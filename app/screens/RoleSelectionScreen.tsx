@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
-import { Button, Text, Card, Surface, useTheme } from 'react-native-paper';
+import React, { useEffect } from 'react';
+import { StyleSheet, View, Platform } from 'react-native';
+import { Button, Text, Card, Surface } from 'react-native-paper';
 import { router } from 'expo-router';
 import { Audio } from 'expo-av';
 
-const RoleSelectionScreen = () => {
-  const theme = useTheme();
+const DATABASE_URL = 'https://ratownictwo-503b1-default-rtdb.firebaseio.com'; 
+const API_KEY = 'AIzaSyCR89wp6BHJw3LtaBittinn9peKmmkvqJw';
 
-  const DATABASE_URL = 'https://ratownictwo-503b1-default-rtdb.firebaseio.com'; // URL Twojej bazy danych
-  const API_KEY = 'AIzaSyCR89wp6BHJw3LtaBittinn9peKmmkvqJw'; // Zmień na klucz API Firebase
+const RoleSelectionScreen = () => {
+  const deviceId = Platform.OS === 'ios' || Platform.OS === 'android' ? 'mobile' : 'pc';
 
   const handleRoleSelect = (role: 'examiner' | 'student') => {
     if (role === 'examiner') {
@@ -26,9 +26,10 @@ const RoleSelectionScreen = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ command: 'PLAY_KASZEL' }),
+        body: JSON.stringify({ command: 'PLAY_KASZEL', target: deviceId === 'pc' ? 'mobile' : 'pc' }),
       });
-      console.log('Komenda wysłana: PLAY_KASZEL');
+
+      console.log('Komenda wysłana: PLAY_KASZEL do:', deviceId === 'pc' ? 'mobile' : 'pc');
       console.log('Odpowiedź z Firebase:', await response.json());
     } catch (error) {
       console.error('Błąd wysyłania komendy:', error);
@@ -39,7 +40,7 @@ const RoleSelectionScreen = () => {
     try {
       console.log('Próba odtworzenia dźwięku...');
       const { sound } = await Audio.Sound.createAsync(
-        require('../../assets/kaszel.mp3') // Odtwórz kaszel.mp3 z assets
+        require('../../assets/kaszel.mp3')
       );
       await sound.playAsync();
       console.log('Dźwięk odtworzony pomyślnie');
@@ -47,6 +48,35 @@ const RoleSelectionScreen = () => {
       console.log('Błąd odtwarzania dźwięku:', error);
     }
   };
+
+  const listenForCommands = async () => {
+    try {
+      const response = await fetch(`${DATABASE_URL}/soundCommand.json?auth=${API_KEY}`);
+      const data = await response.json();
+
+      if (data && data.command === 'PLAY_KASZEL' && data.target === deviceId) {
+        console.log('Odtwarzanie dźwięku na telefonie...');
+
+        const { sound } = await Audio.Sound.createAsync(require('../../assets/kaszel.mp3'));
+        await sound.playAsync();
+
+        console.log('Dźwięk odtworzony pomyślnie');
+
+        await fetch(`${DATABASE_URL}/soundCommand.json?auth=${API_KEY}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+        });
+      }
+    } catch (error) {
+      console.error('Błąd odbierania komendy:', error);
+    }
+  };
+
+  useEffect(() => {
+    const interval = setInterval(listenForCommands, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -87,8 +117,9 @@ const RoleSelectionScreen = () => {
           </Card>
         </Surface>
       </View>
+
       <Button mode="contained" onPress={sendSoundCommand} style={styles.playSoundButton}>
-        Odtwórz kaszel na komputerze
+        Odtwórz kaszel na drugim urządzeniu
       </Button>
       <Button mode="contained" onPress={playSoundLocally} style={styles.playSoundButton}>
         Odtwórz kaszel lokalnie
