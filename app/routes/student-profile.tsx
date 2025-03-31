@@ -59,7 +59,7 @@ const StudentProfileScreen = () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       router.push({
-        pathname: '/routes/student-access',
+        pathname: '/routes/student-session',
         params: {
           firstName: firstName.trim(),
           lastName: lastName.trim(),

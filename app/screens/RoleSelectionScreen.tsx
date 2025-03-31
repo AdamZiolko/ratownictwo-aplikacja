@@ -19,15 +19,15 @@ const RoleSelectionScreen = () => {
       <Text variant="headlineLarge" style={styles.title}>
         Trening Ratownictwa Medycznego
       </Text>
-      
+
       <Text variant="titleMedium" style={styles.subtitle}>
         Wybierz swoją rolę
       </Text>
-      
+
       <View style={styles.cardsContainer}>
         <Surface style={styles.cardSurface} elevation={2}>
-          <Card 
-            style={styles.card} 
+          <Card
+            style={styles.card}
             onPress={() => handleRoleSelect('examiner')}
           >
             <Card.Content style={styles.cardContent}>
@@ -40,8 +40,8 @@ const RoleSelectionScreen = () => {
         </Surface>
 
         <Surface style={styles.cardSurface} elevation={2}>
-          <Card 
-            style={styles.card} 
+          <Card
+            style={styles.card}
             onPress={() => handleRoleSelect('student')}
           >
             <Card.Content style={styles.cardContent}>

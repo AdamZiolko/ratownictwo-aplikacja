@@ -1,8 +1,18 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, ScrollView } from 'react-native';
+import { StyleSheet, View, ScrollView, TouchableOpacity } from 'react-native';
 import { Text, Appbar, Card, Button, FAB, useTheme, Portal, Dialog, TextInput, IconButton, Modal, Switch, List, Divider } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import Svg, { Path, Line, Circle } from 'react-native-svg';
+
+const RhythmSvg = ({ type }: { type: string }) => {
+  return (
+    <Svg width="24" height="24" viewBox="0 0 24 24">
+      <Circle cx="12" cy="12" r="10" stroke="black" strokeWidth="2" fill="none" />
+      <Path d="M8,12 L12,8 L16,12" stroke="black" strokeWidth="2" fill="none" />
+    </Svg>
+  );
+};
 
 // Student type definition
 interface Student {
@@ -15,8 +25,12 @@ interface Student {
     peristalsis: 'normal' | 'hyperactive' | 'hypoactive' | 'absent';
     leftLungMurmurs: boolean;
     rightLungMurmurs: boolean;
+    rhythmType: RhythmType;
   };
 }
+
+// Rhythm type definition
+type RhythmType = 'normal' | 'atrial-fibrillation' | 'atrial-flutter' | 'nodal' | 'front-chamber';
 
 // Session type definition
 interface TrainingSession {
@@ -34,6 +48,24 @@ type Vitals = {
   peristalsis: 'normal' | 'hyperactive' | 'hypoactive' | 'absent';
   leftLungMurmurs: boolean;
   rightLungMurmurs: boolean;
+  rhythmType: RhythmType;
+};
+
+const getRhythmName = (rhythm: RhythmType): string => {
+  switch (rhythm) {
+    case 'normal':
+      return 'Normal Rhythm';
+    case 'atrial-fibrillation':
+      return 'Atrial Fibrillation';
+    case 'atrial-flutter':
+      return 'Atrial Flutter';
+    case 'nodal':
+      return 'Nodal Rhythm';
+    case 'front-chamber':
+      return 'Front Chamber';
+    default:
+      return rhythm;
+  }
 };
 
 const ExaminerDashboardScreen = () => {
@@ -54,6 +86,7 @@ const ExaminerDashboardScreen = () => {
             peristalsis: 'normal',
             leftLungMurmurs: false,
             rightLungMurmurs: false,
+            rhythmType: 'normal',
           }
         }
       ], 
@@ -79,6 +112,7 @@ const ExaminerDashboardScreen = () => {
     peristalsis: 'normal',
     leftLungMurmurs: false,
     rightLungMurmurs: false,
+    rhythmType: 'normal',
   });
 
   // State for expanded session
@@ -130,6 +164,7 @@ const ExaminerDashboardScreen = () => {
             peristalsis: 'normal',
             leftLungMurmurs: false,
             rightLungMurmurs: false,
+            rhythmType: 'normal'
           }
         };
         return {
@@ -147,7 +182,7 @@ const ExaminerDashboardScreen = () => {
 
   const openVitalsModal = (student: Student) => {
     setSelectedStudent(student);
-    setEditedVitals({ ...student.vitals });
+    setEditedVitals({ ...student.vitals, rhythmType: 'normal' });
     setVitalsModalVisible(true);
   };
 
@@ -269,14 +304,14 @@ const ExaminerDashboardScreen = () => {
             )}
           </Card>
         ))}
-      </ScrollView>
 
-      {/* FAB to create new session */}
-      <FAB
-        icon="plus"
-        style={[styles.fab, { backgroundColor: theme.colors.primary }]}
-        onPress={() => setSessionDialogVisible(true)}
-      />
+        {/* FAB to create new session */}
+        <FAB
+          icon="plus"
+          style={[styles.fab, { backgroundColor: theme.colors.primary }]}
+          onPress={() => setSessionDialogVisible(true)}
+        />
+      </ScrollView>
 
       {/* Dialog for adding new session */}
       <Portal>
@@ -351,7 +386,6 @@ const ExaminerDashboardScreen = () => {
               <List.Item
                 title="Heart Rate"
                 description={`${editedVitals.heartRate} BPM`}
-                left={props => <List.Icon {...props} icon="heart-pulse" />}
                 right={() => (
                   <View style={styles.sliderContainer}>
                     <IconButton icon="minus" size={20} onPress={() => {
@@ -364,6 +398,28 @@ const ExaminerDashboardScreen = () => {
                   </View>
                 )}
               />
+              
+              <List.Item
+                title="EKG Rhythm Type"
+                description={getRhythmName(editedVitals.rhythmType)}
+                left={props => <List.Icon {...props} icon="heart-pulse" />}
+              />
+              
+              <View style={styles.rhythmSelectionContainer}>
+                {(['normal', 'atrial-fibrillation', 'atrial-flutter', 'nodal', 'front-chamber'] as RhythmType[]).map((type) => (
+                  <TouchableOpacity
+                    key={type}
+                    style={[
+                      styles.rhythmOption,
+                      editedVitals.rhythmType === type ? styles.selectedRhythm : null
+                    ]}
+                    onPress={() => setEditedVitals({...editedVitals, rhythmType: type})}
+                  >
+                    <RhythmSvg type={type} />
+                    <Text style={styles.rhythmText}>{getRhythmName(type)}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
               
               <List.Item
                 title="Peristalsis Sounds"
@@ -513,6 +569,31 @@ const styles = StyleSheet.create({
   },
   modalButton: {
     marginLeft: 8,
+  },
+  rhythmSelectionContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  rhythmOption: {
+    width: '48%',
+    borderRadius: 8,
+    padding: 8,
+    marginBottom: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  selectedRhythm: {
+    borderColor: '#6200ee',
+    backgroundColor: 'rgba(98, 0, 238, 0.05)',
+  },
+  rhythmText: {
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 4,
   },
 });
 

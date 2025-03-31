@@ -3,6 +3,7 @@ import { StyleSheet, View, ScrollView, Image, Animated, Easing, FlatList } from 
 import { Text, Appbar, Card, Button, List, Divider, useTheme, Portal, Dialog, TextInput, Chip, IconButton, Surface } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
+import EkgProjection from './ekg-projection/EkgProjection';
 
 // Define vital sign types matching the examiner dashboard
 interface Vitals {
@@ -11,6 +12,7 @@ interface Vitals {
   peristalsis: 'normal' | 'hyperactive' | 'hypoactive' | 'absent';
   leftLungMurmurs: boolean;
   rightLungMurmurs: boolean;
+  rhythmType?: string; // Add rhythmType property
 }
 
 interface StudentSession {
@@ -70,6 +72,7 @@ const HeartRateMonitor = ({ heartRate }: { heartRate: number }) => {
     Animated.sequence([
       // First pulse
       Animated.parallel([
+
         Animated.timing(animation, {
           toValue: 1,
           duration: beatDuration * 0.2,
@@ -117,6 +120,7 @@ const HeartRateMonitor = ({ heartRate }: { heartRate: number }) => {
       <View style={styles.monitorContainer}>
         <Animated.View
           style={[
+
             styles.heartLine,
             {
               transform: [{ translateX }],
@@ -131,8 +135,6 @@ const HeartRateMonitor = ({ heartRate }: { heartRate: number }) => {
 const StudentSessionScreen = () => {
   const theme = useTheme();
   const params = useLocalSearchParams();
-  const [accessCodeInput, setAccessCodeInput] = useState('');
-  const [dialogVisible, setDialogVisible] = useState(false);
   const [notes, setNotes] = useState('');
   const [noteDialogVisible, setNoteDialogVisible] = useState(false);
   
@@ -154,62 +156,45 @@ const StudentSessionScreen = () => {
       peristalsis: 'normal',
       leftLungMurmurs: false,
       rightLungMurmurs: false,
+      rhythmType: 'normal', // Normal sinus rhythm
     },
   });
 
-  // Function to simulate loading different vitals based on access code
-  const loadSessionByAccessCode = (code: string) => {
-    // This would be an API call in a real app
-    // For demo purposes, we'll just modify the vitals based on the code
-    if (code === 'BLS2023-101') {
+  // Check for access code in URL params and set the appropriate session
+  useEffect(() => {
+    const code = params.accessCode as string;
+    if (code === 'BLS2023-102') {
       setSession({
         ...session,
-        vitals: {
-          temperature: 36.6,
-          heartRate: 72,
-          peristalsis: 'normal',
-          leftLungMurmurs: false,
-          rightLungMurmurs: false,
-        }
-      });
-      setDialogVisible(false);
-    } else if (code === 'BLS2023-102') {
-      setSession({
-        ...session,
+        accessCode: code,
         vitals: {
           temperature: 38.9,
           heartRate: 110,
           peristalsis: 'hyperactive',
           leftLungMurmurs: true,
           rightLungMurmurs: false,
+          rhythmType: 'atrial-fibrillation', // Add atrial fibrillation for this scenario
         }
       });
-      setDialogVisible(false);
     } else if (code === 'BLS2023-103') {
       setSession({
         ...session,
+        accessCode: code,
         vitals: {
           temperature: 35.2,
           heartRate: 45,
           peristalsis: 'hypoactive',
           leftLungMurmurs: true,
           rightLungMurmurs: true,
+          rhythmType: 'torsade-de-pointes', // Add torsade de pointes for this scenario
         }
       });
-      setDialogVisible(false);
-    } else {
-      // Show error or keep dialog open
-      alert('Invalid access code. Please try again.');
-    }
-  };
-
-  // Check for access code in URL params (from QR code or direct link)
-  useEffect(() => {
-    const code = params.accessCode as string;
-    if (code) {
-      loadSessionByAccessCode(code);
-    } else {
-      setDialogVisible(true);
+    } else if (code) {
+      // Set the access code if it exists in params
+      setSession(prev => ({
+        ...prev,
+        accessCode: code
+      }));
     }
   }, [params]);
 
@@ -325,27 +310,13 @@ const StudentSessionScreen = () => {
 
             {/* Heart Rate Section - Student can only view */}
             <View style={styles.vitalSection}>
-              <View style={styles.vitalIconContainer}>
-                <Text style={styles.vitalIcon}>❤️</Text>
-              </View>
-              <View style={styles.vitalInfoContainer}>
-                <Text variant="titleSmall">Heart Rate</Text>
-                <Text variant="displaySmall" style={{ color: getHeartRateColor(session.vitals.heartRate) }}>
-                  {session.vitals.heartRate} <Text variant="bodySmall">BPM</Text>
-                </Text>
-                <Text variant="bodyMedium" style={styles.rhythmName}>
-                  {selectedHeartRhythm?.name || (
-                    session.vitals.heartRate > 100 ? 'TACHYCARDIA' : 
-                    session.vitals.heartRate < 60 ? 'BRADYCARDIA' : 'NORMAL SINUS RHYTHM'
-                  )}
-                </Text>
-                <Text variant="bodySmall">
-                  {selectedHeartRhythm?.description || 'Rhythm selected by examiner'}
-                </Text>
-              </View>
+                <EkgProjection 
+                    initialType={session.vitals.rhythmType as any} 
+                    initialBpm={session.vitals.heartRate}
+                    readOnly={true}
+                />
             </View>
             
-            <HeartRateMonitor heartRate={session.vitals.heartRate} />
 
             <Divider style={styles.divider} />
 
@@ -412,24 +383,6 @@ const StudentSessionScreen = () => {
           </Card.Content>
         </Card>
       </ScrollView>
-
-      {/* Access code dialog */}
-      <Portal>
-        <Dialog visible={dialogVisible} dismissable={false}>
-          <Dialog.Title>Enter Access Code</Dialog.Title>
-          <Dialog.Content>
-            <TextInput
-              label="Access Code"
-              value={accessCodeInput}
-              onChangeText={setAccessCodeInput}
-              mode="outlined"
-            />
-          </Dialog.Content>
-          <Dialog.Actions>
-            <Button onPress={() => loadSessionByAccessCode(accessCodeInput)}>Submit</Button>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
 
       {/* Notes dialog */}
       <Portal>
