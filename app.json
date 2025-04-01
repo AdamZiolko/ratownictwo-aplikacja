@@ -15,7 +15,18 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "permissions": [
+        "android.permission.BLUETOOTH",
+        "android.permission.BLUETOOTH_ADMIN",
+        "android.permission.BLUETOOTH_CONNECT",
+        "android.permission.BLUETOOTH",
+        "android.permission.BLUETOOTH_ADMIN",
+        "android.permission.BLUETOOTH_CONNECT",
+        "android.permission.ACCESS_FINE_LOCATION", 
+        "android.permission.ACCESS_BACKGROUND_LOCATION" 
+      ],
+      "package": "com.anonymous.ratownictwo"
     },
     "web": {
       "bundler": "metro",
@@ -32,7 +43,19 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ]
+      ],
+      [
+        "@config-plugins/react-native-ble-plx",
+        {
+          "isBackgroundEnabled": true,
+          "modes": [
+            "peripheral",
+            "central"
+          ],
+          "bluetoothAlwaysPermission": "Zezwól $(PRODUCT_NAME) na łączenie się z urządzeniami Bluetooth"
+        }
+      ],
+      "react-native-ble-plx"
     ],
     "experiments": {
       "typedRoutes": true

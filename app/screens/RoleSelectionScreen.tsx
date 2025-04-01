@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button, Text, Card, Surface, useTheme } from 'react-native-paper';
 import { router } from 'expo-router';
+import BluetoothComponent from '../../components/BluetoothComponent'; // Importujemy komponent Bluetooth
 
 const RoleSelectionScreen = () => {
   const theme = useTheme();
@@ -53,6 +54,9 @@ const RoleSelectionScreen = () => {
           </Card>
         </Surface>
       </View>
+
+      {/* Dodajemy komponent Bluetooth do testowania */}
+      <BluetoothComponent /> {/* To wyświetli funkcje Bluetooth na ekranie */}
     </View>
   );
 };
