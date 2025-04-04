@@ -4,10 +4,11 @@
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
-    "reset-project": "node ./scripts/reset-project.js",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
+    "windows": "react-native run-windows",
+    "win-setup": "set RN_PLATFORM=windows",
     "test": "jest --watchAll",
     "lint": "expo lint"
   },
@@ -19,9 +20,10 @@
     "@expo/vector-icons": "^14.0.2",
     "@react-native-async-storage/async-storage": "^1.23.1",
     "@react-native-community/slider": "^4.5.5",
+    "@react-native/metro-config": "0.72.11",
     "@react-navigation/bottom-tabs": "^7.2.0",
     "@react-navigation/native": "^7.0.14",
-    "expo": "^52.0.42",
+    "expo": "^52.0.44",
     "expo-av": "~15.0.2",
     "expo-blur": "~14.0.3",
     "expo-constants": "~17.0.8",
@@ -41,26 +43,38 @@
     "react-native-ble-plx": "^3.5.0",
     "react-native-bluetooth-classic": "^1.73.0-rc.13",
     "react-native-canvas": "^0.1.40",
+    "react-native-fs": "^2.20.0",
     "react-native-gesture-handler": "~2.20.2",
     "react-native-paper": "^5.13.1",
     "react-native-reanimated": "^3.17.1",
     "react-native-safe-area-context": "4.12.0",
     "react-native-screens": "~4.4.0",
+    "react-native-sound": "^0.11.2",
     "react-native-svg": "^15.8.0",
     "react-native-web": "~0.19.13",
-    "react-native-webview": "^13.12.5"
+    "react-native-webview": "^13.12.5",
+    "react-native-windows": "0.76.9"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@react-native-community/cli": "^18.0.0",
+    "@react-native-windows/cli": "^0.78.0",
     "@types/jest": "^29.5.12",
     "@types/react": "~18.3.12",
     "@types/react-native-canvas": "^0.1.14",
     "@types/react-test-renderer": "^18.3.0",
     "jest": "^29.2.1",
     "jest-expo": "~52.0.6",
+    "metro-config": "^0.81.4",
     "react-test-renderer": "18.3.1",
     "typescript": "^5.3.3"
   },
-  "private": true
+  "private": true,
+  "react-native-windows": {
+    "init-windows": {
+      "name": "ratownictwo",
+      "namespace": "ratownictwo",
+      "template": "old/uwp-cpp-app"
+    }
+  }
 }

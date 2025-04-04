@@ -6,9 +6,11 @@ import {
   FlatList, 
   StyleSheet, 
   TouchableOpacity,
-  RefreshControl
+  RefreshControl,
+  Platform
 } from 'react-native';
 import BluetoothSerial from 'react-native-bluetooth-classic';
+import Sound from 'react-native-sound';
 
 interface Device {
   id: string;
@@ -24,21 +26,75 @@ const BluetoothComponent = () => {
   const [error, setError] = useState<string | null>(null);
   const [connectedDevice, setConnectedDevice] = useState<Device | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [sound, setSound] = useState<Sound | null>(null);
 
   useEffect(() => {
     initBluetooth();
+    prepareSound();
+    
     return () => {
       BluetoothSerial.cancelDiscovery();
+      if (sound) {
+        sound.release();
+      }
     };
   }, []);
 
+  const prepareSound = () => {
+    try {
+      let newSound: Sound;
+  
+      if (Platform.OS === 'android') {
+        // UWAGA: drugi argument to "raw", nie Sound.ANDROID_RESOURCE
+        newSound = new Sound('kaszel', 'raw', (error) => {
+          if (error) {
+            console.log('Błąd ładowania dźwięku na Androidzie', error);
+            setError('Nie można załadować pliku dźwiękowego');
+            return;
+          }
+          console.log('Dźwięk załadowany pomyślnie (Android)');
+          setSound(newSound);
+        });
+      } else {
+        newSound = new Sound('kaszel.mp3', Sound.MAIN_BUNDLE, (error) => {
+          if (error) {
+            console.log('Błąd ładowania dźwięku na iOS', error);
+            setError('Nie można załadować pliku dźwiękowego');
+            return;
+          }
+          console.log('Dźwięk załadowany pomyślnie (iOS)');
+          setSound(newSound);
+        });
+      }
+    } catch (err) {
+      console.log('Błąd przygotowania dźwięku:', err);
+      setError('Błąd przygotowania pliku dźwiękowego');
+    }
+  };
+  
+  const playSound = () => {
+    if (!sound) {
+      setError('Dźwięk nie jest gotowy do odtworzenia');
+      return;
+    }
+  
+    sound.play((success) => {
+      if (!success) {
+        console.log('Błąd podczas odtwarzania dźwięku');
+        setError('Błąd podczas odtwarzania dźwięku');
+      } else {
+        console.log('Dźwięk odtworzony');
+      }
+    });
+  };
+  
   const initBluetooth = async () => {
     try {
       const enabled = await BluetoothSerial.isBluetoothEnabled();
       if (!enabled) {
         const result = await BluetoothSerial.requestBluetoothEnabled();
         if (!result) {
-          setError('Bluetooth musi być włączony');
+          setError('Bluetooth musi być włączony');a
           return false;
         }
       }
@@ -61,7 +117,6 @@ const BluetoothComponent = () => {
       setDevices([]);
       setConnectedDevice(null);
 
-      // Pobierz sparowane urządzenia
       const bondedDevices = await BluetoothSerial.getBondedDevices();
       const enhancedBondedDevices = bondedDevices.map(device => ({
         id: device.address,
@@ -73,7 +128,6 @@ const BluetoothComponent = () => {
 
       setDevices(enhancedBondedDevices);
 
-      // Nasłuchuj nowych urządzeń
       const discoverySubscription = BluetoothSerial.onDeviceDiscovered((device) => {
         setDevices(prevDevices => {
           const exists = prevDevices.some(d => d.address === device.address);
@@ -92,16 +146,14 @@ const BluetoothComponent = () => {
         });
       });
 
-      // Rozpocznij skanowanie
       await BluetoothSerial.startDiscovery();
 
-      // Zatrzymaj skanowanie po 15 sekundach
       setTimeout(async () => {
         await BluetoothSerial.cancelDiscovery();
         discoverySubscription.remove();
         setIsScanning(false);
         setRefreshing(false);
-      }, 10000);
+      }, 5000);
 
     } catch (err) {
       const error = err as Error;
@@ -199,6 +251,11 @@ const BluetoothComponent = () => {
           <Text style={styles.connectedBannerText}>
             Połączono z: {connectedDevice.name || connectedDevice.address}
           </Text>
+          <Button
+            title="Odtwórz dźwięk kaszlu"
+            onPress={playSound}
+            color="#34C759"
+          />
         </View>
       )}
 
@@ -267,6 +324,7 @@ const styles = StyleSheet.create({
     color: 'white',
     textAlign: 'center',
     fontWeight: '500',
+    marginBottom: 8,
   },
   listContent: {
     paddingBottom: 24,
