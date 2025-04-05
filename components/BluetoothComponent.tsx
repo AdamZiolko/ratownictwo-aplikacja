@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 import BluetoothSerial from 'react-native-bluetooth-classic';
 import Sound from 'react-native-sound';
+import { Audio } from 'expo-av';
+
 
 interface Device {
   id: string;
@@ -40,52 +42,36 @@ const BluetoothComponent = () => {
     };
   }, []);
 
-  const prepareSound = () => {
-    try {
-      let newSound: Sound;
+  const prepareSound = async () => {
+    if (Platform.OS === 'web') {
+      console.log('Odtwarzanie dźwięku na Web może nie być wspierane');
+    }
   
-      if (Platform.OS === 'android') {
-        // UWAGA: drugi argument to "raw", nie Sound.ANDROID_RESOURCE
-        newSound = new Sound('kaszel', 'raw', (error) => {
-          if (error) {
-            console.log('Błąd ładowania dźwięku na Androidzie', error);
-            setError('Nie można załadować pliku dźwiękowego');
-            return;
-          }
-          console.log('Dźwięk załadowany pomyślnie (Android)');
-          setSound(newSound);
-        });
-      } else {
-        newSound = new Sound('kaszel.mp3', Sound.MAIN_BUNDLE, (error) => {
-          if (error) {
-            console.log('Błąd ładowania dźwięku na iOS', error);
-            setError('Nie można załadować pliku dźwiękowego');
-            return;
-          }
-          console.log('Dźwięk załadowany pomyślnie (iOS)');
-          setSound(newSound);
-        });
-      }
+    try {
+      const { sound: loadedSound } = await Audio.Sound.createAsync(
+        require('../assets/kaszel.mp3') // 🟢 Upewnij się, że ścieżka jest poprawna
+      );
+      setSound(loadedSound);
+      console.log('Dźwięk przygotowany');
     } catch (err) {
       console.log('Błąd przygotowania dźwięku:', err);
-      setError('Błąd przygotowania pliku dźwiękowego');
+      setError('Nie można załadować pliku dźwiękowego');
     }
   };
   
-  const playSound = () => {
+  const playSound = async () => {
     if (!sound) {
       setError('Dźwięk nie jest gotowy do odtworzenia');
       return;
     }
   
-    sound.play((success) => {
-      if (!success) {
-        console.log('Błąd podczas odtwarzania dźwięku');
-        setError('Błąd podczas odtwarzania dźwięku');
-      } else {
-        console.log('Dźwięk odtworzony');
-      }
-    });
+    try {
+      await sound.replayAsync(); // używamy replayAsync dla powtórnego odtworzenia
+      console.log('Dźwięk odtworzony');
+    } catch (err) {
+      console.log('Błąd odtwarzania dźwięku:', err);
+      setError('Błąd podczas odtwarzania dźwięku');
+    }
   };
   
   const initBluetooth = async () => {
@@ -94,7 +80,7 @@ const BluetoothComponent = () => {
       if (!enabled) {
         const result = await BluetoothSerial.requestBluetoothEnabled();
         if (!result) {
-          setError('Bluetooth musi być włączony');a
+          setError('Bluetooth musi być włączony');
           return false;
         }
       }
