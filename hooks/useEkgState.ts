@@ -21,12 +21,6 @@ export const useEkgState = (initialType: EkgType = EkgType.NORMAL, initialBpm: n
     setIsRunning(prev => !prev);
   }, []);
 
-  // Reset the EKG animation
-  const resetEkg = useCallback(() => {
-    setIsRunning(false);
-    setTimeout(() => setIsRunning(true), 50);
-  }, []);
-
   // Handle live slider value changes
   const handleSliderValueChange = useCallback((value: number) => {
     // Immediately update slider value for smooth UI
@@ -69,11 +63,11 @@ export const useEkgState = (initialType: EkgType = EkgType.NORMAL, initialBpm: n
     
     // Otherwise, categorize based on BPM
     if (bpm < 60) {
-      return `Bradycardia: ${bpm} BPM`;
+      return `Bradykardia: ${bpm} BPM`;
     } else if (bpm > 100) {
-      return `Tachycardia: ${bpm} BPM`;
+      return `Tachykardia: ${bpm} BPM`;
     } else {
-      return `Normal Heart Rate: ${bpm} BPM`;
+      return `Normalne tętno: ${bpm} BPM`;
     }
   }, [ekgType, bpm]);
 
@@ -100,7 +94,6 @@ export const useEkgState = (initialType: EkgType = EkgType.NORMAL, initialBpm: n
     sliderValue,
     isRunning,
     togglePlayPause,
-    resetEkg,
     handleSliderValueChange,
     handleSliderComplete,
     selectCustomBpm,

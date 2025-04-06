@@ -4,7 +4,7 @@
  */
 
 // Constants for EKG generation
-const DEFAULT_BASELINE = 150;
+export const DEFAULT_BASELINE = 150;
 const DEFAULT_PHASE_SHIFT = 5;
 
 // Default BPM values
@@ -753,29 +753,29 @@ export class EkgFactory {
   static getNameForType(type: EkgType): string {
     switch (type) {
       case EkgType.NORMAL:
-        return "Normal Sinus Rhythm";
+        return "Rytm zatokowy prawidłowy";
       case EkgType.TACHYCARDIA:
-        return "Sinus Tachycardia";
+        return "Tachykardia zatokowa";
       case EkgType.BRADYCARDIA:
-        return "Sinus Bradycardia";
+        return "Bradykardia zatokowa";
       case EkgType.AFIB:
-        return "Atrial Fibrillation";
+        return "Migotanie przedsionków";
       case EkgType.VFIB:
-        return "Ventricular Fibrillation";
+        return "Migotanie komór";
       case EkgType.VTACH:
-        return "Ventricular Tachycardia";
+        return "Częstoskurcz komorowy";
       case EkgType.TORSADE:
         return "Torsade de Pointes";
       case EkgType.ASYSTOLE:
-        return "Asystole";
+        return "Asystolia";
       case EkgType.HEART_BLOCK:
-        return "Heart Block";
+        return "Blok serca";
       case EkgType.PVC:
-        return "PVCs";
+        return "Przedwczesne pobudzenia komorowe";
       case EkgType.CUSTOM:
-        return "Custom Rhythm";
+        return "Rytm niestandardowy";
       default:
-        return "Unknown Rhythm";
+        return "Nieznany rytm";
     }
   }
 
@@ -785,29 +785,29 @@ export class EkgFactory {
   static getDescriptionForType(type: EkgType): string {
     switch (type) {
       case EkgType.NORMAL:
-        return "Regular rhythm with normal P wave, QRS complex, and T wave. Rate 60-100 BPM.";
+        return "Regularny rytm z prawidłową falą P, zespołem QRS i falą T. Częstość 60-100 uderzeń na minutę.";
       case EkgType.TACHYCARDIA:
-        return "Regular rhythm with normal morphology but accelerated rate above 100 BPM.";
+        return "Regularny rytm o prawidłowej morfologii, ale przyspieszonej częstości powyżej 100 uderzeń na minutę.";
       case EkgType.BRADYCARDIA:
-        return "Regular rhythm with normal morphology but reduced rate below 60 BPM.";
+        return "Regularny rytm o prawidłowej morfologii, ale obniżonej częstości poniżej 60 uderzeń na minutę.";
       case EkgType.AFIB:
-        return "Irregular rhythm with absent P waves, replaced by chaotic baseline. Variable R-R intervals.";
+        return "Nieregularny rytm z brakiem fal P, zastąpionych przez chaotyczną linię podstawową. Zmienne odstępy R-R.";
       case EkgType.VFIB:
-        return "Chaotic, irregular rhythm with no distinct waves. Immediately life-threatening.";
+        return "Chaotyczny, nieregularny rytm bez wyraźnych załamków. Bezpośrednie zagrożenie życia.";
       case EkgType.VTACH:
-        return "Regular, wide QRS complexes at rapid rate with AV dissociation. Life-threatening.";
+        return "Regularny, szeroki zespół QRS o szybkiej częstości z dysocjacją przedsionkowo-komorową. Zagrożenie życia.";
       case EkgType.TORSADE:
-        return "Polymorphic VT with QRS complexes that appear to twist around the baseline. Life-threatening.";
+        return "Polimorficzny częstoskurcz komorowy z zespołami QRS, które wydają się skręcać wokół linii podstawowej. Zagrożenie życia.";
       case EkgType.ASYSTOLE:
-        return "No cardiac electrical activity. Represents cardiac arrest requiring immediate CPR.";
+        return "Płaska linia z minimalną aktywnością elektryczną. Zatrzymanie akcji serca wymagające natychmiastowej resuscytacji.";
       case EkgType.HEART_BLOCK:
-        return "Delayed or blocked conduction between atria and ventricles. Can present as prolonged PR interval or missing QRS.";
+        return "Opóźnione lub przerwane przewodzenie między przedsionkami a komorami. Fale P mogą nie być następowane przez zespoły QRS.";
       case EkgType.PVC:
-        return "Wide, bizarre QRS complexes occurring early and not preceded by P waves.";
+        return "Normalny rytm przerywany przez przedwczesne, szerokie zespoły QRS pochodzące z komór.";
       case EkgType.CUSTOM:
-        return "Custom heart rhythm pattern with user-defined parameters.";
+        return "Niestandardowy rytm z parametrami zdefiniowanymi przez użytkownika.";
       default:
-        return "Undefined cardiac rhythm pattern.";
+        return "Nieokreślony rytm serca.";
     }
   }
 }

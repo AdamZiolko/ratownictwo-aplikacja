@@ -21,19 +21,6 @@ const EkgControls: React.FC<EkgControlsProps> = ({
   const [rhythmType, setRhythmType] = useState<EkgType>(initialType);
   const [bpm, setBpm] = useState<number>(initialBpm);
   
-  // Handle rhythm type change
-  const handleRhythmChange = (newType: EkgType) => {
-    // Update rhythm type
-    setRhythmType(newType);
-    
-    // Get the default BPM for this rhythm type
-    const defaultBpm = EkgFactory.getBpmForType(newType);
-    setBpm(defaultBpm);
-    
-    // Notify parent component
-    onEkgConfigChange(newType, defaultBpm);
-  };
-  
   // Handle BPM change from slider
   const handleBpmChange = (newBpm: number) => {
     setBpm(newBpm);
@@ -50,12 +37,12 @@ const EkgControls: React.FC<EkgControlsProps> = ({
     <Card style={styles.container}>
       <Card.Content>
         <Text variant="titleMedium" style={styles.title}>
-          EKG Configuration
+          Konfiguracja EKG
         </Text>
         
         {/* Heart Rhythm Selector */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Heart Rhythm Pattern</Text>
+          <Text style={styles.sectionLabel}>Wzorzec Rytmu Serca</Text>
         </View>
         
         <Divider style={styles.divider} />
@@ -63,7 +50,7 @@ const EkgControls: React.FC<EkgControlsProps> = ({
         {/* BPM Slider */}
         <View style={styles.section}>
           <View style={styles.bpmHeader}>
-            <Text style={styles.sectionLabel}>Heart Rate</Text>
+            <Text style={styles.sectionLabel}>Tętno</Text>
             <Text style={[styles.bpmValue, { color: theme.colors.primary }]}>
               {bpm} BPM
             </Text>
@@ -81,9 +68,9 @@ const EkgControls: React.FC<EkgControlsProps> = ({
           />
           
           <View style={styles.bpmLabels}>
-            <Text style={styles.bpmLabel}>Slow</Text>
-            <Text style={styles.bpmLabel}>Normal</Text>
-            <Text style={styles.bpmLabel}>Fast</Text>
+            <Text style={styles.bpmLabel}>Wolne</Text>
+            <Text style={styles.bpmLabel}>Normalne</Text>
+            <Text style={styles.bpmLabel}>Szybkie</Text>
           </View>
         </View>
       </Card.Content>

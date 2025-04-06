@@ -22,7 +22,7 @@ interface Device {
   isComputer: boolean;
 }
 
-const BluetoothComponent = () => {
+export const BluetoothComponent = () => {
   const [devices, setDevices] = useState<Device[]>([]);
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,15 +35,28 @@ const BluetoothComponent = () => {
     prepareSound();
     
     return () => {
-      BluetoothSerial.cancelDiscovery();
-      if (sound) {
-        sound.release();
+      try {
+        // Dodajemy sprawdzenie czy BluetoothSerial istnieje przed wywołaniem metod
+        if (BluetoothSerial && typeof BluetoothSerial.cancelDiscovery === 'function') {
+          try {
+            BluetoothSerial.cancelDiscovery();
+          } catch (error) {
+            console.warn('Błąd podczas anulowania wyszukiwania Bluetooth:', error);
+          }
+        }
+        // Bezpieczne zwalnianie zasobów dźwiękowych
+        if (sound) {
+          sound.release();
+        }
+      } catch (error) {
+        console.warn('Błąd podczas czyszczenia zasobów:', error);
       }
     };
   }, []);
 
   const prepareSound = async () => {
-    if (Platform.OS === 'web') {
+    // Sprawdzenie czy obiekt Platform istnieje i czy ma właściwość OS
+    if (Platform && Platform.OS === 'web') {
       console.log('Odtwarzanie dźwięku na Web może nie być wspierane');
     }
   
@@ -76,6 +89,12 @@ const BluetoothComponent = () => {
   
   const initBluetooth = async () => {
     try {
+      // Sprawdzenie czy BluetoothSerial istnieje
+      if (!BluetoothSerial) {
+        setError('Moduł Bluetooth nie jest dostępny');
+        return false;
+      }
+
       const enabled = await BluetoothSerial.isBluetoothEnabled();
       if (!enabled) {
         const result = await BluetoothSerial.requestBluetoothEnabled();
@@ -96,6 +115,14 @@ const BluetoothComponent = () => {
     try {
       const isReady = await initBluetooth();
       if (!isReady) return;
+
+      // Dodatkowe sprawdzenie czy BluetoothSerial istnieje
+      if (!BluetoothSerial) {
+        setError('Moduł Bluetooth nie jest dostępny');
+        setIsScanning(false);
+        setRefreshing(false);
+        return;
+      }
 
       setIsScanning(true);
       setRefreshing(true);
@@ -135,10 +162,19 @@ const BluetoothComponent = () => {
       await BluetoothSerial.startDiscovery();
 
       setTimeout(async () => {
-        await BluetoothSerial.cancelDiscovery();
-        discoverySubscription.remove();
-        setIsScanning(false);
-        setRefreshing(false);
+        try {
+          if (BluetoothSerial) {
+            await BluetoothSerial.cancelDiscovery();
+          }
+          if (discoverySubscription) {
+            discoverySubscription.remove();
+          }
+        } catch (error) {
+          console.warn('Błąd podczas anulowania wyszukiwania:', error);
+        } finally {
+          setIsScanning(false);
+          setRefreshing(false);
+        }
       }, 5000);
 
     } catch (err) {
@@ -158,6 +194,12 @@ const BluetoothComponent = () => {
 
   const connectToDevice = async (device: Device) => {
     try {
+      // Sprawdzenie czy BluetoothSerial istnieje
+      if (!BluetoothSerial) {
+        setError('Moduł Bluetooth nie jest dostępny');
+        return;
+      }
+
       if (connectedDevice) {
         try {
           await BluetoothSerial.disconnectFromDevice(connectedDevice.address);
@@ -378,5 +420,3 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
-
-export default BluetoothComponent;

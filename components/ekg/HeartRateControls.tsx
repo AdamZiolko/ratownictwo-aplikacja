@@ -40,11 +40,16 @@ const HeartRateControls: React.FC<HeartRateControlsProps> = ({
   return (
     <View style={styles.container}>
       <Text style={[styles.bpmLabel, { color: getBpmIndicatorColor() }]}>
-        Heart Rate: {sliderValue} BPM
+        Tętno: {sliderValue} BPM
       </Text>
       
       <View style={styles.sliderContainer}>
-        <Text style={styles.sliderLabel}>{MIN_BPM}</Text>
+        <Text 
+          style={{
+            color: theme.colors.onSurface,
+            margin: 6
+          }}
+        >{MIN_BPM}</Text>
         <CustomSlider
           value={sliderValue}
           minimumValue={MIN_BPM}
@@ -55,10 +60,19 @@ const HeartRateControls: React.FC<HeartRateControlsProps> = ({
           trackColor={theme.colors.surfaceVariant}
           thumbColor={theme.colors.primary}
         />
-        <Text style={styles.sliderLabel}>{MAX_BPM}</Text>
+        <Text 
+          style={{
+            color: theme.colors.onSurface,
+            margin: 6
+          }}
+        >{MAX_BPM}</Text>
       </View>
       
-      <Text style={styles.label}>Clinical Presets:</Text>
+      <Text style={{
+         color: theme.colors.onSurface,
+         fontWeight: 'bold',
+         marginBottom: 12, 
+      }}>Ustawienia kliniczne:</Text>
       <View style={styles.presetButtons}>
         {presetBpmValues.map((presetBpm) => (
           <TouchableOpacity
@@ -93,13 +107,13 @@ const HeartRateControls: React.FC<HeartRateControlsProps> = ({
       
       <View style={styles.bpmRanges}>
         <Text style={[styles.bpmRangeText, { color: theme.colors.error }]}>
-          Bradycardia: &lt; 60 BPM
+          Bradykardia: &lt; 60 BPM
         </Text>
         <Text style={[styles.bpmRangeText, { color: theme.colors.primary }]}>
-          Normal: 60-100 BPM
+          Normalne: 60-100 BPM
         </Text>
         <Text style={[styles.bpmRangeText, { color: theme.colors.secondary }]}>
-          Tachycardia: &gt; 100 BPM
+          Tachykardia: &gt; 100 BPM
         </Text>
       </View>
     </View>
@@ -109,7 +123,6 @@ const HeartRateControls: React.FC<HeartRateControlsProps> = ({
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    paddingVertical: 8,
   },
   bpmLabel: {
     fontSize: 16,
@@ -161,8 +174,6 @@ const styles = StyleSheet.create({
   },
   bpmRanges: {
     marginTop: 10,
-    padding: 12,
-    backgroundColor: 'rgba(0,0,0,0.05)',
     borderRadius: 8,
   },
   bpmRangeText: {
