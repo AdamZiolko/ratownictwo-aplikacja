@@ -13,7 +13,6 @@ import BluetoothSerial from 'react-native-bluetooth-classic';
 import Sound from 'react-native-sound';
 import { Audio } from 'expo-av';
 
-
 interface Device {
   id: string;
   name: string | null;
@@ -26,9 +25,10 @@ const BluetoothComponent = () => {
   const [devices, setDevices] = useState<Device[]>([]);
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [connectedDevice, setConnectedDevice] = useState<Device | null>(null);
+  const [connectedDevices, setConnectedDevices] = useState<Device[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [sound, setSound] = useState<Sound | null>(null);
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [showConnectionStatus, setShowConnectionStatus] = useState(false);
 
   useEffect(() => {
     initBluetooth();
@@ -37,43 +37,154 @@ const BluetoothComponent = () => {
     return () => {
       BluetoothSerial.cancelDiscovery();
       if (sound) {
-        sound.release();
+        sound.unloadAsync().catch((err) => console.error('Error unloading sound:', err));
       }
     };
   }, []);
 
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (showConnectionStatus) {
+      timer = setTimeout(() => {
+        setShowConnectionStatus(false);
+      }, 3000); 
+    }
+    return () => clearTimeout(timer);
+  }, [showConnectionStatus]);
+
   const prepareSound = async () => {
     if (Platform.OS === 'web') {
       console.log('Odtwarzanie dźwięku na Web może nie być wspierane');
+      return;
     }
   
     try {
       const { sound: loadedSound } = await Audio.Sound.createAsync(
-        require('../assets/kaszel.mp3') // 🟢 Upewnij się, że ścieżka jest poprawna
+        require('../assets/kaszel.mp3') 
       );
       setSound(loadedSound);
       console.log('Dźwięk przygotowany');
     } catch (err) {
       console.log('Błąd przygotowania dźwięku:', err);
       setError('Nie można załadować pliku dźwiękowego');
+      setShowConnectionStatus(true);
     }
   };
   
   const playSound = async () => {
     if (!sound) {
       setError('Dźwięk nie jest gotowy do odtworzenia');
+      setShowConnectionStatus(true);
       return;
     }
   
     try {
-      await sound.replayAsync(); // używamy replayAsync dla powtórnego odtworzenia
+      await sound.replayAsync(); 
       console.log('Dźwięk odtworzony');
     } catch (err) {
       console.log('Błąd odtwarzania dźwięku:', err);
       setError('Błąd podczas odtwarzania dźwięku');
+      setShowConnectionStatus(true);
+    }
+  };
+
+  const disconnectDevice = async (device: Device) => {
+    try {
+      console.log('Rozpoczynamy rozłączanie z:', device.address);
+      
+      // Najpierw próbujemy fizycznie rozłączyć urządzenie
+      const disconnected = await BluetoothSerial.disconnectFromDevice(device.address);
+      
+      if (disconnected) {
+        console.log(`Fizycznie rozłączono z urządzeniem: ${device.name || device.address}`);
+        
+        // Dopiero po potwierdzeniu rozłączenia aktualizujemy stan
+        setConnectedDevices(prevDevices => prevDevices.filter(d => d.id !== device.id));
+        setDevices(prevDevices =>
+          prevDevices.map(d => (d.id === device.id ? { ...d, connected: false } : d))
+        );
+        
+        setError(`Rozłączono z urządzeniem: ${device.name || device.address}`);
+      } else {
+        console.log('Nie udało się fizycznie rozłączyć z urządzeniem');
+        setError('Nie udało się rozłączyć - spróbuj ponownie');
+      }
+      
+      setShowConnectionStatus(true);
+      
+      // Dodatkowe sprawdzenie stanu połączenia po 2 sekundach
+      setTimeout(async () => {
+        try {
+          const isConnected = await BluetoothSerial.isDeviceConnected(device.address);
+          if (isConnected) {
+            console.log('UWAGA: Urządzenie nadal jest połączone na poziomie systemowym');
+            setError('Urządzenie nadal połączone - wymagana ręczna interwencja');
+            setShowConnectionStatus(true);
+          }
+        } catch (checkError) {
+          console.log('Błąd podczas sprawdzania stanu połączenia:', checkError);
+        }
+      }, 2000);
+      
+    } catch (err) {
+      console.log('Błąd rozłączania: ', err);
+      setError(`Błąd rozłączania: ${err instanceof Error ? err.message : 'Nieznany błąd'}`);
+      setShowConnectionStatus(true);
     }
   };
   
+  const disconnectAllDevices = async () => {
+    try {
+      // Tworzymy kopię połączonych urządzeń
+      const devicesToDisconnect = [...connectedDevices];
+      
+      // Najpierw próbujemy rozłączyć wszystkie urządzenia
+      const disconnectPromises = devicesToDisconnect.map(device => 
+        BluetoothSerial.disconnectFromDevice(device.address)
+      );
+      
+      const results = await Promise.all(disconnectPromises);
+      const allDisconnected = results.every(result => result);
+      
+      if (allDisconnected) {
+        console.log('Wszystkie urządzenia zostały rozłączone');
+        setConnectedDevices([]);
+        setDevices(prevDevices =>
+          prevDevices.map(d => ({ ...d, connected: false }))
+        );
+        setError('Rozłączono wszystkie urządzenia');
+      } else {
+        console.log('Nie wszystkie urządzenia zostały rozłączone');
+        setError('Nie udało się rozłączyć wszystkich urządzeń');
+      }
+      
+      setShowConnectionStatus(true);
+      
+      // Sprawdzenie stanu połączeń po 2 sekundach
+      setTimeout(async () => {
+        try {
+          const checkPromises = devicesToDisconnect.map(device =>
+            BluetoothSerial.isDeviceConnected(device.address)
+          );
+          const connectionStatuses = await Promise.all(checkPromises);
+          
+          connectionStatuses.forEach((isConnected, index) => {
+            if (isConnected) {
+              console.log(`UWAGA: Urządzenie ${devicesToDisconnect[index].name} nadal połączone`);
+            }
+          });
+        } catch (checkError) {
+          console.log('Błąd podczas sprawdzania stanu połączeń:', checkError);
+        }
+      }, 2000);
+      
+    } catch (err) {
+      console.log('Błąd podczas rozłączania wszystkich urządzeń:', err);
+      setError('Błąd podczas rozłączania wszystkich urządzeń');
+      setShowConnectionStatus(true);
+    }
+  };
+
   const initBluetooth = async () => {
     try {
       const enabled = await BluetoothSerial.isBluetoothEnabled();
@@ -81,6 +192,7 @@ const BluetoothComponent = () => {
         const result = await BluetoothSerial.requestBluetoothEnabled();
         if (!result) {
           setError('Bluetooth musi być włączony');
+          setShowConnectionStatus(true);
           return false;
         }
       }
@@ -88,6 +200,7 @@ const BluetoothComponent = () => {
     } catch (err) {
       const error = err as Error;
       setError('Błąd inicjalizacji Bluetooth: ' + error.message);
+      setShowConnectionStatus(true);
       return false;
     }
   };
@@ -101,7 +214,6 @@ const BluetoothComponent = () => {
       setRefreshing(true);
       setError(null);
       setDevices([]);
-      setConnectedDevice(null);
 
       const bondedDevices = await BluetoothSerial.getBondedDevices();
       const enhancedBondedDevices = bondedDevices.map(device => ({
@@ -144,6 +256,7 @@ const BluetoothComponent = () => {
     } catch (err) {
       const error = err as Error;
       setError('Błąd skanowania: ' + error.message);
+      setShowConnectionStatus(true);
       setIsScanning(false);
       setRefreshing(false);
     }
@@ -158,41 +271,35 @@ const BluetoothComponent = () => {
 
   const connectToDevice = async (device: Device) => {
     try {
-      if (connectedDevice) {
-        try {
-          await BluetoothSerial.disconnectFromDevice(connectedDevice.address);
-        } catch (disconnectError) {
-          console.warn('Błąd przy rozłączaniu: ', disconnectError);
-        }
+      if (connectedDevices.some(d => d.id === device.id)) {
+        setError(`Już połączono z ${device.name || device.address}`);
+        setShowConnectionStatus(true);
+        return;
       }
 
       const connection = await BluetoothSerial.connectToDevice(device.address);
       
       if (connection) {
-        setConnectedDevice(device);
+        setConnectedDevices(prevDevices => [...prevDevices, { ...device, connected: true }]);
         setDevices(prevDevices => 
-          prevDevices.map(d => ({
-            ...d,
-            connected: d.address === device.address
-          }))
+          prevDevices.map(d => (d.id === device.id ? { ...d, connected: true } : d))
         );
-        setError(null);
+        setError(`Połączono z ${device.name || device.address}`);
+        setShowConnectionStatus(true);
       } else {
         setError(`Nie udało się połączyć z ${device.name || device.address}`);
+        setShowConnectionStatus(true);
       }
     } catch (err) {
       const error = err as Error;
       setError('Błąd połączenia: ' + error.message);
+      setShowConnectionStatus(true);
     }
   };
 
   const renderDeviceItem = ({ item }: { item: Device }) => (
     <TouchableOpacity
-      style={[
-        styles.deviceCard,
-        item.connected && styles.connectedCard,
-        item.isComputer && styles.computerCard
-      ]}
+      style={[styles.deviceCard, item.connected && styles.connectedCard, item.isComputer && styles.computerCard]}
       onPress={() => connectToDevice(item)}
     >
       <View style={styles.deviceInfo}>
@@ -206,7 +313,9 @@ const BluetoothComponent = () => {
       </View>
       <View style={styles.deviceStatus}>
         {item.connected ? (
-          <Text style={styles.connectedText}>Połączono</Text>
+          <TouchableOpacity onPress={() => disconnectDevice(item)}>
+            <Text style={styles.connectedText}>Rozłącz</Text>
+          </TouchableOpacity>
         ) : (
           <Text style={styles.connectText}>Dotknij aby połączyć</Text>
         )}
@@ -226,22 +335,44 @@ const BluetoothComponent = () => {
         />
       </View>
 
-      {error && (
+      {(error && showConnectionStatus) && (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
         </View>
       )}
 
-      {connectedDevice && (
+      {connectedDevices.length > 0 && (
         <View style={styles.connectedBanner}>
           <Text style={styles.connectedBannerText}>
-            Połączono z: {connectedDevice.name || connectedDevice.address}
+            Połączono z:
           </Text>
-          <Button
-            title="Odtwórz dźwięk kaszlu"
-            onPress={playSound}
-            color="#34C759"
-          />
+          {connectedDevices.map(device => (
+            <View key={device.id} style={styles.connectedDeviceItem}>
+              <Text style={styles.connectedBannerText}>
+                {device.name || device.address}
+              </Text>
+              <TouchableOpacity 
+                style={styles.disconnectButton}
+                onPress={() => disconnectDevice(device)}
+              >
+                <Text style={styles.disconnectButtonText}>Rozłącz</Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+          <View style={styles.buttonRow}>
+            <Button
+              title="Odtwórz dźwięk kaszlu"
+              onPress={playSound}
+              color="#34C759"
+              style={styles.button}
+            />
+            <Button
+              title="Rozłącz wszystkie"
+              onPress={disconnectAllDevices}
+              color="#FF3B30"
+              style={styles.button}
+            />
+          </View>
         </View>
       )}
 
@@ -271,7 +402,6 @@ const BluetoothComponent = () => {
   );
 };
 
-// Style pozostają bez zmian
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -310,7 +440,30 @@ const styles = StyleSheet.create({
     color: 'white',
     textAlign: 'center',
     fontWeight: '500',
-    marginBottom: 8,
+  },
+  connectedDeviceItem: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginVertical: 4,
+  },
+  disconnectButton: {
+    marginLeft: 10,
+    padding: 5,
+    backgroundColor: '#FF3B30',
+    borderRadius: 5,
+  },
+  disconnectButtonText: {
+    color: 'white',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 8,
+  },
+  button: {
+    flex: 1,
+    marginHorizontal: 4,
   },
   listContent: {
     paddingBottom: 24,
@@ -360,7 +513,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   connectedText: {
-    color: '#34C759',
+    color: '#FF3B30',
     fontWeight: '500',
   },
   connectText: {
