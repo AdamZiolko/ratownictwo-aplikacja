@@ -4,7 +4,8 @@ import { Text, Appbar, Card, Button, FAB, useTheme, Portal, Dialog, TextInput, I
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import Svg, { Path, Line, Circle } from 'react-native-svg';
-
+import {BluetoothComponent} from '../../components/BluetoothComponent'; 
+import { Platform } from 'react-native';
 const RhythmSvg = ({ type }: { type: string }) => {
   return (
     <Svg width="24" height="24" viewBox="0 0 24 24">
@@ -231,6 +232,7 @@ const ExaminerDashboardScreen = () => {
               <Text variant="displaySmall">{totalStudents}</Text>
             </Card.Content>
           </Card>
+          
         </View>
 
         <Text variant="titleLarge" style={styles.sectionTitle}>Sesje Treningowe</Text>
@@ -304,6 +306,7 @@ const ExaminerDashboardScreen = () => {
             )}
           </Card>
         ))}
+      {Platform.OS === 'android' && <BluetoothComponent />} {/* Bluetooth tylko dla androida */}
 
         {/* FAB to create new session */}
         <FAB
