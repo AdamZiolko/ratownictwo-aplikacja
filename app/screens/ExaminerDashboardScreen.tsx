@@ -54,15 +54,15 @@ type Vitals = {
 const getRhythmName = (rhythm: RhythmType): string => {
   switch (rhythm) {
     case 'normal':
-      return 'Normal Rhythm';
+      return 'Rytm normalny';
     case 'atrial-fibrillation':
-      return 'Atrial Fibrillation';
+      return 'Migotanie przedsionków';
     case 'atrial-flutter':
-      return 'Atrial Flutter';
+      return 'Trzepotanie przedsionków';
     case 'nodal':
-      return 'Nodal Rhythm';
+      return 'Rytm węzłowy';
     case 'front-chamber':
-      return 'Front Chamber';
+      return 'Rytm komorowy';
     default:
       return rhythm;
   }
@@ -212,7 +212,7 @@ const ExaminerDashboardScreen = () => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <Appbar.Header>
-        <Appbar.Content title="Examiner Dashboard" />
+        <Appbar.Content title="Panel Egzaminatora" />
         <Appbar.Action icon="logout" onPress={handleLogout} />
       </Appbar.Header>
 
@@ -220,20 +220,20 @@ const ExaminerDashboardScreen = () => {
         <View style={styles.statsContainer}>
           <Card style={styles.statsCard}>
             <Card.Content>
-              <Text variant="titleMedium">Active Sessions</Text>
+              <Text variant="titleMedium">Aktywne Sesje</Text>
               <Text variant="displaySmall">{activeSessions}</Text>
             </Card.Content>
           </Card>
 
           <Card style={styles.statsCard}>
             <Card.Content>
-              <Text variant="titleMedium">Total Students</Text>
+              <Text variant="titleMedium">Liczba Studentów</Text>
               <Text variant="displaySmall">{totalStudents}</Text>
             </Card.Content>
           </Card>
         </View>
 
-        <Text variant="titleLarge" style={styles.sectionTitle}>Training Sessions</Text>
+        <Text variant="titleLarge" style={styles.sectionTitle}>Sesje Treningowe</Text>
 
         {sessions.map((session) => (
           <Card key={session.id} style={styles.sessionCard}>
@@ -241,9 +241,9 @@ const ExaminerDashboardScreen = () => {
               <View style={styles.sessionHeader}>
                 <View>
                   <Text variant="titleMedium">{session.name}</Text>
-                  <Text variant="bodyMedium">Date: {session.date}</Text>
-                  <Text variant="bodyMedium">Students: {session.students.length}</Text>
-                  <Text variant="bodyMedium">Session Code: {session.accessCode}</Text>
+                  <Text variant="bodyMedium">Data: {session.date}</Text>
+                  <Text variant="bodyMedium">Studenci: {session.students.length}</Text>
+                  <Text variant="bodyMedium">Kod sesji: {session.accessCode}</Text>
                 </View>
                 <IconButton
                   icon={expandedSessionId === session.id ? 'chevron-up' : 'chevron-down'}
@@ -255,17 +255,17 @@ const ExaminerDashboardScreen = () => {
               {expandedSessionId === session.id && (
                 <>
                   <Divider style={styles.divider} />
-                  <Text variant="titleSmall" style={styles.studentsTitle}>Students:</Text>
+                  <Text variant="titleSmall" style={styles.studentsTitle}>Studenci:</Text>
                   
                   {session.students.length === 0 ? (
-                    <Text variant="bodyMedium" style={styles.emptyText}>No students added yet</Text>
+                    <Text variant="bodyMedium" style={styles.emptyText}>Brak dodanych studentów</Text>
                   ) : (
                     session.students.map((student, index) => (
                       <Card key={student.id} style={styles.studentCard} onPress={() => openVitalsModal(student)}>
                         <Card.Content>
                           <Text variant="titleSmall">{student.name}</Text>
                           <Text variant="bodyMedium" style={styles.codeText}>
-                            Access Code: <Text style={styles.accessCode}>{student.accessCode}</Text>
+                            Kod dostępu: <Text style={styles.accessCode}>{student.accessCode}</Text>
                           </Text>
                           <View style={styles.vitalsChips}>
                             <Text style={styles.vitalChip}>🌡️ {student.vitals.temperature}°C</Text>
@@ -285,7 +285,7 @@ const ExaminerDashboardScreen = () => {
                       setStudentDialogVisible(true);
                     }}
                   >
-                    Add Student
+                    Dodaj Studenta
                   </Button>
                 </>
               )}
@@ -298,7 +298,7 @@ const ExaminerDashboardScreen = () => {
                     setExpandedSessionId(session.id);
                   }}
                 >
-                  Manage Students
+                  Zarządzaj Studentami
                 </Button>
               </Card.Actions>
             )}
@@ -316,18 +316,18 @@ const ExaminerDashboardScreen = () => {
       {/* Dialog for adding new session */}
       <Portal>
         <Dialog visible={sessionDialogVisible} onDismiss={() => setSessionDialogVisible(false)}>
-          <Dialog.Title>Create New Training Session</Dialog.Title>
+          <Dialog.Title>Utwórz Nową Sesję Treningową</Dialog.Title>
           <Dialog.Content>
             <TextInput
-              label="Session Name"
+              label="Nazwa Sesji"
               value={newSessionName}
               onChangeText={setNewSessionName}
               mode="outlined"
             />
           </Dialog.Content>
           <Dialog.Actions>
-            <Button onPress={() => setSessionDialogVisible(false)}>Cancel</Button>
-            <Button onPress={createNewSession}>Create</Button>
+            <Button onPress={() => setSessionDialogVisible(false)}>Anuluj</Button>
+            <Button onPress={createNewSession}>Utwórz</Button>
           </Dialog.Actions>
         </Dialog>
       </Portal>
@@ -335,18 +335,18 @@ const ExaminerDashboardScreen = () => {
       {/* Dialog for adding student */}
       <Portal>
         <Dialog visible={studentDialogVisible} onDismiss={() => setStudentDialogVisible(false)}>
-          <Dialog.Title>Add New Student</Dialog.Title>
+          <Dialog.Title>Dodaj Nowego Studenta</Dialog.Title>
           <Dialog.Content>
             <TextInput
-              label="Student Name"
+              label="Imię i Nazwisko Studenta"
               value={newStudentName}
               onChangeText={setNewStudentName}
               mode="outlined"
             />
           </Dialog.Content>
           <Dialog.Actions>
-            <Button onPress={() => setStudentDialogVisible(false)}>Cancel</Button>
-            <Button onPress={addStudentToSession}>Add</Button>
+            <Button onPress={() => setStudentDialogVisible(false)}>Anuluj</Button>
+            <Button onPress={addStudentToSession}>Dodaj</Button>
           </Dialog.Actions>
         </Dialog>
       </Portal>
@@ -360,12 +360,12 @@ const ExaminerDashboardScreen = () => {
         >
           <View style={styles.modalContent}>
             <Text variant="headlineSmall" style={styles.modalTitle}>
-              Configure Vitals for {selectedStudent?.name}
+              Konfiguracja parametrów dla {selectedStudent?.name}
             </Text>
             
             <List.Section>
               <List.Item
-                title="Temperature"
+                title="Temperatura"
                 description={`${editedVitals.temperature}°C`}
                 left={props => <List.Icon {...props} icon="thermometer" />}
                 right={() => (
@@ -384,7 +384,7 @@ const ExaminerDashboardScreen = () => {
               />
               
               <List.Item
-                title="Heart Rate"
+                title="Tętno"
                 description={`${editedVitals.heartRate} BPM`}
                 right={() => (
                   <View style={styles.sliderContainer}>
@@ -400,7 +400,7 @@ const ExaminerDashboardScreen = () => {
               />
               
               <List.Item
-                title="EKG Rhythm Type"
+                title="Typ Rytmu EKG"
                 description={getRhythmName(editedVitals.rhythmType)}
                 left={props => <List.Icon {...props} icon="heart-pulse" />}
               />
@@ -422,7 +422,7 @@ const ExaminerDashboardScreen = () => {
               </View>
               
               <List.Item
-                title="Peristalsis Sounds"
+                title="Dźwięki perystaltyki"
                 description={editedVitals.peristalsis}
                 left={props => <List.Icon {...props} icon="stomach" />}
                 onPress={() => {
@@ -435,7 +435,7 @@ const ExaminerDashboardScreen = () => {
               />
               
               <List.Item
-                title="Left Lung Murmurs"
+                title="Szmery w lewym płucu"
                 left={props => <List.Icon {...props} icon="lungs" />}
                 right={() => (
                   <Switch
@@ -446,7 +446,7 @@ const ExaminerDashboardScreen = () => {
               />
               
               <List.Item
-                title="Right Lung Murmurs"
+                title="Szmery w prawym płucu"
                 left={props => <List.Icon {...props} icon="lungs" />}
                 right={() => (
                   <Switch
@@ -459,10 +459,10 @@ const ExaminerDashboardScreen = () => {
             
             <View style={styles.modalActions}>
               <Button mode="outlined" onPress={() => setVitalsModalVisible(false)} style={styles.modalButton}>
-                Cancel
+                Anuluj
               </Button>
               <Button mode="contained" onPress={saveVitals} style={styles.modalButton}>
-                Save Changes
+                Zapisz zmiany
               </Button>
             </View>
           </View>

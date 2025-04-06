@@ -26,7 +26,7 @@ const EkgProjection: React.FC<EkgProjectionProps> = ({
     const theme = useTheme();
     const params = useLocalSearchParams();
     const [showSettingsDialog, setShowSettingsDialog] = useState(false);
-    const [settingsMode, setSettingsMode] = useState<'heart-rate'|'noise'>('heart-rate');
+    const [settingsMode, setSettingsMode] = useState<'heart-rate'|'noise'|'rhytm-type'>('heart-rate');
     
     // Get rhythm type and BPM from params if provided
     const rhythmTypeParam = params.rhythmType as string;
@@ -47,7 +47,6 @@ const EkgProjection: React.FC<EkgProjectionProps> = ({
         sliderValue,
         isRunning,
         togglePlayPause,
-        resetEkg,
         handleSliderValueChange,
         handleSliderComplete,
         selectCustomBpm,
@@ -55,7 +54,6 @@ const EkgProjection: React.FC<EkgProjectionProps> = ({
         getRhythmTypeLabel,
         getRhythmDescription,
         getCurrentBpm,
-        getBpmIndicatorColor
     } = useEkgState(getInitialEkgType(), bpmParam);
 
     const {
@@ -72,10 +70,7 @@ const EkgProjection: React.FC<EkgProjectionProps> = ({
         }
     }, [settingsMode, bpm, handleSliderValueChange]);
 
-    // Navigate to rhythm selection screen
-    const handleChangeRhythmType = () => {
-        router.push('/routes/rhythm-selection');
-    };
+    
 
     return (
         <View style={styles.container}>
@@ -94,7 +89,9 @@ const EkgProjection: React.FC<EkgProjectionProps> = ({
                             <View style={styles.bpmIndicator}>
                                 <Text 
                                     variant="titleLarge" 
-                                    style={[styles.bpmValue, { color: getBpmIndicatorColor() }]}
+                                    style={{
+                                        marginRight: 4,
+                                    }}
                                 >
                                     {getCurrentBpm()}
                                 </Text>
@@ -131,21 +128,12 @@ const EkgProjection: React.FC<EkgProjectionProps> = ({
                     mode="contained" 
                     icon={isRunning ? "pause" : "play"}
                     onPress={togglePlayPause}
-                    style={[styles.button, readOnly && styles.readOnlyButton]}
-                    textColor={theme.colors.primary || theme.colors.onPrimary}
-                    labelStyle={styles.buttonLabel}
+                    style={[{ 
+                        backgroundColor: theme.colors.error,
+                    }, styles.button]}
+                    textColor={'white'}
                 >
-                    {isRunning ? "Pause" : "Play"}
-                </Button>
-                <Button 
-                    mode="contained" 
-                    icon="refresh"
-                    onPress={resetEkg}
-                    style={[styles.button, readOnly && styles.readOnlyButton]}
-                    textColor={theme.colors.primary || theme.colors.onPrimary}
-                    labelStyle={styles.buttonLabel}
-                >
-                    Reset
+                    {isRunning ? "Zatrzymaj" : "Wznów"}
                 </Button>
                 <Button 
                     mode="contained" 
@@ -154,8 +142,10 @@ const EkgProjection: React.FC<EkgProjectionProps> = ({
                         setSettingsMode('heart-rate');
                         setShowSettingsDialog(true);
                     }}
-                    style={[styles.button, readOnly && styles.readOnlyButton]}
-                    textColor={theme.colors.primary || theme.colors.onPrimary}
+                    style={[{ 
+                        backgroundColor: theme.colors.error,
+                    }, styles.button]}
+                    textColor={'white'}
                     labelStyle={styles.buttonLabel}
                 >
                     BPM
@@ -172,15 +162,6 @@ const EkgProjection: React.FC<EkgProjectionProps> = ({
                 </Text>
             </View>
             
-            {/* Floating action button to change rhythm type */}
-            <FAB
-                icon="format-list-bulleted"
-                label="Change Rhythm"
-                onPress={handleChangeRhythmType}
-                style={styles.fab}
-                color={theme.colors.onPrimary}
-            />
-            
             <Portal>
                 <EkgSettingsDialog
                     visible={showSettingsDialog}
@@ -195,6 +176,7 @@ const EkgProjection: React.FC<EkgProjectionProps> = ({
                     onSliderComplete={handleSliderComplete}
                     onCustomBpmSelect={selectCustomBpm}
                     onNoiseTypeChange={selectNoiseType}
+                    onRhythmTypeChange={selectRhythmType}
                 />
             </Portal>
         </View>

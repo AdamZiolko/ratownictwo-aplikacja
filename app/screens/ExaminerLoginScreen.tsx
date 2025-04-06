@@ -17,7 +17,7 @@ const ExaminerLoginScreen = () => {
     
     // Basic validation
     if (!email.trim() || !password.trim()) {
-      setError('Email and password are required');
+      setError('Email i hasło są wymagane');
       return;
     }
     
@@ -32,7 +32,7 @@ const ExaminerLoginScreen = () => {
       // In a real app, you would validate credentials against your backend
       router.push('/routes/examiner-dashboard');
     } catch (err) {
-      setError('Login failed. Please check your credentials and try again.');
+      setError('Logowanie nie powiodło się. Sprawdź swoje dane i spróbuj ponownie.');
     } finally {
       setIsLoading(false);
     }
@@ -48,7 +48,7 @@ const ExaminerLoginScreen = () => {
       />
       
       <Text variant="headlineMedium" style={styles.title}>
-        Examiner Login
+        Logowanie Egzaminatora
       </Text>
       
       <View style={styles.form}>
@@ -64,7 +64,7 @@ const ExaminerLoginScreen = () => {
         />
         
         <TextInput
-          label="Password"
+          label="Hasło"
           value={password}
           onChangeText={setPassword}
           mode="outlined"
@@ -92,7 +92,7 @@ const ExaminerLoginScreen = () => {
           loading={isLoading}
           disabled={isLoading}
         >
-          Login
+          Zaloguj
         </Button>
 
         <Button
@@ -103,7 +103,7 @@ const ExaminerLoginScreen = () => {
           }}
           disabled={isLoading}
         >
-          Forgot Password?
+          Zapomniałeś hasła?
         </Button>
       </View>
     </View>

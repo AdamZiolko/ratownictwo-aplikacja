@@ -16,10 +16,25 @@ const NoiseControls: React.FC<NoiseControlsProps> = ({
   
   return (
     <View style={styles.container}>
-      <Text style={styles.settingsHeader}>Signal Quality</Text>
-      <Text style={styles.settingsDescription}>
-        Adjust noise levels to simulate real-world EKG recording conditions.
-        Medical professionals must interpret EKGs with various artifacts.
+      <Text style={
+          {
+            fontSize: 16,
+            fontWeight: 'bold',
+            marginBottom: 8,
+            color: theme.colors.onSurface
+          }
+        }
+      >
+        Jakość Sygnału
+      </Text>
+      <Text style={{
+            fontSize: 13,
+            marginBottom: 16,
+            lineHeight: 18,
+            color: theme.colors.onSurfaceVariant
+      }}>
+        Dostosuj poziom zakłóceń, aby symulować rzeczywiste warunki rejestracji EKG.
+        Personel medyczny musi interpretować EKG z różnymi artefaktami.
       </Text>
       
       <View style={styles.noiseSelector}>
@@ -33,7 +48,7 @@ const NoiseControls: React.FC<NoiseControlsProps> = ({
               color={theme.colors.primary}
               uncheckedColor={theme.colors.outline}
             />
-            <Text style={[styles.radioLabel, {color: theme.colors.onSurface}]}>None (Perfect Signal)</Text>
+            <Text style={[styles.radioLabel, {color: theme.colors.onSurface}]}>Brak (Idealny Sygnał)</Text>
           </View>
           
           <View style={styles.radioItem}>
@@ -42,7 +57,7 @@ const NoiseControls: React.FC<NoiseControlsProps> = ({
               color={theme.colors.primary}
               uncheckedColor={theme.colors.outline}
             />
-            <Text style={[styles.radioLabel, {color: theme.colors.onSurface}]}>Mild Noise (Slight Interference)</Text>
+            <Text style={[styles.radioLabel, {color: theme.colors.onSurface}]}>Łagodne Zakłócenia (Niewielkie Interferencje)</Text>
           </View>
           
           <View style={styles.radioItem}>
@@ -51,7 +66,7 @@ const NoiseControls: React.FC<NoiseControlsProps> = ({
               color={theme.colors.primary}
               uncheckedColor={theme.colors.outline}
             />
-            <Text style={[styles.radioLabel, {color: theme.colors.onSurface}]}>Moderate Noise (Clinical Setting)</Text>
+            <Text style={[styles.radioLabel, {color: theme.colors.onSurface}]}>Umiarkowane Zakłócenia (Warunki Kliniczne)</Text>
           </View>
           
           <View style={styles.radioItem}>
@@ -60,31 +75,31 @@ const NoiseControls: React.FC<NoiseControlsProps> = ({
               color={theme.colors.primary}
               uncheckedColor={theme.colors.outline}
             />
-            <Text style={[styles.radioLabel, {color: theme.colors.onSurface}]}>Severe Noise (Challenging)</Text>
+            <Text style={[styles.radioLabel, {color: theme.colors.onSurface}]}>Silne Zakłócenia (Trudne Warunki)</Text>
           </View>
         </RadioButton.Group>
       </View>
       
       <View style={[styles.noiseExplanation, {backgroundColor: `${theme.colors.surfaceVariant}`}]}>
         <Text style={[styles.noiseExplanationTitle, {color: theme.colors.onSurface}]}>
-          Noise Types Included:
+          Uwzględnione Typy Zakłóceń:
         </Text>
         <View style={styles.noiseTypeItem}>
-          <Text style={[styles.noiseTypeName, {color: theme.colors.onSurface}]}>• High-frequency noise:</Text>
+          <Text style={[styles.noiseTypeName, {color: theme.colors.onSurface}]}>• Zakłócenia wysokiej częstotliwości:</Text>
           <Text style={[styles.noiseTypeDescription, {color: theme.colors.onSurfaceVariant}]}>
-            Electrical interference, equipment issues
+            Interferencje elektryczne, problemy ze sprzętem
           </Text>
         </View>
         <View style={styles.noiseTypeItem}>
-          <Text style={[styles.noiseTypeName, {color: theme.colors.onSurface}]}>• Baseline wander:</Text>
+          <Text style={[styles.noiseTypeName, {color: theme.colors.onSurface}]}>• Dryfowanie linii bazowej:</Text>
           <Text style={[styles.noiseTypeDescription, {color: theme.colors.onSurfaceVariant}]}>
-            Patient breathing, movement
+            Oddychanie pacjenta, ruchy
           </Text>
         </View>
         <View style={styles.noiseTypeItem}>
-          <Text style={[styles.noiseTypeName, {color: theme.colors.onSurface}]}>• Muscle artifacts:</Text>
+          <Text style={[styles.noiseTypeName, {color: theme.colors.onSurface}]}>• Artefakty mięśniowe:</Text>
           <Text style={[styles.noiseTypeDescription, {color: theme.colors.onSurfaceVariant}]}>
-            Patient movement, muscle tremors
+            Ruchy pacjenta, drżenie mięśni
           </Text>
         </View>
       </View>

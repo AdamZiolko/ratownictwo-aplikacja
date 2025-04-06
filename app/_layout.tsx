@@ -3,13 +3,12 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import 'react-native-reanimated';
 import { PaperProvider, MD3DarkTheme, MD3LightTheme, adaptNavigationTheme } from 'react-native-paper';
 
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
-import ThemeToggleButton from '@/components/ThemeToggleButton';
 import { View } from 'react-native';
 import React from 'react';
+import FloatingThemeToggle from '@/components/FloatingThemeToggle';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -113,9 +112,8 @@ function ThemedLayout() {
       <NavigationThemeProvider value={navigationTheme}>
         <Stack
           screenOptions={{
-            headerShown: true,
+            headerShown: false,
             navigationBarHidden: true,
-            headerRight: () => <ThemeToggleButton />,
           }}
         >
           <Stack.Screen name="index" options={{ title: 'Home' }} />
@@ -126,6 +124,7 @@ function ThemedLayout() {
           <Stack.Screen name="routes/student-profile" options={{ title: 'Student Profile' }} />
           <Stack.Screen name="+not-found" options={{ title: 'Not Found' }} />
         </Stack>
+        <FloatingThemeToggle position="bottomRight" size={24} />
       </NavigationThemeProvider>
     </PaperProvider>
   );

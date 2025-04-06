@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button, Text, Card, Surface, useTheme } from 'react-native-paper';
 import { router } from 'expo-router';
-import BluetoothComponent from '../../components/BluetoothComponent'; 
+import {BluetoothComponent} from '../../components/BluetoothComponent'; 
 import { Platform } from 'react-native';
 
 const RoleSelectionScreen = () => {

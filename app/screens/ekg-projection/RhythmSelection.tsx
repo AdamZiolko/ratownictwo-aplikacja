@@ -1,16 +1,36 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
-import { Text, Card, Title, Paragraph, Divider, useTheme, IconButton, Button, Surface } from 'react-native-paper';
-import { router } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
-import { EkgType, EkgFactory, NoiseType } from '../../../services/EkgFactory';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Dimensions,
+} from "react-native";
+import {
+  Text,
+  Card,
+  Title,
+  Paragraph,
+  useTheme,
+  IconButton,
+} from "react-native-paper";
+import { router } from "expo-router";
+import Svg, { Path } from "react-native-svg";
+import { EkgType, EkgFactory, NoiseType } from "../../../services/EkgFactory";
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
-const RhythmSelection: React.FC = () => {
+interface RhythmSelectionProps {
+  selectedType: EkgType;
+  setSelectedType: (type: EkgType) => void;
+}
+
+const RhythmSelection = ({
+  selectedType = EkgType.NORMAL,
+  setSelectedType,
+}: RhythmSelectionProps) => {
   const theme = useTheme();
-  const [selectedType, setSelectedType] = useState<EkgType>(EkgType.NORMAL);
-  
+
   // Define the rhythm types to display
   const rhythmTypes = [
     EkgType.NORMAL,
@@ -25,39 +45,15 @@ const RhythmSelection: React.FC = () => {
     EkgType.ASYSTOLE,
   ];
 
-  // Handle navigation to the EKG projection screen with the selected rhythm
-  const navigateToEkgProjection = () => {
-    const bpm = EkgFactory.getBpmForType(selectedType);
-    router.push({
-      pathname: '/screens/ekg-projection/EkgProjection',
-      params: { rhythmType: selectedType, bpm }
-    });
-  };
-
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <IconButton
-          icon="arrow-left"
-          size={24}
-          onPress={() => router.back()}
-          style={styles.backButton}
-        />
-        <Text variant="headlineMedium" style={styles.screenTitle}>Heart Rhythm Patterns</Text>
-      </View>
-      
-      <Text style={styles.description}>
-        Select a cardiac rhythm pattern to simulate on the EKG display.
-        Each pattern represents different cardiac conditions.
-      </Text>
-      
-      <ScrollView 
+    <View style={[styles.container]}>
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollViewContent}
         showsVerticalScrollIndicator={true}
       >
         {rhythmTypes.map((type) => (
-          <RhythmCard 
+          <RhythmCard
             key={type}
             type={type}
             isSelected={selectedType === type}
@@ -66,18 +62,6 @@ const RhythmSelection: React.FC = () => {
           />
         ))}
       </ScrollView>
-      
-      <Surface style={styles.footer}>
-        <Button
-          mode="contained"
-          onPress={navigateToEkgProjection}
-          style={styles.applyButton}
-          labelStyle={styles.buttonLabel}
-          icon="heart-pulse"
-        >
-          Apply Selected Rhythm
-        </Button>
-      </Surface>
     </View>
   );
 };
@@ -90,48 +74,55 @@ interface RhythmCardProps {
   theme: any;
 }
 
-const RhythmCard: React.FC<RhythmCardProps> = ({ type, isSelected, onSelect, theme }) => {
-  const [pathData, setPathData] = useState('');
+const RhythmCard: React.FC<RhythmCardProps> = ({
+  type,
+  isSelected,
+  onSelect,
+  theme,
+}) => {
+  const [pathData, setPathData] = useState("");
   const svgWidth = SCREEN_WIDTH - 48; // Account for padding
-  const svgHeight = 80;
-  
+  const svgHeight = 200;
+
   // Generate sample EKG pattern for the preview
   useEffect(() => {
     generatePreviewPath();
   }, []);
-  
+
   const generatePreviewPath = () => {
     // Get default BPM for this rhythm type
     const bpm = EkgFactory.getBpmForType(type);
-    
-    let path = '';
-    const baseline = svgHeight / 2;
-    const pointsCount = 200;
-    
+
+    let path = "";
+    const baseline = svgHeight / 4;
+    const pointsCount = 500;
+    const padding = 0; // Add padding from sides
+    const effectiveWidth = svgWidth - (padding * 2); // Account for padding
+
     // Generate points for the path
     for (let i = 0; i < pointsCount; i++) {
-      const x = (i / pointsCount) * svgWidth;
+      const x = padding + (i / pointsCount) * effectiveWidth; // Add padding to x coordinate
       // Use EkgFactory to generate y value based on rhythm type
-      let y = EkgFactory.generateEkgValue(x, type, bpm, NoiseType.NONE);
-      
-      // Scale and normalize
-      y = baseline - (y - 150);
-      
+      let y = EkgFactory.generateEkgValue(x - padding, type, bpm, NoiseType.NONE); // Subtract padding for calculation
+
+      // Normalize value to match main EKG display and center it
+      y = baseline + y; // Scale down the amplitude to 80% to ensure it fits nicely
+
       if (i === 0) {
         path += `M ${x} ${y}`;
       } else {
         path += ` L ${x} ${y}`;
       }
     }
-    
+
     setPathData(path);
   };
-  
+
   // Get descriptive information about this rhythm
   const name = EkgFactory.getNameForType(type);
   const description = EkgFactory.getDescriptionForType(type);
   const bpm = EkgFactory.getBpmForType(type);
-  
+
   // Determine the severity color based on the rhythm type
   const getSeverityColor = () => {
     switch (type) {
@@ -142,7 +133,7 @@ const RhythmCard: React.FC<RhythmCardProps> = ({ type, isSelected, onSelect, the
         return theme.colors.error; // Critical
       case EkgType.AFIB:
       case EkgType.HEART_BLOCK:
-        return '#E65100'; // Warning (orange)
+        return "#E65100"; // Warning (orange)
       case EkgType.TACHYCARDIA:
       case EkgType.BRADYCARDIA:
       case EkgType.PVC:
@@ -152,21 +143,21 @@ const RhythmCard: React.FC<RhythmCardProps> = ({ type, isSelected, onSelect, the
         return theme.colors.primary; // Normal
     }
   };
-  
+
   return (
-    <TouchableOpacity 
+    <TouchableOpacity
       onPress={onSelect}
       activeOpacity={0.8}
       style={{ marginBottom: 16 }}
     >
-      <Card 
+      <Card
         style={[
           styles.card,
           isSelected && {
             borderColor: theme.colors.primary,
             borderWidth: 2,
-            backgroundColor: `${theme.colors.primary}10`
-          }
+            backgroundColor: `${theme.colors.primary}10`,
+          },
         ]}
         mode="outlined"
       >
@@ -174,24 +165,33 @@ const RhythmCard: React.FC<RhythmCardProps> = ({ type, isSelected, onSelect, the
           <View style={styles.cardHeader}>
             <View style={styles.titleContainer}>
               <Title style={styles.cardTitle}>{name}</Title>
-              <View style={[styles.bpmBadge, { backgroundColor: getSeverityColor() }]}>
-                <Text style={styles.bpmText}>{bpm} BPM</Text>
+              <View
+                style={[
+                  styles.bpmBadge,
+                  { backgroundColor: getSeverityColor() },
+                ]}
+              >
+                <Text style={styles.bpmText}>{bpm} uderzeń/min</Text>
               </View>
             </View>
           </View>
-          
+
           {/* EKG Preview */}
           <View style={styles.ekgPreviewContainer}>
-            <Svg height={svgHeight} width={svgWidth}>
+            <Svg 
+              height={svgHeight} 
+              width={svgWidth}
+            >
               <Path
                 d={pathData}
                 stroke={getSeverityColor()}
                 strokeWidth={2}
+                transform={`translate(0, ${-svgHeight/2})`}
                 fill="none"
               />
             </Svg>
           </View>
-          
+
           <Paragraph style={styles.cardDescription}>{description}</Paragraph>
         </Card.Content>
       </Card>
@@ -202,11 +202,11 @@ const RhythmCard: React.FC<RhythmCardProps> = ({ type, isSelected, onSelect, the
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    // Używamy koloru tła z motywu zamiast sztywnej wartości "#fff"
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 8,
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   screenTitle: {
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   description: {
     paddingHorizontal: 16,
@@ -234,38 +234,38 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 8,
   },
   titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
   },
   cardTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginRight: 8,
   },
   bpmBadge: {
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   bpmText: {
-    color: 'white',
+    color: "white", // Biały tekst dobrze wygląda na kolorowym tle badge'a
     fontSize: 12,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   ekgPreviewContainer: {
     marginVertical: 8,
-    backgroundColor: '#F5F5F5',
+    // Używamy koloru z motywu zamiast sztywnej wartości "#F5F5F5"
     borderRadius: 8,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   cardDescription: {
     fontSize: 13,
@@ -274,14 +274,14 @@ const styles = StyleSheet.create({
   footer: {
     padding: 16,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.1)',
+    // Używamy koloru z motywu zamiast sztywnej wartości "rgba(0,0,0,0.1)"
   },
   applyButton: {
-    width: '100%',
+    width: "100%",
   },
   buttonLabel: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
 });
 

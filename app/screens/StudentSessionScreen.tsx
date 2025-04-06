@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, View, ScrollView, Image, Animated, Easing, FlatList } from 'react-native';
-import { Text, Appbar, Card, Button, List, Divider, useTheme, Portal, Dialog, TextInput, Chip, IconButton, Surface } from 'react-native-paper';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, ScrollView } from 'react-native';
+import { Text, Card, Button, Divider, useTheme, Portal, Dialog, TextInput, Chip } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import EkgProjection from './ekg-projection/EkgProjection';
 
 // Define vital sign types matching the examiner dashboard
@@ -34,103 +34,21 @@ interface HeartRhythm {
 
 // Define pre-created heart rhythm options
 const HEART_RHYTHMS: HeartRhythm[] = [
-  { id: 'normal', name: 'Normal Sinus Rhythm', rate: 72, description: 'Regular rhythm, rate 60-100 BPM', color: '#4CAF50' },
-  { id: 'tachycardia', name: 'Sinus Tachycardia', rate: 120, description: 'Regular rhythm, rate >100 BPM', color: '#FF9800' },
-  { id: 'bradycardia', name: 'Sinus Bradycardia', rate: 45, description: 'Regular rhythm, rate <60 BPM', color: '#2196F3' },
-  { id: 'afib', name: 'Atrial Fibrillation', rate: 110, description: 'Irregular rhythm, variable rate', color: '#F44336' },
-  { id: 'vtach', name: 'Ventricular Tachycardia', rate: 180, description: 'Regular wide complex tachycardia', color: '#D32F2F' },
+  { id: 'normal', name: 'Rytm zatokowy prawidłowy', rate: 72, description: 'Regularny rytm, częstość 60-100 uderzeń/min', color: '#4CAF50' },
+  { id: 'tachycardia', name: 'Tachykardia zatokowa', rate: 120, description: 'Regularny rytm, częstość >100 uderzeń/min', color: '#FF9800' },
+  { id: 'bradycardia', name: 'Bradykardia zatokowa', rate: 45, description: 'Regularny rytm, częstość <60 uderzeń/min', color: '#2196F3' },
+  { id: 'afib', name: 'Migotanie przedsionków', rate: 110, description: 'Nieregularny rytm, zmienna częstość', color: '#F44336' },
+  { id: 'vtach', name: 'Częstoskurcz komorowy', rate: 180, description: 'Regularny szeroki zespół QRS', color: '#D32F2F' },
 ];
 
 // Define pre-created peristalsis options
 const PERISTALSIS_TYPES = [
-  { id: 'normal', name: 'Normal', description: 'Normal bowel sounds (5-30 sounds/min)' },
-  { id: 'hyperactive', name: 'Hyperactive', description: 'Increased frequency and intensity (>30 sounds/min)' },
-  { id: 'hypoactive', name: 'Hypoactive', description: 'Decreased frequency and intensity (<5 sounds/min)' },
-  { id: 'absent', name: 'Absent', description: 'No bowel sounds for >3 minutes' },
+  { id: 'normal', name: 'Prawidłowa', description: 'Normalne dźwięki perystaltyki (5-30 dźwięków/min)' },
+  { id: 'hyperactive', name: 'Wzmożona', description: 'Zwiększona częstość i intensywność (>30 dźwięków/min)' },
+  { id: 'hypoactive', name: 'Osłabiona', description: 'Zmniejszona częstość i intensywność (<5 dźwięków/min)' },
+  { id: 'absent', name: 'Brak', description: 'Brak dźwięków perystaltyki przez >3 minuty' },
 ];
 
-// Define pre-created lung sound options
-const LUNG_SOUND_TYPES = [
-  { id: 'normal', name: 'Normal', description: 'Clear bilateral breath sounds', leftMurmurs: false, rightMurmurs: false },
-  { id: 'left', name: 'Left Murmur', description: 'Murmur detected in left lung', leftMurmurs: true, rightMurmurs: false },
-  { id: 'right', name: 'Right Murmur', description: 'Murmur detected in right lung', leftMurmurs: false, rightMurmurs: true },
-  { id: 'bilateral', name: 'Bilateral Murmurs', description: 'Murmurs detected in both lungs', leftMurmurs: true, rightMurmurs: true },
-];
-
-const HeartRateMonitor = ({ heartRate }: { heartRate: number }) => {
-  const animation = useRef(new Animated.Value(0)).current;
-  const scale = useRef(new Animated.Value(1)).current;
-
-  const animateHeartbeat = () => {
-    // Reset the animation value
-    animation.setValue(0);
-    
-    // Calculate animation duration based on heart rate
-    // 60 BPM = 1000ms per beat, so we calculate accordingly
-    const beatDuration = 60000 / heartRate;
-    
-    Animated.sequence([
-      // First pulse
-      Animated.parallel([
-
-        Animated.timing(animation, {
-          toValue: 1,
-          duration: beatDuration * 0.2,
-          useNativeDriver: true,
-          easing: Easing.bezier(0.1, 0.4, 0.4, 1),
-        }),
-        Animated.sequence([
-          Animated.timing(scale, {
-            toValue: 1.2,
-            duration: beatDuration * 0.15,
-            useNativeDriver: true,
-          }),
-          Animated.timing(scale, {
-            toValue: 1,
-            duration: beatDuration * 0.15,
-            useNativeDriver: true,
-          }),
-        ]),
-      ]),
-      // Rest period
-      Animated.timing(animation, {
-        toValue: 0.1,
-        duration: beatDuration * 0.6,
-        useNativeDriver: true,
-      }),
-    ]).start(() => animateHeartbeat());
-  };
-
-  useEffect(() => {
-    animateHeartbeat();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [heartRate]);
-
-  // Interpolate the animation value to create the line
-  const translateX = animation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 150],
-  });
-
-  return (
-    <View style={styles.heartRateContainer}>
-      <Animated.View style={[styles.heartIcon, {transform: [{scale: scale}]}]}>
-        <Text style={styles.heartIconText}>❤️</Text>
-      </Animated.View>
-      <View style={styles.monitorContainer}>
-        <Animated.View
-          style={[
-
-            styles.heartLine,
-            {
-              transform: [{ translateX }],
-            },
-          ]}
-        />
-      </View>
-    </View>
-  );
-};
 
 const StudentSessionScreen = () => {
   const theme = useTheme();
@@ -232,55 +150,49 @@ const StudentSessionScreen = () => {
 
   const getPeristalsisDescription = (peristalsis: string) => {
     const found = PERISTALSIS_TYPES.find(p => p.id === peristalsis);
-    return found ? found.description : 'Unknown';
+    return found ? found.description : 'Nieznany';
   };
 
   const getLungDescription = (leftMurmurs: boolean, rightMurmurs: boolean) => {
-    if (leftMurmurs && rightMurmurs) return 'Bilateral lung murmurs detected';
-    if (leftMurmurs) return 'Left lung murmurs detected';
-    if (rightMurmurs) return 'Right lung murmurs detected';
-    return 'Normal lung sounds bilaterally';
+    if (leftMurmurs && rightMurmurs) return 'Wykryto szmery w obu płucach';
+    if (leftMurmurs) return 'Wykryto szmery w lewym płucu';
+    if (rightMurmurs) return 'Wykryto szmery w prawym płucu';
+    return 'Prawidłowe szmery oddechowe obustronnie';
   };
 
   const handleAddNotes = () => {
     // This would save notes to the server in a real app
     setNoteDialogVisible(false);
-    alert('Notes saved successfully');
+    alert('Notatki zapisane pomyślnie');
   };
 
   // Get the current peristalsis type name
   const getPeristalsisName = (id: string) => {
     const found = PERISTALSIS_TYPES.find(p => p.id === id);
-    return found ? found.name : 'Unknown';
+    return found ? found.name : 'Nieznany';
   };
 
   // Get the current lung sound type name
   const getLungSoundName = (leftMurmurs: boolean, rightMurmurs: boolean) => {
-    if (leftMurmurs && rightMurmurs) return 'Bilateral Murmurs';
-    if (leftMurmurs) return 'Left Lung Murmur';
-    if (rightMurmurs) return 'Right Lung Murmur';
-    return 'Normal';
+    if (leftMurmurs && rightMurmurs) return 'Szmery obustronne';
+    if (leftMurmurs) return 'Szmer w lewym płucu';
+    if (rightMurmurs) return 'Szmer w prawym płucu';
+    return 'Prawidłowe';
   };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <Appbar.Header>
-        <Appbar.Content title="Patient Monitoring" subtitle={`Session: ${session.name}`} />
-        <Appbar.Action icon="note-text" onPress={() => setNoteDialogVisible(true)} />
-        <Appbar.Action icon="exit-to-app" onPress={() => router.replace('/')} />
-      </Appbar.Header>
-
       <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
         <Card style={styles.infoCard} mode="elevated">
           <Card.Content>
-            <Text variant="titleMedium">Session Information</Text>
+            <Text variant="titleMedium">Informacje o sesji</Text>
             <Divider style={styles.divider} />
             <View style={styles.infoRow}>
-              <Text variant="bodyMedium">Examiner:</Text>
+              <Text variant="bodyMedium">Egzaminator:</Text>
               <Text variant="bodyMedium">{session.examiner}</Text>
             </View>
             <View style={styles.infoRow}>
-              <Text variant="bodyMedium">Access Code:</Text>
+              <Text variant="bodyMedium">Kod dostępu:</Text>
               <Text variant="bodyMedium">{session.accessCode}</Text>
             </View>
           </Card.Content>
@@ -288,20 +200,20 @@ const StudentSessionScreen = () => {
 
         <Card style={styles.vitalsCard} mode="elevated">
           <Card.Content>
-            <Text variant="titleLarge" style={styles.vitalsTitle}>Patient Vital Signs</Text>
+            <Text variant="titleLarge" style={styles.vitalsTitle}>Parametry życiowe pacjenta</Text>
             
             <View style={styles.vitalSection}>
               <View style={styles.vitalIconContainer}>
                 <Text style={styles.vitalIcon}>🌡️</Text>
               </View>
               <View style={styles.vitalInfoContainer}>
-                <Text variant="titleSmall">Body Temperature</Text>
+                <Text variant="titleSmall">Temperatura ciała</Text>
                 <Text variant="displaySmall" style={{ color: getTemperatureColor(session.vitals.temperature) }}>
                   {session.vitals.temperature}°C
                 </Text>
                 <Text variant="bodySmall">
-                  {session.vitals.temperature > 38.0 ? 'ELEVATED' : 
-                   session.vitals.temperature < 36.0 ? 'LOW' : 'NORMAL'}
+                  {session.vitals.temperature > 38.0 ? 'PODWYŻSZONA' : 
+                   session.vitals.temperature < 36.0 ? 'OBNIŻONA' : 'PRAWIDŁOWA'}
                 </Text>
               </View>
             </View>
@@ -311,7 +223,6 @@ const StudentSessionScreen = () => {
             {/* Heart Rate Section - Student can only view */}
             <View style={styles.vitalSection}>
                 <EkgProjection 
-                    initialType={session.vitals.rhythmType as any} 
                     initialBpm={session.vitals.heartRate}
                     readOnly={true}
                 />
@@ -326,7 +237,7 @@ const StudentSessionScreen = () => {
                 <Text style={styles.vitalIcon}>🔊</Text>
               </View>
               <View style={styles.vitalInfoContainer}>
-                <Text variant="titleSmall">Peristalsis</Text>
+                <Text variant="titleSmall">Perystaltyka</Text>
                 <Text variant="headlineSmall">
                   {getPeristalsisName(session.vitals.peristalsis)}
                 </Text>
@@ -342,7 +253,7 @@ const StudentSessionScreen = () => {
                 <Text style={styles.vitalIcon}>🫁</Text>
               </View>
               <View style={styles.vitalInfoContainer}>
-                <Text variant="titleSmall">Lung Sounds</Text>
+                <Text variant="titleSmall">Szmery oddechowe</Text>
                 <Text variant="headlineSmall">
                   {getLungSoundName(session.vitals.leftLungMurmurs, session.vitals.rightLungMurmurs)}
                 </Text>
@@ -354,13 +265,13 @@ const StudentSessionScreen = () => {
                     style={styles.lungChip} 
                     icon={session.vitals.leftLungMurmurs ? "alert-circle" : "check-circle"}
                   >
-                    Left: {session.vitals.leftLungMurmurs ? "Murmurs" : "Clear"}
+                    Lewe: {session.vitals.leftLungMurmurs ? "Szmery" : "Czyste"}
                   </Chip>
                   <Chip 
                     style={styles.lungChip}
                     icon={session.vitals.rightLungMurmurs ? "alert-circle" : "check-circle"}
                   >
-                    Right: {session.vitals.rightLungMurmurs ? "Murmurs" : "Clear"}
+                    Prawe: {session.vitals.rightLungMurmurs ? "Szmery" : "Czyste"}
                   </Chip>
                 </View>
               </View>
@@ -371,13 +282,13 @@ const StudentSessionScreen = () => {
 
         <Card style={styles.assessmentCard} mode="elevated">
           <Card.Content>
-            <Text variant="titleMedium">Assessment Notes</Text>
+            <Text variant="titleMedium">Notatki z badania</Text>
             <Divider style={styles.divider} />
             {notes ? (
               <Text variant="bodyMedium">{notes}</Text>
             ) : (
               <Text variant="bodyMedium" style={styles.emptyNotes}>
-                Tap the note icon in the app bar to add assessment notes
+                Dotknij ikony notatki w górnym pasku, aby dodać notatki z badania
               </Text>
             )}
           </Card.Content>
@@ -387,10 +298,10 @@ const StudentSessionScreen = () => {
       {/* Notes dialog */}
       <Portal>
         <Dialog visible={noteDialogVisible} onDismiss={() => setNoteDialogVisible(false)}>
-          <Dialog.Title>Assessment Notes</Dialog.Title>
+          <Dialog.Title>Notatki z badania</Dialog.Title>
           <Dialog.Content>
             <TextInput
-              label="Your notes"
+              label="Twoje notatki"
               value={notes}
               onChangeText={setNotes}
               mode="outlined"
@@ -400,8 +311,8 @@ const StudentSessionScreen = () => {
             />
           </Dialog.Content>
           <Dialog.Actions>
-            <Button onPress={() => setNoteDialogVisible(false)}>Cancel</Button>
-            <Button onPress={handleAddNotes}>Save</Button>
+            <Button onPress={() => setNoteDialogVisible(false)}>Anuluj</Button>
+            <Button onPress={handleAddNotes}>Zapisz</Button>
           </Dialog.Actions>
         </Dialog>
       </Portal>

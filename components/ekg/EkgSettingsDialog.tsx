@@ -1,17 +1,18 @@
 import React from 'react';
-import { StyleSheet, ScrollView, View, Dimensions, Platform } from 'react-native';
+import { StyleSheet, ScrollView, Dimensions, Platform } from 'react-native';
 import { Dialog, Button, SegmentedButtons, Divider, useTheme } from 'react-native-paper';
 import HeartRateControls from './HeartRateControls';
 import NoiseControls from './NoiseControls';
 import { EkgType, NoiseType } from '@/services/EkgFactory';
+import RhythmSelection from '@/app/screens/ekg-projection/RhythmSelection';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface EkgSettingsDialogProps {
   visible: boolean;
   onDismiss: () => void;
-  settingsMode: 'heart-rate' | 'noise';
-  onSettingsModeChange: (mode: 'heart-rate' | 'noise') => void;
+  settingsMode: 'heart-rate' | 'noise' | 'rhytm-type';
+  onSettingsModeChange: (mode: 'heart-rate' | 'noise' | 'rhytm-type') => void;
   ekgType: EkgType;
   bpm: number;
   sliderValue: number;
@@ -20,6 +21,7 @@ interface EkgSettingsDialogProps {
   onSliderComplete: (value: number) => void;
   onCustomBpmSelect: (value: number) => void;
   onNoiseTypeChange: (type: NoiseType) => void;
+  onRhythmTypeChange: (type: EkgType) => void;
 }
 
 const EkgSettingsDialog: React.FC<EkgSettingsDialogProps> = ({
@@ -34,7 +36,8 @@ const EkgSettingsDialog: React.FC<EkgSettingsDialogProps> = ({
   onSliderValueChange,
   onSliderComplete,
   onCustomBpmSelect,
-  onNoiseTypeChange
+  onNoiseTypeChange,
+  onRhythmTypeChange,
 }) => {
   const theme = useTheme();
 
@@ -45,14 +48,15 @@ const EkgSettingsDialog: React.FC<EkgSettingsDialogProps> = ({
       style={[styles.dialog, { backgroundColor: theme.colors.surface }]}
       dismissable={true}
     >
-      <Dialog.Title style={styles.dialogTitle}>EKG Settings</Dialog.Title>
+      <Dialog.Title style={styles.dialogTitle}>Ustawienia EKG</Dialog.Title>
       <Dialog.Content style={styles.dialogContent}>
         <SegmentedButtons
           value={settingsMode}
           onValueChange={(value) => onSettingsModeChange(value as 'heart-rate' | 'noise')}
           buttons={[
-            { value: 'heart-rate', label: 'Heart Rate' },
-            { value: 'noise', label: 'Noise Level' }
+            { value: 'heart-rate', label: 'Tętno' },
+            { value: 'noise', label: 'Poziom Zakłóceń' },
+            { value: 'rhytm-type', label: 'Typ Rytmu'}
           ]}
           style={styles.segmentedButtons}
         />
@@ -67,7 +71,7 @@ const EkgSettingsDialog: React.FC<EkgSettingsDialogProps> = ({
           overScrollMode="always"
           nestedScrollEnabled={true}
         >
-          {settingsMode === 'heart-rate' ? (
+          {settingsMode === 'heart-rate' && (
             <HeartRateControls
               ekgType={ekgType}
               bpm={bpm}
@@ -76,27 +80,38 @@ const EkgSettingsDialog: React.FC<EkgSettingsDialogProps> = ({
               onSliderComplete={onSliderComplete}
               onCustomBpmSelect={onCustomBpmSelect}
             />
-          ) : (
+          )}
+          {settingsMode === 'noise' && (
             <NoiseControls
               noiseType={noiseType}
               onNoiseTypeChange={onNoiseTypeChange}
             />
           )}
-          
-          {/* Add padding at the bottom to ensure content isn't hidden behind the buttons */}
-          <View style={styles.bottomPadding} />
+          {settingsMode === 'rhytm-type' && (
+            // TODO: Add rhythm type controls component when implemented
+            <RhythmSelection
+              selectedType={ekgType}
+              setSelectedType={onRhythmTypeChange}
+            />
+          )}
         </ScrollView>
       </Dialog.Content>
-      <Dialog.Actions style={styles.dialogActions}>
+      <Dialog.Actions style={{
+        paddingInline: 20,
+        justifyContent: 'flex-end',
+        backgroundColor: theme.colors.surface,
+        borderRadius: 12,
+        padding: 0,
+      }}>
         <Button 
           mode="contained"
           onPress={onDismiss}
           style={styles.applyButton}
           labelStyle={styles.buttonLabel}
           buttonColor={theme.colors.primary}
-          textColor={theme.colors.buttonTextColor || theme.colors.onPrimary} 
+          textColor={theme.colors.onPrimary} 
         >
-          Apply
+          Zastosuj
         </Button>
       </Dialog.Actions>
     </Dialog>
@@ -142,14 +157,8 @@ const styles = StyleSheet.create({
   divider: {
     marginVertical: 8,
   },
-  dialogActions: {
-    justifyContent: 'flex-end',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.1)',
-  },
   applyButton: {
+    margin: 12,
     minWidth: 120,
   },
   buttonLabel: {
