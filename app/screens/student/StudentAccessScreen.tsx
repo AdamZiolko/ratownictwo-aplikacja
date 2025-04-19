@@ -1,7 +1,29 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { StyleSheet, View, Keyboard, ScrollView } from 'react-native';
 import { Text, TextInput, Button, HelperText, IconButton } from 'react-native-paper';
 import { router } from 'expo-router';
+import { sessionService } from '@/services/SessionService';
+
+// Create memoized components for static UI elements
+const MemoizedTitle = React.memo(({ title }: { title: string }) => (
+  <Text variant="headlineMedium" style={styles.title}>
+    {title}
+  </Text>
+));
+
+const MemoizedSubtitle = React.memo(({ subtitle }: { subtitle: string }) => (
+  <Text variant="bodyMedium" style={styles.subtitle}>
+    {subtitle}
+  </Text>
+));
+
+const MemoizedHelpSection = React.memo(() => (
+  <View style={styles.helpSection}>
+    <Text variant="bodySmall" style={styles.helpText}>
+      Potrzebujesz pomocy? Skontaktuj się z prowadzącym lub zespołem wsparcia.
+    </Text>
+  </View>
+));
 
 const StudentAccessScreen = () => {
   const [accessCode, setAccessCode] = useState('');
@@ -13,7 +35,7 @@ const StudentAccessScreen = () => {
   
   const accessCodeInputRef = useRef<any>(null);
 
-  const validateFields = () => {
+  const validateFields = useCallback(() => {
     const errors = {
       accessCode: '',
     };
@@ -26,9 +48,9 @@ const StudentAccessScreen = () => {
 
     setFieldErrors(errors);
     return isValid;
-  };
+  }, [accessCode]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     // Hide keyboard
     Keyboard.dismiss();
     
@@ -44,12 +66,17 @@ const StudentAccessScreen = () => {
     setIsLoading(true);
     
     try {
-      // Simulate API call to validate access code
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Navigate to student profile screen with the access code
+      const isSessionValid = await sessionService.getSessionByCode(Number(accessCode.trim()));
+
+      if(!isSessionValid) {
+        setError('Nieprawidłowy kod dostępu');
+        setIsLoading(false);
+        return;
+      }
+
+      // Only navigate if session is valid
       router.push({
-        pathname: '/routes/student-profile',
+        pathname: '/routes/student-session',
         params: { 
           accessCode: accessCode.trim(),
         }
@@ -59,7 +86,37 @@ const StudentAccessScreen = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [accessCode, validateFields]);
+
+  const handleTextChange = useCallback((text: string) => {
+    setAccessCode(text);
+    if (fieldErrors.accessCode || error) {
+      setFieldErrors(prev => ({...prev, accessCode: ''}));
+      setError('');
+    }
+  }, [fieldErrors.accessCode, error]);
+
+  const handleBackPress = useCallback(() => {
+    router.back();
+  }, []);
+
+  // Memoize error messages to prevent re-renders
+  const errorMessage = useMemo(() => {
+    if (fieldErrors.accessCode) {
+      return (
+        <HelperText type="error" visible={true}>
+          {fieldErrors.accessCode}
+        </HelperText>
+      );
+    } else if (error) {
+      return (
+        <HelperText type="error" visible={true}>
+          {error}
+        </HelperText>
+      );
+    }
+    return null;
+  }, [fieldErrors.accessCode, error]);
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
@@ -67,47 +124,29 @@ const StudentAccessScreen = () => {
         <IconButton
           icon="arrow-left"
           size={24}
-          onPress={() => router.back()}
+          onPress={handleBackPress}
           style={styles.backButton}
         />
         
-        <Text variant="headlineMedium" style={styles.title}>
-          Dołącz do sesji
-        </Text>
-        
-        <Text variant="bodyMedium" style={styles.subtitle}>
-          Podaj kod dostępu otrzymany od nauczyciela
-        </Text>
+        <MemoizedTitle title="Dołącz do sesji" />
+        <MemoizedSubtitle subtitle="Podaj kod dostępu otrzymany od nauczyciela" />
         
         <View style={styles.form}>
           <TextInput
             ref={accessCodeInputRef}
             label="Kod dostępu"
             value={accessCode}
-            onChangeText={(text) => {
-              setAccessCode(text);
-              setFieldErrors(prev => ({...prev, accessCode: ''}));
-            }}
+            onChangeText={handleTextChange}
             mode="outlined"
             autoCapitalize="characters"
             autoCorrect={false}
             style={styles.input}
             disabled={isLoading}
-            error={!!fieldErrors.accessCode}
+            error={!!fieldErrors.accessCode || !!error}
             onSubmitEditing={handleSubmit}
-            blurOnSubmit={true}
+            keyboardType="number-pad"
           />
-          {fieldErrors.accessCode ? (
-            <HelperText type="error" visible={!!fieldErrors.accessCode}>
-              {fieldErrors.accessCode}
-            </HelperText>
-          ) : null}
-          
-          {error ? (
-            <HelperText type="error" visible={!!error}>
-              {error}
-            </HelperText>
-          ) : null}
+          {errorMessage}
           
           <Button
             mode="contained"
@@ -120,17 +159,14 @@ const StudentAccessScreen = () => {
           </Button>
         </View>
         
-        <View style={styles.helpSection}>
-          <Text variant="bodySmall" style={styles.helpText}>
-            Potrzebujesz pomocy? Skontaktuj się z prowadzącym lub zespołem wsparcia.
-          </Text>
-        </View>
+        <MemoizedHelpSection />
       </View>
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
+  // ...existing code...
   scrollContainer: {
     flexGrow: 1,
   },
@@ -177,4 +213,4 @@ const styles = StyleSheet.create({
   }
 });
 
-export default StudentAccessScreen;
+export default React.memo(StudentAccessScreen);

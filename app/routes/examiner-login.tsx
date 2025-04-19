@@ -1,3 +1,3 @@
-import ExaminerLoginScreen from '../screens/ExaminerLoginScreen';
+import ExaminerLoginScreen from "../screens/examiner/ExaminerLoginScreen";
 
 export default ExaminerLoginScreen;

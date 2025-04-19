@@ -1,8 +1,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Button, Text, Card, Surface, useTheme } from 'react-native-paper';
+import { Text, Card, Surface, useTheme } from 'react-native-paper';
 import { router } from 'expo-router';
-
 
 const RoleSelectionScreen = () => {
   const theme = useTheme();
@@ -55,6 +54,8 @@ const RoleSelectionScreen = () => {
         </Surface>
       </View>
 
+      {/* Dodajemy komponent Bluetooth do testowania */}
+      {/* <BluetoothComponent /> */}
     </View>
   );
 };

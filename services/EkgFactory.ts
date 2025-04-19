@@ -19,26 +19,26 @@ const DEFAULT_MUSCLE_ARTIFACT_PROBABILITY = 0;
 
 // Enhanced EKG Type enum with various cardiac rhythms
 export enum EkgType {
-  NORMAL = 'normal',
-  TACHYCARDIA = 'tachycardia',
-  BRADYCARDIA = 'bradycardia',
-  AFIB = 'afib',
-  VFIB = 'vfib',
-  VTACH = 'vtach',
-  TORSADE = 'torsade',
-  ASYSTOLE = 'asystole',
-  HEART_BLOCK = 'heart_block',
-  PVC = 'pvc',
-  CUSTOM = 'custom'
+  NORMAL = 0,
+  TACHYCARDIA = 1,
+  BRADYCARDIA = 2,
+  AFIB = 3,
+  VFIB = 4,
+  VTACH = 5,
+  TORSADE = 6,
+  ASYSTOLE = 7,
+  HEART_BLOCK = 8,
+  PVC = 9,
+  CUSTOM = 10
 }
 
 // Noise type enum
 export enum NoiseType {
-  NONE = 'none',
-  MILD = 'mild',
-  MODERATE = 'moderate',
-  SEVERE = 'severe',
-  CUSTOM = 'custom',
+  NONE = 0,
+  MILD = 1,
+  MODERATE = 2,
+  SEVERE = 3,
+  CUSTOM = 4,
 }
 
 // EKG configuration interface

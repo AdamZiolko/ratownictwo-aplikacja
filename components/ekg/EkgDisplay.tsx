@@ -4,10 +4,10 @@ import { View, StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 interface EkgDisplayProps {
-  ekgType: EkgType;
-  bpm: number;
-  noiseType: NoiseType;
-  isRunning: boolean;
+  ekgType?: EkgType ;
+  bpm?: number ;
+  noiseType?: NoiseType ;
+  isRunning?: boolean ;
 }
 
 const BASELINE = 150;

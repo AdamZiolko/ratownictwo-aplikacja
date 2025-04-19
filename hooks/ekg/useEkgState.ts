@@ -1,5 +1,6 @@
+import { EkgType, EkgFactory } from '@/services/EkgFactory';
 import { useState, useCallback, useEffect } from 'react';
-import { EkgType, EkgFactory } from '../services/EkgFactory';
+
 
 /**
  * Custom hook to manage EKG state including rhythm type selection, BPM, and playback

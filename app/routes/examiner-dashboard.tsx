@@ -1,3 +1,3 @@
-import ExaminerDashboardScreen from "../screens/ExaminerDashboardScreen";
+import ExaminerDashboardScreen from "../screens/examiner/ExaminerDashboardScreen";
 
 export default ExaminerDashboardScreen;

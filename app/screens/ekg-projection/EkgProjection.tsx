@@ -7,10 +7,10 @@ import { useLocalSearchParams, router } from 'expo-router';
 // Import separated components
 import EkgDisplay from '../../../components/ekg/EkgDisplay';
 import EkgSettingsDialog from '../../../components/ekg/EkgSettingsDialog';
+import { useNoiseState } from '@/hooks/ekg/useNoiseState';
+import { useEkgState } from '@/hooks/ekg/useEkgState';
 
 // Custom hooks
-import { useEkgState } from '../../../hooks/useEkgState';
-import { useNoiseState } from '../../../hooks/useNoiseState';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 

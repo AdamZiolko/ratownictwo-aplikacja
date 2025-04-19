@@ -1,3 +1,3 @@
-import StudentAccessScreen from '../screens/StudentAccessScreen';
+import StudentAccessScreen from "../screens/student/StudentAccessScreen";
 
 export default StudentAccessScreen;

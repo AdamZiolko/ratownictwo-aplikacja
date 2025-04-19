@@ -1,0 +1,141 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const API_URL = 'http://localhost:8080/api/auth/';
+
+interface User {
+  id: number;
+  username: string;
+  email: string;
+  roles: string[];
+  accessToken: string;
+}
+
+interface RegisterData {
+  username: string;
+  email: string;
+  password: string;
+}
+
+interface LoginData {
+  username: string;
+  password: string;
+}
+
+interface TokenRefreshResponse {
+  accessToken: string;
+  refreshToken: string;
+}
+
+class AuthService {
+  // Register a new user
+  async register(data: RegisterData): Promise<any> {
+    try {
+      const response = await fetch(`${API_URL}signup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      
+      return await response.json();
+    } catch (error) {
+      throw new Error('Registration failed');
+    }
+  }
+
+  // Login user
+  async login(data: LoginData): Promise<any> {
+    try {
+      const response = await fetch(`${API_URL}signin`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Login failed');
+      }
+
+      const userData = await response.json();
+      
+      // Store user data in AsyncStorage
+      await AsyncStorage.setItem('user', JSON.stringify(userData));
+      
+      if (userData.refreshToken) {
+        await AsyncStorage.setItem('refreshToken', userData.refreshToken);
+      }
+      
+      return userData;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Logout user
+  async logout(): Promise<void> {
+    await AsyncStorage.removeItem('user');
+    await AsyncStorage.removeItem('refreshToken');
+  }
+
+  // Get current user
+  async getCurrentUser(): Promise<User | null> {
+    const userStr = await AsyncStorage.getItem('user');
+    if (userStr) {
+      return JSON.parse(userStr);
+    }
+    return null;
+  }
+
+  // Check if user is authenticated
+  async isAuthenticated(): Promise<boolean> {
+    const user = await this.getCurrentUser();
+    return !!user;
+  }
+
+  // Refresh token
+  async refreshToken(): Promise<TokenRefreshResponse | null> {
+    try {
+      const refreshToken = await AsyncStorage.getItem('refreshToken');
+      
+      if (!refreshToken) {
+        return null;
+      }
+
+      const response = await fetch(`${API_URL}refreshtoken`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      if (!response.ok) {
+        await this.logout();
+        throw new Error('Session expired');
+      }
+
+      const data: TokenRefreshResponse = await response.json();
+      
+      // Update user with new token
+      const userStr = await AsyncStorage.getItem('user');
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        user.accessToken = data.accessToken;
+        await AsyncStorage.setItem('user', JSON.stringify(user));
+      }
+
+      await AsyncStorage.setItem('refreshToken', data.refreshToken);
+      
+      return data;
+    } catch (error) {
+      await this.logout();
+      throw error;
+    }
+  }
+}
+
+export default new AuthService();

@@ -4,11 +4,10 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { PaperProvider, MD3DarkTheme, MD3LightTheme, adaptNavigationTheme } from 'react-native-paper';
-
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
-import { View } from 'react-native';
 import React from 'react';
 import FloatingThemeToggle from '@/components/FloatingThemeToggle';
+import { AuthProvider } from '@/contexts/AuthContext';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -122,9 +121,10 @@ function ThemedLayout() {
           <Stack.Screen name="routes/examiner-dashboard" options={{ title: 'Examiner Dashboard' }} />
           <Stack.Screen name="routes/student-session" options={{ title: 'Student Session' }} />
           <Stack.Screen name="routes/student-profile" options={{ title: 'Student Profile' }} />
+          <Stack.Screen name="routes/login-screen" options={{ title: 'Login' }} />
+          <Stack.Screen name="routes/register-screen" options={{ title: 'Register' }} />
           <Stack.Screen name="+not-found" options={{ title: 'Not Found' }} />
         </Stack>
-        <FloatingThemeToggle position="bottomRight" size={24} />
       </NavigationThemeProvider>
     </PaperProvider>
   );
@@ -133,7 +133,9 @@ function ThemedLayout() {
 export default function RootLayout() {
   return (
     <ThemeProvider>
-      <ThemedLayout />
+      <AuthProvider>
+        <ThemedLayout />
+      </AuthProvider>
     </ThemeProvider>
   );
 }

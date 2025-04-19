@@ -1,5 +1,5 @@
+import { NoiseType } from '@/services/EkgFactory';
 import { useState, useCallback } from 'react';
-import { NoiseType } from '../services/EkgFactory';
 
 export const useNoiseState = () => {
   const [noiseType, setNoiseType] = useState<NoiseType>(NoiseType.NONE);
