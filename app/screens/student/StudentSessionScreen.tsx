@@ -55,13 +55,10 @@ const StudentSessionScreen = () => {
     const setupSubscription = async () => {
       try {
         if (accessCode) {
-          const sessionCodeStr = accessCode.toString();
-          if (sessionCodeStr && sessionCodeStr.length === 6 && /^\d{6}$/.test(sessionCodeStr)) {
-            unsubscribeFn = await sessionService.subscribeToSessionUpdates(sessionCodeStr, (updatedSession) => {
+            unsubscribeFn = await sessionService.subscribeToSessionUpdates(accessCode.toString(), (updatedSession) => {
               console.log("Session updated:", updatedSession);
               setSessionData(updatedSession);
             });
-          }
         }
       } catch (err) {
         console.error("Error setting up session subscription:", err);

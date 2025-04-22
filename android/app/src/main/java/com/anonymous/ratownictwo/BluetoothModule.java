@@ -17,6 +17,19 @@ import android.bluetooth.BluetoothA2dp;
 import java.lang.reflect.Method;
 import java.util.List;
 
+// Android Bluetooth
+import android.bluetooth.BluetoothClass;
+import android.bluetooth.BluetoothDevice;
+import android.os.ParcelUuid;
+import android.os.Handler;
+import android.os.Looper;
+
+// React Native Bridge
+import com.facebook.react.bridge.WritableArray;
+import com.facebook.react.bridge.WritableNativeArray;
+
+
+
 public class BluetoothModule extends ReactContextBaseJavaModule {
     private final ReactApplicationContext reactContext;
     private static final String TAG = "BluetoothModule";
@@ -25,11 +38,68 @@ public class BluetoothModule extends ReactContextBaseJavaModule {
         super(context);
         this.reactContext = context;
     }
-
+    private static final ParcelUuid A2DP_SINK_UUID = ParcelUuid.fromString("0000110b-0000-1000-8000-00805f9b34fb");
+    private static final ParcelUuid HFP_UUID = ParcelUuid.fromString("0000111e-0000-1000-8000-00805f9b34fb");
+    private static final ParcelUuid HSP_UUID = ParcelUuid.fromString("00001108-0000-1000-8000-00805f9b34fb");
+    private static final ParcelUuid OPP_UUID = ParcelUuid.fromString("00001105-0000-1000-8000-00805f9b34fb");
     @Override
     public String getName() {
         return "BluetoothModule";
     }
+
+  
+    
+
+
+    @ReactMethod
+public void disconnectAudioDevice(String deviceAddress, Promise promise) {
+    try {
+        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+        if (adapter == null) {
+            promise.reject("NO_ADAPTER", "Brak adaptera Bluetooth");
+            return;
+        }
+
+        BluetoothDevice device = adapter.getRemoteDevice(deviceAddress);
+        if (device == null) {
+            promise.reject("NO_DEVICE", "Nie znaleziono urządzenia");
+            return;
+        }
+
+        // Rozłącz tylko określone urządzenie
+        adapter.getProfileProxy(reactContext, new BluetoothProfile.ServiceListener() {
+            @Override
+            public void onServiceConnected(int profile, BluetoothProfile proxy) {
+                try {
+                    if (profile == BluetoothProfile.A2DP) {
+                        BluetoothA2dp a2dp = (BluetoothA2dp) proxy;
+                        Method method = BluetoothA2dp.class.getMethod("disconnect", BluetoothDevice.class);
+                        method.invoke(a2dp, device);
+                    } else if (profile == BluetoothProfile.HEADSET) {
+                        BluetoothHeadset headset = (BluetoothHeadset) proxy;
+                        Method method = BluetoothHeadset.class.getMethod("disconnect", BluetoothDevice.class);
+                        method.invoke(headset, device);
+                    }
+                    promise.resolve(true);
+                } catch (Exception e) {
+                    promise.reject("DISCONNECT_ERROR", e.getMessage());
+                } finally {
+                    adapter.closeProfileProxy(profile, proxy);
+                }
+            }
+
+            @Override
+            public void onServiceDisconnected(int profile) {
+                // Ignoruj
+            }
+        }, BluetoothProfile.A2DP);
+
+    } catch (Exception e) {
+        promise.reject("ERROR", e.getMessage());
+    }
+}
+
+
 
     @ReactMethod
     public void disconnectAudio(Promise promise) {
@@ -51,6 +121,129 @@ public class BluetoothModule extends ReactContextBaseJavaModule {
             promise.reject("DISCONNECT_ERROR", e.getMessage());
         }
     }
+
+
+    @ReactMethod
+public void getDeviceProfiles(String deviceAddress, Promise promise) {
+    try {
+        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+        if (adapter == null) {
+            promise.resolve(new WritableNativeArray());
+            return;
+        }
+
+        BluetoothDevice device = adapter.getRemoteDevice(deviceAddress);
+        if (device == null) {
+            promise.resolve(new WritableNativeArray());
+            return;
+        }
+
+        WritableArray profiles = new WritableNativeArray();
+
+        // Sprawdzanie profili poprzez refleksję (dla starszych wersji Androida)
+        try {
+            Method getUuidsMethod = BluetoothDevice.class.getMethod("getUuids");
+            ParcelUuid[] uuids = (ParcelUuid[]) getUuidsMethod.invoke(device);
+            if (uuids != null) {
+                for (ParcelUuid uuid : uuids) {
+                    if (uuid.equals(A2DP_SINK_UUID)) {
+                        profiles.pushString("A2DP");
+                    } else if (uuid.equals(HFP_UUID)) {
+                        profiles.pushString("HFP");
+                    } else if (uuid.equals(HSP_UUID)) {
+                        profiles.pushString("HSP");
+                    } else if (uuid.equals(OPP_UUID)) {
+                        profiles.pushString("OPP");
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Błąd sprawdzania profili", e);
+        }
+
+        promise.resolve(profiles);
+    } catch (Exception e) {
+        promise.reject("PROFILE_ERROR", e.getMessage());
+    }
+}
+
+@ReactMethod
+public void connectToDevice(String deviceAddress, Promise promise) {
+    try {
+        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+        if (adapter == null) {
+            promise.reject("NO_ADAPTER", "Brak adaptera Bluetooth");
+            return;
+        }
+
+        BluetoothDevice device = adapter.getRemoteDevice(deviceAddress);
+        if (device == null) {
+            promise.reject("NO_DEVICE", "Nie znaleziono urządzenia");
+            return;
+        }
+
+        // Próba połączenia przez profile audio
+        boolean connected = false;
+
+        // 1. Próba połączenia przez A2DP
+        adapter.getProfileProxy(reactContext, new BluetoothProfile.ServiceListener() {
+            @Override
+            public void onServiceConnected(int profile, BluetoothProfile proxy) {
+                if (profile == BluetoothProfile.A2DP) {
+                    BluetoothA2dp a2dp = (BluetoothA2dp) proxy;
+                    try {
+                        Method connectMethod = BluetoothA2dp.class.getMethod("connect", BluetoothDevice.class);
+                        connectMethod.invoke(a2dp, device);
+                        promise.resolve("SUCCESS");
+                    } catch (Exception e) {
+                        promise.reject("A2DP_ERROR", e.getMessage());
+                    } finally {
+                        adapter.closeProfileProxy(profile, proxy);
+                    }
+                }
+            }
+
+            @Override
+            public void onServiceDisconnected(int profile) {
+                // Ignoruj
+            }
+        }, BluetoothProfile.A2DP);
+
+        // 2. Próba połączenia przez HFP (z opóźnieniem, jeśli A2DP zawiedzie)
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            if (!connected) {
+                adapter.getProfileProxy(reactContext, new BluetoothProfile.ServiceListener() {
+                    @Override
+                    public void onServiceConnected(int profile, BluetoothProfile proxy) {
+                        if (profile == BluetoothProfile.HEADSET) {
+                            BluetoothHeadset headset = (BluetoothHeadset) proxy;
+                            try {
+                                Method connectMethod = BluetoothHeadset.class.getMethod("connect", BluetoothDevice.class);
+                                connectMethod.invoke(headset, device);
+                                promise.resolve("SUCCESS");
+                            } catch (Exception e) {
+                                promise.reject("HFP_ERROR", e.getMessage());
+                            } finally {
+                                adapter.closeProfileProxy(profile, proxy);
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onServiceDisconnected(int profile) {
+                        // Ignoruj
+                    }
+                }, BluetoothProfile.HEADSET);
+            }
+        }, 1000);
+
+    } catch (Exception e) {
+        promise.reject("CONNECTION_ERROR", e.getMessage());
+    }
+}
+
+
+
 
     private void resetAudioRouting() {
         try {
