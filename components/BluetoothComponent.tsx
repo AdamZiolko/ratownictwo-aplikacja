@@ -9,24 +9,29 @@ import {
   RefreshControl,
   Platform,
   ScrollView,
-  NativeModules
+  NativeModules,
+  Linking
 } from 'react-native';
 import BluetoothSerial from 'react-native-bluetooth-classic';
 import { Audio } from 'expo-av';
 import { Picker } from '@react-native-picker/picker';
 import sounds from '../soundList';
 import { useTheme } from 'react-native-paper';
+
 interface Device {
   id: string;
   name: string | null;
   address: string;
   connected: boolean;
-  isComputer: boolean;
+  deviceClass: number | null; 
+  profiles?: string[]; 
 }
-
 
 type NativeBluetoothModule = {
   disconnectAudio(): void;
+  getDeviceProfiles(deviceAddress: string): Promise<string[]>;
+  connectToDevice(deviceAddress: string): Promise<string>;
+  openBluetoothSettings(): Promise<void>;
 };
 
 const { BluetoothModule } = NativeModules;
@@ -63,6 +68,13 @@ export const BluetoothComponent = () => {
     return () => clearTimeout(timer);
   }, [showConnectionStatus]);
 
+
+  useEffect(() => {
+    return () => {
+      
+      Audio.setIsEnabledAsync(true);
+    };
+  }, []);
 
   useEffect(() => {
     const subscription = BluetoothSerial.onDeviceDisconnected((disconnectedDevice) => {
@@ -128,6 +140,21 @@ export const BluetoothComponent = () => {
     }
   };
 
+
+  const checkDeviceProfiles = async (deviceAddress: string): Promise<string[]> => {
+    try {
+      if (Platform.OS === 'android') {
+        const profiles = await nativeBluetoothModule.getDeviceProfiles(deviceAddress);
+        return profiles || [];
+      }
+      return [];
+    } catch (error) {
+      console.log('Błąd sprawdzania profili:', error);
+      return [];
+    }
+  };
+
+
   const playSound = async (soundName: string) => {
     if (!soundObjects[soundName]) {
       setError(`Dźwięk ${soundName} nie jest gotowy do odtworzenia`);
@@ -147,19 +174,35 @@ export const BluetoothComponent = () => {
 
   const sendPlayCommand = async () => {
     if (!selectedSound || connectedDevices.length === 0) return;
+    
     try {
       const activeConnections = connectedDevices.filter(device => device.connected);
       
-      const sendPromises = activeConnections.map(device => 
-        BluetoothSerial.writeToDevice(device.address, 'PLAY\n')
-      );
-      
-      await Promise.all(sendPromises);
-      console.log('Komenda PLAY wysłana do', activeConnections.length, 'urządzeń');
-      
+      // Najpierw odtwórz dźwięk lokalnie
       if (selectedSound && soundObjects[selectedSound.name]) {
         await playSound(selectedSound.name);
       }
+  
+      // Następnie wyślij komendy do urządzeń
+      const sendPromises = activeConnections.map(async (device) => {
+        try {
+          if (device.profiles?.includes('A2DP') || device.profiles?.includes('HFP')) {
+            // Dla urządzeń audio - nie wysyłaj komendy PLAY, wystarczy odtworzyć lokalnie
+            console.log(`Pominięto wysyłanie PLAY do urządzenia audio: ${device.name}`);
+            return;
+          } else {
+            // Dla urządzeń SPP
+            await BluetoothSerial.writeToDevice(device.address, 'PLAY\n');
+            console.log(`Komenda PLAY wysłana do ${device.name || device.address}`);
+          }
+        } catch (err) {
+          console.log(`Błąd wysyłania do ${device.name || device.address}:`, err);
+          // Kontynuuj pomimo błędu dla jednego urządzenia
+        }
+      });
+      
+      await Promise.all(sendPromises);
+      console.log('Komendy wysłane do wszystkich urządzeń');
     } catch (err) {
       console.log('Błąd wysyłania komendy PLAY:', err);
       setError('Błąd podczas wysyłania komendy PLAY');
@@ -204,7 +247,7 @@ export const BluetoothComponent = () => {
       console.log("Pełne rozłączenie zakończone:", device.name);
     } catch (err) {
       console.error("Błąd rozłączania:", err);
-      setError("Rozłączenie nie powiodło się. Sprawdź ustawienia Bluetooth.");
+     setError("Rozłączenie nie powiodło się. Sprawdź ustawienia Bluetooth.");
       setShowConnectionStatus(true);
     }
   };
@@ -365,17 +408,40 @@ export const BluetoothComponent = () => {
         return;
       }
   
-      const connection = await BluetoothSerial.connectToDevice(device.address);
-      
+      // Najpierw sprawdź profile urządzenia
+      const profiles = await checkDeviceProfiles(device.address);
+      console.log('Dostępne profile:', profiles);
+  
+      let connection;
+      if (profiles.includes('A2DP') || profiles.includes('HFP')) {
+        // Dla urządzeń audio (TWS) używamy natywnego połączenia
+        console.log('Próba połączenia przez natywny moduł...');
+        const result = await nativeBluetoothModule.connectToDevice(device.address);
+        connection = result === 'SUCCESS';
+      } else {
+        // Dla innych urządzeń używamy standardowego połączenia SPP
+        console.log('Próba standardowego połączenia SPP...');
+        connection = await BluetoothSerial.connectToDevice(device.address);
+      }
+  
       if (connection) {
-        setConnectedDevices(prev => [...prev, { ...device, connected: true }]);
+        await Audio.setIsEnabledAsync(true);
+        
+        const updatedDevice = {
+          ...device,
+          connected: true,
+          profiles: profiles
+        };
+        
+        setConnectedDevices(prev => [...prev, updatedDevice]);
         setDevices(prev =>
-          prev.map(d => (d.id === device.id ? { ...d, connected: true } : d))
+          prev.map(d => (d.id === device.id ? updatedDevice : d))
         );
+        
         setError(`Połączono z ${device.name || device.address}`);
         setShowConnectionStatus(true);
         
-        // Dodaj listener dla rozłączenia
+        // Listener dla rozłączenia
         BluetoothSerial.onDeviceDisconnected((disconnectedDevice) => {
           if (disconnectedDevice.address === device.address) {
             setConnectedDevices(prev => prev.filter(d => d.address !== disconnectedDevice.address));
@@ -390,8 +456,34 @@ export const BluetoothComponent = () => {
       }
     } catch (err) {
       const error = err as Error;
+      console.error('Pełny błąd połączenia:', error);
       setError('Błąd połączenia: ' + error.message);
       setShowConnectionStatus(true);
+      
+      // Spróbuj ponownie z inną metodą w przypadku błędu
+      if (error.message.includes('socket') || error.message.includes('timeout')) {
+        try {
+          console.log('Próba alternatywnej metody połączenia...');
+          await nativeBluetoothModule.connectToDevice(device.address);
+          await Audio.setIsEnabledAsync(true);
+          
+          const updatedDevice = {
+            ...device,
+            connected: true,
+            profiles: ['A2DP/HFP (alternatywne połączenie)']
+          };
+          
+          setConnectedDevices(prev => [...prev, updatedDevice]);
+          setDevices(prev =>
+            prev.map(d => (d.id === device.id ? updatedDevice : d))
+          );
+          
+          setError(`Połączono z ${device.name || device.address} (alternatywna metoda)`);
+          setShowConnectionStatus(true);
+        } catch (altErr) {
+          console.error('Błąd alternatywnej metody:', altErr);
+        }
+      }
     }
   };
 

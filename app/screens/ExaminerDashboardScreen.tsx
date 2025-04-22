@@ -306,8 +306,7 @@ const ExaminerDashboardScreen = () => {
             )}
           </Card>
         ))}
-      {Platform.OS === 'android' && <BluetoothComponent />} {/* Bluetooth tylko dla androida */}
-
+       {Platform.OS === 'android' && <BluetoothComponent />} {/* Bluetooth tylko dla androida */}
         {/* FAB to create new session */}
         <FAB
           icon="plus"
