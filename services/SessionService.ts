@@ -8,14 +8,22 @@ import { socketService } from './SocketService';
 
 export interface Session {
   sessionId?: number;
+  name?: string;     // New field for session name
   temperature: number;
   rhythmType: number;
   beatsPerMinute: number;
   noiseLevel: number;
-  sessionCode: number;
+  sessionCode: string; // Changed from number to string
+  isActive?: boolean;  // New field indicating if session is active
   createdAt?: string;
   updatedAt?: string;
+  // Added medical parameters
   examiner_id?: number;
+  hr?: number;      // Heart rate in beats per minute
+  bp?: string;      // Blood pressure in mmHg, format: systolic/diastolic
+  spo2?: number;    // Oxygen saturation percentage
+  etco2?: number;   // End-tidal carbon dioxide level in mmHg
+  rr?: number;      // Respiratory rate in breaths per minute
 }
 
 export class SessionService {
@@ -96,7 +104,7 @@ export class SessionService {
    * @param authToken Optional authorization token
    * @returns Promise with the session data
    */
-  async getSessionByCode(code: number, authToken?: string): Promise<Session> {
+  async getSessionByCode(code: string, authToken?: string): Promise<Session> {
     try {
       const headers = this.createHeaders(authToken);
       const response = await this.api.get(`sessions/code/${code}`, headers);
@@ -112,7 +120,7 @@ export class SessionService {
  * @param onUpdate Callback function for session updates
  * @returns Unsubscribe function
  */
-  async subscribeToSessionUpdates(code: number, onUpdate: (session: Session) => void): Promise<() => void> {
+  async subscribeToSessionUpdates(code: string, onUpdate: (session: Session) => void): Promise<() => void> {
   try {
     // Connect to socket first if not already connected
     socketService.connect();
@@ -176,7 +184,7 @@ export class SessionService {
    * @param code The session code to validate
    * @returns Promise with the session data if valid, or an error if invalid
    */
-  async validateSessionCode(code: number): Promise<Session> {
+  async validateSessionCode(code: string): Promise<Session> {
     try {
       const response = await this.api.get(`sessions/validate/${code}`);
       return response;
@@ -220,14 +228,13 @@ export class SessionService {
       throw error;
     }
   }
-
   /**
    * Generate a random session code
-   * @returns A random 6-digit session code
+   * @returns A random 6-digit session code as a string
    */
-  generateSessionCode(): number {
-    // Generate a random 6-digit code
-    return Math.floor(100000 + Math.random() * 900000);
+  generateSessionCode(): string {
+    // Generate a random 6-digit code and convert to string
+    return Math.floor(100000 + Math.random() * 900000).toString();
   }
 }
 

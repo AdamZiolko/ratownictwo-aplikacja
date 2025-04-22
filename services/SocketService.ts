@@ -57,12 +57,11 @@ class SocketService {
       console.log(`DEBUG: Socket event received: ${event}`, args);
     });
   }
-
   /**
    * Join a specific session code room to receive updates for that session
    * @param code The session code to subscribe to
    */
-  joinSessionCode(code: number): Promise<{ success: boolean, code: number }> {
+  joinSessionCode(code: string): Promise<{ success: boolean, code: string }> {
     if (!this.socket || !this.socket.connected) {
       this.connect();
     }
@@ -155,13 +154,12 @@ class SocketService {
       listeners?.delete(callback);
     };
   }
-
   /**
    * Listen for session updates by session code
    * @param code The session code to listen for updates on
    * @param callback The callback when an update is received
    */
-  async onSessionUpdate(code: number, callback: (session: Session) => void): Promise<() => void> {
+  async onSessionUpdate(code: string, callback: (session: Session) => void): Promise<() => void> {
     // ensure socket is up
     if (!this.socket || !this.socket.connected) {
       console.log(`Socket not connected, reconnecting before subscribing to session ${code}...`);
@@ -199,14 +197,13 @@ class SocketService {
       offGeneral();
     };
   }
-
   /**
    * Emit a session update event to all clients in a session room
    * @param eventName The event name to emit
    * @param data The data to send
    * @param sessionCode The session code room to emit to
    */
-  emitSessionUpdate(eventName: string, data: any, sessionCode: number): void {
+  emitSessionUpdate(eventName: string, data: any, sessionCode: string): void {
     if (!this.socket || !this.socket.connected) {
       this.connect();
     }

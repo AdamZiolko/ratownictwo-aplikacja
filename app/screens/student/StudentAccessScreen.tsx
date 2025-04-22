@@ -66,7 +66,7 @@ const StudentAccessScreen = () => {
     setIsLoading(true);
     
     try {
-      const isSessionValid = await sessionService.getSessionByCode(Number(accessCode.trim()));
+      const isSessionValid = await sessionService.getSessionByCode(accessCode.trim());
 
       if(!isSessionValid) {
         setError('Nieprawidłowy kod dostępu');

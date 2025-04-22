@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { sessionService, Session } from '@/services/SessionService';
 import EkgDisplay from '@/components/ekg/EkgDisplay';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, ScrollView } from 'react-native';
 import { socketService } from '@/services/SocketService';
 
 const StudentSessionScreen = () => {
@@ -19,20 +19,18 @@ const StudentSessionScreen = () => {
       setError("No access code provided");
       setIsLoading(false);
       return;
-    }
-
-    try {
+    }    try {
       setIsLoading(true);
       setError(null);
 
       console.log(`Fetching session with code: ${accessCode}`);
-      const parsedCode = parseInt(accessCode.toString(), 10);
-
-      if (isNaN(parsedCode)) {
+      const sessionCodeStr = accessCode.toString();
+      
+      if (!sessionCodeStr || sessionCodeStr.length !== 6) {
         throw new Error("Invalid access code format");
       }
 
-      const response = await sessionService.getSessionByCode(parsedCode);
+      const response = await sessionService.getSessionByCode(sessionCodeStr);
       console.log("Session data received:", response);
 
       if (!response) {
@@ -40,8 +38,6 @@ const StudentSessionScreen = () => {
       }
 
       setSessionData(response);
-
-      console.log(response)
     } catch (error) {
       console.error('Error fetching session data:', error);
       setError(error instanceof Error ? error.message : "Failed to fetch session data");
@@ -54,29 +50,41 @@ const StudentSessionScreen = () => {
     fetchSessionData();
   }, [accessCode]);
 
-
-
   useEffect(() => {
-    sessionService.subscribeToSessionUpdates(Number(accessCode), (updatedSession) => {
-      console.log("Session updated:", updatedSession);
-      setSessionData(updatedSession);
-    });
+    let unsubscribeFn: (() => void) | undefined;    // Set up subscription to session updates
+    const setupSubscription = async () => {
+      try {
+        if (accessCode) {
+          const sessionCodeStr = accessCode.toString();
+          if (sessionCodeStr && sessionCodeStr.length === 6 && /^\d{6}$/.test(sessionCodeStr)) {
+            unsubscribeFn = await sessionService.subscribeToSessionUpdates(sessionCodeStr, (updatedSession) => {
+              console.log("Session updated:", updatedSession);
+              setSessionData(updatedSession);
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Error setting up session subscription:", err);
+      }
+    };
 
-  }, []);
+    setupSubscription();
 
+    // Clean up subscription when component unmounts
+    return () => {
+      if (unsubscribeFn) {
+        unsubscribeFn();
+      }
+    };
+  }, [accessCode]);
 
-
-
-
-
-
-
-
-
+  // Function to retry fetching session data
+  const handleRetry = () => {
+    fetchSessionData();
+  };
 
   return (
     <SafeAreaView edges={['top']} style={styles.container}>
-
       {isLoading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
@@ -85,12 +93,12 @@ const StudentSessionScreen = () => {
       ) : error ? (
         <Surface style={styles.errorContainer} elevation={2}>
           <Text style={styles.errorText}>Error: {error}</Text>
-          <Button mode="contained" style={styles.retryButton}>
+          <Button mode="contained" style={styles.retryButton} onPress={handleRetry}>
             Retry
           </Button>
         </Surface>
       ) : sessionData ? (
-        <View style={styles.contentContainer}>
+        <ScrollView style={styles.contentContainer}>
           <Surface style={styles.sessionInfo} elevation={1}>
             <Text style={styles.sessionTitle}>Session #{accessCode}</Text>
             <Text style={styles.sessionSubtitle}>
@@ -105,12 +113,58 @@ const StudentSessionScreen = () => {
             isRunning={true}
           />
 
-          <Surface style={styles.infoCard} elevation={1}>
-            <Text style={styles.infoText}>
-              Temperature: {sessionData?.temperature}°C
-            </Text>
+          <Surface style={styles.vitalsCard} elevation={1}>
+            <Text style={styles.cardTitle}>Patient Vitals</Text>
+            
+            <View style={styles.vitalsRow}>
+              <View style={styles.vitalItem}>
+                <Text style={styles.vitalLabel}>Temperature</Text>
+                <Text style={styles.vitalValue}>
+                  {sessionData?.temperature != null ? `${sessionData.temperature}°C` : 'N/A'}
+                </Text>
+              </View>
+              
+              <View style={styles.vitalItem}>
+                <Text style={styles.vitalLabel}>Heart Rate</Text>
+                <Text style={styles.vitalValue}>
+                  {sessionData?.hr != null ? `${sessionData.hr} BPM` : 'N/A'}
+                </Text>
+              </View>
+            </View>
+            
+            <View style={styles.vitalsRow}>
+              <View style={styles.vitalItem}>
+                <Text style={styles.vitalLabel}>Blood Pressure</Text>
+                <Text style={styles.vitalValue}>
+                  {sessionData?.bp || 'N/A'}
+                </Text>
+              </View>
+              
+              <View style={styles.vitalItem}>
+                <Text style={styles.vitalLabel}>SpO₂</Text>
+                <Text style={styles.vitalValue}>
+                  {sessionData?.spo2 != null ? `${sessionData.spo2}%` : 'N/A'}
+                </Text>
+              </View>
+            </View>
+            
+            <View style={styles.vitalsRow}>
+              <View style={styles.vitalItem}>
+                <Text style={styles.vitalLabel}>EtCO₂</Text>
+                <Text style={styles.vitalValue}>
+                  {sessionData?.etco2 != null ? `${sessionData.etco2} mmHg` : 'N/A'}
+                </Text>
+              </View>
+              
+              <View style={styles.vitalItem}>
+                <Text style={styles.vitalLabel}>Respiratory Rate</Text>
+                <Text style={styles.vitalValue}>
+                  {sessionData?.rr != null ? `${sessionData.rr} breaths/min` : 'N/A'}
+                </Text>
+              </View>
+            </View>
           </Surface>
-        </View>
+        </ScrollView>
       ) : (
         <Text style={styles.noDataText}>No session data available</Text>
       )}
@@ -161,6 +215,34 @@ const styles = StyleSheet.create({
   sessionSubtitle: {
     fontSize: 16,
     marginTop: 4,
+  },
+  vitalsCard: {
+    padding: 16,
+    margin: 8,
+    borderRadius: 8,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  vitalsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  vitalItem: {
+    flex: 1,
+    padding: 8,
+  },
+  vitalLabel: {
+    fontSize: 14,
+    opacity: 0.7,
+    marginBottom: 4,
+  },
+  vitalValue: {
+    fontSize: 18,
+    fontWeight: '500',
   },
   infoCard: {
     padding: 16,

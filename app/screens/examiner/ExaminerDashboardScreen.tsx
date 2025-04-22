@@ -43,13 +43,20 @@ const ExaminerDashboardScreen = () => {
   const [viewDialogVisible, setViewDialogVisible] = useState(false);
   
   // Session form state
-  const [currentSession, setCurrentSession] = useState<Session | null>(null);
-  const [formData, setFormData] = useState({
+  const [currentSession, setCurrentSession] = useState<Session | null>(null);  const [formData, setFormData] = useState({
+    name: "",         // New field for session name
     temperature: "36.6",
     rhythmType: EkgType.NORMAL,
     beatsPerMinute: "72",
     noiseLevel: NoiseType.NONE,
-    sessionCode: ""
+    sessionCode: "",
+    isActive: true,   // New field for active status
+    // Add new medical parameters
+    hr: "80",         // Heart rate (BPM)
+    bp: "120/80",     // Blood pressure (mmHg)
+    spo2: "98",       // Oxygen saturation (%)
+    etco2: "35",      // End-tidal CO2 (mmHg)
+    rr: "12"          // Respiratory rate (breaths/min)
   });
   
   // Form errors
@@ -133,30 +140,34 @@ const ExaminerDashboardScreen = () => {
     } else if (bpm < 0 || bpm > 300) {
       errors.beatsPerMinute = "Tętno musi być w zakresie 0-300";
       isValid = false;
-    }
-
-    // Validate session code
-    const code = parseInt(formData.sessionCode);
+    }    // Validate session code
     if (!formData.sessionCode) {
       errors.sessionCode = "Kod sesji jest wymagany";
       isValid = false;
-    } else if (isNaN(code) || formData.sessionCode.length !== 6) {
-      errors.sessionCode = "Kod musi być 6-cyfrowy";
+    } else if (formData.sessionCode.length !== 6) {
+      errors.sessionCode = "Kod musi zawierać 6 znaków";
       isValid = false;
     }
 
     setFormErrors(errors);
     return isValid;
   };
-
   // Reset form state
   const resetForm = () => {
     setFormData({
+      name: "", // Add name field
       temperature: "36.6",
       rhythmType: EkgType.NORMAL,
       beatsPerMinute: "72",
       noiseLevel: NoiseType.NONE,
-      sessionCode: sessionService.generateSessionCode().toString()
+      sessionCode: sessionService.generateSessionCode(), // Now returns a string directly
+      isActive: true, // Add isActive field
+      // Reset medical parameters to default values
+      hr: "80",         // Heart rate (BPM)
+      bp: "120/80",     // Blood pressure (mmHg)
+      spo2: "98",       // Oxygen saturation (%)
+      etco2: "35",      // End-tidal CO2 (mmHg)
+      rr: "12"          // Respiratory rate (breaths/min)
     });
     setFormErrors({
       temperature: "",
@@ -170,7 +181,6 @@ const ExaminerDashboardScreen = () => {
     resetForm();
     setCreateDialogVisible(true);
   };
-
   // Open edit session dialog
   const openEditDialog = (session: Session) => {
     setCurrentSession(session);
@@ -179,7 +189,15 @@ const ExaminerDashboardScreen = () => {
       rhythmType: session.rhythmType as EkgType,
       beatsPerMinute: session.beatsPerMinute ? session.beatsPerMinute.toString() : "72",
       noiseLevel: session.noiseLevel as NoiseType,
-      sessionCode: session.sessionCode ? session.sessionCode.toString() : ""
+      sessionCode: session.sessionCode ? session.sessionCode.toString() : "",
+      isActive: session.isActive !== undefined ? session.isActive : true, // Add the isActive property
+      // Populate medical parameters if available, otherwise use default values
+      hr: session.hr ? session.hr.toString() : "80",
+      bp: session.bp || "120/80",
+      spo2: session.spo2 ? session.spo2.toString() : "98",
+      etco2: session.etco2 ? session.etco2.toString() : "35",
+      rr: session.rr ? session.rr.toString() : "12",
+      name: session.name || ""
     });
     setEditDialogVisible(true);
   };
@@ -190,24 +208,30 @@ const ExaminerDashboardScreen = () => {
 
     setDeleteDialogVisible(true);
   };
-
   // Open view session details dialog
   const openViewDialog = (session: Session) => {
     setCurrentSession(session);
     setViewDialogVisible(true);
   };
-
-  // Create a new session
+    // Create a new session
   const handleCreateSession = async () => {
     if (!validateForm()) return;
 
     try {
       const newSession = {
+        name: formData.name || `Sesja ${formData.sessionCode}`, // Use provided name or generate one
         temperature: parseFloat(formData.temperature),
         rhythmType: formData.rhythmType as number,
         beatsPerMinute: parseInt(formData.beatsPerMinute),
         noiseLevel: formData.noiseLevel as number,
-        sessionCode: parseInt(formData.sessionCode)
+        sessionCode: formData.sessionCode, // Keep as string
+        isActive: formData.isActive, // Use the isActive field value
+        // Add medical parameters
+        hr: parseInt(formData.hr) || undefined,
+        bp: formData.bp,
+        spo2: parseInt(formData.spo2) || undefined,
+        etco2: parseInt(formData.etco2) || undefined,
+        rr: parseInt(formData.rr) || undefined
       };
 
       await sessionService.createSession(newSession);
@@ -217,20 +241,26 @@ const ExaminerDashboardScreen = () => {
     } catch (error) {
       console.error("Error creating session:", error);
       showSnackbar("Nie udało się utworzyć sesji", "error");
-    }
-  };
-
-  // Update an existing session
+    }  };
+    // Update an existing session
   const handleUpdateSession = async () => {
     if (!currentSession || !validateForm()) return;
 
     try {
       const updatedSession = {
+        name: formData.name || `Sesja ${formData.sessionCode}`, // Use form data name
         temperature: parseFloat(formData.temperature),
         rhythmType: formData.rhythmType as number,
         beatsPerMinute: parseInt(formData.beatsPerMinute),
         noiseLevel: formData.noiseLevel as number,
-        sessionCode: parseInt(formData.sessionCode)
+        sessionCode: formData.sessionCode, // Keep as string instead of parsing to number
+        isActive: formData.isActive, // Use selected active status
+        // Add medical parameters
+        hr: parseInt(formData.hr) || undefined,
+        bp: formData.bp,
+        spo2: parseInt(formData.spo2) || undefined,
+        etco2: parseInt(formData.etco2) || undefined,
+        rr: parseInt(formData.rr) || undefined
       };
 
       if (!currentSession.sessionId) return;
@@ -414,6 +444,15 @@ const ExaminerDashboardScreen = () => {
             <ScrollView>
               <View style={styles.dialogContent}>
                 <TextInput
+                  label="Nazwa sesji"
+                  value={formData.name}
+                  onChangeText={(text) => setFormData({ ...formData, name: text })}
+                  mode="outlined"
+                  style={styles.input}
+                  placeholder="Wprowadź nazwę sesji"
+                />
+
+                <TextInput
                   label="Temperatura (°C)"
                   value={formData.temperature}
                   onChangeText={(text) => setFormData({ ...formData, temperature: text })}
@@ -556,6 +595,63 @@ const ExaminerDashboardScreen = () => {
                 >
                   Generuj losowy kod
                 </Button>
+                
+                <Text variant="titleMedium" style={styles.sectionTitle}>Parametry medyczne</Text>
+                
+                <View style={styles.paramRow}>
+                  <TextInput
+                    label="Tętno (HR)"
+                    value={formData.hr}
+                    onChangeText={(text) => setFormData({ ...formData, hr: text })}
+                    keyboardType="number-pad"
+                    mode="outlined"
+                    style={styles.inputHalf}
+                    right={<TextInput.Affix text="BPM" />}
+                  />
+                  
+                  <TextInput
+                    label="Ciśnienie krwi (BP)"
+                    value={formData.bp}
+                    onChangeText={(text) => setFormData({ ...formData, bp: text })}
+                    keyboardType="default"
+                    mode="outlined"
+                    style={styles.inputHalf}
+                    right={<TextInput.Affix text="mmHg" />}
+                    placeholder="np. 120/80"
+                  />
+                </View>
+                
+                <View style={styles.paramRow}>
+                  <TextInput
+                    label="SpO₂"
+                    value={formData.spo2}
+                    onChangeText={(text) => setFormData({ ...formData, spo2: text })}
+                    keyboardType="number-pad"
+                    mode="outlined"
+                    style={styles.inputHalf}
+                    right={<TextInput.Affix text="%" />}
+                  />
+                  
+                  <TextInput
+                    label="EtCO₂"
+                    value={formData.etco2}
+                    onChangeText={(text) => setFormData({ ...formData, etco2: text })}
+                    keyboardType="number-pad"
+                    mode="outlined"
+                    style={styles.inputHalf}
+                    right={<TextInput.Affix text="mmHg" />}
+                  />
+                </View>
+                
+                <TextInput
+                  label="Częstość oddechów (RR)"
+                  value={formData.rr}
+                  onChangeText={(text) => setFormData({ ...formData, rr: text })}
+                  keyboardType="number-pad"
+                  mode="outlined"
+                  style={styles.input}
+                  right={<TextInput.Affix text="oddechów/min" />}
+                />
               </View>
             </ScrollView>
           </Dialog.ScrollArea>
@@ -571,6 +667,28 @@ const ExaminerDashboardScreen = () => {
           <Dialog.ScrollArea style={styles.dialogScrollArea}>
             <ScrollView>
               <View style={styles.dialogContent}>
+                <TextInput
+                  label="Nazwa sesji"
+                  value={formData.name}
+                  onChangeText={(text) => setFormData({ ...formData, name: text })}
+                  mode="outlined"
+                  style={styles.input}
+                  placeholder="Wprowadź nazwę sesji"
+                />
+                
+                <View style={styles.paramRow}>
+                  <Text variant="bodyMedium" style={{...styles.inputHalf, marginTop: 8}}>Status sesji:</Text>
+                  <SegmentedButtons
+                    value={formData.isActive ? "true" : "false"}
+                    onValueChange={(value) => setFormData({ ...formData, isActive: value === "true" })}
+                    buttons={[
+                      { value: "true", label: 'Aktywna' },
+                      { value: "false", label: 'Nieaktywna' },
+                    ]}
+                    style={{...styles.segmentedButtons, flex: 1}}
+                  />
+                </View>
+
                 <TextInput
                   label="Temperatura (°C)"
                   value={formData.temperature}
@@ -706,6 +824,292 @@ const ExaminerDashboardScreen = () => {
                 ) : (
                   <HelperText type="info">6-cyfrowy kod do udostępnienia studentom</HelperText>
                 )}
+                
+                <Text variant="titleMedium" style={styles.sectionTitle}>Parametry medyczne</Text>
+                
+                <View style={styles.paramRow}>
+                  <TextInput
+                    label="Tętno (HR)"
+                    value={formData.hr}
+                    onChangeText={(text) => setFormData({ ...formData, hr: text })}
+                    keyboardType="number-pad"
+                    mode="outlined"
+                    style={styles.inputHalf}
+                    right={<TextInput.Affix text="BPM" />}
+                  />
+                  
+                  <TextInput
+                    label="Ciśnienie krwi (BP)"
+                    value={formData.bp}
+                    onChangeText={(text) => setFormData({ ...formData, bp: text })}
+                    keyboardType="default"
+                    mode="outlined"
+                    style={styles.inputHalf}
+                    right={<TextInput.Affix text="mmHg" />}
+                    placeholder="np. 120/80"
+                  />
+                </View>
+                
+                <View style={styles.paramRow}>
+                  <TextInput
+                    label="SpO₂"
+                    value={formData.spo2}
+                    onChangeText={(text) => setFormData({ ...formData, spo2: text })}
+                    keyboardType="number-pad"
+                    mode="outlined"
+                    style={styles.inputHalf}
+                    right={<TextInput.Affix text="%" />}
+                  />
+                  
+                  <TextInput
+                    label="EtCO₂"
+                    value={formData.etco2}
+                    onChangeText={(text) => setFormData({ ...formData, etco2: text })}
+                    keyboardType="number-pad"
+                    mode="outlined"
+                    style={styles.inputHalf}
+                    right={<TextInput.Affix text="mmHg" />}
+                  />
+                </View>
+                
+                <TextInput
+                  label="Częstość oddechów (RR)"
+                  value={formData.rr}
+                  onChangeText={(text) => setFormData({ ...formData, rr: text })}
+                  keyboardType="number-pad"
+                  mode="outlined"
+                  style={styles.input}
+                  right={<TextInput.Affix text="oddechów/min" />}
+                />
+              </View>
+            </ScrollView>
+          </Dialog.ScrollArea>
+          <Dialog.Actions>
+            <Button onPress={() => setCreateDialogVisible(false)}>Anuluj</Button>
+            <Button onPress={handleCreateSession}>Utwórz</Button>
+          </Dialog.Actions>
+        </Dialog>
+
+        {/* Edit Session Dialog */}
+        <Dialog visible={editDialogVisible} onDismiss={() => setEditDialogVisible(false)}>
+          <Dialog.Title>Edytuj sesję</Dialog.Title>
+          <Dialog.ScrollArea style={styles.dialogScrollArea}>
+            <ScrollView>
+              <View style={styles.dialogContent}>
+                <TextInput
+                  label="Nazwa sesji"
+                  value={formData.name}
+                  onChangeText={(text) => setFormData({ ...formData, name: text })}
+                  mode="outlined"
+                  style={styles.input}
+                  placeholder="Wprowadź nazwę sesji"
+                />
+                
+                <View style={styles.paramRow}>
+                  <Text variant="bodyMedium" style={{...styles.inputHalf, marginTop: 8}}>Status sesji:</Text>
+                  <SegmentedButtons
+                    value={formData.isActive ? "true" : "false"}
+                    onValueChange={(value) => setFormData({ ...formData, isActive: value === "true" })}
+                    buttons={[
+                      { value: "true", label: 'Aktywna' },
+                      { value: "false", label: 'Nieaktywna' },
+                    ]}
+                    style={{...styles.segmentedButtons, flex: 1}}
+                  />
+                </View>
+
+                <TextInput
+                  label="Temperatura (°C)"
+                  value={formData.temperature}
+                  onChangeText={(text) => setFormData({ ...formData, temperature: text })}
+                  keyboardType="decimal-pad"
+                  mode="outlined"
+                  style={styles.input}
+                  error={!!formErrors.temperature}
+                />
+                {formErrors.temperature ? (
+                  <HelperText type="error">{formErrors.temperature}</HelperText>
+                ) : null}
+
+                <Text variant="titleSmall" >Typ rytmu serca</Text>
+                <Card style={styles.selectionCard}>
+                  <Card.Content>
+                    <RadioButton.Group 
+                      onValueChange={(value) => setFormData({ ...formData, rhythmType: parseInt(value) })} 
+                      value={formData.rhythmType.toString()}
+                    >
+                      <View style={styles.radioRow}>
+                        <RadioButton.Item 
+                          label={EkgFactory.getNameForType(EkgType.NORMAL)} 
+                          value={EkgType.NORMAL.toString()} 
+                          position="leading"
+                        />
+                      </View>
+                      <View style={styles.radioRow}>
+                        <RadioButton.Item 
+                          label={EkgFactory.getNameForType(EkgType.TACHYCARDIA)} 
+                          value={EkgType.TACHYCARDIA.toString()}
+                          position="leading" 
+                        />
+                      </View>
+                      <View style={styles.radioRow}>
+                        <RadioButton.Item 
+                          label={EkgFactory.getNameForType(EkgType.BRADYCARDIA)} 
+                          value={EkgType.BRADYCARDIA.toString()}
+                          position="leading" 
+                        />
+                      </View>
+                      <View style={styles.radioRow}>
+                        <RadioButton.Item 
+                          label={EkgFactory.getNameForType(EkgType.AFIB)} 
+                          value={EkgType.AFIB.toString()}
+                          position="leading" 
+                        />
+                      </View>
+                      <View style={styles.radioRow}>
+                        <RadioButton.Item 
+                          label={EkgFactory.getNameForType(EkgType.VFIB)} 
+                          value={EkgType.VFIB.toString()}
+                          position="leading" 
+                        />
+                      </View>
+                      <View style={styles.radioRow}>
+                        <RadioButton.Item 
+                          label={EkgFactory.getNameForType(EkgType.VTACH)} 
+                          value={EkgType.VTACH.toString()}
+                          position="leading" 
+                        />
+                      </View>
+                      <View style={styles.radioRow}>
+                        <RadioButton.Item 
+                          label={EkgFactory.getNameForType(EkgType.TORSADE)} 
+                          value={EkgType.TORSADE.toString()}
+                          position="leading" 
+                        />
+                      </View>
+                      <View style={styles.radioRow}>
+                        <RadioButton.Item 
+                          label={EkgFactory.getNameForType(EkgType.ASYSTOLE)} 
+                          value={EkgType.ASYSTOLE.toString()}
+                          position="leading" 
+                        />
+                      </View>
+                      <View style={styles.radioRow}>
+                        <RadioButton.Item 
+                          label={EkgFactory.getNameForType(EkgType.HEART_BLOCK)} 
+                          value={EkgType.HEART_BLOCK.toString()}
+                          position="leading" 
+                        />
+                      </View>
+                      <View style={styles.radioRow}>
+                        <RadioButton.Item 
+                          label={EkgFactory.getNameForType(EkgType.PVC)} 
+                          value={EkgType.PVC.toString()}
+                          position="leading" 
+                        />
+                      </View>
+                    </RadioButton.Group>
+                  </Card.Content>
+                </Card>
+
+                <TextInput
+                  label="Tętno (BPM)"
+                  value={formData.beatsPerMinute}
+                  onChangeText={(text) => setFormData({ ...formData, beatsPerMinute: text })}
+                  keyboardType="number-pad"
+                  mode="outlined"
+                  style={styles.input}
+                  error={!!formErrors.beatsPerMinute}
+                />
+                {formErrors.beatsPerMinute ? (
+                  <HelperText type="error">{formErrors.beatsPerMinute}</HelperText>
+                ) : null}
+
+                <Text variant="titleSmall" >Poziom szumów</Text>
+                <SegmentedButtons
+                  value={formData.noiseLevel.toString()}
+                  onValueChange={(value) => setFormData({ ...formData, noiseLevel: parseInt(value) })}
+                  buttons={[
+                    { value: NoiseType.NONE.toString(), label: 'Brak' },
+                    { value: NoiseType.MILD.toString(), label: 'Łagodne' },
+                    { value: NoiseType.MODERATE.toString(), label: 'Umiarkowane' },
+                    { value: NoiseType.SEVERE.toString(), label: 'Silne' },
+                  ]}
+                  style={styles.segmentedButtons}
+                />
+
+                <TextInput
+                  label="Kod sesji"
+                  value={formData.sessionCode}
+                  onChangeText={(text) => setFormData({ ...formData, sessionCode: text })}
+                  keyboardType="number-pad"
+                  mode="outlined"
+                  style={styles.input}
+                  error={!!formErrors.sessionCode}
+                  maxLength={6}
+                />
+                {formErrors.sessionCode ? (
+                  <HelperText type="error">{formErrors.sessionCode}</HelperText>
+                ) : (
+                  <HelperText type="info">6-cyfrowy kod do udostępnienia studentom</HelperText>
+                )}
+                
+                <Text variant="titleMedium" style={styles.sectionTitle}>Parametry medyczne</Text>
+                
+                <View style={styles.paramRow}>
+                  <TextInput
+                    label="Tętno (HR)"
+                    value={formData.hr}
+                    onChangeText={(text) => setFormData({ ...formData, hr: text })}
+                    keyboardType="number-pad"
+                    mode="outlined"
+                    style={styles.inputHalf}
+                    right={<TextInput.Affix text="BPM" />}
+                  />
+                  
+                  <TextInput
+                    label="Ciśnienie krwi (BP)"
+                    value={formData.bp}
+                    onChangeText={(text) => setFormData({ ...formData, bp: text })}
+                    keyboardType="default"
+                    mode="outlined"
+                    style={styles.inputHalf}
+                    right={<TextInput.Affix text="mmHg" />}
+                    placeholder="np. 120/80"
+                  />
+                </View>
+                
+                <View style={styles.paramRow}>
+                  <TextInput
+                    label="SpO₂"
+                    value={formData.spo2}
+                    onChangeText={(text) => setFormData({ ...formData, spo2: text })}
+                    keyboardType="number-pad"
+                    mode="outlined"
+                    style={styles.inputHalf}
+                    right={<TextInput.Affix text="%" />}
+                  />
+                  
+                  <TextInput
+                    label="EtCO₂"
+                    value={formData.etco2}
+                    onChangeText={(text) => setFormData({ ...formData, etco2: text })}
+                    keyboardType="number-pad"
+                    mode="outlined"
+                    style={styles.inputHalf}
+                    right={<TextInput.Affix text="mmHg" />}
+                  />
+                </View>
+                
+                <TextInput
+                  label="Częstość oddechów (RR)"
+                  value={formData.rr}
+                  onChangeText={(text) => setFormData({ ...formData, rr: text })}
+                  keyboardType="number-pad"
+                  mode="outlined"
+                  style={styles.input}
+                  right={<TextInput.Affix text="oddechów/min" />}
+                />
               </View>
             </ScrollView>
           </Dialog.ScrollArea>
@@ -745,6 +1149,25 @@ const ExaminerDashboardScreen = () => {
                   </Chip>
                 </View>
 
+                <Text variant="titleLarge" style={{textAlign: 'center', marginVertical: 8}}>
+                  {currentSession.name || `Sesja ${currentSession.sessionCode}`}
+                </Text>
+                
+                <View style={{flexDirection: 'row', justifyContent: 'center', marginBottom: 8}}>
+                  <Chip 
+                    icon={currentSession.isActive ? "check-circle" : "close-circle"} 
+                    mode="flat" 
+                    style={{
+                      backgroundColor: currentSession.isActive ? "#E8F5E9" : "#FFEBEE",
+                    }}
+                    textStyle={{
+                      color: currentSession.isActive ? "#2E7D32" : "#C62828",
+                    }}
+                  >
+                    {currentSession.isActive ? "Aktywna" : "Nieaktywna"}
+                  </Chip>
+                </View>
+
                 <Divider style={styles.divider} />
                 
                 <View style={styles.detailRow}>
@@ -766,9 +1189,7 @@ const ExaminerDashboardScreen = () => {
                   <Text variant="bodyLarge" style={styles.detailValue}>
                     {currentSession.beatsPerMinute} uderzeń/min
                   </Text>
-                </View>
-
-                <View style={styles.detailRow}>
+                </View>                <View style={styles.detailRow}>
                   <Text variant="bodyMedium" style={styles.detailLabel}>Poziom szumów:</Text>
                   <Text variant="bodyLarge" style={styles.detailValue}>
                     {getNoiseLevelName(currentSession.noiseLevel)}
@@ -783,6 +1204,45 @@ const ExaminerDashboardScreen = () => {
                     </Text>
                   </View>
                 )}
+                
+                <Divider style={styles.divider} />
+                
+                <Text variant="titleSmall" style={{marginBottom: 8}}>Parametry medyczne</Text>
+
+                <View style={styles.detailRow}>
+                  <Text variant="bodyMedium" style={styles.detailLabel}>Tętno (HR):</Text>
+                  <Text variant="bodyLarge" style={styles.detailValue}>
+                    {currentSession.hr != null ? `${currentSession.hr} BPM` : 'N/A'}
+                  </Text>
+                </View>
+                
+                <View style={styles.detailRow}>
+                  <Text variant="bodyMedium" style={styles.detailLabel}>Ciśnienie (BP):</Text>
+                  <Text variant="bodyLarge" style={styles.detailValue}>
+                    {currentSession.bp || 'N/A'}
+                  </Text>
+                </View>
+                
+                <View style={styles.detailRow}>
+                  <Text variant="bodyMedium" style={styles.detailLabel}>SpO₂:</Text>
+                  <Text variant="bodyLarge" style={styles.detailValue}>
+                    {currentSession.spo2 != null ? `${currentSession.spo2}%` : 'N/A'}
+                  </Text>
+                </View>
+                
+                <View style={styles.detailRow}>
+                  <Text variant="bodyMedium" style={styles.detailLabel}>EtCO₂:</Text>
+                  <Text variant="bodyLarge" style={styles.detailValue}>
+                    {currentSession.etco2 != null ? `${currentSession.etco2} mmHg` : 'N/A'}
+                  </Text>
+                </View>
+                
+                <View style={styles.detailRow}>
+                  <Text variant="bodyMedium" style={styles.detailLabel}>Częstość oddechów (RR):</Text>
+                  <Text variant="bodyLarge" style={styles.detailValue}>
+                    {currentSession.rr != null ? `${currentSession.rr} oddechów/min` : 'N/A'}
+                  </Text>
+                </View>
                 
                 <Divider style={styles.divider} />
                 
@@ -857,6 +1317,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     marginBottom: 12,
+    marginTop: 12,
     fontWeight: "bold",
   },
   tableContainer: {
@@ -899,6 +1360,16 @@ const styles = StyleSheet.create({
   },
   input: {
     marginBottom: 8,
+  },
+  inputHalf: {
+    flex: 1,
+    marginBottom: 8,
+    marginHorizontal: 4,
+  },
+  paramRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginHorizontal: -4,
   },
   pickerLabel: {
     fontSize: 12,
