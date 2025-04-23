@@ -216,6 +216,26 @@ class SocketService {
     });
   }
 
+/**
+ * Emit an audio command to a specific session
+ * @param sessionCode The code of the session
+ * @param command The command type (e.g., 'PLAY')
+ * @param soundName Optional sound name (e.g., 'kaszel.mp3')
+ */
+emitAudioCommand(sessionCode: string, command: string, soundName: string | null = null): void {
+  if (!this.socket || !this.socket.connected) {
+    this.connect();
+  }
+
+  console.log(`Emitting audio-command to session-${sessionCode}`, { command, soundName });
+  this.socket?.emit('audio-command', {
+    code: sessionCode,
+    command,
+    soundName,
+  });
+}
+
+  
   /**
    * Disconnect the socket
    */

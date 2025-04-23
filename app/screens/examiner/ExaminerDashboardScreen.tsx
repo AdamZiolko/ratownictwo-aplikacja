@@ -20,12 +20,24 @@ import {
   Divider,
   SegmentedButtons,
   Menu,
-  RadioButton
+  RadioButton,
+  List
 } from "react-native-paper";
 import { router } from "expo-router";
 import { useAuth } from "@/contexts/AuthContext";
 import { sessionService, Session } from "@/services/SessionService";
 import { EkgType, NoiseType, EkgFactory } from "@/services/EkgFactory";
+import { socketService } from "@/services/SocketService";
+import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+
+type Preset = {
+  id: string;
+  name: string;
+  data: typeof FormData;
+};
+
 
 const ExaminerDashboardScreen = () => {
   const theme = useTheme();
@@ -41,7 +53,108 @@ const ExaminerDashboardScreen = () => {
   const [editDialogVisible, setEditDialogVisible] = useState(false);
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
   const [viewDialogVisible, setViewDialogVisible] = useState(false);
+  const [soundDialogVisible, setSoundDialogVisible] = useState(false);
+
+  //Sound state
+  const [selectedSound, setSelectedSound] = useState<string | null>(null);
+
+   // Presety stan
+   const [savePresetDialogVisible, setSavePresetDialogVisible] = useState(false);
+   const [loadPresetDialogVisible, setLoadPresetDialogVisible] = useState(false);
+   const [presetName, setPresetName] = useState("");
+   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
+   const [presets, setPresets] = useState<Preset[]>([]);
   
+
+   const storage = {
+    getItem: async (key: string) => {
+      if (Platform.OS === 'web') {
+        return localStorage.getItem(key);
+      }
+      return await AsyncStorage.getItem(key);
+    },
+    setItem: async (key: string, value: string) => {
+      if (Platform.OS === 'web') {
+        localStorage.setItem(key, value);
+      } else {
+        await AsyncStorage.setItem(key, value);
+      }
+    }
+  };
+
+  // Załaduj presety przy montowaniu komponentu
+  useEffect(() => {
+    const loadPresets = async () => {
+      try {
+        const savedPresets = await storage.getItem('presets');
+        if (savedPresets) {
+          setPresets(JSON.parse(savedPresets));
+        }
+      } catch (error) {
+        console.error('Błąd ładowania presetów:', error);
+      }
+    };
+    loadPresets();
+  }, []);
+
+  // Zapisz preset
+  const handleSavePreset = async () => {
+    if (!presetName) {
+      showSnackbar('Podaj nazwę presetu', 'error');
+      return;
+    }
+
+    try {
+      const newPreset: Preset = {
+        id: Date.now().toString(),
+        name: presetName,
+        data: formData
+      };
+
+      const updatedPresets = [...presets, newPreset];
+      await storage.setItem('presets', JSON.stringify(updatedPresets));
+      
+      setPresets(updatedPresets);
+      setPresetName('');
+      setSavePresetDialogVisible(false);
+      showSnackbar('Preset został zapisany', 'success');
+    } catch (error) {
+      console.error('Błąd zapisywania presetu:', error);
+      showSnackbar('Błąd zapisywania presetu', 'error');
+    }
+  };
+
+  // Wczytaj preset
+  const handleLoadPreset = async () => {
+    if (!selectedPreset) return;
+
+    try {
+      const presetToLoad = presets.find(p => p.id === selectedPreset);
+      if (presetToLoad) {
+        setFormData(presetToLoad.data);
+        setLoadPresetDialogVisible(false);
+        showSnackbar('Preset został wczytany', 'success');
+      }
+    } catch (error) {
+      console.error('Błąd wczytywania presetu:', error);
+      showSnackbar('Błąd wczytywania presetu', 'error');
+    }
+  };
+
+  // Usuń preset
+  const handleDeletePreset = async (presetId: string) => {
+    try {
+      const updatedPresets = presets.filter(p => p.id !== presetId);
+      await storage.setItem('presets', JSON.stringify(updatedPresets));
+      setPresets(updatedPresets);
+      showSnackbar('Preset został usunięty', 'success');
+    } catch (error) {
+      console.error('Błąd usuwania presetu:', error);
+      showSnackbar('Błąd usuwania presetu', 'error');
+    }
+  };
+
+
   // Session form state
   const [currentSession, setCurrentSession] = useState<Session | null>(null);  const [formData, setFormData] = useState({
     name: "",         // New field for session name
@@ -58,6 +171,10 @@ const ExaminerDashboardScreen = () => {
     etco2: "35",      // End-tidal CO2 (mmHg)
     rr: "12"          // Respiratory rate (breaths/min)
   });
+  
+
+
+
   
   // Form errors
   const [formErrors, setFormErrors] = useState({
@@ -202,6 +319,14 @@ const ExaminerDashboardScreen = () => {
     setEditDialogVisible(true);
   };
 
+  // Open sound dialog
+  const openSoundDialog = (session: Session) => {
+    setCurrentSession(session);
+    setSelectedSound(null);
+    setSoundDialogVisible(true);
+  };
+
+
   // Open delete confirmation dialog
   const openDeleteDialog = (session: Session) => {
     setCurrentSession(session);
@@ -292,6 +417,8 @@ const ExaminerDashboardScreen = () => {
     }
   };
 
+  
+
   const handleLogout = () => {
     logout();
     router.replace("/");
@@ -323,6 +450,14 @@ const ExaminerDashboardScreen = () => {
         readOnly: "true"
       }
     });
+  };
+  //play sound for a session
+  const handleSendAudioCommand = () => {
+    if (!currentSession || !selectedSound) return;
+  
+    socketService.emitAudioCommand(currentSession.sessionCode, 'PLAY', selectedSound);
+    setSoundDialogVisible(false);
+    showSnackbar("Polecenie odtworzenia dźwięku wysłane", "success");
   };
 
   return (
@@ -426,6 +561,12 @@ const ExaminerDashboardScreen = () => {
                           onPress={() => openDeleteDialog(session)} 
                           iconColor={theme.colors.error}
                         />
+                        <IconButton 
+                          icon="volume-high" 
+                          size={20}
+                          onPress={() => openSoundDialog(session)}
+                          iconColor={theme.colors.secondary}
+                        />
                       </View>
                     </DataTable.Cell>
                   </DataTable.Row>
@@ -434,15 +575,34 @@ const ExaminerDashboardScreen = () => {
             )}
           </ScrollView>
         )}
+        
       </View>
 
       {/* Create Session Dialog */}
       <Portal>
+          {/* Save Preset Dialog */}
+   
         <Dialog visible={createDialogVisible} onDismiss={() => setCreateDialogVisible(false)}>
           <Dialog.Title>Utwórz nową sesję</Dialog.Title>
           <Dialog.ScrollArea style={styles.dialogScrollArea}>
             <ScrollView>
               <View style={styles.dialogContent}>
+              <View style={styles.presetButtonsContainer}>
+    <Button 
+      mode="outlined" 
+      onPress={() => setLoadPresetDialogVisible(true)}
+      style={styles.presetButton}
+    >
+      Wczytaj preset
+    </Button>
+    <Button 
+      mode="contained-tonal" 
+      onPress={() => setSavePresetDialogVisible(true)}
+      style={styles.presetButton}
+    >
+      Zapisz jako preset
+    </Button>
+  </View>
                 <TextInput
                   label="Nazwa sesji"
                   value={formData.name}
@@ -655,6 +815,69 @@ const ExaminerDashboardScreen = () => {
               </View>
             </ScrollView>
           </Dialog.ScrollArea>
+          <Dialog visible={savePresetDialogVisible} onDismiss={() => setSavePresetDialogVisible(false)}>
+    <Dialog.Title>Zapisz konfigurację jako preset</Dialog.Title>
+    <Dialog.Content>
+      <TextInput
+        label="Nazwa presetu"
+        value={presetName}
+        onChangeText={setPresetName}
+        mode="outlined"
+        style={styles.input}
+        placeholder="Wprowadź nazwę presetu"
+      />
+    </Dialog.Content>
+    <Dialog.Actions>
+      <Button onPress={() => setSavePresetDialogVisible(false)}>Anuluj</Button>
+      <Button onPress={handleSavePreset}>Zapisz</Button>
+    </Dialog.Actions>
+  </Dialog>
+
+    {/* Load Preset Dialog */}
+    <Dialog visible={loadPresetDialogVisible} onDismiss={() => setLoadPresetDialogVisible(false)}>
+    <Dialog.Title>Wybierz preset do wczytania</Dialog.Title>
+    <Dialog.ScrollArea style={styles.dialogScrollArea}>
+      <ScrollView>
+        {presets.length === 0 ? (
+          <Text style={styles.emptyStateText}>Brak zapisanych presetów</Text>
+        ) : (
+          <RadioButton.Group 
+            onValueChange={value => setSelectedPreset(value)} 
+            value={selectedPreset || ""}
+          >
+            {presets.map(preset => (
+              <List.Item
+                key={preset.id}
+                title={preset.name}
+                description={`Utworzono: ${new Date(parseInt(preset.id)).toLocaleDateString()}`}
+                onPress={() => setSelectedPreset(preset.id)}
+                right={props => (
+                  <View style={styles.presetItemActions}>
+                    <RadioButton {...props} value={preset.id} />
+                    <IconButton
+                      icon="delete"
+                      size={20}
+                      onPress={() => handleDeletePreset(preset.id)}
+                      iconColor={theme.colors.error}
+                    />
+                  </View>
+                )}
+              />
+            ))}
+          </RadioButton.Group>
+        )}
+      </ScrollView>
+    </Dialog.ScrollArea>
+    <Dialog.Actions>
+      <Button onPress={() => setLoadPresetDialogVisible(false)}>Anuluj</Button>
+      <Button 
+        onPress={handleLoadPreset}
+        disabled={!selectedPreset}
+      >
+        Wczytaj
+      </Button>
+    </Dialog.Actions>
+  </Dialog>
           <Dialog.Actions>
             <Button onPress={() => setCreateDialogVisible(false)}>Anuluj</Button>
             <Button onPress={handleCreateSession}>Utwórz</Button>
@@ -1133,6 +1356,51 @@ const ExaminerDashboardScreen = () => {
             <Button onPress={handleDeleteSession} textColor={theme.colors.error}>Usuń</Button>
           </Dialog.Actions>
         </Dialog>
+          
+        <Dialog
+  visible={soundDialogVisible}
+  onDismiss={() => setSoundDialogVisible(false)}
+>
+        <Dialog.Title>Odtwórz dźwięk</Dialog.Title>
+        <Dialog.Content>
+          <Text>
+            Wybierz dźwięk do odtworzenia w sesji{" "}
+            <Text style={{ fontWeight: "bold" }}>{currentSession?.sessionCode}</Text>
+          </Text>
+          <RadioButton.Group
+            onValueChange={value => setSelectedSound(value)}
+            value={selectedSound || ""}
+          >
+            {[
+              { label: "Kaszel", value: "kaszel" },
+              { label: "Szum serca", value: "szum-serca" },
+              { label: "Normalne bicie", value: "normalne-bicie" },
+            ].map(option => (
+              <List.Item
+                key={option.value}
+                title={option.label}
+                onPress={() => setSelectedSound(option.value)}
+                right={props => (
+                  <RadioButton
+                    {...props}
+                    value={option.value}
+                  />
+                )}
+              />
+            ))}
+          </RadioButton.Group>
+        </Dialog.Content>
+        <Dialog.Actions>
+          <Button onPress={() => setSoundDialogVisible(false)}>Anuluj</Button>
+          <Button
+            onPress={handleSendAudioCommand}
+            disabled={!selectedSound}
+          >
+            Odtwórz
+          </Button>
+        </Dialog.Actions>
+      </Dialog>      
+
 
         {/* View Session Details Dialog */}
         <Dialog visible={viewDialogVisible} onDismiss={() => setViewDialogVisible(false)} style={styles.viewDialog}>
@@ -1273,6 +1541,7 @@ const ExaminerDashboardScreen = () => {
             </Button>
           </Dialog.Actions>
         </Dialog>
+        
       </Portal>
 
       <FAB
@@ -1452,6 +1721,19 @@ const styles = StyleSheet.create({
   dialogContent: {
     paddingHorizontal: 24,
     paddingVertical: 8,
+  },
+  presetButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginVertical: 16,
+    gap: 8,
+  },
+  presetButton: {
+    flex: 1,
+  },
+  presetItemActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { 
   View, 
   Text, 
@@ -26,7 +26,10 @@ interface Device {
   deviceClass: number | null; 
   profiles?: string[]; 
 }
-
+export interface BluetoothComponentRef {
+  playSound: (soundName: string) => Promise<void>;
+  disconnectAll: () => Promise<void>;
+}
 type NativeBluetoothModule = {
   disconnectAudio(): void;
   getDeviceProfiles(deviceAddress: string): Promise<string[]>;
@@ -37,7 +40,7 @@ type NativeBluetoothModule = {
 const { BluetoothModule } = NativeModules;
 const nativeBluetoothModule = BluetoothModule as NativeBluetoothModule;
 
-export const BluetoothComponent = () => {
+export const BluetoothComponent = forwardRef<BluetoothComponentRef>((props, ref) => {
   const [devices, setDevices] = useState<Device[]>([]);
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,6 +51,18 @@ export const BluetoothComponent = () => {
   const [soundObjects, setSoundObjects] = useState<{[key: string]: Audio.Sound}>({});
   const [isSoundListExpanded, setIsSoundListExpanded] = useState(false);
   const { colors } = useTheme();
+
+  useImperativeHandle(ref, () => ({
+    playSound: async (soundName: string) => {
+      const soundToPlay = sounds.find(s => s.name === soundName);
+      if (!soundToPlay) {
+        setError(`Dźwięk ${soundName} nie znaleziony`);
+        return;
+      }
+      await handlePlaySound(soundToPlay);
+    },
+    disconnectAll: disconnectAllDevices
+  }));
 
   useEffect(() => {
     initBluetooth();
@@ -97,6 +112,7 @@ export const BluetoothComponent = () => {
   }, []);
   
 
+  
   const cleanup = () => {
     try {
       if (BluetoothSerial && typeof BluetoothSerial.cancelDiscovery === 'function') {
@@ -154,7 +170,50 @@ export const BluetoothComponent = () => {
     }
   };
 
-
+  const handlePlaySound = async (soundItem: typeof sounds[0]) => {
+    try {
+      console.log(`[DEBUG] Rozpoczynam odtwarzanie '${soundItem.name}'`);
+  
+      // Krok 1: Sprawdź czy dźwięk istnieje
+      if (!soundObjects[soundItem.name]) {
+        console.log('[ERROR] Dźwięk nie został załadowany');
+        return;
+      }
+  
+      // Krok 2: Odtwórz na urządzeniach audio (A2DP/HFP)
+      const audioDevices = connectedDevices.filter(
+        d => d.profiles?.includes('A2DP') || d.profiles?.includes('HFP')
+      );
+      
+      if (audioDevices.length > 0) {
+        console.log(`[AUDIO] Odtwarzam lokalnie dla ${audioDevices.length} urządzeń`);
+        await soundObjects[soundItem.name].replayAsync();
+      }
+  
+      // Krok 3: Wyślij komendę do urządzeń SPP
+      const sppDevices = connectedDevices.filter(
+        d => !d.profiles?.includes('A2DP') && !d.profiles?.includes('HFP')
+      );
+      
+      if (sppDevices.length > 0) {
+        console.log(`[SPP] Wysyłam 'PLAY' do ${sppDevices.length} urządzeń`);
+        await Promise.all(
+          sppDevices.map(async (device) => {
+            try {
+              await BluetoothSerial.writeToDevice(device.address, 'PLAY\n');
+              console.log(`[SPP] Wysłano do ${device.address}`);
+            } catch (err) {
+              console.error(`[SPP] Błąd dla ${device.address}:`, err);
+            }
+          })
+        );
+      }
+  
+      console.log('[SUKCES] Kompletne wykonanie');
+    } catch (err) {
+      console.error('[KRYTYCZNY BŁĄD]', err);
+    }
+  };
   const playSound = async (soundName: string) => {
     if (!soundObjects[soundName]) {
       setError(`Dźwięk ${soundName} nie jest gotowy do odtworzenia`);
@@ -674,7 +733,7 @@ export const BluetoothComponent = () => {
       />
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
