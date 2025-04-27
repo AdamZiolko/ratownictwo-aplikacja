@@ -9,10 +9,7 @@ interface AuthProtectionProps {
   requiredRole?: string;
 }
 
-/**
- * Component to protect routes that require authentication
- * Can also specify a required role for more fine-grained access control
- */
+
 export default function AuthProtection({ 
   children, 
   requiredRole 
@@ -22,11 +19,11 @@ export default function AuthProtection({
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
-      // Redirect to login if not authenticated
+      
       router.replace('/routes/examiner-login');
     }
     
-    // Check for required role if specified
+    
     if (
       !loading && 
       isAuthenticated && 
@@ -34,7 +31,7 @@ export default function AuthProtection({
       user?.roles && 
       !user.roles.includes(requiredRole)
     ) {
-      // Redirect to dashboard if user doesn't have the required role
+      
       router.replace('/routes/student-access');
     }
   }, [loading, isAuthenticated, user, requiredRole, router]);
@@ -47,7 +44,7 @@ export default function AuthProtection({
     );
   }
 
-  // Only render children if authenticated (and has required role if specified)
+  
   if (
     isAuthenticated && 
     (!requiredRole || (user?.roles && user.roles.includes(requiredRole)))
@@ -55,7 +52,7 @@ export default function AuthProtection({
     return <>{children}</>;
   }
 
-  // Return empty view while redirecting
+  
   return <View />;
 }
 

@@ -1,4 +1,4 @@
-// app/screens/student/StudentSessionScreen.tsx
+
 
 import React, { useState, useEffect, useRef } from 'react';
 import {
@@ -16,7 +16,7 @@ import { View, StyleSheet, ScrollView, Platform } from 'react-native';
 import { socketService } from '@/services/SocketService';
 import { Audio } from 'expo-av';
 
-// mapa soundName → plik mp3
+
 const soundFiles: Record<string, any> = {
   kaszel: require('../../../assets/sounds/kaszel.mp3'),
 };
@@ -28,15 +28,15 @@ const StudentSessionScreen = () => {
   const [error, setError] = useState<string | null>(null);
   const [sessionData, setSessionData] = useState<Session | null>(null);
 
-  // ref do cache'a dźwięków
+  
   const soundObjects = useRef<Record<string, Audio.Sound>>({});
 
-  // retry handler
+  
   const handleRetry = () => {
     fetchSession();
   };
 
-  // 1) fetch session
+  
   const fetchSession = async () => {
     if (!accessCode) {
       setError('No access code provided');
@@ -56,12 +56,12 @@ const StudentSessionScreen = () => {
     }
   };
 
-  // zamiast useEffect(fetchSession, [accessCode])
+  
   useEffect(() => {
     fetchSession();
   }, [accessCode]);
 
-  // 2) live updates
+  
   useEffect(() => {
     let unsub: (() => void) | undefined;
     if (accessCode) {
@@ -77,11 +77,11 @@ const StudentSessionScreen = () => {
     };
   }, [accessCode]);
 
-  // 3) preload audio & ustaw AudioMode (tylko na native)
+  
   useEffect(() => {
     if (Platform.OS === 'web') return;
 
-    // ustawienia Audio
+    
     Audio.setAudioModeAsync({
       allowsRecordingIOS: false,
       staysActiveInBackground: false,
@@ -106,12 +106,12 @@ const StudentSessionScreen = () => {
 
     return () => {
       isMounted = false;
-      // cleanup sounds
+      
       Object.values(soundObjects.current).forEach(s => s.unloadAsync());
     };
   }, []);
 
-  // 4) nasłuch audio-command → play (tylko na native)
+  
   useEffect(() => {
     if (Platform.OS === 'web' || !accessCode) return;
 

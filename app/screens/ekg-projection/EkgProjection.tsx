@@ -4,13 +4,13 @@ import { Appbar, Button, Surface, Text, Portal, Chip, Card, useTheme, FAB } from
 import { EkgType, NoiseType } from '../../../services/EkgFactory';
 import { useLocalSearchParams, router } from 'expo-router';
 
-// Import separated components
+
 import EkgDisplay from '../../../components/ekg/EkgDisplay';
 import EkgSettingsDialog from '../../../components/ekg/EkgSettingsDialog';
 import { useNoiseState } from '@/hooks/ekg/useNoiseState';
 import { useEkgState } from '@/hooks/ekg/useEkgState';
 
-// Custom hooks
+
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -28,11 +28,11 @@ const EkgProjection: React.FC<EkgProjectionProps> = ({
     const [showSettingsDialog, setShowSettingsDialog] = useState(false);
     const [settingsMode, setSettingsMode] = useState<'heart-rate'|'noise'|'rhytm-type'>('heart-rate');
     
-    // Get rhythm type and BPM from params if provided
+    
     const rhythmTypeParam = params.rhythmType as string;
     const bpmParam = params.bpm ? parseInt(params.bpm as string, 10) : initialBpm;
     
-    // Determine initial EKG type from route parameters
+    
     const getInitialEkgType = (): EkgType => {
         if (rhythmTypeParam && Object.values(EkgType).includes(rhythmTypeParam as EkgType)) {
             return rhythmTypeParam as EkgType;
@@ -40,7 +40,7 @@ const EkgProjection: React.FC<EkgProjectionProps> = ({
         return EkgType.NORMAL;
     };
     
-    // Use custom hooks for EKG and noise state management
+    
     const {
         ekgType,
         bpm,
@@ -63,7 +63,7 @@ const EkgProjection: React.FC<EkgProjectionProps> = ({
         getNoiseColor
     } = useNoiseState();
     
-    // Initialize slider value when mode changes
+    
     useEffect(() => {
         if (settingsMode === 'heart-rate') {
             handleSliderValueChange(bpm);
@@ -152,7 +152,7 @@ const EkgProjection: React.FC<EkgProjectionProps> = ({
                 </Button>
             </View>
 
-            {/* Display rhythm info */}
+            {}
             <View style={styles.rhythmInfoContainer}>
                 <Text style={styles.rhythmInfoTitle}>
                     {getRhythmTypeLabel()}

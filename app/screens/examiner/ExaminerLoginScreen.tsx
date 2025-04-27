@@ -11,14 +11,14 @@ const ExaminerLoginScreen = () => {
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
   
-  // Login state
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
   
-  // Register state
+  
   const [regUsername, setRegUsername] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
@@ -30,30 +30,30 @@ const ExaminerLoginScreen = () => {
 
   const { login, register } = useAuth();
 
-  // Email validation
+  
   const isValidEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
 
   const handleLogin = async () => {
-    // Reset error state
+    
     setLoginError('');
     
-    // Basic validation
+    
     if (!email.trim() || !password.trim()) {
       setLoginError('Email i hasło są wymagane');
       return;
     }
     
-    // Show loading state
+    
     setLoginLoading(true);
     
     try {
-      // Use the auth context for real authentication
+      
       await login(email, password);
       
-      // Navigate to dashboard on successful login
+      
       router.push('/routes/examiner-dashboard');
     } catch (err: any) {
       setLoginError(err.message || 'Logowanie nie powiodło się. Sprawdź swoje dane i spróbuj ponownie.');
@@ -65,10 +65,10 @@ const ExaminerLoginScreen = () => {
   };
 
   const handleRegister = async () => {
-    // Reset error
+    
     setRegisterError('');
     
-    // Validate inputs
+    
     if (!regUsername || !regEmail || !regPassword || !confirmPassword) {
       setRegisterError('Wszystkie pola są wymagane');
       return;
@@ -96,7 +96,7 @@ const ExaminerLoginScreen = () => {
       setSnackbarMessage('Rejestracja pomyślna! Możesz się teraz zalogować.');
       setSnackbarVisible(true);
       
-      // Clear form and switch to login tab
+      
       setRegUsername('');
       setRegEmail('');
       setRegPassword('');
@@ -187,7 +187,7 @@ const ExaminerLoginScreen = () => {
               <Button
                 mode="text"
                 onPress={() => {
-                  // In a real app, this would navigate to a password reset screen
+                  
                   console.log('Forgot password pressed');
                   setSnackbarMessage('Funkcja resetowania hasła będzie dostępna wkrótce.');
                   setSnackbarVisible(true);

@@ -4,7 +4,7 @@ import { Text, TextInput, Button, HelperText, IconButton } from 'react-native-pa
 import { router } from 'expo-router';
 import { sessionService } from '@/services/SessionService';
 
-// Create memoized components for static UI elements
+
 const MemoizedTitle = React.memo(({ title }: { title: string }) => (
   <Text variant="headlineMedium" style={styles.title}>
     {title}
@@ -51,18 +51,18 @@ const StudentAccessScreen = () => {
   }, [accessCode]);
 
   const handleSubmit = useCallback(async () => {
-    // Hide keyboard
+    
     Keyboard.dismiss();
     
-    // Reset general error state
+    
     setError('');
     
-    // Validate all fields
+    
     if (!validateFields()) {
       return;
     }
     
-    // Show loading state
+    
     setIsLoading(true);
     
     try {
@@ -74,7 +74,7 @@ const StudentAccessScreen = () => {
         return;
       }
 
-      // Only navigate if session is valid
+      
       router.push({
         pathname: '/routes/student-session',
         params: { 
@@ -100,7 +100,7 @@ const StudentAccessScreen = () => {
     router.back();
   }, []);
 
-  // Memoize error messages to prevent re-renders
+  
   const errorMessage = useMemo(() => {
     if (fieldErrors.accessCode) {
       return (
@@ -166,7 +166,7 @@ const StudentAccessScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  // ...existing code...
+  
   scrollContainer: {
     flexGrow: 1,
   },

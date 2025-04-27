@@ -4,7 +4,7 @@ import { useTheme } from 'react-native-paper';
 import CustomSlider from './CustomSlider';
 import { EkgType } from '@/services/EkgFactory';
 
-// Default BPM values
+
 const MIN_BPM = 30;
 const MAX_BPM = 220;
 
@@ -27,10 +27,10 @@ const HeartRateControls: React.FC<HeartRateControlsProps> = ({
 }) => {
   const theme = useTheme();
   
-  // Common presets for medical scenarios
+  
   const presetBpmValues = [45, 60, 72, 100, 120, 150];
   
-  // Get color for BPM indicator
+  
   const getBpmIndicatorColor = () => {
     if (sliderValue < 60) return theme.colors.error;
     if (sliderValue > 100) return theme.colors.secondary;

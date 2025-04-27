@@ -31,7 +31,7 @@ const RhythmSelection = ({
 }: RhythmSelectionProps) => {
   const theme = useTheme();
 
-  // Define the rhythm types to display
+  
   const rhythmTypes = [
     EkgType.NORMAL,
     EkgType.TACHYCARDIA,
@@ -66,7 +66,7 @@ const RhythmSelection = ({
   );
 };
 
-// Rhythm card component that displays a rhythm type with preview
+
 interface RhythmCardProps {
   type: EkgType;
   isSelected: boolean;
@@ -81,32 +81,32 @@ const RhythmCard: React.FC<RhythmCardProps> = ({
   theme,
 }) => {
   const [pathData, setPathData] = useState("");
-  const svgWidth = SCREEN_WIDTH - 48; // Account for padding
+  const svgWidth = SCREEN_WIDTH - 48; 
   const svgHeight = 200;
 
-  // Generate sample EKG pattern for the preview
+  
   useEffect(() => {
     generatePreviewPath();
   }, []);
 
   const generatePreviewPath = () => {
-    // Get default BPM for this rhythm type
+    
     const bpm = EkgFactory.getBpmForType(type);
 
     let path = "";
     const baseline = svgHeight / 4;
     const pointsCount = 500;
-    const padding = 0; // Add padding from sides
-    const effectiveWidth = svgWidth - (padding * 2); // Account for padding
+    const padding = 0; 
+    const effectiveWidth = svgWidth - (padding * 2); 
 
-    // Generate points for the path
+    
     for (let i = 0; i < pointsCount; i++) {
-      const x = padding + (i / pointsCount) * effectiveWidth; // Add padding to x coordinate
-      // Use EkgFactory to generate y value based on rhythm type
-      let y = EkgFactory.generateEkgValue(x - padding, type, bpm, NoiseType.NONE); // Subtract padding for calculation
+      const x = padding + (i / pointsCount) * effectiveWidth; 
+      
+      let y = EkgFactory.generateEkgValue(x - padding, type, bpm, NoiseType.NONE); 
 
-      // Normalize value to match main EKG display and center it
-      y = baseline + y; // Scale down the amplitude to 80% to ensure it fits nicely
+      
+      y = baseline + y; 
 
       if (i === 0) {
         path += `M ${x} ${y}`;
@@ -118,29 +118,29 @@ const RhythmCard: React.FC<RhythmCardProps> = ({
     setPathData(path);
   };
 
-  // Get descriptive information about this rhythm
+  
   const name = EkgFactory.getNameForType(type);
   const description = EkgFactory.getDescriptionForType(type);
   const bpm = EkgFactory.getBpmForType(type);
 
-  // Determine the severity color based on the rhythm type
+  
   const getSeverityColor = () => {
     switch (type) {
       case EkgType.VFIB:
       case EkgType.VTACH:
       case EkgType.TORSADE:
       case EkgType.ASYSTOLE:
-        return theme.colors.error; // Critical
+        return theme.colors.error; 
       case EkgType.AFIB:
       case EkgType.HEART_BLOCK:
-        return "#E65100"; // Warning (orange)
+        return "#E65100"; 
       case EkgType.TACHYCARDIA:
       case EkgType.BRADYCARDIA:
       case EkgType.PVC:
-        return theme.colors.secondary; // Caution
+        return theme.colors.secondary; 
       case EkgType.NORMAL:
       default:
-        return theme.colors.primary; // Normal
+        return theme.colors.primary; 
     }
   };
 
@@ -176,7 +176,7 @@ const RhythmCard: React.FC<RhythmCardProps> = ({
             </View>
           </View>
 
-          {/* EKG Preview */}
+          {}
           <View style={styles.ekgPreviewContainer}>
             <Svg 
               height={svgHeight} 
@@ -202,7 +202,7 @@ const RhythmCard: React.FC<RhythmCardProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // Używamy koloru tła z motywu zamiast sztywnej wartości "#fff"
+    
   },
   header: {
     flexDirection: "row",
@@ -257,13 +257,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   bpmText: {
-    color: "white", // Biały tekst dobrze wygląda na kolorowym tle badge'a
+    color: "white", 
     fontSize: 12,
     fontWeight: "bold",
   },
   ekgPreviewContainer: {
     marginVertical: 8,
-    // Używamy koloru z motywu zamiast sztywnej wartości "#F5F5F5"
+    
     borderRadius: 8,
     overflow: "hidden",
   },
@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
   footer: {
     padding: 16,
     borderTopWidth: 1,
-    // Używamy koloru z motywu zamiast sztywnej wartości "rgba(0,0,0,0.1)"
+    
   },
   applyButton: {
     width: "100%",

@@ -54,8 +54,8 @@ const RoleSelectionScreen = () => {
         </Surface>
       </View>
 
-      {/* Dodajemy komponent Bluetooth do testowania */}
-      {/* <BluetoothComponent /> */}
+      {}
+      {}
     </View>
   );
 };

@@ -23,36 +23,36 @@ const CustomSlider: React.FC<CustomSliderProps> = ({
   thumbColor,
 }: CustomSliderProps) => {
   const sliderRef = useRef<View>(null);
-  const [measureWidth, setMeasureWidth] = useState(200); // Default width until measured
-  const [localValue, setLocalValue] = useState(value); // Local state to track value
+  const [measureWidth, setMeasureWidth] = useState(200); 
+  const [localValue, setLocalValue] = useState(value); 
   const thumbRadius = 12;
   const isSlidingRef = useRef(false);
   const startPositionRef = useRef(0);
   const trackPositionRef = useRef({ x: 0, width: 0 });
   
-  // Update local value when external value changes and we're not sliding
+  
   useEffect(() => {
     if (!isSlidingRef.current) {
       setLocalValue(value);
     }
   }, [value]);
   
-  // Calculate value from touch position
+  
   const calculateValueFromTouch = useCallback((x: number): number => {
     const { x: trackX, width: trackWidth } = trackPositionRef.current;
     if (trackWidth <= 0) return localValue;
     
-    // Calculate relative position in track (0 to 1)
+    
     const relativePosition = Math.max(0, Math.min(1, (x - trackX) / trackWidth));
     
-    // Map to value range
+    
     const newValue = minimumValue + relativePosition * (maximumValue - minimumValue);
     
-    // Round to integer
+    
     return Math.round(Math.max(minimumValue, Math.min(maximumValue, newValue)));
   }, [localValue, minimumValue, maximumValue]);
   
-  // Get thumb position from current value (in pixels)
+  
   const getThumbPosition = useCallback((): number => {
     if (measureWidth <= 0) return thumbRadius;
     
@@ -62,13 +62,13 @@ const CustomSlider: React.FC<CustomSliderProps> = ({
     return Math.max(thumbRadius, Math.min(measureWidth - thumbRadius, position));
   }, [localValue, minimumValue, maximumValue, measureWidth]);
   
-  // Handle slider layout - ensure we get an accurate width measurement
+  
   const handleLayout = useCallback((event: LayoutChangeEvent) => {
     const { width } = event.nativeEvent.layout;
     if (width > 0 && width !== measureWidth) {
       setMeasureWidth(width);
       
-      // Update track position when layout changes
+      
       if (sliderRef.current) {
         sliderRef.current.measure((x, y, width, height, pageX, pageY) => {
           trackPositionRef.current = { x: pageX, width: width };
@@ -77,11 +77,11 @@ const CustomSlider: React.FC<CustomSliderProps> = ({
     }
   }, [measureWidth]);
   
-  // Handle direct track touch/tap
+  
   const handleTrackPress = useCallback((event: GestureResponderEvent) => {
     if (!sliderRef.current) return;
     
-    // Get the x coordinate relative to the track
+    
     sliderRef.current.measure((x, y, width, height, pageX, pageY) => {
       trackPositionRef.current = { x: pageX, width: width };
       const touchX = event.nativeEvent.pageX;
@@ -93,16 +93,16 @@ const CustomSlider: React.FC<CustomSliderProps> = ({
     });
   }, [calculateValueFromTouch, onValueChange, onSlidingComplete]);
   
-  // Create pan responder for thumb dragging with improved handling
+  
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: (_, gestureState) => {
-        // Mark that we're actively sliding
+        
         isSlidingRef.current = true;
         
-        // Update track position information
+        
         if (sliderRef.current) {
           sliderRef.current.measure((x, y, width, height, pageX, pageY) => {
             trackPositionRef.current = { x: pageX, width: width };
@@ -110,7 +110,7 @@ const CustomSlider: React.FC<CustomSliderProps> = ({
         }
       },
       onPanResponderMove: (event, gestureState) => {
-        // Calculate the new position based on the absolute position of the touch
+        
         const touchX = event.nativeEvent.pageX;
         const newValue = calculateValueFromTouch(touchX);
         
@@ -120,20 +120,20 @@ const CustomSlider: React.FC<CustomSliderProps> = ({
         }
       },
       onPanResponderRelease: (event, gestureState) => {
-        // Calculate final value from touch position
+        
         const touchX = event.nativeEvent.pageX;
         const newValue = calculateValueFromTouch(touchX);
         
         setLocalValue(newValue);
         onSlidingComplete(newValue);
         
-        // Mark that sliding has ended
+        
         isSlidingRef.current = false;
       },
     })
   ).current;
   
-  // Force remeasure on mount and when value range changes
+  
   useEffect(() => {
     const timer = setTimeout(() => {
       if (sliderRef.current) {
@@ -155,13 +155,13 @@ const CustomSlider: React.FC<CustomSliderProps> = ({
       ref={sliderRef}
       onLayout={handleLayout}
     >
-      {/* Track area with improved touch handling */}
+      {}
       <TouchableOpacity 
         style={styles.sliderTrackArea}
         onPress={handleTrackPress}
         activeOpacity={0.8}
       >
-        {/* Background track */}
+        {}
         <View 
           style={[
             styles.sliderTrack, 
@@ -169,7 +169,7 @@ const CustomSlider: React.FC<CustomSliderProps> = ({
           ]} 
         />
         
-        {/* Filled portion of track */}
+        {}
         <View 
           style={[
             styles.sliderFill, 
@@ -181,14 +181,14 @@ const CustomSlider: React.FC<CustomSliderProps> = ({
         />
       </TouchableOpacity>
       
-      {/* Thumb/handle with improved touch response */}
+      {}
       <View 
         style={[
           styles.sliderThumb,
           { 
             backgroundColor: thumbColor || '#2196F3',
             left: getThumbPosition() - thumbRadius,
-            // Add shadow appropriate for the platform
+            
             ...Platform.select({
               ios: {
                 shadowColor: '#000',
@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   sliderTrackArea: {
-    height: 40, // Increased touch target for better usability
+    height: 40, 
     justifyContent: 'center',
     borderRadius: 2,
   },
@@ -235,9 +235,9 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     top: 8,
-    marginTop: -6, // Centered on the track
-    zIndex: 1, // Ensure thumb is above track
-    // Improve touch target size for the thumb
+    marginTop: -6, 
+    zIndex: 1, 
+    
   },
 });
 

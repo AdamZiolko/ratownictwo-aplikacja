@@ -28,7 +28,7 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
   const pathDataRef = useRef('');
   const containerRef = useRef<View>(null);
 
-  // Measure container width when mounted
+  
   useLayoutEffect(() => {
     if (containerRef.current) {
       containerRef.current.measure((x, y, width, height, pageX, pageY) => {
@@ -39,7 +39,7 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
     }
   }, []);
 
-  // Draw function with noise
+  
   const draw = () => {
     if (!isRunning || containerWidth === 0) return;
     
@@ -47,7 +47,7 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
     const x = xOffsetRef.current;
 
     if (x > containerWidth) {
-      // Reset drawing
+      
       xOffsetRef.current = 0;
       previousXRef.current = 0;
       previousYRef.current = BASELINE;
@@ -55,15 +55,15 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
       pathDataRef.current = '';
       setPathData('');
     } else {
-      // Generate EKG waveform based on type, BPM and noise
+      
       const ekgValue = EkgFactory.generateEkgValue(x, ekgType, bpm, noiseType);
 
       if (isFirstPointRef.current) {
-        // Start a new path
+        
         pathDataRef.current = `M 0 ${BASELINE} L ${x} ${ekgValue}`;
         isFirstPointRef.current = false;
       } else if (previousXRef.current <= x) {
-        // Append to existing path
+        
         pathDataRef.current += ` L ${x} ${ekgValue}`;
       }
       previousXRef.current = x;
@@ -74,9 +74,9 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
     animationRef.current = requestAnimationFrame(draw);
   };
 
-  // Reset the EKG animation when parameters change
+  
   useEffect(() => {
-    // Force a complete reset of the EKG when BPM or noise changes
+    
     resetEkg();
   }, [bpm, noiseType]);
 
@@ -92,13 +92,13 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
     };
   }, [isRunning, bpm, noiseType, containerWidth]);
 
-  // Reset noise cache when noise type changes
+  
   useEffect(() => {
     EkgFactory.resetNoiseCache();
   }, [noiseType]);
 
   const resetEkg = () => {
-    // Reset drawing
+    
     xOffsetRef.current = 0;
     previousXRef.current = 0;
     previousYRef.current = BASELINE;
@@ -106,11 +106,11 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
     pathDataRef.current = '';
     setPathData('');
     
-    // Reset noise cache for fresh noise patterns
+    
     EkgFactory.resetNoiseCache();
   };
 
-  // Handle container layout changes to measure width
+  
   const onLayout = () => {
     if (containerRef.current) {
       containerRef.current.measure((x, y, width, height, pageX, pageY) => {

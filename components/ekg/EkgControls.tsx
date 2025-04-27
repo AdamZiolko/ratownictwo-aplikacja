@@ -17,19 +17,19 @@ const EkgControls: React.FC<EkgControlsProps> = ({
 }) => {
   const theme = useTheme();
   
-  // State for rhythm type and BPM
+  
   const [rhythmType, setRhythmType] = useState<EkgType>(initialType);
   const [bpm, setBpm] = useState<number>(initialBpm);
   
-  // Handle BPM change from slider
+  
   const handleBpmChange = (newBpm: number) => {
     setBpm(newBpm);
     
-    // If BPM changes but we keep the same rhythm type, it becomes "custom"
-    // unless it's already custom
+    
+    
     const effectiveType = rhythmType === EkgType.CUSTOM ? EkgType.CUSTOM : rhythmType;
     
-    // Notify parent component
+    
     onEkgConfigChange(effectiveType, newBpm);
   };
   
@@ -40,14 +40,14 @@ const EkgControls: React.FC<EkgControlsProps> = ({
           Konfiguracja EKG
         </Text>
         
-        {/* Heart Rhythm Selector */}
+        {}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Wzorzec Rytmu Serca</Text>
         </View>
         
         <Divider style={styles.divider} />
         
-        {/* BPM Slider */}
+        {}
         <View style={styles.section}>
           <View style={styles.bpmHeader}>
             <Text style={styles.sectionLabel}>Tętno</Text>

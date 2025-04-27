@@ -88,7 +88,7 @@ const EkgSettingsDialog: React.FC<EkgSettingsDialogProps> = ({
             />
           )}
           {settingsMode === 'rhytm-type' && (
-            // TODO: Add rhythm type controls component when implemented
+            
             <RhythmSelection
               selectedType={ekgType}
               setSelectedType={onRhythmTypeChange}

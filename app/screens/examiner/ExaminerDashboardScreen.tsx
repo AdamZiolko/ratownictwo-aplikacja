@@ -43,22 +43,22 @@ const ExaminerDashboardScreen = () => {
   const theme = useTheme();
   const { user, logout } = useAuth();
   
-  // Sessions state
+  
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   
-  // Dialog state
+  
   const [createDialogVisible, setCreateDialogVisible] = useState(false);
   const [editDialogVisible, setEditDialogVisible] = useState(false);
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
   const [viewDialogVisible, setViewDialogVisible] = useState(false);
   const [soundDialogVisible, setSoundDialogVisible] = useState(false);
 
-  //Sound state
+  
   const [selectedSound, setSelectedSound] = useState<string | null>(null);
 
-   // Presety stan
+   
    const [savePresetDialogVisible, setSavePresetDialogVisible] = useState(false);
    const [loadPresetDialogVisible, setLoadPresetDialogVisible] = useState(false);
    const [presetName, setPresetName] = useState("");
@@ -82,7 +82,7 @@ const ExaminerDashboardScreen = () => {
     }
   };
 
-  // Załaduj presety przy montowaniu komponentu
+  
   useEffect(() => {
     const loadPresets = async () => {
       try {
@@ -97,7 +97,7 @@ const ExaminerDashboardScreen = () => {
     loadPresets();
   }, []);
 
-  // Zapisz preset
+  
   const handleSavePreset = async () => {
     if (!presetName) {
       showSnackbar('Podaj nazwę presetu', 'error');
@@ -124,7 +124,7 @@ const ExaminerDashboardScreen = () => {
     }
   };
 
-  // Wczytaj preset
+  
   const handleLoadPreset = async () => {
     if (!selectedPreset) return;
 
@@ -141,7 +141,7 @@ const ExaminerDashboardScreen = () => {
     }
   };
 
-  // Usuń preset
+  
   const handleDeletePreset = async (presetId: string) => {
     try {
       const updatedPresets = presets.filter(p => p.id !== presetId);
@@ -155,43 +155,43 @@ const ExaminerDashboardScreen = () => {
   };
 
 
-  // Session form state
+  
   const [currentSession, setCurrentSession] = useState<Session | null>(null);  const [formData, setFormData] = useState({
-    name: "",         // New field for session name
+    name: "",         
     temperature: "36.6",
     rhythmType: EkgType.NORMAL,
     beatsPerMinute: "72",
     noiseLevel: NoiseType.NONE,
     sessionCode: "",
-    isActive: true,   // New field for active status
-    // Add new medical parameters
-    hr: "80",         // Heart rate (BPM)
-    bp: "120/80",     // Blood pressure (mmHg)
-    spo2: "98",       // Oxygen saturation (%)
-    etco2: "35",      // End-tidal CO2 (mmHg)
-    rr: "12"          // Respiratory rate (breaths/min)
+    isActive: true,   
+    
+    hr: "80",         
+    bp: "120/80",     
+    spo2: "98",       
+    etco2: "35",      
+    rr: "12"          
   });
   
 
 
 
   
-  // Form errors
+  
   const [formErrors, setFormErrors] = useState({
     temperature: "",
     beatsPerMinute: "",
     sessionCode: ""
   });
   
-  // Snackbar state
+  
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarType, setSnackbarType] = useState<"success" | "error">("success");
 
-  // Menu state
+  
   const [menuVisible, setMenuVisible] = useState(false);
 
-  // Load sessions on mount and after actions
+  
   useEffect(() => {
     loadSessions();
   }, []);
@@ -201,7 +201,7 @@ const ExaminerDashboardScreen = () => {
       console.log(sessions)
   }, [sessions])
 
-  // Load all sessions from API
+  
   const loadSessions = async () => {
     setLoading(true);
     try {
@@ -216,20 +216,20 @@ const ExaminerDashboardScreen = () => {
     }
   };
 
-  // Handle refresh action
+  
   const onRefresh = () => {
     setRefreshing(true);
     loadSessions();
   };
 
-  // Show a snackbar message
+  
   const showSnackbar = (message: string, type: "success" | "error" = "success") => {
     setSnackbarMessage(message);
     setSnackbarType(type);
     setSnackbarVisible(true);
   };
 
-  // Validate form data
+  
   const validateForm = () => {
     const errors = {
       temperature: "",
@@ -239,7 +239,7 @@ const ExaminerDashboardScreen = () => {
     
     let isValid = true;
 
-    // Validate temperature
+    
     const temp = parseFloat(formData.temperature);
     if (!formData.temperature || isNaN(temp)) {
       errors.temperature = "Podaj prawidłową temperaturę";
@@ -249,7 +249,7 @@ const ExaminerDashboardScreen = () => {
       isValid = false;
     }
 
-    // Validate BPM
+    
     const bpm = parseInt(formData.beatsPerMinute);
     if (!formData.beatsPerMinute || isNaN(bpm)) {
       errors.beatsPerMinute = "Podaj prawidłowe tętno";
@@ -257,7 +257,7 @@ const ExaminerDashboardScreen = () => {
     } else if (bpm < 0 || bpm > 300) {
       errors.beatsPerMinute = "Tętno musi być w zakresie 0-300";
       isValid = false;
-    }    // Validate session code
+    }    
     if (!formData.sessionCode) {
       errors.sessionCode = "Kod sesji jest wymagany";
       isValid = false;
@@ -269,22 +269,22 @@ const ExaminerDashboardScreen = () => {
     setFormErrors(errors);
     return isValid;
   };
-  // Reset form state
+  
   const resetForm = () => {
     setFormData({
-      name: "", // Add name field
+      name: "", 
       temperature: "36.6",
       rhythmType: EkgType.NORMAL,
       beatsPerMinute: "72",
       noiseLevel: NoiseType.NONE,
-      sessionCode: sessionService.generateSessionCode(), // Now returns a string directly
-      isActive: true, // Add isActive field
-      // Reset medical parameters to default values
-      hr: "80",         // Heart rate (BPM)
-      bp: "120/80",     // Blood pressure (mmHg)
-      spo2: "98",       // Oxygen saturation (%)
-      etco2: "35",      // End-tidal CO2 (mmHg)
-      rr: "12"          // Respiratory rate (breaths/min)
+      sessionCode: sessionService.generateSessionCode(), 
+      isActive: true, 
+      
+      hr: "80",         
+      bp: "120/80",     
+      spo2: "98",       
+      etco2: "35",      
+      rr: "12"          
     });
     setFormErrors({
       temperature: "",
@@ -293,12 +293,12 @@ const ExaminerDashboardScreen = () => {
     });
   };
 
-  // Open create session dialog
+  
   const openCreateDialog = () => {
     resetForm();
     setCreateDialogVisible(true);
   };
-  // Open edit session dialog
+  
   const openEditDialog = (session: Session) => {
     setCurrentSession(session);
     setFormData({
@@ -307,8 +307,8 @@ const ExaminerDashboardScreen = () => {
       beatsPerMinute: session.beatsPerMinute ? session.beatsPerMinute.toString() : "72",
       noiseLevel: session.noiseLevel as NoiseType,
       sessionCode: session.sessionCode ? session.sessionCode.toString() : "",
-      isActive: session.isActive !== undefined ? session.isActive : true, // Add the isActive property
-      // Populate medical parameters if available, otherwise use default values
+      isActive: session.isActive !== undefined ? session.isActive : true, 
+      
       hr: session.hr ? session.hr.toString() : "80",
       bp: session.bp || "120/80",
       spo2: session.spo2 ? session.spo2.toString() : "98",
@@ -319,7 +319,7 @@ const ExaminerDashboardScreen = () => {
     setEditDialogVisible(true);
   };
 
-  // Open sound dialog
+  
   const openSoundDialog = (session: Session) => {
     setCurrentSession(session);
     setSelectedSound(null);
@@ -327,31 +327,31 @@ const ExaminerDashboardScreen = () => {
   };
 
 
-  // Open delete confirmation dialog
+  
   const openDeleteDialog = (session: Session) => {
     setCurrentSession(session);
 
     setDeleteDialogVisible(true);
   };
-  // Open view session details dialog
+  
   const openViewDialog = (session: Session) => {
     setCurrentSession(session);
     setViewDialogVisible(true);
   };
-    // Create a new session
+    
   const handleCreateSession = async () => {
     if (!validateForm()) return;
 
     try {
       const newSession = {
-        name: formData.name || `Sesja ${formData.sessionCode}`, // Use provided name or generate one
+        name: formData.name || `Sesja ${formData.sessionCode}`, 
         temperature: parseFloat(formData.temperature),
         rhythmType: formData.rhythmType as number,
         beatsPerMinute: parseInt(formData.beatsPerMinute),
         noiseLevel: formData.noiseLevel as number,
-        sessionCode: formData.sessionCode, // Keep as string
-        isActive: formData.isActive, // Use the isActive field value
-        // Add medical parameters
+        sessionCode: formData.sessionCode, 
+        isActive: formData.isActive, 
+        
         hr: parseInt(formData.hr) || undefined,
         bp: formData.bp,
         spo2: parseInt(formData.spo2) || undefined,
@@ -367,20 +367,20 @@ const ExaminerDashboardScreen = () => {
       console.error("Error creating session:", error);
       showSnackbar("Nie udało się utworzyć sesji", "error");
     }  };
-    // Update an existing session
+    
   const handleUpdateSession = async () => {
     if (!currentSession || !validateForm()) return;
 
     try {
       const updatedSession = {
-        name: formData.name || `Sesja ${formData.sessionCode}`, // Use form data name
+        name: formData.name || `Sesja ${formData.sessionCode}`, 
         temperature: parseFloat(formData.temperature),
         rhythmType: formData.rhythmType as number,
         beatsPerMinute: parseInt(formData.beatsPerMinute),
         noiseLevel: formData.noiseLevel as number,
-        sessionCode: formData.sessionCode, // Keep as string instead of parsing to number
-        isActive: formData.isActive, // Use selected active status
-        // Add medical parameters
+        sessionCode: formData.sessionCode, 
+        isActive: formData.isActive, 
+        
         hr: parseInt(formData.hr) || undefined,
         bp: formData.bp,
         spo2: parseInt(formData.spo2) || undefined,
@@ -400,7 +400,7 @@ const ExaminerDashboardScreen = () => {
     }
   };
 
-  // Delete a session
+  
   const handleDeleteSession = async () => {
     if (!currentSession) return;
 
@@ -424,12 +424,12 @@ const ExaminerDashboardScreen = () => {
     router.replace("/");
   };
 
-  // Get rhythm type name
+  
   const getRhythmTypeName = (type: number): string => {
     return EkgFactory.getNameForType(type as EkgType);
   };
 
-  // Get noise level name
+  
   const getNoiseLevelName = (type: number): string => {
     switch(type as NoiseType) {
       case NoiseType.NONE: return "Brak";
@@ -440,7 +440,7 @@ const ExaminerDashboardScreen = () => {
     }
   };
 
-  // View EKG projection for a session
+  
   const viewEkgProjection = (session: Session) => {
     router.push({
       pathname: "/screens/ekg-projection/EkgProjection",
@@ -451,7 +451,7 @@ const ExaminerDashboardScreen = () => {
       }
     });
   };
-  //play sound for a session
+  
   const handleSendAudioCommand = () => {
     if (!currentSession || !selectedSound) return;
   
@@ -578,9 +578,9 @@ const ExaminerDashboardScreen = () => {
         
       </View>
 
-      {/* Create Session Dialog */}
+      {}
       <Portal>
-          {/* Save Preset Dialog */}
+          {}
    
         <Dialog visible={createDialogVisible} onDismiss={() => setCreateDialogVisible(false)}>
           <Dialog.Title>Utwórz nową sesję</Dialog.Title>
@@ -833,7 +833,7 @@ const ExaminerDashboardScreen = () => {
     </Dialog.Actions>
   </Dialog>
 
-    {/* Load Preset Dialog */}
+    {}
     <Dialog visible={loadPresetDialogVisible} onDismiss={() => setLoadPresetDialogVisible(false)}>
     <Dialog.Title>Wybierz preset do wczytania</Dialog.Title>
     <Dialog.ScrollArea style={styles.dialogScrollArea}>
@@ -884,7 +884,7 @@ const ExaminerDashboardScreen = () => {
           </Dialog.Actions>
         </Dialog>
 
-        {/* Edit Session Dialog */}
+        {}
         <Dialog visible={editDialogVisible} onDismiss={() => setEditDialogVisible(false)}>
           <Dialog.Title>Edytuj sesję</Dialog.Title>
           <Dialog.ScrollArea style={styles.dialogScrollArea}>
@@ -1113,7 +1113,7 @@ const ExaminerDashboardScreen = () => {
           </Dialog.Actions>
         </Dialog>
 
-        {/* Edit Session Dialog */}
+        {}
         <Dialog visible={editDialogVisible} onDismiss={() => setEditDialogVisible(false)}>
           <Dialog.Title>Edytuj sesję</Dialog.Title>
           <Dialog.ScrollArea style={styles.dialogScrollArea}>
@@ -1342,7 +1342,7 @@ const ExaminerDashboardScreen = () => {
           </Dialog.Actions>
         </Dialog>
 
-        {/* Delete Session Dialog */}
+        {}
         <Dialog visible={deleteDialogVisible} onDismiss={() => setDeleteDialogVisible(false)}>
           <Dialog.Title>Usuń sesję</Dialog.Title>
           <Dialog.Content>
@@ -1402,7 +1402,7 @@ const ExaminerDashboardScreen = () => {
       </Dialog>      
 
 
-        {/* View Session Details Dialog */}
+        {}
         <Dialog visible={viewDialogVisible} onDismiss={() => setViewDialogVisible(false)} style={styles.viewDialog}>
           <Dialog.Title>Szczegóły sesji</Dialog.Title>
           <Dialog.Content>

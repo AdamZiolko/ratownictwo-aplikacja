@@ -27,7 +27,7 @@ interface TokenRefreshResponse {
 }
 
 class AuthService {
-  // Register a new user
+  
   async register(data: RegisterData): Promise<any> {
     try {
       const response = await fetch(`${API_URL}signup`, {
@@ -44,7 +44,7 @@ class AuthService {
     }
   }
 
-  // Login user
+  
   async login(data: LoginData): Promise<any> {
     try {
       const response = await fetch(`${API_URL}signin`, {
@@ -62,7 +62,7 @@ class AuthService {
 
       const userData = await response.json();
       
-      // Store user data in AsyncStorage
+      
       await AsyncStorage.setItem('user', JSON.stringify(userData));
       
       if (userData.refreshToken) {
@@ -75,13 +75,13 @@ class AuthService {
     }
   }
 
-  // Logout user
+  
   async logout(): Promise<void> {
     await AsyncStorage.removeItem('user');
     await AsyncStorage.removeItem('refreshToken');
   }
 
-  // Get current user
+  
   async getCurrentUser(): Promise<User | null> {
     const userStr = await AsyncStorage.getItem('user');
     if (userStr) {
@@ -90,13 +90,13 @@ class AuthService {
     return null;
   }
 
-  // Check if user is authenticated
+  
   async isAuthenticated(): Promise<boolean> {
     const user = await this.getCurrentUser();
     return !!user;
   }
 
-  // Refresh token
+  
   async refreshToken(): Promise<TokenRefreshResponse | null> {
     try {
       const refreshToken = await AsyncStorage.getItem('refreshToken');
@@ -120,7 +120,7 @@ class AuthService {
 
       const data: TokenRefreshResponse = await response.json();
       
-      // Update user with new token
+      
       const userStr = await AsyncStorage.getItem('user');
       if (userStr) {
         const user = JSON.parse(userStr);

@@ -19,17 +19,17 @@ export default function RegisterScreen() {
   const { register } = useAuth();
   const router = useRouter();
 
-  // Email validation
+  
   const isValidEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
 
   const handleRegister = async () => {
-    // Reset error
+    
     setError('');
     
-    // Validate inputs
+    
     if (!username || !email || !password || !confirmPassword) {
       setError('All fields are required');
       return;
@@ -57,13 +57,13 @@ export default function RegisterScreen() {
       setSnackbarMessage('Registration successful! Please login.');
       setSnackbarVisible(true);
       
-      // Clear form
+      
       setUsername('');
       setEmail('');
       setPassword('');
       setConfirmPassword('');
       
-      // Navigate to login after a short delay
+      
       setTimeout(() => {
         router.replace('/routes/examiner-login');
       }, 2000);

@@ -50,15 +50,15 @@ function ThemedLayout() {
       primary: '#0077B6',
       secondary: '#48CAE4',
       background: '#ffffff',
-      // Ensure maximum contrast for button text in light mode
+      
       onPrimary: '#FFFFFF',
       onSecondary: '#000000',
       onSurface: '#000000',
-      // Add explicit button text colors
+      
       buttonTextColor: '#FFFFFF',
       error: '#B00020',
     },
-    fonts: MD3LightTheme.fonts, // Keep Paper's font for PaperProvider
+    fonts: MD3LightTheme.fonts, 
   };
 
   const CombinedDarkTheme = {
@@ -70,15 +70,15 @@ function ThemedLayout() {
       primary: '#48CAE4',
       secondary: '#90E0EF',
       background: '#121212',
-      // Ensure maximum contrast for button text in dark mode
+      
       onPrimary: '#000000',
       onSecondary: '#000000',
       onSurface: '#FFFFFF',
-      // Add explicit button text colors
+      
       buttonTextColor: '#FFFFFF',
       error: '#CF6679',
     },
-    fonts: MD3DarkTheme.fonts, // Keep Paper's font for PaperProvider
+    fonts: MD3DarkTheme.fonts, 
   };
 
   const NavigationCompatibleLightTheme = {

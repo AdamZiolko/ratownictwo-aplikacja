@@ -10,9 +10,7 @@ const STUDENT_DATA_KEY = 'student_profile_data';
 
 export class StudentStorageService {
 
-    /**
-     * Save student data to AsyncStorage
-     */
+    
     static async saveStudent(student: Student): Promise<void> {
         try {
             const jsonValue = JSON.stringify(student);
@@ -24,9 +22,7 @@ export class StudentStorageService {
         }
     }
 
-    /**
-     * Get student data from AsyncStorage
-     */
+    
     static async getStudent(): Promise<Student | null> {
         try {
             const jsonValue = await AsyncStorage.getItem(STUDENT_DATA_KEY);
@@ -37,9 +33,7 @@ export class StudentStorageService {
         }
     }
 
-    /**
-     * Clear student data from AsyncStorage
-     */
+    
     static async clearStudent(): Promise<void> {
         try {
             await AsyncStorage.removeItem(STUDENT_DATA_KEY);

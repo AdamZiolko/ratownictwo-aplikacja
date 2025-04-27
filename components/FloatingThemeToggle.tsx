@@ -15,7 +15,7 @@ const FloatingThemeToggle: React.FC<FloatingThemeToggleProps> = ({
   const { theme, toggleTheme } = useTheme();
   const paperTheme = usePaperTheme();
 
-  // Określ styl pozycji na podstawie przekazanego parametru
+  
   const getPositionStyle = () => {
     switch (position) {
       case 'bottomLeft':

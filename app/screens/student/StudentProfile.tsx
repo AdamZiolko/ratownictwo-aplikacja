@@ -87,27 +87,27 @@ const StudentProfileScreen = () => {
     setIsLoading(true);
 
     try {
-      // Create student object
+      
       const student: Student = {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         albumNumber: albumNumber.trim(),
       };
       
-      // Save student data to AsyncStorage
+      
       await StudentStorageService.saveStudent(student);
       
-      // Set state to show card
+      
       setHasExistingData(true);
       setShowForm(false);
       
-      // If submitting from card view, navigate to the next screen
+      
       if (!showForm) {
         navigateToSession();
       }
     } catch (error) {
       console.error('Error saving student profile:', error);
-      // You could add error handling UI here
+      
     } finally {
       setIsLoading(false);
     }

@@ -27,7 +27,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
-  // Check for existing session on mount
+  
   useEffect(() => {
     const initAuth = async () => {
       try {
@@ -48,7 +48,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initAuth();
   }, []);
 
-  // Login function
+  
   const login = async (username: string, password: string) => {
     try {
       setLoading(true);
@@ -64,7 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Register function
+  
   const register = async (username: string, email: string, password: string) => {
     try {
       setLoading(true);
@@ -78,7 +78,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Logout function
+  
   const logout = async () => {
     try {
       setLoading(true);

@@ -34,7 +34,7 @@ export function useOrientation(): {
     });
 
     return () => {
-      // Clean up the event listener
+      
       subscription.remove();
     };
   }, []);

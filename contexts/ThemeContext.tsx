@@ -20,7 +20,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [themeMode, setThemeModeState] = useState<ThemeMode>('system');
   const [theme, setTheme] = useState<'light' | 'dark'>(deviceTheme);
 
-  // Load saved theme preference
+  
   useEffect(() => {
     const loadThemePreference = async () => {
       try {
@@ -36,7 +36,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     loadThemePreference();
   }, []);
 
-  // Update the actual theme when theme mode changes
+  
   useEffect(() => {
     if (themeMode === 'system') {
       setTheme(deviceTheme);
@@ -45,7 +45,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [themeMode, deviceTheme]);
 
-  // Save theme preference when it changes
+  
   const setThemeMode = async (mode: ThemeMode) => {
     try {
       await AsyncStorage.setItem(THEME_PREFERENCE_KEY, mode);
@@ -55,7 +55,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  // Toggle between light and dark, preserving system as needed
+  
   const toggleTheme = () => {
     if (themeMode === 'system') {
       setThemeMode(deviceTheme === 'light' ? 'dark' : 'light');

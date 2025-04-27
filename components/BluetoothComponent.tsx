@@ -174,13 +174,13 @@ export const BluetoothComponent = forwardRef<BluetoothComponentRef>((props, ref)
     try {
       console.log(`[DEBUG] Rozpoczynam odtwarzanie '${soundItem.name}'`);
   
-      // Krok 1: Sprawdź czy dźwięk istnieje
+      
       if (!soundObjects[soundItem.name]) {
         console.log('[ERROR] Dźwięk nie został załadowany');
         return;
       }
   
-      // Krok 2: Odtwórz na urządzeniach audio (A2DP/HFP)
+      
       const audioDevices = connectedDevices.filter(
         d => d.profiles?.includes('A2DP') || d.profiles?.includes('HFP')
       );
@@ -190,7 +190,7 @@ export const BluetoothComponent = forwardRef<BluetoothComponentRef>((props, ref)
         await soundObjects[soundItem.name].replayAsync();
       }
   
-      // Krok 3: Wyślij komendę do urządzeń SPP
+      
       const sppDevices = connectedDevices.filter(
         d => !d.profiles?.includes('A2DP') && !d.profiles?.includes('HFP')
       );
@@ -237,26 +237,26 @@ export const BluetoothComponent = forwardRef<BluetoothComponentRef>((props, ref)
     try {
       const activeConnections = connectedDevices.filter(device => device.connected);
       
-      // Najpierw odtwórz dźwięk lokalnie
+      
       if (selectedSound && soundObjects[selectedSound.name]) {
         await playSound(selectedSound.name);
       }
   
-      // Następnie wyślij komendy do urządzeń
+      
       const sendPromises = activeConnections.map(async (device) => {
         try {
           if (device.profiles?.includes('A2DP') || device.profiles?.includes('HFP')) {
-            // Dla urządzeń audio - nie wysyłaj komendy PLAY, wystarczy odtworzyć lokalnie
+            
             console.log(`Pominięto wysyłanie PLAY do urządzenia audio: ${device.name}`);
             return;
           } else {
-            // Dla urządzeń SPP
+            
             await BluetoothSerial.writeToDevice(device.address, 'PLAY\n');
             console.log(`Komenda PLAY wysłana do ${device.name || device.address}`);
           }
         } catch (err) {
           console.log(`Błąd wysyłania do ${device.name || device.address}:`, err);
-          // Kontynuuj pomimo błędu dla jednego urządzenia
+          
         }
       });
       
@@ -273,7 +273,7 @@ export const BluetoothComponent = forwardRef<BluetoothComponentRef>((props, ref)
     try {
       console.log("Rozpoczynanie pełnego rozłączania:", device.name);
   
-      // 1. Zatrzymaj wszystkie operacje audio
+      
       for (const sound of Object.values(soundObjects)) {
         if (sound) {
           await sound.pauseAsync();
@@ -281,16 +281,16 @@ export const BluetoothComponent = forwardRef<BluetoothComponentRef>((props, ref)
       }
       await Audio.setIsEnabledAsync(false);
       
-      // 2. Wywołaj natywną metodę rozłączania
+      
       if (Platform.OS === 'android') {
         await nativeBluetoothModule.disconnectAudio();
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Dłuższe opóźnienie
+        await new Promise(resolve => setTimeout(resolve, 1000)); 
       }
   
-      // 3. Wymuś rozłączenie przez BluetoothSerial
+      
       await BluetoothSerial.disconnectFromDevice(device.address);
       
-      // 4. Resetuj UI po dodatkowym opóźnieniu
+      
       await new Promise(resolve => setTimeout(resolve, 500));
       
       setConnectedDevices(prev => 
@@ -313,31 +313,31 @@ export const BluetoothComponent = forwardRef<BluetoothComponentRef>((props, ref)
   
   const disconnectAllDevices = async () => {
     try {
-      // Zatrzymaj audio
+      
       await Audio.setIsEnabledAsync(false);
   
-      // Wywołaj natywną metodę dla Androida
+      
       if (Platform.OS === 'android') {
         nativeBluetoothModule.disconnectAudio();
       }
   
-      // Rozłącz wszystkie urządzenia
+      
       const results = await Promise.allSettled(
         connectedDevices.map(device => 
           BluetoothSerial.disconnectFromDevice(device.address)
         )
       );
   
-      // Obsłuż wyniki
+      
       const failedDevices = results
         .map((result, index) => ({result, device: connectedDevices[index]}))
         .filter(({result}) => result.status === 'rejected');
   
-      // Aktualizuj stan
+      
       setConnectedDevices([]);
       setDevices(prev => prev.map(d => ({...d, connected: false})));
   
-      // Komunikat o błędach
+      
       if (failedDevices.length > 0) {
         const names = failedDevices.map(({device}) => device.name || device.address);
         setError(`Nie udało się rozłączyć: ${names.join(', ')}`);
@@ -345,7 +345,7 @@ export const BluetoothComponent = forwardRef<BluetoothComponentRef>((props, ref)
         setError('Wszystkie urządzenia rozłączone');
       }
   
-      // Przywróć audio
+      
       await Audio.setIsEnabledAsync(true);
   
     } catch (err) {
@@ -459,7 +459,7 @@ export const BluetoothComponent = forwardRef<BluetoothComponentRef>((props, ref)
         return;
       }
   
-      // Sprawdź czy urządzenie jest już połączone
+      
       const isAlreadyConnected = connectedDevices.some(d => d.address === device.address);
       if (isAlreadyConnected) {
         setError(`Już połączono z ${device.name || device.address}`);
@@ -467,18 +467,18 @@ export const BluetoothComponent = forwardRef<BluetoothComponentRef>((props, ref)
         return;
       }
   
-      // Najpierw sprawdź profile urządzenia
+      
       const profiles = await checkDeviceProfiles(device.address);
       console.log('Dostępne profile:', profiles);
   
       let connection;
       if (profiles.includes('A2DP') || profiles.includes('HFP')) {
-        // Dla urządzeń audio (TWS) używamy natywnego połączenia
+        
         console.log('Próba połączenia przez natywny moduł...');
         const result = await nativeBluetoothModule.connectToDevice(device.address);
         connection = result === 'SUCCESS';
       } else {
-        // Dla innych urządzeń używamy standardowego połączenia SPP
+        
         console.log('Próba standardowego połączenia SPP...');
         connection = await BluetoothSerial.connectToDevice(device.address);
       }
@@ -500,7 +500,7 @@ export const BluetoothComponent = forwardRef<BluetoothComponentRef>((props, ref)
         setError(`Połączono z ${device.name || device.address}`);
         setShowConnectionStatus(true);
         
-        // Listener dla rozłączenia
+        
         BluetoothSerial.onDeviceDisconnected((disconnectedDevice) => {
           if (disconnectedDevice.address === device.address) {
             setConnectedDevices(prev => prev.filter(d => d.address !== disconnectedDevice.address));
@@ -519,7 +519,7 @@ export const BluetoothComponent = forwardRef<BluetoothComponentRef>((props, ref)
       setError('Błąd połączenia: ' + error.message);
       setShowConnectionStatus(true);
       
-      // Spróbuj ponownie z inną metodą w przypadku błędu
+      
       if (error.message.includes('socket') || error.message.includes('timeout')) {
         try {
           console.log('Próba alternatywnej metody połączenia...');
