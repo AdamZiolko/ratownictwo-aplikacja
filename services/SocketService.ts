@@ -127,18 +127,24 @@ class SocketService {
   
 
 
-emitAudioCommand(sessionCode: string, command: string, soundName: string | null = null): void {
-  if (!this.socket || !this.socket.connected) {
-    this.connect();
+  emitAudioCommand(
+    sessionCode: string, 
+    command: string, 
+    soundName: string | SoundQueueItem[] | null = null
+  ): void {
+    if (!this.socket || !this.socket.connected) {
+      this.connect();
+    }
+  
+    const payload = {
+      code: sessionCode,
+      command,
+      soundName // Teraz może być stringiem lub tablicą SoundQueueItem
+    };
+  
+    console.log(`Emitting audio-command to session-${sessionCode}`, payload);
+    this.socket?.emit('audio-command', payload);
   }
-
-  console.log(`Emitting audio-command to session-${sessionCode}`, { command, soundName });
-  this.socket?.emit('audio-command', {
-    code: sessionCode,
-    command,
-    soundName,
-  });
-}
 
   
   

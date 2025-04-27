@@ -276,6 +276,11 @@ public void connectToDevice(String deviceAddress, Promise promise) {
         }
     }
     
+@ReactMethod
+
+
+
+
 
     private void disconnectHeadsetProfile(BluetoothAdapter adapter) {
         try {
@@ -327,6 +332,10 @@ public void connectToDevice(String deviceAddress, Promise promise) {
             Log.e(TAG, "Błąd rozłączania profili Bluetooth", e);
         }
     }
+    
+
+
+
     
     private void disconnectDevice(BluetoothA2dp a2dp, BluetoothDevice device) {
         try {

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import {
   useTheme,
@@ -21,6 +20,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const soundFiles: Record<string, any> = {
   kaszel: require('../../../assets/sounds/kaszel.mp3'),
+  serce: require('../../../assets/sounds/serce.mp3'),
 };
 
 
@@ -192,35 +192,53 @@ const StudentSessionScreen = () => {
   
   useEffect(() => {
     if (Platform.OS === 'web' || !accessCode) return;
-
-    socketService.connect();
-    socketService.joinSessionCode(accessCode.toString()).catch(console.error);
-
-    const unsubscribe = socketService.on<{ command: string; soundName: string }>(
-      'audio-command',
-      async ({ command, soundName }) => {
-        console.log('🔊 Received audio-command:', command, soundName);
-        if (command === 'PLAY' && soundName) {
-          const snd = soundObjects.current[soundName];
-          if (snd) {
-            try {
-              await snd.replayAsync();
-              console.log(`✅ Played: ${soundName}`);
-            } catch (err) {
-              console.error('❌ Play error:', err);
+  
+    const processSoundQueue = async (queue: SoundQueueItem[]) => {
+      for (const item of queue) {
+        const snd = soundObjects.current[item.soundName];
+        if (!snd) continue;
+    
+        // 1. Zatrzymaj i zresetuj
+        await snd.stopAsync();
+        await snd.setPositionAsync(0);
+    
+        // 2. Odtwórz
+        await snd.playAsync();
+    
+        // 3. Poczekaj na koniec odtwarzania
+        await new Promise<void>(resolve => {
+          const onStatusUpdate = (status: AVPlaybackStatus) => {
+            if ('didJustFinish' in status && status.didJustFinish) {
+              snd.setOnPlaybackStatusUpdate(null);
+              resolve();
             }
-          } else {
-            console.warn(`❌ Sound not loaded: ${soundName}`);
-          }
+          };
+          snd.setOnPlaybackStatusUpdate(onStatusUpdate);
+        });
+    
+        // 4. Teraz dodatkowe opóźnienie (item.delay w ms)
+        if (item.delay && item.delay > 0) {
+          await new Promise(r => setTimeout(r, item.delay));
         }
       }
-    );
-
-    return () => {
-      unsubscribe();
     };
+    
+  
+    const unsubscribe = socketService.on<{
+      command: string;
+      soundName: string | SoundQueueItem[];
+    }>('audio-command', async ({ command, soundName }) => {
+      if (command === 'PLAY' && typeof soundName === 'string') {
+        const snd = soundObjects.current[soundName];
+        if (snd) await snd.replayAsync({ positionMillis: 0 });
+      }
+      else if (command === 'PLAY_QUEUE' && Array.isArray(soundName)) {
+        await processSoundQueue(soundName);
+      }
+    });
+  
+    return () => unsubscribe();
   }, [accessCode]);
-
   
   useEffect(() => {
     if (!sessionData) return;

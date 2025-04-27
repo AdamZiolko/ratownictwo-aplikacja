@@ -23,6 +23,7 @@ import {
 } from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
+import {SoundQueueItem } from './types/types'; 
 
 
 import CreateSessionDialog from "./modals/CreateSessionDialog";
@@ -388,6 +389,18 @@ const ExaminerDashboardScreen = () => {
     showSnackbar("Polecenie odtworzenia dźwięku wysłane", "success");
   };
 
+
+  const handleSendQueue = (queue: SoundQueueItem[]) => {
+    if (!currentSession || queue.length === 0) return;
+  
+    socketService.emitAudioCommand(
+      currentSession.sessionCode,
+      "PLAY_QUEUE",
+      queue 
+    );
+    setSoundDialogVisible(false);
+    showSnackbar(`Wysłano kolejkę (${queue.length} dźwięków)`, "success");
+  };
   return (
     <SafeAreaView style={styles.container}>
       <Appbar.Header>
@@ -572,6 +585,7 @@ const ExaminerDashboardScreen = () => {
           selectedSound={selectedSound}
           setSelectedSound={setSelectedSound}
           onSendAudioCommand={handleSendAudioCommand}
+          onSendQueue={handleSendQueue}
         />
 
         {}
