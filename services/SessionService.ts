@@ -4,7 +4,7 @@ import apiService from "./ApiService";
 import { socketService } from './SocketService';
 
 export interface Session {
-  sessionId?: number;
+  sessionId?: string;
   name?: string;     
   temperature: number;
   rhythmType: number;
@@ -122,7 +122,7 @@ export class SessionService {
 }
 
   
-  async updateSession(id: number, sessionData: Partial<Session>, authToken?: string): Promise<Session> {
+  async updateSession(id: string, sessionData: Partial<Session>, authToken?: string): Promise<Session> {
     try {
       const headers = this.createHeaders(authToken);
       const response = await this.api.put(`sessions/${id}`, sessionData, headers);
@@ -147,7 +147,7 @@ export class SessionService {
 
 
   
-  async deleteSession(id: number, authToken?: string): Promise<any> {
+  async deleteSession(id: string, authToken?: string): Promise<any> {
     try {
       const headers = this.createHeaders(authToken);
       const response = await this.api.delete(`sessions/${id}`, headers);

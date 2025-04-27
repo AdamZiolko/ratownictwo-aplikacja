@@ -1,53 +1,53 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, View, ScrollView, RefreshControl, TouchableOpacity } from "react-native";
+import {
+  StyleSheet,
+  View,
+  ScrollView,
+  RefreshControl,
+  Platform,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { 
-  Appbar, 
-  Text, 
-  Card, 
-  Button, 
-  FAB, 
-  Dialog, 
-  Portal, 
-  TextInput, 
-  HelperText,
-  DataTable, 
-  IconButton, 
+import {
+  Appbar,
+  Text,
+  Card,
+  Button,
+  FAB,
+  Portal,
+  DataTable,
+  IconButton,
   useTheme,
   ActivityIndicator,
   Snackbar,
-  Chip,
-  Divider,
-  SegmentedButtons,
   Menu,
-  RadioButton,
-  List
 } from "react-native-paper";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
+
+
+import CreateSessionDialog from "./modals/CreateSessionDialog";
+import EditSessionDialog from "./modals/EditSessionDialog";
+import ViewSessionDialog from "./modals/ViewSessionDialog";
+import DeleteSessionDialog from "./modals/DeleteSessionDialog";
+import SoundSelectionDialog from "./modals/SoundSelectionDialog";
+import { SavePresetDialog, LoadPresetDialog } from "./modals/PresetDialogs";
+
+
+import { Session, FormData, Preset, Storage } from "./types/types";
 import { useAuth } from "@/contexts/AuthContext";
-import { sessionService, Session } from "@/services/SessionService";
-import { EkgType, NoiseType, EkgFactory } from "@/services/EkgFactory";
+import { EkgType, NoiseType } from "@/services/EkgFactory";
+import { sessionService } from "@/services/SessionService";
 import { socketService } from "@/services/SocketService";
-import { Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-
-type Preset = {
-  id: string;
-  name: string;
-  data: typeof FormData;
-};
-
 
 const ExaminerDashboardScreen = () => {
   const theme = useTheme();
   const { user, logout } = useAuth();
-  
+
   
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  
+
   
   const [createDialogVisible, setCreateDialogVisible] = useState(false);
   const [editDialogVisible, setEditDialogVisible] = useState(false);
@@ -58,135 +58,54 @@ const ExaminerDashboardScreen = () => {
   
   const [selectedSound, setSelectedSound] = useState<string | null>(null);
 
-   
-   const [savePresetDialogVisible, setSavePresetDialogVisible] = useState(false);
-   const [loadPresetDialogVisible, setLoadPresetDialogVisible] = useState(false);
-   const [presetName, setPresetName] = useState("");
-   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
-   const [presets, setPresets] = useState<Preset[]>([]);
   
+  const [savePresetDialogVisible, setSavePresetDialogVisible] = useState(false);
+  const [loadPresetDialogVisible, setLoadPresetDialogVisible] = useState(false);
+  const [presetName, setPresetName] = useState("");
+  const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
+  const [presets, setPresets] = useState<Preset[]>([]);
 
-   const storage = {
+  
+  const storage: Storage = {
     getItem: async (key: string) => {
-      if (Platform.OS === 'web') {
+      if (Platform.OS === "web") {
         return localStorage.getItem(key);
       }
       return await AsyncStorage.getItem(key);
     },
     setItem: async (key: string, value: string) => {
-      if (Platform.OS === 'web') {
+      if (Platform.OS === "web") {
         localStorage.setItem(key, value);
       } else {
         await AsyncStorage.setItem(key, value);
       }
-    }
+    },
   };
 
   
-  useEffect(() => {
-    const loadPresets = async () => {
-      try {
-        const savedPresets = await storage.getItem('presets');
-        if (savedPresets) {
-          setPresets(JSON.parse(savedPresets));
-        }
-      } catch (error) {
-        console.error('Błąd ładowania presetów:', error);
-      }
-    };
-    loadPresets();
-  }, []);
-
-  
-  const handleSavePreset = async () => {
-    if (!presetName) {
-      showSnackbar('Podaj nazwę presetu', 'error');
-      return;
-    }
-
-    try {
-      const newPreset: Preset = {
-        id: Date.now().toString(),
-        name: presetName,
-        data: formData
-      };
-
-      const updatedPresets = [...presets, newPreset];
-      await storage.setItem('presets', JSON.stringify(updatedPresets));
-      
-      setPresets(updatedPresets);
-      setPresetName('');
-      setSavePresetDialogVisible(false);
-      showSnackbar('Preset został zapisany', 'success');
-    } catch (error) {
-      console.error('Błąd zapisywania presetu:', error);
-      showSnackbar('Błąd zapisywania presetu', 'error');
-    }
-  };
-
-  
-  const handleLoadPreset = async () => {
-    if (!selectedPreset) return;
-
-    try {
-      const presetToLoad = presets.find(p => p.id === selectedPreset);
-      if (presetToLoad) {
-        setFormData(presetToLoad.data);
-        setLoadPresetDialogVisible(false);
-        showSnackbar('Preset został wczytany', 'success');
-      }
-    } catch (error) {
-      console.error('Błąd wczytywania presetu:', error);
-      showSnackbar('Błąd wczytywania presetu', 'error');
-    }
-  };
-
-  
-  const handleDeletePreset = async (presetId: string) => {
-    try {
-      const updatedPresets = presets.filter(p => p.id !== presetId);
-      await storage.setItem('presets', JSON.stringify(updatedPresets));
-      setPresets(updatedPresets);
-      showSnackbar('Preset został usunięty', 'success');
-    } catch (error) {
-      console.error('Błąd usuwania presetu:', error);
-      showSnackbar('Błąd usuwania presetu', 'error');
-    }
-  };
-
-
-  
-  const [currentSession, setCurrentSession] = useState<Session | null>(null);  const [formData, setFormData] = useState({
-    name: "",         
+  const [currentSession, setCurrentSession] = useState<Session | null>(null);
+  const [formData, setFormData] = useState<FormData>({
+    name: "",
     temperature: "36.6",
     rhythmType: EkgType.NORMAL,
     beatsPerMinute: "72",
     noiseLevel: NoiseType.NONE,
     sessionCode: "",
-    isActive: true,   
-    
-    hr: "80",         
-    bp: "120/80",     
-    spo2: "98",       
-    etco2: "35",      
-    rr: "12"          
+    isActive: true,
+    hr: "80",
+    bp: "120/80",
+    spo2: "98",
+    etco2: "35",
+    rr: "12",
   });
   
 
-
-
-  
-  
-  const [formErrors, setFormErrors] = useState({
-    temperature: "",
-    beatsPerMinute: "",
-    sessionCode: ""
-  });
-  
   
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [snackbarType, setSnackbarType] = useState<"success" | "error">("success");
+  const [snackbarType, setSnackbarType] = useState<"success" | "error">(
+    "success"
+  );
 
   
   const [menuVisible, setMenuVisible] = useState(false);
@@ -196,10 +115,20 @@ const ExaminerDashboardScreen = () => {
     loadSessions();
   }, []);
 
-
+  
   useEffect(() => {
-      console.log(sessions)
-  }, [sessions])
+    const loadPresets = async () => {
+      try {
+        const savedPresets = await storage.getItem("presets");
+        if (savedPresets) {
+          setPresets(JSON.parse(savedPresets));
+        }
+      } catch (error) {
+        console.error("Błąd ładowania presetów:", error);
+      }
+    };
+    loadPresets();
+  }, []);
 
   
   const loadSessions = async () => {
@@ -221,142 +150,56 @@ const ExaminerDashboardScreen = () => {
     setRefreshing(true);
     loadSessions();
   };
-
   
-  const showSnackbar = (message: string, type: "success" | "error" = "success") => {
+  const showSnackbar = (
+    message: string,
+    type: "success" | "error" = "success"
+  ) => {
     setSnackbarMessage(message);
     setSnackbarType(type);
     setSnackbarVisible(true);
   };
-
-  
-  const validateForm = () => {
-    const errors = {
-      temperature: "",
-      beatsPerMinute: "",
-      sessionCode: ""
-    };
-    
-    let isValid = true;
-
-    
-    const temp = parseFloat(formData.temperature);
-    if (!formData.temperature || isNaN(temp)) {
-      errors.temperature = "Podaj prawidłową temperaturę";
-      isValid = false;
-    } else if (temp < 30 || temp > 43) {
-      errors.temperature = "Temperatura musi być w zakresie 30-43°C";
-      isValid = false;
-    }
-
-    
-    const bpm = parseInt(formData.beatsPerMinute);
-    if (!formData.beatsPerMinute || isNaN(bpm)) {
-      errors.beatsPerMinute = "Podaj prawidłowe tętno";
-      isValid = false;
-    } else if (bpm < 0 || bpm > 300) {
-      errors.beatsPerMinute = "Tętno musi być w zakresie 0-300";
-      isValid = false;
-    }    
-    if (!formData.sessionCode) {
-      errors.sessionCode = "Kod sesji jest wymagany";
-      isValid = false;
-    } else if (formData.sessionCode.length !== 6) {
-      errors.sessionCode = "Kod musi zawierać 6 znaków";
-      isValid = false;
-    }
-
-    setFormErrors(errors);
-    return isValid;
-  };
-  
-  const resetForm = () => {
-    setFormData({
-      name: "", 
-      temperature: "36.6",
-      rhythmType: EkgType.NORMAL,
-      beatsPerMinute: "72",
-      noiseLevel: NoiseType.NONE,
-      sessionCode: sessionService.generateSessionCode(), 
-      isActive: true, 
-      
-      hr: "80",         
-      bp: "120/80",     
-      spo2: "98",       
-      etco2: "35",      
-      rr: "12"          
-    });
-    setFormErrors({
-      temperature: "",
-      beatsPerMinute: "",
-      sessionCode: ""
-    });
-  };
-
   
   const openCreateDialog = () => {
-    resetForm();
     setCreateDialogVisible(true);
   };
-  
+
   const openEditDialog = (session: Session) => {
     setCurrentSession(session);
-    setFormData({
-      temperature: session.temperature ? session.temperature.toString() : "36.6",
-      rhythmType: session.rhythmType as EkgType,
-      beatsPerMinute: session.beatsPerMinute ? session.beatsPerMinute.toString() : "72",
-      noiseLevel: session.noiseLevel as NoiseType,
-      sessionCode: session.sessionCode ? session.sessionCode.toString() : "",
-      isActive: session.isActive !== undefined ? session.isActive : true, 
-      
-      hr: session.hr ? session.hr.toString() : "80",
-      bp: session.bp || "120/80",
-      spo2: session.spo2 ? session.spo2.toString() : "98",
-      etco2: session.etco2 ? session.etco2.toString() : "35",
-      rr: session.rr ? session.rr.toString() : "12",
-      name: session.name || ""
-    });
     setEditDialogVisible(true);
   };
 
-  
   const openSoundDialog = (session: Session) => {
     setCurrentSession(session);
     setSelectedSound(null);
     setSoundDialogVisible(true);
   };
 
-
-  
   const openDeleteDialog = (session: Session) => {
     setCurrentSession(session);
-
     setDeleteDialogVisible(true);
   };
-  
+
   const openViewDialog = (session: Session) => {
     setCurrentSession(session);
     setViewDialogVisible(true);
   };
-    
-  const handleCreateSession = async () => {
-    if (!validateForm()) return;
-
+  
+  const handleCreateSession = async (data: FormData) => {
     try {
       const newSession = {
-        name: formData.name || `Sesja ${formData.sessionCode}`, 
-        temperature: parseFloat(formData.temperature),
-        rhythmType: formData.rhythmType as number,
-        beatsPerMinute: parseInt(formData.beatsPerMinute),
-        noiseLevel: formData.noiseLevel as number,
-        sessionCode: formData.sessionCode, 
-        isActive: formData.isActive, 
-        
-        hr: parseInt(formData.hr) || undefined,
-        bp: formData.bp,
-        spo2: parseInt(formData.spo2) || undefined,
-        etco2: parseInt(formData.etco2) || undefined,
-        rr: parseInt(formData.rr) || undefined
+        name: data.name || `Sesja ${data.sessionCode}`,
+        temperature: parseFloat(data.temperature),
+        rhythmType: data.rhythmType as number,
+        beatsPerMinute: parseInt(data.beatsPerMinute),
+        noiseLevel: data.noiseLevel as number,
+        sessionCode: data.sessionCode,
+        isActive: data.isActive,
+        hr: parseInt(data.hr) || undefined,
+        bp: data.bp,
+        spo2: parseInt(data.spo2) || undefined,
+        etco2: parseInt(data.etco2) || undefined,
+        rr: parseInt(data.rr) || undefined,
       };
 
       await sessionService.createSession(newSession);
@@ -366,31 +209,34 @@ const ExaminerDashboardScreen = () => {
     } catch (error) {
       console.error("Error creating session:", error);
       showSnackbar("Nie udało się utworzyć sesji", "error");
-    }  };
-    
-  const handleUpdateSession = async () => {
-    if (!currentSession || !validateForm()) return;
+    }
+  };
+
+  const handleUpdateSession = async (data: FormData) => {
+    if (!currentSession) return;
 
     try {
       const updatedSession = {
-        name: formData.name || `Sesja ${formData.sessionCode}`, 
-        temperature: parseFloat(formData.temperature),
-        rhythmType: formData.rhythmType as number,
-        beatsPerMinute: parseInt(formData.beatsPerMinute),
-        noiseLevel: formData.noiseLevel as number,
-        sessionCode: formData.sessionCode, 
-        isActive: formData.isActive, 
-        
-        hr: parseInt(formData.hr) || undefined,
-        bp: formData.bp,
-        spo2: parseInt(formData.spo2) || undefined,
-        etco2: parseInt(formData.etco2) || undefined,
-        rr: parseInt(formData.rr) || undefined
+        name: data.name || `Sesja ${data.sessionCode}`,
+        temperature: parseFloat(data.temperature),
+        rhythmType: data.rhythmType as number,
+        beatsPerMinute: parseInt(data.beatsPerMinute),
+        noiseLevel: data.noiseLevel as number,
+        sessionCode: data.sessionCode,
+        isActive: data.isActive,
+        hr: parseInt(data.hr) || undefined,
+        bp: data.bp,
+        spo2: parseInt(data.spo2) || undefined,
+        etco2: parseInt(data.etco2) || undefined,
+        rr: parseInt(data.rr) || undefined,
       };
 
       if (!currentSession.sessionId) return;
 
-      await sessionService.updateSession(currentSession.sessionId, updatedSession);
+      await sessionService.updateSession(
+        currentSession.sessionId,
+        updatedSession
+      );
       setEditDialogVisible(false);
       showSnackbar("Sesja została zaktualizowana", "success");
       loadSessions();
@@ -400,11 +246,8 @@ const ExaminerDashboardScreen = () => {
     }
   };
 
-  
   const handleDeleteSession = async () => {
     if (!currentSession) return;
-
-    console.log(currentSession) 
 
     try {
       await sessionService.deleteSession(currentSession.sessionId!);
@@ -418,44 +261,129 @@ const ExaminerDashboardScreen = () => {
   };
 
   
+  const handleSavePreset = async () => {
+    if (!presetName) {
+      showSnackbar("Podaj nazwę presetu", "error");
+      return;
+    }
 
-  const handleLogout = () => {
-    logout();
-    router.replace("/");
+    try {
+      const newPreset: Preset = {
+        id: Date.now().toString(),
+        name: presetName,
+        data: formData,
+      };
+
+      const updatedPresets = [...presets, newPreset];
+      await storage.setItem("presets", JSON.stringify(updatedPresets));
+
+      setPresets(updatedPresets);
+      setPresetName("");
+      setSavePresetDialogVisible(false);
+      showSnackbar("Preset został zapisany", "success");
+    } catch (error) {
+      console.error("Błąd zapisywania presetu:", error);
+      showSnackbar("Błąd zapisywania presetu", "error");
+    }
   };
 
-  
-  const getRhythmTypeName = (type: number): string => {
-    return EkgFactory.getNameForType(type as EkgType);
+  const handleLoadPreset = async () => {
+    if (!selectedPreset) return;
+
+    try {
+      const presetToLoad = presets.find((p) => p.id === selectedPreset);
+      if (presetToLoad) {
+        setFormData(presetToLoad.data);
+        setLoadPresetDialogVisible(false);
+        showSnackbar("Preset został wczytany", "success");
+      }
+    } catch (error) {
+      console.error("Błąd wczytywania presetu:", error);
+      showSnackbar("Błąd wczytywania presetu", "error");
+    }
   };
 
-  
-  const getNoiseLevelName = (type: number): string => {
-    switch(type as NoiseType) {
-      case NoiseType.NONE: return "Brak";
-      case NoiseType.MILD: return "Łagodne";
-      case NoiseType.MODERATE: return "Umiarkowane";
-      case NoiseType.SEVERE: return "Silne";
-      default: return "Nieznane";
+  const handleDeletePreset = async (presetId: string) => {
+    try {
+      const updatedPresets = presets.filter((p) => p.id !== presetId);
+      await storage.setItem("presets", JSON.stringify(updatedPresets));
+      setPresets(updatedPresets);
+      showSnackbar("Preset został usunięty", "success");
+    } catch (error) {
+      console.error("Błąd usuwania presetu:", error);
+      showSnackbar("Błąd usuwania presetu", "error");
     }
   };
 
   
+  const handleLogout = () => {
+    logout();
+    router.replace("/");
+  };
+  
+  const getRhythmTypeName = (type: number): string => {
+    switch (type as EkgType) {
+      case EkgType.NORMAL:
+        return "Rytm normalny (Zatokowy)";
+      case EkgType.TACHYCARDIA:
+        return "Tachykardia zatokowa";
+      case EkgType.BRADYCARDIA:
+        return "Bradykardia zatokowa";
+      case EkgType.AFIB:
+        return "Migotanie przedsionków";
+      case EkgType.VFIB:
+        return "Migotanie komór";
+      case EkgType.VTACH:
+        return "Częstoskurcz komorowy";
+      case EkgType.TORSADE:
+        return "Torsade de pointes";
+      case EkgType.ASYSTOLE:
+        return "Asystolia";
+      case EkgType.HEART_BLOCK:
+        return "Blok serca";
+      case EkgType.PVC:
+        return "Przedwczesne pobudzenie komorowe";
+      case EkgType.CUSTOM:
+        return "Niestandardowy";
+      default:
+        return "Nieznany";
+    }
+  };
+
+  const getNoiseLevelName = (type: number): string => {
+    switch (type as NoiseType) {
+      case NoiseType.NONE:
+        return "Brak";
+      case NoiseType.MILD:
+        return "Łagodne";
+      case NoiseType.MODERATE:
+        return "Umiarkowane";
+      case NoiseType.SEVERE:
+        return "Silne";
+      default:
+        return "Nieznane";
+    }
+  };
+
   const viewEkgProjection = (session: Session) => {
     router.push({
       pathname: "/screens/ekg-projection/EkgProjection",
       params: {
         rhythmType: session.rhythmType,
         bpm: session.beatsPerMinute.toString(),
-        readOnly: "true"
-      }
+        readOnly: "true",
+      },
     });
   };
-  
+
   const handleSendAudioCommand = () => {
     if (!currentSession || !selectedSound) return;
-  
-    socketService.emitAudioCommand(currentSession.sessionCode, 'PLAY', selectedSound);
+
+    socketService.emitAudioCommand(
+      currentSession.sessionCode,
+      "PLAY",
+      selectedSound
+    );
     setSoundDialogVisible(false);
     showSnackbar("Polecenie odtworzenia dźwięku wysłane", "success");
   };
@@ -463,8 +391,14 @@ const ExaminerDashboardScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <Appbar.Header>
-        <Appbar.Content title="Panel Egzaminatora" subtitle={user ? `Zalogowany jako: ${user.username}` : ""} />
-        <Appbar.Action icon="dots-vertical" onPress={() => setMenuVisible(true)} />
+        <Appbar.Content
+          title="Panel Egzaminatora"
+          subtitle={user ? `Zalogowany jako: ${user.username}` : ""}
+        />
+        <Appbar.Action
+          icon="dots-vertical"
+          onPress={() => setMenuVisible(true)}
+        />
         <Menu
           visible={menuVisible}
           onDismiss={() => setMenuVisible(false)}
@@ -472,13 +406,16 @@ const ExaminerDashboardScreen = () => {
           anchorPosition="bottom"
           style={{ marginTop: 40, marginRight: 10 }}
         >
-          <Menu.Item onPress={() => {
-            setMenuVisible(false);
-            handleLogout();
-          }} title="Wyloguj" leadingIcon="logout" />
+          <Menu.Item
+            onPress={() => {
+              setMenuVisible(false);
+              handleLogout();
+            }}
+            title="Wyloguj"
+            leadingIcon="logout"
+          />
         </Menu>
       </Appbar.Header>
-
       <View style={styles.contentContainer}>
         <Card style={styles.statsCard}>
           <Card.Content>
@@ -488,19 +425,25 @@ const ExaminerDashboardScreen = () => {
                 <Text variant="bodyMedium">Wszystkie sesje</Text>
               </View>
               <View style={styles.statItem}>
-                <Text variant="titleLarge">{sessions?.filter(s => s.beatsPerMinute > 100)?.length || 0}</Text>
+                <Text variant="titleLarge">
+                  {sessions?.filter((s) => s.beatsPerMinute > 100)?.length || 0}
+                </Text>
                 <Text variant="bodyMedium">Tachykardia</Text>
               </View>
               <View style={styles.statItem}>
-                <Text variant="titleLarge">{sessions?.filter(s => s.beatsPerMinute < 60)?.length || 0}</Text>
+                <Text variant="titleLarge">
+                  {sessions?.filter((s) => s.beatsPerMinute < 60)?.length || 0}
+                </Text>
                 <Text variant="bodyMedium">Bradykardia</Text>
               </View>
             </View>
           </Card.Content>
         </Card>
 
-        <Text variant="titleMedium" style={styles.sectionTitle}>Aktywne Sesje</Text>
-        
+        <Text variant="titleMedium" style={styles.sectionTitle}>
+          Aktywne Sesje
+        </Text>
+
         {loading && !refreshing ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" />
@@ -519,9 +462,9 @@ const ExaminerDashboardScreen = () => {
                 <Text variant="bodyMedium" style={styles.emptyStateText}>
                   Kliknij przycisk "+" aby utworzyć nową sesję
                 </Text>
-                <Button 
-                  mode="contained" 
-                  onPress={openCreateDialog} 
+                <Button
+                  mode="contained"
+                  onPress={openCreateDialog}
                   style={styles.emptyStateButton}
                 >
                   Utwórz pierwszą sesję
@@ -534,35 +477,46 @@ const ExaminerDashboardScreen = () => {
                   <DataTable.Title>Temp.</DataTable.Title>
                   <DataTable.Title>Rytm</DataTable.Title>
                   <DataTable.Title numeric>BPM</DataTable.Title>
-                  <DataTable.Title style={styles.actionsColumn}>Akcje</DataTable.Title>
+                  <DataTable.Title style={styles.actionsColumn}>
+                    Akcje
+                  </DataTable.Title>
                 </DataTable.Header>
 
                 {sessions?.map((session) => (
-                  <DataTable.Row key={session.sessionId} onPress={() => openViewDialog(session)}>
+                  <DataTable.Row
+                    key={session.sessionId}
+                    onPress={() => openViewDialog(session)}
+                  >
                     <DataTable.Cell>{session.sessionCode}</DataTable.Cell>
                     <DataTable.Cell>{session.temperature}°C</DataTable.Cell>
                     <DataTable.Cell>
-                      <Text numberOfLines={1} ellipsizeMode="tail" style={styles.rhythmCell}>
+                      <Text
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                        style={styles.rhythmCell}
+                      >
                         {getRhythmTypeName(session.rhythmType)}
                       </Text>
                     </DataTable.Cell>
-                    <DataTable.Cell numeric>{session.beatsPerMinute}</DataTable.Cell>
+                    <DataTable.Cell numeric>
+                      {session.beatsPerMinute}
+                    </DataTable.Cell>
                     <DataTable.Cell style={styles.actionsColumn}>
                       <View style={styles.rowActions}>
-                        <IconButton 
-                          icon="pencil" 
-                          size={20} 
-                          onPress={() => openEditDialog(session)} 
+                        <IconButton
+                          icon="pencil"
+                          size={20}
+                          onPress={() => openEditDialog(session)}
                           iconColor={theme.colors.primary}
                         />
-                        <IconButton 
-                          icon="delete" 
-                          size={20} 
-                          onPress={() => openDeleteDialog(session)} 
+                        <IconButton
+                          icon="delete"
+                          size={20}
+                          onPress={() => openDeleteDialog(session)}
                           iconColor={theme.colors.error}
                         />
-                        <IconButton 
-                          icon="volume-high" 
+                        <IconButton
+                          icon="volume-high"
                           size={20}
                           onPress={() => openSoundDialog(session)}
                           iconColor={theme.colors.secondary}
@@ -575,989 +529,104 @@ const ExaminerDashboardScreen = () => {
             )}
           </ScrollView>
         )}
-        
       </View>
-
-      {}
       <Portal>
-          {}
-   
-        <Dialog visible={createDialogVisible} onDismiss={() => setCreateDialogVisible(false)}>
-          <Dialog.Title>Utwórz nową sesję</Dialog.Title>
-          <Dialog.ScrollArea style={styles.dialogScrollArea}>
-            <ScrollView>
-              <View style={styles.dialogContent}>
-              <View style={styles.presetButtonsContainer}>
-    <Button 
-      mode="outlined" 
-      onPress={() => setLoadPresetDialogVisible(true)}
-      style={styles.presetButton}
-    >
-      Wczytaj preset
-    </Button>
-    <Button 
-      mode="contained-tonal" 
-      onPress={() => setSavePresetDialogVisible(true)}
-      style={styles.presetButton}
-    >
-      Zapisz jako preset
-    </Button>
-  </View>
-                <TextInput
-                  label="Nazwa sesji"
-                  value={formData.name}
-                  onChangeText={(text) => setFormData({ ...formData, name: text })}
-                  mode="outlined"
-                  style={styles.input}
-                  placeholder="Wprowadź nazwę sesji"
-                />
-
-                <TextInput
-                  label="Temperatura (°C)"
-                  value={formData.temperature}
-                  onChangeText={(text) => setFormData({ ...formData, temperature: text })}
-                  keyboardType="decimal-pad"
-                  mode="outlined"
-                  style={styles.input}
-                  error={!!formErrors.temperature}
-                />
-                {formErrors.temperature ? (
-                  <HelperText type="error">{formErrors.temperature}</HelperText>
-                ) : null}
-
-                <Text variant="titleSmall" >Typ rytmu serca</Text>
-                <Card style={styles.selectionCard}>
-                  <Card.Content>
-                    <RadioButton.Group 
-                      onValueChange={(value) => setFormData({ ...formData, rhythmType: parseInt(value) })} 
-                      value={formData.rhythmType.toString()}
-                    >
-                      <View style={styles.radioRow}>
-                        <RadioButton.Item 
-                          label={EkgFactory.getNameForType(EkgType.NORMAL)} 
-                          value={EkgType.NORMAL.toString()} 
-                          position="leading"
-                        />
-                      </View>
-                      <View style={styles.radioRow}>
-                        <RadioButton.Item 
-                          label={EkgFactory.getNameForType(EkgType.TACHYCARDIA)} 
-                          value={EkgType.TACHYCARDIA.toString()}
-                          position="leading" 
-                        />
-                      </View>
-                      <View style={styles.radioRow}>
-                        <RadioButton.Item 
-                          label={EkgFactory.getNameForType(EkgType.BRADYCARDIA)} 
-                          value={EkgType.BRADYCARDIA.toString()}
-                          position="leading" 
-                        />
-                      </View>
-                      <View style={styles.radioRow}>
-                        <RadioButton.Item 
-                          label={EkgFactory.getNameForType(EkgType.AFIB)} 
-                          value={EkgType.AFIB.toString()}
-                          position="leading" 
-                        />
-                      </View>
-                      <View style={styles.radioRow}>
-                        <RadioButton.Item 
-                          label={EkgFactory.getNameForType(EkgType.VFIB)} 
-                          value={EkgType.VFIB.toString()}
-                          position="leading" 
-                        />
-                      </View>
-                      <View style={styles.radioRow}>
-                        <RadioButton.Item 
-                          label={EkgFactory.getNameForType(EkgType.VTACH)} 
-                          value={EkgType.VTACH.toString()}
-                          position="leading" 
-                        />
-                      </View>
-                      <View style={styles.radioRow}>
-                        <RadioButton.Item 
-                          label={EkgFactory.getNameForType(EkgType.TORSADE)} 
-                          value={EkgType.TORSADE.toString()}
-                          position="leading" 
-                        />
-                      </View>
-                      <View style={styles.radioRow}>
-                        <RadioButton.Item 
-                          label={EkgFactory.getNameForType(EkgType.ASYSTOLE)} 
-                          value={EkgType.ASYSTOLE.toString()}
-                          position="leading" 
-                        />
-                      </View>
-                      <View style={styles.radioRow}>
-                        <RadioButton.Item 
-                          label={EkgFactory.getNameForType(EkgType.HEART_BLOCK)} 
-                          value={EkgType.HEART_BLOCK.toString()}
-                          position="leading" 
-                        />
-                      </View>
-                      <View style={styles.radioRow}>
-                        <RadioButton.Item 
-                          label={EkgFactory.getNameForType(EkgType.PVC)} 
-                          value={EkgType.PVC.toString()}
-                          position="leading" 
-                        />
-                      </View>
-                    </RadioButton.Group>
-                  </Card.Content>
-                </Card>
-
-                <TextInput
-                  label="Tętno (BPM)"
-                  value={formData.beatsPerMinute}
-                  onChangeText={(text) => setFormData({ ...formData, beatsPerMinute: text })}
-                  keyboardType="number-pad"
-                  mode="outlined"
-                  style={styles.input}
-                  error={!!formErrors.beatsPerMinute}
-                />
-                {formErrors.beatsPerMinute ? (
-                  <HelperText type="error">{formErrors.beatsPerMinute}</HelperText>
-                ) : null}
-
-                <Text variant="titleSmall" >Poziom szumów</Text>
-                <SegmentedButtons
-                  value={formData.noiseLevel.toString()}
-                  onValueChange={(value) => setFormData({ ...formData, noiseLevel: parseInt(value) })}
-                  buttons={[
-                    { value: NoiseType.NONE.toString(), label: 'Brak' },
-                    { value: NoiseType.MILD.toString(), label: 'Łagodne' },
-                    { value: NoiseType.MODERATE.toString(), label: 'Umiarkowane' },
-                    { value: NoiseType.SEVERE.toString(), label: 'Silne' },
-                  ]}
-                  style={styles.segmentedButtons}
-                />
-
-                <TextInput
-                  label="Kod sesji"
-                  value={formData.sessionCode}
-                  onChangeText={(text) => setFormData({ ...formData, sessionCode: text })}
-                  keyboardType="number-pad"
-                  mode="outlined"
-                  style={styles.input}
-                  error={!!formErrors.sessionCode}
-                  maxLength={6}
-                />
-                {formErrors.sessionCode ? (
-                  <HelperText type="error">{formErrors.sessionCode}</HelperText>
-                ) : (
-                  <HelperText type="info">6-cyfrowy kod do udostępnienia studentom</HelperText>
-                )}
-
-                <Button
-                  mode="text"
-                  onPress={() => setFormData({ ...formData, sessionCode: sessionService.generateSessionCode().toString() })}
-                  style={styles.generateButton}
-                >
-                  Generuj losowy kod
-                </Button>
-                
-                <Text variant="titleMedium" style={styles.sectionTitle}>Parametry medyczne</Text>
-                
-                <View style={styles.paramRow}>
-                  <TextInput
-                    label="Tętno (HR)"
-                    value={formData.hr}
-                    onChangeText={(text) => setFormData({ ...formData, hr: text })}
-                    keyboardType="number-pad"
-                    mode="outlined"
-                    style={styles.inputHalf}
-                    right={<TextInput.Affix text="BPM" />}
-                  />
-                  
-                  <TextInput
-                    label="Ciśnienie krwi (BP)"
-                    value={formData.bp}
-                    onChangeText={(text) => setFormData({ ...formData, bp: text })}
-                    keyboardType="default"
-                    mode="outlined"
-                    style={styles.inputHalf}
-                    right={<TextInput.Affix text="mmHg" />}
-                    placeholder="np. 120/80"
-                  />
-                </View>
-                
-                <View style={styles.paramRow}>
-                  <TextInput
-                    label="SpO₂"
-                    value={formData.spo2}
-                    onChangeText={(text) => setFormData({ ...formData, spo2: text })}
-                    keyboardType="number-pad"
-                    mode="outlined"
-                    style={styles.inputHalf}
-                    right={<TextInput.Affix text="%" />}
-                  />
-                  
-                  <TextInput
-                    label="EtCO₂"
-                    value={formData.etco2}
-                    onChangeText={(text) => setFormData({ ...formData, etco2: text })}
-                    keyboardType="number-pad"
-                    mode="outlined"
-                    style={styles.inputHalf}
-                    right={<TextInput.Affix text="mmHg" />}
-                  />
-                </View>
-                
-                <TextInput
-                  label="Częstość oddechów (RR)"
-                  value={formData.rr}
-                  onChangeText={(text) => setFormData({ ...formData, rr: text })}
-                  keyboardType="number-pad"
-                  mode="outlined"
-                  style={styles.input}
-                  right={<TextInput.Affix text="oddechów/min" />}
-                />
-              </View>
-            </ScrollView>
-          </Dialog.ScrollArea>
-          <Dialog visible={savePresetDialogVisible} onDismiss={() => setSavePresetDialogVisible(false)}>
-    <Dialog.Title>Zapisz konfigurację jako preset</Dialog.Title>
-    <Dialog.Content>
-      <TextInput
-        label="Nazwa presetu"
-        value={presetName}
-        onChangeText={setPresetName}
-        mode="outlined"
-        style={styles.input}
-        placeholder="Wprowadź nazwę presetu"
-      />
-    </Dialog.Content>
-    <Dialog.Actions>
-      <Button onPress={() => setSavePresetDialogVisible(false)}>Anuluj</Button>
-      <Button onPress={handleSavePreset}>Zapisz</Button>
-    </Dialog.Actions>
-  </Dialog>
-
-    {}
-    <Dialog visible={loadPresetDialogVisible} onDismiss={() => setLoadPresetDialogVisible(false)}>
-    <Dialog.Title>Wybierz preset do wczytania</Dialog.Title>
-    <Dialog.ScrollArea style={styles.dialogScrollArea}>
-      <ScrollView>
-        {presets.length === 0 ? (
-          <Text style={styles.emptyStateText}>Brak zapisanych presetów</Text>
-        ) : (
-          <RadioButton.Group 
-            onValueChange={value => setSelectedPreset(value)} 
-            value={selectedPreset || ""}
-          >
-            {presets.map(preset => (
-              <List.Item
-                key={preset.id}
-                title={preset.name}
-                description={`Utworzono: ${new Date(parseInt(preset.id)).toLocaleDateString()}`}
-                onPress={() => setSelectedPreset(preset.id)}
-                right={props => (
-                  <View style={styles.presetItemActions}>
-                    <RadioButton {...props} value={preset.id} />
-                    <IconButton
-                      icon="delete"
-                      size={20}
-                      onPress={() => handleDeletePreset(preset.id)}
-                      iconColor={theme.colors.error}
-                    />
-                  </View>
-                )}
-              />
-            ))}
-          </RadioButton.Group>
-        )}
-      </ScrollView>
-    </Dialog.ScrollArea>
-    <Dialog.Actions>
-      <Button onPress={() => setLoadPresetDialogVisible(false)}>Anuluj</Button>
-      <Button 
-        onPress={handleLoadPreset}
-        disabled={!selectedPreset}
-      >
-        Wczytaj
-      </Button>
-    </Dialog.Actions>
-  </Dialog>
-          <Dialog.Actions>
-            <Button onPress={() => setCreateDialogVisible(false)}>Anuluj</Button>
-            <Button onPress={handleCreateSession}>Utwórz</Button>
-          </Dialog.Actions>
-        </Dialog>
+        {}
+        <CreateSessionDialog
+          visible={createDialogVisible}
+          onDismiss={() => setCreateDialogVisible(false)}
+          onCreateSession={(newFormData: FormData) => {
+            handleCreateSession(newFormData);
+          }}
+          onOpenSavePresetDialog={(dialogFormData: FormData) => {
+            setFormData(dialogFormData);
+            setSavePresetDialogVisible(true);
+          }}
+          onOpenLoadPresetDialog={() => setLoadPresetDialogVisible(true)}
+        />
 
         {}
-        <Dialog visible={editDialogVisible} onDismiss={() => setEditDialogVisible(false)}>
-          <Dialog.Title>Edytuj sesję</Dialog.Title>
-          <Dialog.ScrollArea style={styles.dialogScrollArea}>
-            <ScrollView>
-              <View style={styles.dialogContent}>
-                <TextInput
-                  label="Nazwa sesji"
-                  value={formData.name}
-                  onChangeText={(text) => setFormData({ ...formData, name: text })}
-                  mode="outlined"
-                  style={styles.input}
-                  placeholder="Wprowadź nazwę sesji"
-                />
-                
-                <View style={styles.paramRow}>
-                  <Text variant="bodyMedium" style={{...styles.inputHalf, marginTop: 8}}>Status sesji:</Text>
-                  <SegmentedButtons
-                    value={formData.isActive ? "true" : "false"}
-                    onValueChange={(value) => setFormData({ ...formData, isActive: value === "true" })}
-                    buttons={[
-                      { value: "true", label: 'Aktywna' },
-                      { value: "false", label: 'Nieaktywna' },
-                    ]}
-                    style={{...styles.segmentedButtons, flex: 1}}
-                  />
-                </View>
-
-                <TextInput
-                  label="Temperatura (°C)"
-                  value={formData.temperature}
-                  onChangeText={(text) => setFormData({ ...formData, temperature: text })}
-                  keyboardType="decimal-pad"
-                  mode="outlined"
-                  style={styles.input}
-                  error={!!formErrors.temperature}
-                />
-                {formErrors.temperature ? (
-                  <HelperText type="error">{formErrors.temperature}</HelperText>
-                ) : null}
-
-                <Text variant="titleSmall" >Typ rytmu serca</Text>
-                <Card style={styles.selectionCard}>
-                  <Card.Content>
-                    <RadioButton.Group 
-                      onValueChange={(value) => setFormData({ ...formData, rhythmType: parseInt(value) })} 
-                      value={formData.rhythmType.toString()}
-                    >
-                      <View style={styles.radioRow}>
-                        <RadioButton.Item 
-                          label={EkgFactory.getNameForType(EkgType.NORMAL)} 
-                          value={EkgType.NORMAL.toString()} 
-                          position="leading"
-                        />
-                      </View>
-                      <View style={styles.radioRow}>
-                        <RadioButton.Item 
-                          label={EkgFactory.getNameForType(EkgType.TACHYCARDIA)} 
-                          value={EkgType.TACHYCARDIA.toString()}
-                          position="leading" 
-                        />
-                      </View>
-                      <View style={styles.radioRow}>
-                        <RadioButton.Item 
-                          label={EkgFactory.getNameForType(EkgType.BRADYCARDIA)} 
-                          value={EkgType.BRADYCARDIA.toString()}
-                          position="leading" 
-                        />
-                      </View>
-                      <View style={styles.radioRow}>
-                        <RadioButton.Item 
-                          label={EkgFactory.getNameForType(EkgType.AFIB)} 
-                          value={EkgType.AFIB.toString()}
-                          position="leading" 
-                        />
-                      </View>
-                      <View style={styles.radioRow}>
-                        <RadioButton.Item 
-                          label={EkgFactory.getNameForType(EkgType.VFIB)} 
-                          value={EkgType.VFIB.toString()}
-                          position="leading" 
-                        />
-                      </View>
-                      <View style={styles.radioRow}>
-                        <RadioButton.Item 
-                          label={EkgFactory.getNameForType(EkgType.VTACH)} 
-                          value={EkgType.VTACH.toString()}
-                          position="leading" 
-                        />
-                      </View>
-                      <View style={styles.radioRow}>
-                        <RadioButton.Item 
-                          label={EkgFactory.getNameForType(EkgType.TORSADE)} 
-                          value={EkgType.TORSADE.toString()}
-                          position="leading" 
-                        />
-                      </View>
-                      <View style={styles.radioRow}>
-                        <RadioButton.Item 
-                          label={EkgFactory.getNameForType(EkgType.ASYSTOLE)} 
-                          value={EkgType.ASYSTOLE.toString()}
-                          position="leading" 
-                        />
-                      </View>
-                      <View style={styles.radioRow}>
-                        <RadioButton.Item 
-                          label={EkgFactory.getNameForType(EkgType.HEART_BLOCK)} 
-                          value={EkgType.HEART_BLOCK.toString()}
-                          position="leading" 
-                        />
-                      </View>
-                      <View style={styles.radioRow}>
-                        <RadioButton.Item 
-                          label={EkgFactory.getNameForType(EkgType.PVC)} 
-                          value={EkgType.PVC.toString()}
-                          position="leading" 
-                        />
-                      </View>
-                    </RadioButton.Group>
-                  </Card.Content>
-                </Card>
-
-                <TextInput
-                  label="Tętno (BPM)"
-                  value={formData.beatsPerMinute}
-                  onChangeText={(text) => setFormData({ ...formData, beatsPerMinute: text })}
-                  keyboardType="number-pad"
-                  mode="outlined"
-                  style={styles.input}
-                  error={!!formErrors.beatsPerMinute}
-                />
-                {formErrors.beatsPerMinute ? (
-                  <HelperText type="error">{formErrors.beatsPerMinute}</HelperText>
-                ) : null}
-
-                <Text variant="titleSmall" >Poziom szumów</Text>
-                <SegmentedButtons
-                  value={formData.noiseLevel.toString()}
-                  onValueChange={(value) => setFormData({ ...formData, noiseLevel: parseInt(value) })}
-                  buttons={[
-                    { value: NoiseType.NONE.toString(), label: 'Brak' },
-                    { value: NoiseType.MILD.toString(), label: 'Łagodne' },
-                    { value: NoiseType.MODERATE.toString(), label: 'Umiarkowane' },
-                    { value: NoiseType.SEVERE.toString(), label: 'Silne' },
-                  ]}
-                  style={styles.segmentedButtons}
-                />
-
-                <TextInput
-                  label="Kod sesji"
-                  value={formData.sessionCode}
-                  onChangeText={(text) => setFormData({ ...formData, sessionCode: text })}
-                  keyboardType="number-pad"
-                  mode="outlined"
-                  style={styles.input}
-                  error={!!formErrors.sessionCode}
-                  maxLength={6}
-                />
-                {formErrors.sessionCode ? (
-                  <HelperText type="error">{formErrors.sessionCode}</HelperText>
-                ) : (
-                  <HelperText type="info">6-cyfrowy kod do udostępnienia studentom</HelperText>
-                )}
-                
-                <Text variant="titleMedium" style={styles.sectionTitle}>Parametry medyczne</Text>
-                
-                <View style={styles.paramRow}>
-                  <TextInput
-                    label="Tętno (HR)"
-                    value={formData.hr}
-                    onChangeText={(text) => setFormData({ ...formData, hr: text })}
-                    keyboardType="number-pad"
-                    mode="outlined"
-                    style={styles.inputHalf}
-                    right={<TextInput.Affix text="BPM" />}
-                  />
-                  
-                  <TextInput
-                    label="Ciśnienie krwi (BP)"
-                    value={formData.bp}
-                    onChangeText={(text) => setFormData({ ...formData, bp: text })}
-                    keyboardType="default"
-                    mode="outlined"
-                    style={styles.inputHalf}
-                    right={<TextInput.Affix text="mmHg" />}
-                    placeholder="np. 120/80"
-                  />
-                </View>
-                
-                <View style={styles.paramRow}>
-                  <TextInput
-                    label="SpO₂"
-                    value={formData.spo2}
-                    onChangeText={(text) => setFormData({ ...formData, spo2: text })}
-                    keyboardType="number-pad"
-                    mode="outlined"
-                    style={styles.inputHalf}
-                    right={<TextInput.Affix text="%" />}
-                  />
-                  
-                  <TextInput
-                    label="EtCO₂"
-                    value={formData.etco2}
-                    onChangeText={(text) => setFormData({ ...formData, etco2: text })}
-                    keyboardType="number-pad"
-                    mode="outlined"
-                    style={styles.inputHalf}
-                    right={<TextInput.Affix text="mmHg" />}
-                  />
-                </View>
-                
-                <TextInput
-                  label="Częstość oddechów (RR)"
-                  value={formData.rr}
-                  onChangeText={(text) => setFormData({ ...formData, rr: text })}
-                  keyboardType="number-pad"
-                  mode="outlined"
-                  style={styles.input}
-                  right={<TextInput.Affix text="oddechów/min" />}
-                />
-              </View>
-            </ScrollView>
-          </Dialog.ScrollArea>
-          <Dialog.Actions>
-            <Button onPress={() => setCreateDialogVisible(false)}>Anuluj</Button>
-            <Button onPress={handleCreateSession}>Utwórz</Button>
-          </Dialog.Actions>
-        </Dialog>
+        <EditSessionDialog
+          visible={editDialogVisible}
+          onDismiss={() => setEditDialogVisible(false)}
+          session={currentSession}
+          onUpdateSession={(updatedFormData: FormData) => {
+            handleUpdateSession(updatedFormData);
+          }}
+        />
 
         {}
-        <Dialog visible={editDialogVisible} onDismiss={() => setEditDialogVisible(false)}>
-          <Dialog.Title>Edytuj sesję</Dialog.Title>
-          <Dialog.ScrollArea style={styles.dialogScrollArea}>
-            <ScrollView>
-              <View style={styles.dialogContent}>
-                <TextInput
-                  label="Nazwa sesji"
-                  value={formData.name}
-                  onChangeText={(text) => setFormData({ ...formData, name: text })}
-                  mode="outlined"
-                  style={styles.input}
-                  placeholder="Wprowadź nazwę sesji"
-                />
-                
-                <View style={styles.paramRow}>
-                  <Text variant="bodyMedium" style={{...styles.inputHalf, marginTop: 8}}>Status sesji:</Text>
-                  <SegmentedButtons
-                    value={formData.isActive ? "true" : "false"}
-                    onValueChange={(value) => setFormData({ ...formData, isActive: value === "true" })}
-                    buttons={[
-                      { value: "true", label: 'Aktywna' },
-                      { value: "false", label: 'Nieaktywna' },
-                    ]}
-                    style={{...styles.segmentedButtons, flex: 1}}
-                  />
-                </View>
-
-                <TextInput
-                  label="Temperatura (°C)"
-                  value={formData.temperature}
-                  onChangeText={(text) => setFormData({ ...formData, temperature: text })}
-                  keyboardType="decimal-pad"
-                  mode="outlined"
-                  style={styles.input}
-                  error={!!formErrors.temperature}
-                />
-                {formErrors.temperature ? (
-                  <HelperText type="error">{formErrors.temperature}</HelperText>
-                ) : null}
-
-                <Text variant="titleSmall" >Typ rytmu serca</Text>
-                <Card style={styles.selectionCard}>
-                  <Card.Content>
-                    <RadioButton.Group 
-                      onValueChange={(value) => setFormData({ ...formData, rhythmType: parseInt(value) })} 
-                      value={formData.rhythmType.toString()}
-                    >
-                      <View style={styles.radioRow}>
-                        <RadioButton.Item 
-                          label={EkgFactory.getNameForType(EkgType.NORMAL)} 
-                          value={EkgType.NORMAL.toString()} 
-                          position="leading"
-                        />
-                      </View>
-                      <View style={styles.radioRow}>
-                        <RadioButton.Item 
-                          label={EkgFactory.getNameForType(EkgType.TACHYCARDIA)} 
-                          value={EkgType.TACHYCARDIA.toString()}
-                          position="leading" 
-                        />
-                      </View>
-                      <View style={styles.radioRow}>
-                        <RadioButton.Item 
-                          label={EkgFactory.getNameForType(EkgType.BRADYCARDIA)} 
-                          value={EkgType.BRADYCARDIA.toString()}
-                          position="leading" 
-                        />
-                      </View>
-                      <View style={styles.radioRow}>
-                        <RadioButton.Item 
-                          label={EkgFactory.getNameForType(EkgType.AFIB)} 
-                          value={EkgType.AFIB.toString()}
-                          position="leading" 
-                        />
-                      </View>
-                      <View style={styles.radioRow}>
-                        <RadioButton.Item 
-                          label={EkgFactory.getNameForType(EkgType.VFIB)} 
-                          value={EkgType.VFIB.toString()}
-                          position="leading" 
-                        />
-                      </View>
-                      <View style={styles.radioRow}>
-                        <RadioButton.Item 
-                          label={EkgFactory.getNameForType(EkgType.VTACH)} 
-                          value={EkgType.VTACH.toString()}
-                          position="leading" 
-                        />
-                      </View>
-                      <View style={styles.radioRow}>
-                        <RadioButton.Item 
-                          label={EkgFactory.getNameForType(EkgType.TORSADE)} 
-                          value={EkgType.TORSADE.toString()}
-                          position="leading" 
-                        />
-                      </View>
-                      <View style={styles.radioRow}>
-                        <RadioButton.Item 
-                          label={EkgFactory.getNameForType(EkgType.ASYSTOLE)} 
-                          value={EkgType.ASYSTOLE.toString()}
-                          position="leading" 
-                        />
-                      </View>
-                      <View style={styles.radioRow}>
-                        <RadioButton.Item 
-                          label={EkgFactory.getNameForType(EkgType.HEART_BLOCK)} 
-                          value={EkgType.HEART_BLOCK.toString()}
-                          position="leading" 
-                        />
-                      </View>
-                      <View style={styles.radioRow}>
-                        <RadioButton.Item 
-                          label={EkgFactory.getNameForType(EkgType.PVC)} 
-                          value={EkgType.PVC.toString()}
-                          position="leading" 
-                        />
-                      </View>
-                    </RadioButton.Group>
-                  </Card.Content>
-                </Card>
-
-                <TextInput
-                  label="Tętno (BPM)"
-                  value={formData.beatsPerMinute}
-                  onChangeText={(text) => setFormData({ ...formData, beatsPerMinute: text })}
-                  keyboardType="number-pad"
-                  mode="outlined"
-                  style={styles.input}
-                  error={!!formErrors.beatsPerMinute}
-                />
-                {formErrors.beatsPerMinute ? (
-                  <HelperText type="error">{formErrors.beatsPerMinute}</HelperText>
-                ) : null}
-
-                <Text variant="titleSmall" >Poziom szumów</Text>
-                <SegmentedButtons
-                  value={formData.noiseLevel.toString()}
-                  onValueChange={(value) => setFormData({ ...formData, noiseLevel: parseInt(value) })}
-                  buttons={[
-                    { value: NoiseType.NONE.toString(), label: 'Brak' },
-                    { value: NoiseType.MILD.toString(), label: 'Łagodne' },
-                    { value: NoiseType.MODERATE.toString(), label: 'Umiarkowane' },
-                    { value: NoiseType.SEVERE.toString(), label: 'Silne' },
-                  ]}
-                  style={styles.segmentedButtons}
-                />
-
-                <TextInput
-                  label="Kod sesji"
-                  value={formData.sessionCode}
-                  onChangeText={(text) => setFormData({ ...formData, sessionCode: text })}
-                  keyboardType="number-pad"
-                  mode="outlined"
-                  style={styles.input}
-                  error={!!formErrors.sessionCode}
-                  maxLength={6}
-                />
-                {formErrors.sessionCode ? (
-                  <HelperText type="error">{formErrors.sessionCode}</HelperText>
-                ) : (
-                  <HelperText type="info">6-cyfrowy kod do udostępnienia studentom</HelperText>
-                )}
-                
-                <Text variant="titleMedium" style={styles.sectionTitle}>Parametry medyczne</Text>
-                
-                <View style={styles.paramRow}>
-                  <TextInput
-                    label="Tętno (HR)"
-                    value={formData.hr}
-                    onChangeText={(text) => setFormData({ ...formData, hr: text })}
-                    keyboardType="number-pad"
-                    mode="outlined"
-                    style={styles.inputHalf}
-                    right={<TextInput.Affix text="BPM" />}
-                  />
-                  
-                  <TextInput
-                    label="Ciśnienie krwi (BP)"
-                    value={formData.bp}
-                    onChangeText={(text) => setFormData({ ...formData, bp: text })}
-                    keyboardType="default"
-                    mode="outlined"
-                    style={styles.inputHalf}
-                    right={<TextInput.Affix text="mmHg" />}
-                    placeholder="np. 120/80"
-                  />
-                </View>
-                
-                <View style={styles.paramRow}>
-                  <TextInput
-                    label="SpO₂"
-                    value={formData.spo2}
-                    onChangeText={(text) => setFormData({ ...formData, spo2: text })}
-                    keyboardType="number-pad"
-                    mode="outlined"
-                    style={styles.inputHalf}
-                    right={<TextInput.Affix text="%" />}
-                  />
-                  
-                  <TextInput
-                    label="EtCO₂"
-                    value={formData.etco2}
-                    onChangeText={(text) => setFormData({ ...formData, etco2: text })}
-                    keyboardType="number-pad"
-                    mode="outlined"
-                    style={styles.inputHalf}
-                    right={<TextInput.Affix text="mmHg" />}
-                  />
-                </View>
-                
-                <TextInput
-                  label="Częstość oddechów (RR)"
-                  value={formData.rr}
-                  onChangeText={(text) => setFormData({ ...formData, rr: text })}
-                  keyboardType="number-pad"
-                  mode="outlined"
-                  style={styles.input}
-                  right={<TextInput.Affix text="oddechów/min" />}
-                />
-              </View>
-            </ScrollView>
-          </Dialog.ScrollArea>
-          <Dialog.Actions>
-            <Button onPress={() => setEditDialogVisible(false)}>Anuluj</Button>
-            <Button onPress={handleUpdateSession}>Zaktualizuj</Button>
-          </Dialog.Actions>
-        </Dialog>
+        <DeleteSessionDialog
+          visible={deleteDialogVisible}
+          onDismiss={() => setDeleteDialogVisible(false)}
+          session={currentSession}
+          onDeleteSession={handleDeleteSession}
+          errorColor={theme.colors.error}
+        />
 
         {}
-        <Dialog visible={deleteDialogVisible} onDismiss={() => setDeleteDialogVisible(false)}>
-          <Dialog.Title>Usuń sesję</Dialog.Title>
-          <Dialog.Content>
-            <Text>Czy na pewno chcesz usunąć sesję o kodzie {currentSession?.sessionCode}?</Text>
-            <Text style={styles.warningText}>Tej operacji nie można cofnąć.</Text>
-          </Dialog.Content>
-          <Dialog.Actions>
-            <Button onPress={() => {
-              setDeleteDialogVisible(false)
-              }}>Anuluj</Button>
-            <Button onPress={handleDeleteSession} textColor={theme.colors.error}>Usuń</Button>
-          </Dialog.Actions>
-        </Dialog>
-          
-        <Dialog
-  visible={soundDialogVisible}
-  onDismiss={() => setSoundDialogVisible(false)}
->
-        <Dialog.Title>Odtwórz dźwięk</Dialog.Title>
-        <Dialog.Content>
-          <Text>
-            Wybierz dźwięk do odtworzenia w sesji{" "}
-            <Text style={{ fontWeight: "bold" }}>{currentSession?.sessionCode}</Text>
-          </Text>
-          <RadioButton.Group
-            onValueChange={value => setSelectedSound(value)}
-            value={selectedSound || ""}
-          >
-            {[
-              { label: "Kaszel", value: "kaszel" },
-              { label: "Szum serca", value: "szum-serca" },
-              { label: "Normalne bicie", value: "normalne-bicie" },
-            ].map(option => (
-              <List.Item
-                key={option.value}
-                title={option.label}
-                onPress={() => setSelectedSound(option.value)}
-                right={props => (
-                  <RadioButton
-                    {...props}
-                    value={option.value}
-                  />
-                )}
-              />
-            ))}
-          </RadioButton.Group>
-        </Dialog.Content>
-        <Dialog.Actions>
-          <Button onPress={() => setSoundDialogVisible(false)}>Anuluj</Button>
-          <Button
-            onPress={handleSendAudioCommand}
-            disabled={!selectedSound}
-          >
-            Odtwórz
-          </Button>
-        </Dialog.Actions>
-      </Dialog>      
-
+        <SoundSelectionDialog
+          visible={soundDialogVisible}
+          onDismiss={() => setSoundDialogVisible(false)}
+          session={currentSession}
+          selectedSound={selectedSound}
+          setSelectedSound={setSelectedSound}
+          onSendAudioCommand={handleSendAudioCommand}
+        />
 
         {}
-        <Dialog visible={viewDialogVisible} onDismiss={() => setViewDialogVisible(false)} style={styles.viewDialog}>
-          <Dialog.Title>Szczegóły sesji</Dialog.Title>
-          <Dialog.Content>
-            {currentSession && (
-              <View>
-                <View style={styles.sessionHeader}>
-                  <Chip 
-                    icon="key" 
-                    mode="outlined" 
-                  >
-                    Kod: {currentSession.sessionCode}
-                  </Chip>
-                </View>
+        <ViewSessionDialog
+          visible={viewDialogVisible}
+          onDismiss={() => setViewDialogVisible(false)}
+          session={currentSession}
+          onEditSession={() => {
+            setViewDialogVisible(false);
+            if (currentSession) openEditDialog(currentSession);
+          }}
+          getRhythmTypeName={getRhythmTypeName}
+          getNoiseLevelName={getNoiseLevelName}
+          onViewEkgProjection={viewEkgProjection}
+        />
 
-                <Text variant="titleLarge" style={{textAlign: 'center', marginVertical: 8}}>
-                  {currentSession.name || `Sesja ${currentSession.sessionCode}`}
-                </Text>
-                
-                <View style={{flexDirection: 'row', justifyContent: 'center', marginBottom: 8}}>
-                  <Chip 
-                    icon={currentSession.isActive ? "check-circle" : "close-circle"} 
-                    mode="flat" 
-                    style={{
-                      backgroundColor: currentSession.isActive ? "#E8F5E9" : "#FFEBEE",
-                    }}
-                    textStyle={{
-                      color: currentSession.isActive ? "#2E7D32" : "#C62828",
-                    }}
-                  >
-                    {currentSession.isActive ? "Aktywna" : "Nieaktywna"}
-                  </Chip>
-                </View>
+        {}
+        <SavePresetDialog
+          visible={savePresetDialogVisible}
+          onDismiss={() => setSavePresetDialogVisible(false)}
+          onSavePreset={(name: string) => {
+            setPresetName(name);
+            handleSavePreset();
+          }}
+          formData={formData}
+        />
 
-                <Divider style={styles.divider} />
-                
-                <View style={styles.detailRow}>
-                  <Text variant="bodyMedium" style={styles.detailLabel}>Temperatura:</Text>
-                  <Text variant="bodyLarge" style={styles.detailValue}>
-                    {currentSession.temperature}°C
-                  </Text>
-                </View>
-
-                <View style={styles.detailRow}>
-                  <Text variant="bodyMedium" style={styles.detailLabel}>Rytm serca:</Text>
-                  <Text variant="bodyLarge" style={styles.detailValue}>
-                    {getRhythmTypeName(currentSession.rhythmType)}
-                  </Text>
-                </View>
-
-                <View style={styles.detailRow}>
-                  <Text variant="bodyMedium" style={styles.detailLabel}>Tętno:</Text>
-                  <Text variant="bodyLarge" style={styles.detailValue}>
-                    {currentSession.beatsPerMinute} uderzeń/min
-                  </Text>
-                </View>                <View style={styles.detailRow}>
-                  <Text variant="bodyMedium" style={styles.detailLabel}>Poziom szumów:</Text>
-                  <Text variant="bodyLarge" style={styles.detailValue}>
-                    {getNoiseLevelName(currentSession.noiseLevel)}
-                  </Text>
-                </View>
-
-                {currentSession.createdAt && (
-                  <View style={styles.detailRow}>
-                    <Text variant="bodyMedium" style={styles.detailLabel}>Utworzono:</Text>
-                    <Text variant="bodyLarge" style={styles.detailValue}>
-                      {new Date(currentSession.createdAt).toLocaleString()}
-                    </Text>
-                  </View>
-                )}
-                
-                <Divider style={styles.divider} />
-                
-                <Text variant="titleSmall" style={{marginBottom: 8}}>Parametry medyczne</Text>
-
-                <View style={styles.detailRow}>
-                  <Text variant="bodyMedium" style={styles.detailLabel}>Tętno (HR):</Text>
-                  <Text variant="bodyLarge" style={styles.detailValue}>
-                    {currentSession.hr != null ? `${currentSession.hr} BPM` : 'N/A'}
-                  </Text>
-                </View>
-                
-                <View style={styles.detailRow}>
-                  <Text variant="bodyMedium" style={styles.detailLabel}>Ciśnienie (BP):</Text>
-                  <Text variant="bodyLarge" style={styles.detailValue}>
-                    {currentSession.bp || 'N/A'}
-                  </Text>
-                </View>
-                
-                <View style={styles.detailRow}>
-                  <Text variant="bodyMedium" style={styles.detailLabel}>SpO₂:</Text>
-                  <Text variant="bodyLarge" style={styles.detailValue}>
-                    {currentSession.spo2 != null ? `${currentSession.spo2}%` : 'N/A'}
-                  </Text>
-                </View>
-                
-                <View style={styles.detailRow}>
-                  <Text variant="bodyMedium" style={styles.detailLabel}>EtCO₂:</Text>
-                  <Text variant="bodyLarge" style={styles.detailValue}>
-                    {currentSession.etco2 != null ? `${currentSession.etco2} mmHg` : 'N/A'}
-                  </Text>
-                </View>
-                
-                <View style={styles.detailRow}>
-                  <Text variant="bodyMedium" style={styles.detailLabel}>Częstość oddechów (RR):</Text>
-                  <Text variant="bodyLarge" style={styles.detailValue}>
-                    {currentSession.rr != null ? `${currentSession.rr} oddechów/min` : 'N/A'}
-                  </Text>
-                </View>
-                
-                <Divider style={styles.divider} />
-                
-                <Button 
-                  mode="contained" 
-                  icon="monitor-eye"
-                  onPress={() => {
-                    setViewDialogVisible(false);
-                    viewEkgProjection(currentSession);
-                  }}
-                  style={styles.viewEkgButton}
-                >
-                  Podgląd EKG
-                </Button>
-              </View>
-            )}
-          </Dialog.Content>
-          <Dialog.Actions>
-            <Button onPress={() => setViewDialogVisible(false)}>Zamknij</Button>
-            <Button 
-              onPress={() => {
-                setViewDialogVisible(false);
-                openEditDialog(currentSession!);
-              }} 
-              icon="pencil"
-            >
-              Edytuj
-            </Button>
-          </Dialog.Actions>
-        </Dialog>
-        
+        {}
+        <LoadPresetDialog
+          visible={loadPresetDialogVisible}
+          onDismiss={() => setLoadPresetDialogVisible(false)}
+          presets={presets}
+          onLoadPreset={(preset: Preset) => {
+            setFormData(preset.data);
+            showSnackbar("Preset został wczytany", "success");
+            setLoadPresetDialogVisible(false);
+          }}
+          onDeletePreset={handleDeletePreset}
+        />
       </Portal>
-
       <FAB
         icon="plus"
         style={[styles.fab, { backgroundColor: theme.colors.primary }]}
         onPress={openCreateDialog}
         color="#fff"
       />
-
       <Snackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
         duration={3000}
         style={[
-          styles.snackbar, 
-          snackbarType === "success" ? styles.successSnackbar : styles.errorSnackbar
+          styles.snackbar,
+          snackbarType === "success"
+            ? styles.successSnackbar
+            : styles.errorSnackbar,
         ]}
       >
         {snackbarMessage}
@@ -1627,51 +696,6 @@ const styles = StyleSheet.create({
   emptyStateButton: {
     marginTop: 16,
   },
-  input: {
-    marginBottom: 8,
-  },
-  inputHalf: {
-    flex: 1,
-    marginBottom: 8,
-    marginHorizontal: 4,
-  },
-  paramRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginHorizontal: -4,
-  },
-  pickerLabel: {
-    fontSize: 12,
-    marginTop: 8,
-    marginBottom: 4,
-    paddingHorizontal: 4,
-  },
-  pickerContainer: {
-    borderWidth: 1,
-    borderRadius: 4,
-    borderColor: "#ccc",
-    marginBottom: 16,
-  },
-  picker: {
-    height: 50,
-  },
-  segmentedButtons: {
-    marginBottom: 16,
-  },
-  selectionCard: {
-    marginBottom: 16,
-  },
-  radioRow: {
-    marginVertical: 2,
-  },
-  generateButton: {
-    marginTop: 0,
-    alignSelf: "flex-start",
-  },
-  warningText: {
-    color: "red",
-    marginTop: 8,
-  },
   fab: {
     position: "absolute",
     margin: 16,
@@ -1686,54 +710,6 @@ const styles = StyleSheet.create({
   },
   errorSnackbar: {
     backgroundColor: "#F44336",
-  },
-  viewDialog: {
-    maxWidth: 480,
-  },
-  sessionHeader: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginBottom: 8,
-  },
-  sessionCode: {
-    fontSize: 16,
-  },
-  divider: {
-    marginVertical: 12,
-  },
-  detailRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginVertical: 6,
-  },
-  detailLabel: {
-    opacity: 0.7,
-  },
-  detailValue: {
-    fontWeight: "500",
-  },
-  viewEkgButton: {
-    marginTop: 8,
-  },
-  dialogScrollArea: {
-    maxHeight: 400,
-  },
-  dialogContent: {
-    paddingHorizontal: 24,
-    paddingVertical: 8,
-  },
-  presetButtonsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginVertical: 16,
-    gap: 8,
-  },
-  presetButton: {
-    flex: 1,
-  },
-  presetItemActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
   },
 });
 
