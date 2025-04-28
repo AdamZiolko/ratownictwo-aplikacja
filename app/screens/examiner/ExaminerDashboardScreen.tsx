@@ -25,7 +25,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import {SoundQueueItem } from './types/types'; 
 
-
 import CreateSessionDialog from "./modals/CreateSessionDialog";
 import EditSessionDialog from "./modals/EditSessionDialog";
 import ViewSessionDialog from "./modals/ViewSessionDialog";
@@ -62,7 +61,6 @@ const ExaminerDashboardScreen = () => {
   
   const [savePresetDialogVisible, setSavePresetDialogVisible] = useState(false);
   const [loadPresetDialogVisible, setLoadPresetDialogVisible] = useState(false);
-  const [presetName, setPresetName] = useState("");
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
   const [presets, setPresets] = useState<Preset[]>([]);
 
@@ -116,6 +114,7 @@ const ExaminerDashboardScreen = () => {
     loadSessions();
   }, []);
 
+  
   
   useEffect(() => {
     const loadPresets = async () => {
@@ -262,24 +261,20 @@ const ExaminerDashboardScreen = () => {
   };
 
   
-  const handleSavePreset = async () => {
-    if (!presetName) {
+  const handleSavePreset = async (name: string) => {
+    if (!name.trim()) {
       showSnackbar("Podaj nazwę presetu", "error");
       return;
     }
-
     try {
       const newPreset: Preset = {
         id: Date.now().toString(),
-        name: presetName,
+        name,              
         data: formData,
       };
-
       const updatedPresets = [...presets, newPreset];
       await storage.setItem("presets", JSON.stringify(updatedPresets));
-
       setPresets(updatedPresets);
-      setPresetName("");
       setSavePresetDialogVisible(false);
       showSnackbar("Preset został zapisany", "success");
     } catch (error) {
@@ -287,22 +282,7 @@ const ExaminerDashboardScreen = () => {
       showSnackbar("Błąd zapisywania presetu", "error");
     }
   };
-
-  const handleLoadPreset = async () => {
-    if (!selectedPreset) return;
-
-    try {
-      const presetToLoad = presets.find((p) => p.id === selectedPreset);
-      if (presetToLoad) {
-        setFormData(presetToLoad.data);
-        setLoadPresetDialogVisible(false);
-        showSnackbar("Preset został wczytany", "success");
-      }
-    } catch (error) {
-      console.error("Błąd wczytywania presetu:", error);
-      showSnackbar("Błąd wczytywania presetu", "error");
-    }
-  };
+  
 
   const handleDeletePreset = async (presetId: string) => {
     try {
@@ -548,16 +528,15 @@ const ExaminerDashboardScreen = () => {
         <CreateSessionDialog
           visible={createDialogVisible}
           onDismiss={() => setCreateDialogVisible(false)}
-          onCreateSession={(newFormData: FormData) => {
-            handleCreateSession(newFormData);
-          }}
-          onOpenSavePresetDialog={(dialogFormData: FormData) => {
+        initialData={formData}           // ← tu
+          onCreateSession={handleCreateSession}
+          onOpenSavePresetDialog={(dialogFormData) => {
             setFormData(dialogFormData);
             setSavePresetDialogVisible(true);
           }}
           onOpenLoadPresetDialog={() => setLoadPresetDialogVisible(true)}
         />
-
+        
         {}
         <EditSessionDialog
           visible={editDialogVisible}
@@ -606,10 +585,7 @@ const ExaminerDashboardScreen = () => {
         <SavePresetDialog
           visible={savePresetDialogVisible}
           onDismiss={() => setSavePresetDialogVisible(false)}
-          onSavePreset={(name: string) => {
-            setPresetName(name);
-            handleSavePreset();
-          }}
+          onSavePreset={handleSavePreset}
           formData={formData}
         />
 
@@ -618,7 +594,7 @@ const ExaminerDashboardScreen = () => {
           visible={loadPresetDialogVisible}
           onDismiss={() => setLoadPresetDialogVisible(false)}
           presets={presets}
-          onLoadPreset={(preset: Preset) => {
+          onLoadPreset={(preset) => {
             setFormData(preset.data);
             showSnackbar("Preset został wczytany", "success");
             setLoadPresetDialogVisible(false);

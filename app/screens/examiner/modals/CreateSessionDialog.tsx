@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { 
   View, 
   ScrollView, 
@@ -31,6 +31,14 @@ const CreateSessionDialog = ({
   onOpenLoadPresetDialog,
 }: CreateSessionDialogProps) => {
   
+
+  useEffect(() => {
+    if (visible && initialData) {
+      setFormData(initialData);
+    }
+  }, [visible, initialData]);
+
+
   const [formData, setFormData] = useState<FormData>(initialData || {
     name: "", 
     temperature: "36.6",
