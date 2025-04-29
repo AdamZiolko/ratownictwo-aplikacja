@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Dialog, Button, RadioButton, Text, List, TextInput } from 'react-native-paper';
-import { Session, SoundQueueItem } from '../types/types'; // Dodaj import typu
+import { Dialog, Button, RadioButton, Text, List, TextInput, IconButton, Checkbox } from 'react-native-paper';
+import { Session, SoundQueueItem } from '../types/types';
 
 interface SoundSelectionDialogProps {
   visible: boolean;
@@ -9,8 +9,12 @@ interface SoundSelectionDialogProps {
   session: Session | null;
   selectedSound: string | null;
   setSelectedSound: React.Dispatch<React.SetStateAction<string | null>>;
-  onSendAudioCommand: () => void;
+  onSendAudioCommand: (loop?: boolean) => void;
   onSendQueue: (queue: SoundQueueItem[]) => void;
+  onPauseAudioCommand: () => void;
+  onResumeAudioCommand: () => void;
+  onStopAudioCommand: () => void;
+  
 }
 
 const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
@@ -21,20 +25,25 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
   setSelectedSound,
   onSendAudioCommand,
   onSendQueue,
+  onPauseAudioCommand, 
+  onResumeAudioCommand,
+  onStopAudioCommand,
 }) => {
   const [delay, setDelay] = useState('0');
   const [queue, setQueue] = useState<SoundQueueItem[]>([]);
   const [activeTab, setActiveTab] = useState<'single' | 'queue'>('single');
+  const [isLooping, setIsLooping] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const addToQueue = () => {
     if (selectedSound) {
       const newItem = {
         soundName: selectedSound,
-        delay: parseInt(delay) || 0
+        delay: parseInt(delay) || 0,
       };
       setQueue([...queue, newItem]);
-      setSelectedSound(null); // Reset wyboru dźwięku po dodaniu do kolejki
-      setDelay('0'); // Reset opóźnienia
+      setSelectedSound(null);
+      setDelay('0');
     }
   };
 
@@ -45,8 +54,8 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
 
   const handleSendQueue = () => {
     onSendQueue(queue);
-    setQueue([]); // Czyść kolejkę po wysłaniu
-    setSelectedSound(null); // Reset wyboru dźwięku
+    setQueue([]);
+    setSelectedSound(null);
   };
 
   if (!session) return null;
@@ -54,17 +63,17 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
   return (
     <Dialog visible={visible} onDismiss={onDismiss}>
       <Dialog.Title>Odtwórz dźwięk</Dialog.Title>
-      
+
       <View style={styles.tabsContainer}>
-        <Button 
-          mode={activeTab === 'single' ? 'contained' : 'outlined'} 
+        <Button
+          mode={activeTab === 'single' ? 'contained' : 'outlined'}
           onPress={() => setActiveTab('single')}
           style={styles.tabButton}
         >
           Pojedynczy
         </Button>
-        <Button 
-          mode={activeTab === 'queue' ? 'contained' : 'outlined'} 
+        <Button
+          mode={activeTab === 'queue' ? 'contained' : 'outlined'}
           onPress={() => setActiveTab('queue')}
           style={styles.tabButton}
         >
@@ -76,12 +85,12 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
         <Text style={styles.sectionHeader}>Wybierz dźwięk:</Text>
         <RadioButton.Group
           onValueChange={setSelectedSound}
-          value={selectedSound || ""}
+          value={selectedSound || ''}
         >
           {[
-            { label: "Kaszel", value: "kaszel" },
-            { label: "Szum serca", value: "serce" },
-            { label: "Normalne bicie", value: "normalne-bicie" },
+            { label: 'Kaszel', value: 'kaszel' },
+            { label: 'Szum serca', value: 'serce' },
+            { label: 'Normalne bicie', value: 'normalne-bicie' },
           ].map(option => (
             <List.Item
               key={option.value}
@@ -94,6 +103,56 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
           ))}
         </RadioButton.Group>
 
+        {activeTab === 'single' && (
+          <>
+            <Text style={styles.sectionHeader}>Odtwarzaj w pętli:</Text>
+            <View style={styles.checkboxRow}>
+              <Checkbox
+                status={isLooping ? 'checked' : 'unchecked'}
+                onPress={() => setIsLooping(!isLooping)}
+              />
+              <Text style={{ alignSelf: 'center' }}>Odtwarzaj w pętli</Text>
+            </View>
+
+            <Button
+              onPress={() => {
+                onSendAudioCommand(isLooping);
+                setIsPlaying(true);
+              }}
+              disabled={!selectedSound}
+              mode="contained"
+            >
+              Odtwórz
+            </Button>
+
+                    {isLooping && (
+          <View style={styles.controlIcons}>
+            <IconButton
+              icon={isPlaying ? 'pause-circle' : 'play-circle'}
+              size={32}
+              onPress={() => {
+                if (isPlaying) {
+                  onPauseAudioCommand();
+                } else {
+                  onResumeAudioCommand();
+                }
+                setIsPlaying(!isPlaying);
+              }}
+            />
+            <IconButton
+              icon="stop-circle"
+              size={32}
+              onPress={() => {
+                onStopAudioCommand();
+                setIsPlaying(false);
+                setIsLooping(false);
+              }}
+            />
+          </View>
+        )}
+          </>
+        )}
+
         {activeTab === 'queue' && (
           <>
             <Text style={styles.sectionHeader}>Opóźnienie (ms):</Text>
@@ -105,8 +164,8 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
               style={styles.input}
             />
 
-            <Button 
-              mode="outlined" 
+            <Button
+              mode="outlined"
               onPress={addToQueue}
               disabled={!selectedSound}
               style={styles.addButton}
@@ -120,30 +179,21 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
                 <Text>
                   {item.soundName} (+{item.delay}ms)
                 </Text>
-                <Button 
+                <Button
                   icon="close"
                   compact
-                  onPress={() => removeFromQueue(index)} children={undefined}                />
+                  onPress={() => removeFromQueue(index)}
+                  children={undefined}
+                />
               </View>
             ))}
           </>
         )}
       </Dialog.Content>
+
       <Dialog.Actions>
         <Button onPress={onDismiss}>Anuluj</Button>
-        
-        {activeTab === 'single' ? (
-          <Button
-            onPress={() => {
-              onSendAudioCommand();
-              setSelectedSound(null); // Reset wyboru po wysłaniu
-            }}
-            disabled={!selectedSound}
-            mode="contained"
-          >
-            Odtwórz
-          </Button>
-        ) : (
+        {activeTab === 'queue' && (
           <Button
             onPress={handleSendQueue}
             disabled={queue.length === 0}
@@ -157,7 +207,6 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
   );
 };
 
-// Style pozostają bez zmian
 const styles = StyleSheet.create({
   tabsContainer: {
     flexDirection: 'row',
@@ -172,20 +221,30 @@ const styles = StyleSheet.create({
   sectionHeader: {
     fontWeight: 'bold',
     marginTop: 15,
-    marginBottom: 5
+    marginBottom: 5,
   },
   input: {
-    marginVertical: 10
+    marginVertical: 10,
   },
   addButton: {
-    marginVertical: 10
+    marginVertical: 10,
   },
   queueItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 5
-  }
+    paddingVertical: 5,
+  },
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  controlIcons: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 10,
+  },
 });
 
 export default SoundSelectionDialog;

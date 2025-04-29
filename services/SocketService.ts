@@ -129,8 +129,9 @@ class SocketService {
 
   emitAudioCommand(
     sessionCode: string, 
-    command: string, 
-    soundName: string | SoundQueueItem[] | null = null
+    command: 'PLAY' | 'PAUSE' | 'RESUME' | 'STOP', 
+    soundName: string,
+    loop: boolean = false 
   ): void {
     if (!this.socket || !this.socket.connected) {
       this.connect();
@@ -139,10 +140,11 @@ class SocketService {
     const payload = {
       code: sessionCode,
       command,
-      soundName // Teraz może być stringiem lub tablicą SoundQueueItem
+      soundName,
+      loop 
     };
   
-    console.log(`Emitting audio-command to session-${sessionCode}`, payload);
+    console.log(`Emitting audio-command: ${command}`, payload);
     this.socket?.emit('audio-command', payload);
   }
 

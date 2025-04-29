@@ -357,18 +357,44 @@ const ExaminerDashboardScreen = () => {
     });
   };
 
-  const handleSendAudioCommand = () => {
+  const handleSendAudioCommand = (loop?: boolean) => {
     if (!currentSession || !selectedSound) return;
-
+  
     socketService.emitAudioCommand(
       currentSession.sessionCode,
       "PLAY",
-      selectedSound
+      selectedSound,
+      loop
     );
-    setSoundDialogVisible(false);
     showSnackbar("Polecenie odtworzenia dźwięku wysłane", "success");
   };
 
+  const handlePauseAudioCommand = () => {
+    if (!currentSession || !selectedSound) return;
+    socketService.emitAudioCommand(
+      currentSession.sessionCode,
+      "PAUSE",
+      selectedSound
+    );
+  };
+  
+  const handleResumeAudioCommand = () => {
+    if (!currentSession || !selectedSound) return;
+    socketService.emitAudioCommand(
+      currentSession.sessionCode,
+      "RESUME",
+      selectedSound
+    );
+  };
+  
+  const handleStopAudioCommand = () => {
+    if (!currentSession || !selectedSound) return;
+    socketService.emitAudioCommand(
+      currentSession.sessionCode,
+      "STOP",
+      selectedSound
+    );
+  };
 
   const handleSendQueue = (queue: SoundQueueItem[]) => {
     if (!currentSession || queue.length === 0) return;
@@ -378,7 +404,6 @@ const ExaminerDashboardScreen = () => {
       "PLAY_QUEUE",
       queue 
     );
-    setSoundDialogVisible(false);
     showSnackbar(`Wysłano kolejkę (${queue.length} dźwięków)`, "success");
   };
   return (
@@ -565,6 +590,9 @@ const ExaminerDashboardScreen = () => {
           setSelectedSound={setSelectedSound}
           onSendAudioCommand={handleSendAudioCommand}
           onSendQueue={handleSendQueue}
+          onPauseAudioCommand={handlePauseAudioCommand}
+          onResumeAudioCommand={handleResumeAudioCommand}
+          onStopAudioCommand={handleStopAudioCommand}
         />
 
         {}

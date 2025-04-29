@@ -45,6 +45,7 @@ const StudentSessionScreen = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sessionData, setSessionData] = useState<Session | null>(null);
+  const [soundsLoaded, setSoundsLoaded] = useState(false);
 
   
   const [temperature, setTemperature] = useState<VitalWithFluctuation>({
@@ -160,7 +161,7 @@ const StudentSessionScreen = () => {
   
   useEffect(() => {
     if (Platform.OS === 'web') return;
-
+  
     Audio.setAudioModeAsync({
       allowsRecordingIOS: false,
       staysActiveInBackground: false,
@@ -169,43 +170,45 @@ const StudentSessionScreen = () => {
       shouldDuckAndroid: true,
       interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
     });
-
+  
     let isMounted = true;
     (async () => {
-      for (const [name, module] of Object.entries(soundFiles)) {
-        const { sound } = await Audio.Sound.createAsync(module);
-        if (!isMounted) {
-          await sound.unloadAsync();
-        } else {
-          soundObjects.current[name] = sound;
+      try {
+        for (const [name, module] of Object.entries(soundFiles)) {
+          const { sound } = await Audio.Sound.createAsync(module);
+          if (!isMounted) {
+            await sound.unloadAsync();
+          } else {
+            soundObjects.current[name] = sound;
+          }
         }
+        console.log('🔉 Sounds loaded');
+        setSoundsLoaded(true); // Aktualizuj stan po załadowaniu
+      } catch (error) {
+        console.error('Błąd ładowania dźwięków:', error);
       }
-      console.log('🔉 Sounds loaded');
     })();
-
+  
     return () => {
       isMounted = false;
       Object.values(soundObjects.current).forEach(s => s.unloadAsync());
+      setSoundsLoaded(false); 
     };
   }, []);
 
   
   useEffect(() => {
-    if (Platform.OS === 'web' || !accessCode) return;
+    if (Platform.OS === 'web' || !accessCode || !soundsLoaded) return;
   
     const processSoundQueue = async (queue: SoundQueueItem[]) => {
       for (const item of queue) {
         const snd = soundObjects.current[item.soundName];
         if (!snd) continue;
-    
-        // 1. Zatrzymaj i zresetuj
+  
         await snd.stopAsync();
         await snd.setPositionAsync(0);
-    
-        // 2. Odtwórz
         await snd.playAsync();
-    
-        // 3. Poczekaj na koniec odtwarzania
+  
         await new Promise<void>(resolve => {
           const onStatusUpdate = (status: AVPlaybackStatus) => {
             if ('didJustFinish' in status && status.didJustFinish) {
@@ -215,30 +218,55 @@ const StudentSessionScreen = () => {
           };
           snd.setOnPlaybackStatusUpdate(onStatusUpdate);
         });
-    
-        // 4. Teraz dodatkowe opóźnienie (item.delay w ms)
+  
         if (item.delay && item.delay > 0) {
           await new Promise(r => setTimeout(r, item.delay));
         }
       }
     };
-    
   
     const unsubscribe = socketService.on<{
       command: string;
       soundName: string | SoundQueueItem[];
-    }>('audio-command', async ({ command, soundName }) => {
-      if (command === 'PLAY' && typeof soundName === 'string') {
-        const snd = soundObjects.current[soundName];
-        if (snd) await snd.replayAsync({ positionMillis: 0 });
+      loop?: boolean;
+    }>('audio-command', async (payload) => {
+      console.log('Received command:', payload.command, 'Payload:', payload);
+  
+      // Najpierw obsłuż kolejkę
+      if (payload.command === 'PLAY_QUEUE' && Array.isArray(payload.soundName)) {
+        await processSoundQueue(payload.soundName);
+        return;
       }
-      else if (command === 'PLAY_QUEUE' && Array.isArray(soundName)) {
-        await processSoundQueue(soundName);
+  
+      // Następnie obsłuż pojedyncze komendy
+      if (typeof payload.soundName === 'string') {
+        const snd = soundObjects.current[payload.soundName];
+        if (!snd) return;
+  
+        switch (payload.command) {
+          case 'PLAY':
+            console.log('PLAY with loop:', payload.loop);
+            await snd.stopAsync();
+            await snd.setPositionAsync(0);
+            await snd.setIsLoopingAsync(!!payload.loop);
+            await snd.playAsync();
+            break;
+          case 'PAUSE':
+            await snd.pauseAsync();
+            break;
+          case 'RESUME':
+            await snd.playAsync();
+            break;
+          case 'STOP':
+            await snd.stopAsync();
+            await snd.setPositionAsync(0);
+            break;
+        }
       }
     });
   
     return () => unsubscribe();
-  }, [accessCode]);
+  }, [accessCode, soundsLoaded]);
   
   useEffect(() => {
     if (!sessionData) return;
