@@ -28,8 +28,7 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
   const pathDataRef = useRef('');
   const containerRef = useRef<View>(null);
 
-  
-  useLayoutEffect(() => {
+    useLayoutEffect(() => {
     if (containerRef.current) {
       containerRef.current.measure((x, y, width, height, pageX, pageY) => {
         if (width > 0) {
@@ -37,7 +36,12 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
         }
       });
     }
-  }, []);
+    
+    // Force a reset when ekgType changes (in addition to the useEffect)
+    if (ekgType !== undefined) {
+      resetEkg();
+    }
+  }, [ekgType]);
 
   
   const draw = () => {
@@ -74,11 +78,14 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
     animationRef.current = requestAnimationFrame(draw);
   };
 
-  
-  useEffect(() => {
-    
+    useEffect(() => {
     resetEkg();
-  }, [bpm, noiseType]);
+    // Immediately start drawing with the new parameters
+    if (isRunning && containerWidth > 0) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = requestAnimationFrame(draw);
+    }
+  }, [bpm, noiseType, ekgType]);
 
   useEffect(() => {
     if (isRunning && containerWidth > 0) {
@@ -90,15 +97,17 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
     return () => {
       cancelAnimationFrame(animationRef.current);
     };
-  }, [isRunning, bpm, noiseType, containerWidth]);
+  }, [isRunning, containerWidth]);
 
   
   useEffect(() => {
     EkgFactory.resetNoiseCache();
   }, [noiseType]);
-
   const resetEkg = () => {
+    // Cancel any ongoing animation frame
+    cancelAnimationFrame(animationRef.current);
     
+    // Reset all state variables
     xOffsetRef.current = 0;
     previousXRef.current = 0;
     previousYRef.current = BASELINE;
@@ -106,7 +115,7 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
     pathDataRef.current = '';
     setPathData('');
     
-    
+    // Reset factory noise cache for new parameters
     EkgFactory.resetNoiseCache();
   };
 
