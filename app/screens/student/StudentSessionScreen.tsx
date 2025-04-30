@@ -10,6 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { sessionService, Session } from '@/services/SessionService';
+import { StudentStorageService } from '@/services/StudentStorageService';
 import EkgDisplay from '@/components/ekg/EkgDisplay';
 import { View, StyleSheet, ScrollView, Platform } from 'react-native';
 import { socketService } from '@/services/SocketService';
@@ -45,8 +46,37 @@ const StudentSessionScreen = () => {
   const [error, setError] = useState<string | null>(null);
   const [sessionData, setSessionData] = useState<Session | null>(null);
   const [soundsLoaded, setSoundsLoaded] = useState(false);
-
   
+  
+  const [studentInfo, setStudentInfo] = useState({
+    firstName: firstName || '',
+    lastName: lastName || '',
+    albumNumber: albumNumber || ''
+  });
+  
+  
+  useEffect(() => {
+    async function loadStudentData() {
+      
+      if (firstName && lastName && albumNumber) return;
+      
+      try {
+        const storedStudentData = await StudentStorageService.getStudent();
+        if (storedStudentData) {
+          setStudentInfo({
+            firstName: firstName || storedStudentData.firstName,
+            lastName: lastName || storedStudentData.lastName,
+            albumNumber: albumNumber || storedStudentData.albumNumber
+          });
+        }
+      } catch (error) {
+        console.error('Failed to load student data:', error);
+      }
+    }
+    
+    loadStudentData();
+  }, [firstName, lastName, albumNumber]);
+
   const [temperature, setTemperature] = useState<VitalWithFluctuation>({
     baseValue: null,
     currentValue: null,
@@ -137,18 +167,57 @@ const StudentSessionScreen = () => {
   
   useEffect(() => {
     let unsub: (() => void) | undefined;
-    if (accessCode) {
+    
+    async function setupSessionSubscription() {
+      if (!accessCode) return;
+      
+      let name = firstName || '';
+      let surname = lastName || '';
+      let albumNum = albumNumber || '';
+      
+      
+      if (!firstName || !lastName || !albumNumber) {
+        try {
+          const storedStudentData = await StudentStorageService.getStudent();
+          if (storedStudentData) {
+            name = firstName || storedStudentData.firstName;
+            surname = lastName || storedStudentData.lastName;
+            albumNum = albumNumber || storedStudentData.albumNumber;
+          }
+        } catch (error) {
+          console.error('Failed to load student data:', error);
+        }
+      }
+      
+      
       sessionService
-        .subscribeToSessionUpdates(accessCode.toString(), updated => {
-          setSessionData(updated);
-        })
+        .subscribeToSessionUpdates(
+          accessCode.toString(), 
+          updated => {
+            setSessionData(updated);
+          },
+          {
+            name,
+            surname,
+            albumNumber: albumNum
+          }
+        )
         .then(fn => { unsub = fn; })
         .catch(console.error);
     }
-    return () => {
+    
+    setupSessionSubscription();
+      return () => {
+      
       unsub?.();
+      
+      
+      if (accessCode) {
+        sessionService.leaveSession(accessCode.toString());
+        console.log(`Left session ${accessCode}`);
+      }
     };
-  }, [accessCode]);
+  }, [accessCode, firstName, lastName, albumNumber]);
 
   
   useEffect(() => {
@@ -175,7 +244,7 @@ const StudentSessionScreen = () => {
           }
         }
         console.log('🔉 Sounds loaded');
-        setSoundsLoaded(true); // Aktualizuj stan po załadowaniu
+        setSoundsLoaded(true); 
       } catch (error) {
         console.error('Błąd ładowania dźwięków:', error);
       }
@@ -224,13 +293,13 @@ const StudentSessionScreen = () => {
     }>('audio-command', async (payload) => {
       console.log('Received command:', payload.command, 'Payload:', payload);
   
-      // Najpierw obsłuż kolejkę
+      
       if (payload.command === 'PLAY_QUEUE' && Array.isArray(payload.soundName)) {
         await processSoundQueue(payload.soundName);
         return;
       }
   
-      // Następnie obsłuż pojedyncze komendy
+      
       if (typeof payload.soundName === 'string') {
         const snd = soundObjects.current[payload.soundName];
         if (!snd) return;

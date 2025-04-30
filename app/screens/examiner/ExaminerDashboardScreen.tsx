@@ -38,6 +38,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { EkgType, NoiseType } from "@/services/EkgFactory";
 import { sessionService } from "@/services/SessionService";
 import { socketService } from "@/services/SocketService";
+import StudentsListDialog from "./modals/StudentsListDialog";
 
 const ExaminerDashboardScreen = () => {
   const theme = useTheme();
@@ -48,12 +49,12 @@ const ExaminerDashboardScreen = () => {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  
-  const [createDialogVisible, setCreateDialogVisible] = useState(false);
+    const [createDialogVisible, setCreateDialogVisible] = useState(false);
   const [editDialogVisible, setEditDialogVisible] = useState(false);
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
   const [viewDialogVisible, setViewDialogVisible] = useState(false);
   const [soundDialogVisible, setSoundDialogVisible] = useState(false);
+  const [studentsDialogVisible, setStudentsDialogVisible] = useState(false);
 
   
   const [selectedSound, setSelectedSound] = useState<string | null>(null);
@@ -178,10 +179,14 @@ const ExaminerDashboardScreen = () => {
     setCurrentSession(session);
     setDeleteDialogVisible(true);
   };
-
   const openViewDialog = (session: Session) => {
     setCurrentSession(session);
     setViewDialogVisible(true);
+  };
+  
+  const openStudentsDialog = (session: Session) => {
+    setCurrentSession(session);
+    setStudentsDialogVisible(true);
   };
   
   const handleCreateSession = async (data: FormData) => {
@@ -475,8 +480,7 @@ const ExaminerDashboardScreen = () => {
                 </Button>
               </View>
             ) : (
-              <DataTable style={styles.table}>
-                <DataTable.Header>
+              <DataTable style={styles.table}>                <DataTable.Header>
                   <DataTable.Title>Kod</DataTable.Title>
                   <DataTable.Title>Temp.</DataTable.Title>
                   <DataTable.Title>Rytm</DataTable.Title>
@@ -506,8 +510,7 @@ const ExaminerDashboardScreen = () => {
                       {session.beatsPerMinute}
                     </DataTable.Cell>
                     <DataTable.Cell style={styles.actionsColumn}>
-                      <View style={styles.rowActions}>
-                        <IconButton
+                      <View style={styles.rowActions}>                        <IconButton
                           icon="pencil"
                           size={20}
                           onPress={() => openEditDialog(session)}
@@ -524,7 +527,21 @@ const ExaminerDashboardScreen = () => {
                           size={20}
                           onPress={() => openSoundDialog(session)}
                           iconColor={theme.colors.secondary}
-                        />
+                        />                        <View style={styles.studentButtonContainer}>
+                          <IconButton
+                            icon="account-group"
+                            size={20}
+                            onPress={() => openStudentsDialog(session)}
+                            iconColor={theme.colors.tertiary || "#9c27b0"}
+                          />
+                          {session.students && session.students.length > 0 && (
+                            <View style={styles.studentCountBadge}>
+                              <Text style={styles.studentCountText}>
+                                {session.students.length}
+                              </Text>
+                            </View>
+                          )}
+                        </View>
                       </View>
                     </DataTable.Cell>
                   </DataTable.Row>
@@ -539,7 +556,7 @@ const ExaminerDashboardScreen = () => {
         <CreateSessionDialog
           visible={createDialogVisible}
           onDismiss={() => setCreateDialogVisible(false)}
-        initialData={formData}           // ← tu
+        initialData={formData}           
           onCreateSession={handleCreateSession}
           onOpenSavePresetDialog={(dialogFormData) => {
             setFormData(dialogFormData);
@@ -581,14 +598,17 @@ const ExaminerDashboardScreen = () => {
           onStopAudioCommand={handleStopAudioCommand}
         />
 
-        {}
-        <ViewSessionDialog
+        {}        <ViewSessionDialog
           visible={viewDialogVisible}
           onDismiss={() => setViewDialogVisible(false)}
           session={currentSession}
           onEditSession={() => {
             setViewDialogVisible(false);
             if (currentSession) openEditDialog(currentSession);
+          }}
+          onShowStudents={() => {
+            setViewDialogVisible(false);
+            if (currentSession) openStudentsDialog(currentSession);
           }}
           getRhythmTypeName={getRhythmTypeName}
           getNoiseLevelName={getNoiseLevelName}
@@ -602,8 +622,7 @@ const ExaminerDashboardScreen = () => {
           formData={formData}
         />
 
-        {}
-        <LoadPresetDialog
+        {}        <LoadPresetDialog
           visible={loadPresetDialogVisible}
           onDismiss={() => setLoadPresetDialogVisible(false)}
           presets={presets}
@@ -613,6 +632,13 @@ const ExaminerDashboardScreen = () => {
             setLoadPresetDialogVisible(false);
           }}
           onDeletePreset={handleDeletePreset}
+        />
+
+        {}
+        <StudentsListDialog
+          visible={studentsDialogVisible}
+          onDismiss={() => setStudentsDialogVisible(false)}
+          session={currentSession}
         />
       </Portal>
       <FAB
@@ -677,6 +703,35 @@ const styles = StyleSheet.create({
   actionsColumn: {
     flex: 1.5,
     justifyContent: "center",
+  },  actionsTitleContainer: {
+    flexDirection: 'column',
+  },
+  actionsSubtitle: {
+    fontSize: 10,
+    opacity: 0.6,
+  },  studentButtonContainer: {
+    position: 'relative',
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  studentCountBadge: {
+    position: 'absolute',
+    right: 2,
+    top: 2,
+    backgroundColor: '#ff5722',
+    borderRadius: 10,
+    minWidth: 16,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 2,
+  },
+  studentCountText: {
+    color: 'white',
+    fontSize: 9,
+    fontWeight: 'bold',
   },
   loadingContainer: {
     flex: 1,

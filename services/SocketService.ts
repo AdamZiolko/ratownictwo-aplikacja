@@ -1,5 +1,3 @@
-
-
 import { io, Socket } from 'socket.io-client';
 import { Session } from './SessionService';
 import { API_URL } from '@/constants/Config';
@@ -49,12 +47,10 @@ class SocketService {
       console.log(`DEBUG: Socket event received: ${event}`, args);
     });
   }
-  
-  joinSessionCode(code: string): Promise<{ success: boolean, code: string }> {
+    joinSessionCode(code: string, studentInfo?: { name?: string, surname?: string, albumNumber?: string }): Promise<{ success: boolean, code: string }> {
     if (!this.socket || !this.socket.connected) {
       this.connect();
     }
-
 
     return new Promise((resolve) => {
       if (!this.socket) {
@@ -62,7 +58,20 @@ class SocketService {
         return;
       }
 
-      this.socket.emit('join-code', code);
+      if (studentInfo && studentInfo.name && studentInfo.surname && studentInfo.albumNumber) {
+        
+        this.socket.emit('join-code', {
+          code,
+          name: studentInfo.name,
+          surname: studentInfo.surname,
+          albumNumber: studentInfo.albumNumber
+        });
+        console.log('Joining code room with student info:', code, studentInfo);
+      } else {
+        
+        this.socket.emit('join-code', code);
+        console.log('Joining code room:', code);
+      }
       
       this.socket.once('joined-code', (response) => {
         console.log('Joined code room:', response);
@@ -95,8 +104,11 @@ class SocketService {
       listeners?.delete(callback);
     };
   }
-  
-  async onSessionUpdate(code: string, callback: (session: Session) => void): Promise<() => void> {
+    async onSessionUpdate(
+    code: string, 
+    callback: (session: Session) => void,
+    studentInfo?: { name?: string, surname?: string, albumNumber?: string }
+  ): Promise<() => void> {
     
     if (!this.socket || !this.socket.connected) {
       console.log(`Socket not connected, reconnecting before subscribing to session ${code}...`);
@@ -105,7 +117,7 @@ class SocketService {
 
     
     console.log(`Joining session room for code: ${code}...`);
-    const { success } = await this.joinSessionCode(code);
+    const { success } = await this.joinSessionCode(code, studentInfo);
     if (!success) {
       console.error(`⚠️  Could not join session-${code}, updates won't arrive.`);
     }
@@ -147,8 +159,25 @@ class SocketService {
     console.log(`Emitting audio-command: ${command}`, payload);
     this.socket?.emit('audio-command', payload);
   }
-
   
+  leaveSession(code: string): void {
+    if (!this.socket || !this.socket.connected) return;
+    
+    console.log(`Leaving session room for code: ${code}`);
+    this.socket.emit('leave-code', code);
+    
+    // Also unsubscribe from specific session update events for this code
+    const specificEvent = `session-update-${code}`;
+    const listeners = this.listeners.get(specificEvent);
+    if (listeners) {
+      listeners.forEach(listener => {
+        this.socket?.off(specificEvent, listener);
+      });
+      this.listeners.delete(specificEvent);
+      console.log(`Removed all listeners for ${specificEvent}`);
+    }
+  }
+
   
   disconnect(): void {
     if (this.socket) {

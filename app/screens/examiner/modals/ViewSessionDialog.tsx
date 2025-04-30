@@ -8,6 +8,7 @@ interface ViewSessionDialogProps {
   onDismiss: () => void;
   session: Session | null;
   onEditSession: () => void;
+  onShowStudents?: () => void;
   getRhythmTypeName: (type: number) => string;
   getNoiseLevelName: (type: number) => string;
 }
@@ -17,6 +18,7 @@ const ViewSessionDialog: React.FC<ViewSessionDialogProps> = ({
   onDismiss,
   session,
   onEditSession,
+  onShowStudents,
   getRhythmTypeName,
   getNoiseLevelName,
 }) => {
@@ -104,19 +106,41 @@ const ViewSessionDialog: React.FC<ViewSessionDialogProps> = ({
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>EtCO₂:</Text>
             <Text style={styles.detailValue}>{session.etco2 || "-"} mmHg</Text>
-          </View>
-
-          <View style={styles.detailRow}>
+          </View>          <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Częst. oddechów (RR):</Text>
             <Text style={styles.detailValue}>{session.rr || "-"} odd./min</Text>
           </View>
 
           <Divider style={styles.divider} />
+
+          <Text variant="titleMedium" style={{ marginBottom: 8 }}>
+            Uczestnicy
+          </Text>
+
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Liczba studentów:</Text>
+            <View style={styles.studentCountContainer}>
+              <Text style={styles.detailValue}>
+                {session.students?.length || 0}
+              </Text>              {session.students && session.students.length > 0 && (
+                <Chip 
+                  icon="account-group"
+                  style={styles.studentsChip}
+                  onPress={onShowStudents}
+                >
+                  {session.students.length} {session.students.length === 1 ? 'student' : 'studentów'}
+                </Chip>
+              )}
+            </View>
+          </View>
+
+          <Divider style={styles.divider} />
         </View>
-      </Dialog.Content>
-      <Dialog.Actions>
+      </Dialog.Content>      <Dialog.Actions>
         <Button onPress={onDismiss}>Zamknij</Button>
-        <Button onPress={onEditSession} icon="pencil">
+        <Button 
+          onPress={onEditSession} 
+          icon="pencil">
           Edytuj
         </Button>
       </Dialog.Actions>
@@ -152,6 +176,14 @@ const styles = StyleSheet.create({
   },
   viewEkgButton: {
     marginTop: 8,
+  },
+  studentCountContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  studentsChip: {
+    marginLeft: 8,
+    height: 26,
   },
 });
 

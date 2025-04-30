@@ -1,8 +1,9 @@
-import React, { useState, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { StyleSheet, View, Keyboard, ScrollView } from 'react-native';
 import { Text, TextInput, Button, HelperText, IconButton } from 'react-native-paper';
 import { router } from 'expo-router';
 import { sessionService } from '@/services/SessionService';
+import { StudentStorageService } from '@/services/StudentStorageService';
 
 
 const MemoizedTitle = React.memo(({ title }: { title: string }) => (
@@ -32,8 +33,29 @@ const StudentAccessScreen = () => {
   const [fieldErrors, setFieldErrors] = useState({
     accessCode: '',
   });
+  const [studentData, setStudentData] = useState<{
+    firstName: string;
+    lastName: string;
+    albumNumber: string;
+  } | null>(null);
   
   const accessCodeInputRef = useRef<any>(null);
+  
+  
+  useEffect(() => {
+    async function loadStudentProfile() {
+      try {
+        const studentProfile = await StudentStorageService.getStudent();
+        if (studentProfile) {
+          setStudentData(studentProfile);
+        }
+      } catch (error) {
+        console.error('Failed to load student profile:', error);
+      }
+    }
+    
+    loadStudentProfile();
+  }, []);
 
   const validateFields = useCallback(() => {
     const errors = {
@@ -72,15 +94,26 @@ const StudentAccessScreen = () => {
         setError('Nieprawidłowy kod dostępu');
         setIsLoading(false);
         return;
+      }      
+      if (studentData) {
+        router.push({
+          pathname: '/routes/student-session',
+          params: { 
+            accessCode: accessCode.trim(),
+            firstName: studentData.firstName,
+            lastName: studentData.lastName,
+            albumNumber: studentData.albumNumber,
+          }
+        });
+      } else {
+        
+        router.push({
+          pathname: '/routes/student-profile',
+          params: { 
+            accessCode: accessCode.trim(),
+          }
+        });
       }
-
-      
-      router.push({
-        pathname: '/routes/student-session',
-        params: { 
-          accessCode: accessCode.trim(),
-        }
-      });
     } catch (err) {
       setError('Wystąpił błąd. Sprawdź wprowadzone dane i spróbuj ponownie.');
     } finally {

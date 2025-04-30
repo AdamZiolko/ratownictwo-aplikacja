@@ -1,7 +1,16 @@
-
-
 import apiService from "./ApiService";
 import { socketService } from './SocketService';
+
+export interface StudentInSession {
+  id?: number;
+  name?: string;
+  surname?: string;
+  albumNumber?: string;
+  student_sessions?: {
+    active?: boolean;
+    joinedAt?: string;
+  };
+}
 
 export interface Session {
   sessionId?: string;
@@ -21,6 +30,8 @@ export interface Session {
   spo2?: number;    
   etco2?: number;   
   rr?: number;      
+  
+  students?: StudentInSession[];
 }
 
 export class SessionService {
@@ -88,14 +99,17 @@ export class SessionService {
       throw error;
     }
   }
-
-  async subscribeToSessionUpdates(code: string, onUpdate: (session: Session) => void): Promise<() => void> {
+  async subscribeToSessionUpdates(
+    code: string, 
+    onUpdate: (session: Session) => void,
+    studentInfo?: { name?: string, surname?: string, albumNumber?: string }
+  ): Promise<() => void> {
   try {
     
     socketService.connect();
     
     
-    const joinResult = await socketService.joinSessionCode(code);
+    const joinResult = await socketService.joinSessionCode(code, studentInfo);
     console.log(`Socket joined code ${code}: ${joinResult.success ? 'Success' : 'Failed'}`);
     
     if (!joinResult.success) {
@@ -107,7 +121,7 @@ export class SessionService {
     const unsubscribe = await socketService.onSessionUpdate(code, updatedSession => {
       console.log(`Session update received for code ${code}:`, updatedSession);
       onUpdate(updatedSession);
-    });
+    }, studentInfo);
     
     
     return () => {
@@ -145,6 +159,15 @@ export class SessionService {
     }
   }
 
+  
+  leaveSession(code: string): void {
+    try {
+      socketService.leaveSession(code);
+      console.log(`Left session with code ${code}`);
+    } catch (error) {
+      console.error(`Error leaving session with code ${code}:`, error);
+    }
+  }
 
   
   async deleteSession(id: string, authToken?: string): Promise<any> {

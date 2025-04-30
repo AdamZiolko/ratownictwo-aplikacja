@@ -1,5 +1,16 @@
 import { EkgType, NoiseType } from "@/services/EkgFactory";
 
+export interface StudentInSession {
+  id?: number;
+  name?: string;
+  surname?: string;
+  albumNumber?: string;
+  student_sessions?: {
+    active?: boolean;
+    joinedAt?: string;
+  };
+}
+
 export interface Session {
   sessionId?: string;
   name?: string;
@@ -18,6 +29,8 @@ export interface Session {
   spo2?: number;
   etco2?: number;
   rr?: number;
+  
+  students?: StudentInSession[];
 }
 
 export interface FormData {
