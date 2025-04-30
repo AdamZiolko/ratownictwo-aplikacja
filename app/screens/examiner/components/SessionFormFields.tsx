@@ -127,16 +127,6 @@ const SessionFormFieldsWithSlider = ({
 
       <View style={styles.paramRow}>
         <TextInput
-          label="Tętno (HR)"
-          value={formData.hr}
-          onChangeText={(text) => setFormData({ ...formData, hr: text })}
-          keyboardType="number-pad"
-          mode="outlined"
-          style={styles.inputHalf}
-          right={<TextInput.Affix text="BPM" />}
-        />
-
-        <TextInput
           label="Ciśnienie krwi (BP)"
           value={formData.bp}
           onChangeText={(text) => setFormData({ ...formData, bp: text })}

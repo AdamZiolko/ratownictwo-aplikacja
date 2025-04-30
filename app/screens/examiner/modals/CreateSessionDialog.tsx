@@ -47,7 +47,6 @@ const CreateSessionDialog = ({
     noiseLevel: NoiseType.NONE,
     sessionCode: sessionService.generateSessionCode(), 
     isActive: true, 
-    hr: "80",         
     bp: "120/80",     
     spo2: "98",       
     etco2: "35",      

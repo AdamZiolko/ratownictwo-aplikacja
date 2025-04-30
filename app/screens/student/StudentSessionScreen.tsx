@@ -5,9 +5,7 @@ import {
   ActivityIndicator,
   Surface,
   Button,
-  Icon,
   Divider,
-  MD3Colors,
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
@@ -15,8 +13,9 @@ import { sessionService, Session } from '@/services/SessionService';
 import EkgDisplay from '@/components/ekg/EkgDisplay';
 import { View, StyleSheet, ScrollView, Platform } from 'react-native';
 import { socketService } from '@/services/SocketService';
-import { Audio, InterruptionModeAndroid, InterruptionModeIOS } from 'expo-av';
+import { Audio, AVPlaybackStatus, InterruptionModeAndroid, InterruptionModeIOS } from 'expo-av';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { SoundQueueItem } from '../examiner/types/types';
 
 const soundFiles: Record<string, any> = {
   kaszel: require('../../../assets/sounds/kaszel.mp3'),
@@ -53,13 +52,6 @@ const StudentSessionScreen = () => {
     currentValue: null,
     unit: '°C',
     fluctuationRange: 0.2, 
-  });
-  
-  const [heartRate, setHeartRate] = useState<VitalWithFluctuation>({
-    baseValue: null,
-    currentValue: null,
-    unit: 'BPM',
-    fluctuationRange: 3, 
   });
   
   const [bloodPressure, setBloodPressure] = useState<BloodPressure>({
@@ -278,12 +270,6 @@ const StudentSessionScreen = () => {
           : sessionData.temperature)
       : null;
       
-    const hrValue = sessionData.hr !== undefined && sessionData.hr !== null
-      ? (typeof sessionData.hr === 'string'
-          ? parseInt(sessionData.hr, 10)
-          : sessionData.hr)
-      : null;
-      
     const { systolic, diastolic } = parseBloodPressure(sessionData.bp);
     
     const spo2Value = sessionData.spo2 !== undefined && sessionData.spo2 !== null
@@ -305,7 +291,6 @@ const StudentSessionScreen = () => {
       : null;
     
     setTemperature(prev => ({ ...prev, baseValue: tempValue, currentValue: tempValue }));
-    setHeartRate(prev => ({ ...prev, baseValue: hrValue, currentValue: hrValue }));
     setBloodPressure({ 
       systolic, 
       diastolic, 
@@ -319,11 +304,6 @@ const StudentSessionScreen = () => {
     
     const fluctuationTimer = setInterval(() => {
       setTemperature(prev => ({
-        ...prev,
-        currentValue: generateFluctuation(prev.baseValue, prev.fluctuationRange),
-      }));
-      
-      setHeartRate(prev => ({
         ...prev,
         currentValue: generateFluctuation(prev.baseValue, prev.fluctuationRange),
       }));
@@ -456,15 +436,6 @@ const StudentSessionScreen = () => {
                 <Text style={styles.vitalValue}>
                   {temperature.currentValue !== null
                     ? `${temperature.currentValue}${temperature.unit}`
-                    : 'N/A'}
-                </Text>
-              </Surface>
-              <Surface style={styles.vitalItemCard} elevation={1}>
-                <MaterialCommunityIcons name="heart" size={22} color={theme.colors.error} />
-                <Text style={styles.vitalLabel}>Tętno</Text>
-                <Text style={styles.vitalValue}>
-                  {heartRate.currentValue !== null 
-                    ? `${heartRate.currentValue} ${heartRate.unit}` 
                     : 'N/A'}
                 </Text>
               </Surface>

@@ -91,7 +91,6 @@ const ExaminerDashboardScreen = () => {
     noiseLevel: NoiseType.NONE,
     sessionCode: "",
     isActive: true,
-    hr: "80",
     bp: "120/80",
     spo2: "98",
     etco2: "35",
@@ -195,7 +194,6 @@ const ExaminerDashboardScreen = () => {
         noiseLevel: data.noiseLevel as number,
         sessionCode: data.sessionCode,
         isActive: data.isActive,
-        hr: parseInt(data.hr) || undefined,
         bp: data.bp,
         spo2: parseInt(data.spo2) || undefined,
         etco2: parseInt(data.etco2) || undefined,
@@ -224,7 +222,6 @@ const ExaminerDashboardScreen = () => {
         noiseLevel: data.noiseLevel as number,
         sessionCode: data.sessionCode,
         isActive: data.isActive,
-        hr: parseInt(data.hr) || undefined,
         bp: data.bp,
         spo2: parseInt(data.spo2) || undefined,
         etco2: parseInt(data.etco2) || undefined,
@@ -344,17 +341,6 @@ const ExaminerDashboardScreen = () => {
       default:
         return "Nieznane";
     }
-  };
-
-  const viewEkgProjection = (session: Session) => {
-    router.push({
-      pathname: "/screens/ekg-projection/EkgProjection",
-      params: {
-        rhythmType: session.rhythmType,
-        bpm: session.beatsPerMinute.toString(),
-        readOnly: "true",
-      },
-    });
   };
 
   const handleSendAudioCommand = (loop?: boolean) => {
@@ -606,7 +592,6 @@ const ExaminerDashboardScreen = () => {
           }}
           getRhythmTypeName={getRhythmTypeName}
           getNoiseLevelName={getNoiseLevelName}
-          onViewEkgProjection={viewEkgProjection}
         />
 
         {}

@@ -28,8 +28,6 @@ export interface FormData {
   noiseLevel: NoiseType;
   sessionCode: string;
   isActive: boolean;
-  
-  hr: string;
   bp: string;
   spo2: string;
   etco2: string;
