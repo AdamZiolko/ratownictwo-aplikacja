@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
@@ -23,7 +24,7 @@ import {
 } from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
-import {SoundQueueItem } from './types/types'; 
+import { SoundQueueItem } from './types/types';
 
 import CreateSessionDialog from "./modals/CreateSessionDialog";
 import EditSessionDialog from "./modals/EditSessionDialog";
@@ -31,7 +32,6 @@ import ViewSessionDialog from "./modals/ViewSessionDialog";
 import DeleteSessionDialog from "./modals/DeleteSessionDialog";
 import SoundSelectionDialog from "./modals/SoundSelectionDialog";
 import { SavePresetDialog, LoadPresetDialog } from "./modals/PresetDialogs";
-
 
 import { Session, FormData, Preset, Storage } from "./types/types";
 import { useAuth } from "@/contexts/AuthContext";
@@ -49,13 +49,15 @@ const ExaminerDashboardScreen = () => {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-    const [createDialogVisible, setCreateDialogVisible] = useState(false);
+  const [createDialogVisible, setCreateDialogVisible] = useState(false);
   const [editDialogVisible, setEditDialogVisible] = useState(false);
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
   const [viewDialogVisible, setViewDialogVisible] = useState(false);
   const [soundDialogVisible, setSoundDialogVisible] = useState(false);
   const [studentsDialogVisible, setStudentsDialogVisible] = useState(false);
 
+  
+  const [sessionStudents, setSessionStudents] = useState<Record<string, any[]>>({});
   
   const [selectedSound, setSelectedSound] = useState<string | null>(null);
 
@@ -112,9 +114,87 @@ const ExaminerDashboardScreen = () => {
   
   useEffect(() => {
     loadSessions();
+    
+    
+    socketService.connect();
+    
+    return () => {
+      
+      socketService.unsubscribeAsExaminer();
+    };
+  }, []);
+  
+
+  useEffect(() => {
+    sessions.forEach(session => {
+      if (user && session.sessionCode) {
+        subscribeToStudentUpdates(session.sessionCode, user.id.toString());
+      }
+    });
   }, []);
 
   
+  useEffect(() => {
+    
+    sessions.forEach(session => {
+      if (user && session.sessionCode) {
+        subscribeToStudentUpdates(session.sessionCode, user.id.toString());
+      }
+    });
+  }, [sessions, user]);
+  
+  
+  const subscribeToStudentUpdates = async (sessionCode: string, userId: string) => {
+    try {
+      const { success } = await socketService.subscribeAsExaminer(
+        sessionCode,
+        userId,
+        undefined, 
+        (data) => {
+          
+          console.log('Received student list update:', data);
+          setSessionStudents(prev => ({
+            ...prev,
+            [data.sessionCode]: data.students
+          }));
+        },
+        (data) => {
+          
+          console.log('Received student session update:', data);
+          setSessionStudents(prev => {
+            const currentStudents = prev[data.sessionCode] || [];
+            
+            if (data.type === 'join') {
+              
+              const exists = currentStudents.some(s => s.id === data.student.id);
+              if (!exists) {
+                return {
+                  ...prev,
+                  [data.sessionCode]: [...currentStudents, data.student]
+                };
+              }
+            } else if (data.type === 'leave') {
+              
+              return {
+                ...prev,
+                [data.sessionCode]: currentStudents.filter(s => s.id !== data.student.id)
+              };
+            }
+            
+            return prev;
+          });
+        }
+      );
+      
+      if (success) {
+        console.log(`Successfully subscribed to student updates for session ${sessionCode}`);
+      } else {
+        console.error(`Failed to subscribe to student updates for session ${sessionCode}`);
+      }
+    } catch (error) {
+      console.error('Error subscribing to student updates:', error);
+    }
+  };
   
   useEffect(() => {
     const loadPresets = async () => {
@@ -480,7 +560,8 @@ const ExaminerDashboardScreen = () => {
                 </Button>
               </View>
             ) : (
-              <DataTable style={styles.table}>                <DataTable.Header>
+              <DataTable style={styles.table}>
+                <DataTable.Header>
                   <DataTable.Title>Kod</DataTable.Title>
                   <DataTable.Title>Temp.</DataTable.Title>
                   <DataTable.Title>Rytm</DataTable.Title>
@@ -510,7 +591,8 @@ const ExaminerDashboardScreen = () => {
                       {session.beatsPerMinute}
                     </DataTable.Cell>
                     <DataTable.Cell style={styles.actionsColumn}>
-                      <View style={styles.rowActions}>                        <IconButton
+                      <View style={styles.rowActions}>
+                        <IconButton
                           icon="pencil"
                           size={20}
                           onPress={() => openEditDialog(session)}
@@ -527,17 +609,18 @@ const ExaminerDashboardScreen = () => {
                           size={20}
                           onPress={() => openSoundDialog(session)}
                           iconColor={theme.colors.secondary}
-                        />                        <View style={styles.studentButtonContainer}>
+                        />
+                        <View style={styles.studentButtonContainer}>
                           <IconButton
                             icon="account-group"
                             size={20}
                             onPress={() => openStudentsDialog(session)}
                             iconColor={theme.colors.tertiary || "#9c27b0"}
                           />
-                          {session.students && session.students.length > 0 && (
+                          {sessionStudents[session.sessionCode] && sessionStudents[session.sessionCode].length > 0 && (
                             <View style={styles.studentCountBadge}>
                               <Text style={styles.studentCountText}>
-                                {session.students.length}
+                                {sessionStudents[session.sessionCode].length}
                               </Text>
                             </View>
                           )}
@@ -556,7 +639,7 @@ const ExaminerDashboardScreen = () => {
         <CreateSessionDialog
           visible={createDialogVisible}
           onDismiss={() => setCreateDialogVisible(false)}
-        initialData={formData}           
+          initialData={formData}           
           onCreateSession={handleCreateSession}
           onOpenSavePresetDialog={(dialogFormData) => {
             setFormData(dialogFormData);
@@ -598,7 +681,8 @@ const ExaminerDashboardScreen = () => {
           onStopAudioCommand={handleStopAudioCommand}
         />
 
-        {}        <ViewSessionDialog
+        {}
+        <ViewSessionDialog
           visible={viewDialogVisible}
           onDismiss={() => setViewDialogVisible(false)}
           session={currentSession}
@@ -622,7 +706,8 @@ const ExaminerDashboardScreen = () => {
           formData={formData}
         />
 
-        {}        <LoadPresetDialog
+        {}
+        <LoadPresetDialog
           visible={loadPresetDialogVisible}
           onDismiss={() => setLoadPresetDialogVisible(false)}
           presets={presets}
@@ -639,6 +724,7 @@ const ExaminerDashboardScreen = () => {
           visible={studentsDialogVisible}
           onDismiss={() => setStudentsDialogVisible(false)}
           session={currentSession}
+          students={currentSession?.sessionCode ? sessionStudents[currentSession.sessionCode] : []}
         />
       </Portal>
       <FAB
@@ -703,13 +789,15 @@ const styles = StyleSheet.create({
   actionsColumn: {
     flex: 1.5,
     justifyContent: "center",
-  },  actionsTitleContainer: {
+  },
+  actionsTitleContainer: {
     flexDirection: 'column',
   },
   actionsSubtitle: {
     fontSize: 10,
     opacity: 0.6,
-  },  studentButtonContainer: {
+  },
+  studentButtonContainer: {
     position: 'relative',
     width: 40,
     height: 40,

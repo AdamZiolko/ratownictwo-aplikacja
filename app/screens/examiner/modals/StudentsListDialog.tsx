@@ -7,16 +7,20 @@ interface StudentsListDialogProps {
   visible: boolean;
   onDismiss: () => void;
   session: Session | null;
+  students?: any[];
 }
 
 const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
   visible,
   onDismiss,
   session,
+  students = []
 }) => {
   if (!session) return null;
 
-  const hasStudents = session.students && session.students.length > 0;
+  
+  const studentsList = students.length > 0 ? students : (session.students || []);
+  const hasStudents = studentsList && studentsList.length > 0;
   
   const formatJoinTime = (dateString?: string) => {
     if (!dateString) return "-";
@@ -55,7 +59,7 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
           </View>
         ) : (
           <ScrollView style={styles.studentsList}>
-            {session.students?.map((student, index) => (
+            {studentsList.map((student, index) => (
               <View key={student.id || index}>
                 <List.Item
                   title={`${student.name || ""} ${student.surname || ""}`}
@@ -86,7 +90,7 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
                     </View>
                   )}
                 />
-                {index < (session.students?.length || 0) - 1 && (
+                {index < studentsList.length - 1 && (
                   <Divider style={styles.itemDivider} />
                 )}
               </View>

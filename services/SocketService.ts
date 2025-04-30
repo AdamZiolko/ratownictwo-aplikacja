@@ -2,6 +2,30 @@ import { io, Socket } from 'socket.io-client';
 import { Session } from './SessionService';
 import { API_URL } from '@/constants/Config';
 
+export interface StudentListUpdate {
+  sessionId: string;
+  sessionCode: string;
+  students: {
+    id: number;
+    name?: string;
+    surname?: string;
+    albumNumber?: string;
+  }[];
+}
+
+export interface StudentSessionUpdate {
+  type: 'join' | 'leave';
+  sessionId: string;
+  sessionCode: string;
+  student: {
+    id: number;
+    name?: string;
+    surname?: string;
+    albumNumber?: string;
+  };
+  timestamp: Date;
+}
+
 class SocketService {
   private socket: Socket | null = null;
   private listeners: Map<string, Set<(data: any) => void>> = new Map();
@@ -138,11 +162,10 @@ class SocketService {
   }
   
 
-
   emitAudioCommand(
     sessionCode: string, 
-    command: 'PLAY' | 'PAUSE' | 'RESUME' | 'STOP', 
-    soundName: string,
+    command: 'PLAY' | 'PAUSE' | 'RESUME' | 'STOP' | 'PLAY_QUEUE', 
+    soundName: string | any,
     loop: boolean = false 
   ): void {
     if (!this.socket || !this.socket.connected) {
@@ -176,6 +199,64 @@ class SocketService {
       this.listeners.delete(specificEvent);
       console.log(`Removed all listeners for ${specificEvent}`);
     }
+  }
+
+  subscribeAsExaminer(
+    sessionCode: string, 
+    userId: string, 
+    token?: string, 
+    onStudentListUpdate?: (data: StudentListUpdate) => void,
+    onStudentSessionUpdate?: (data: StudentSessionUpdate) => void
+  ): Promise<{ success: boolean }> {
+    if (!this.socket || !this.socket.connected) {
+      this.connect();
+    }
+
+    return new Promise((resolve) => {
+      if (!this.socket) {
+        resolve({ success: false });
+        return;
+      }
+
+      console.log(`Subscribing examiner to session: ${sessionCode}`);
+      
+      this.socket.emit('examiner-subscribe', { 
+        sessionCode, 
+        userId, 
+        token 
+      });
+      
+      // Set up listeners for student updates if callbacks are provided
+      if (onStudentListUpdate) {
+        this.on<StudentListUpdate>('student-list-update', onStudentListUpdate);
+      }
+      
+      if (onStudentSessionUpdate) {
+        this.on<StudentSessionUpdate>('student-session-update', onStudentSessionUpdate);
+      }
+      
+      // Listen for subscription confirmation
+      this.socket.once('examiner-subscribe-success', () => {
+        console.log(`Successfully subscribed examiner to session ${sessionCode}`);
+        resolve({ success: true });
+      });
+      
+      this.socket.once('examiner-subscribe-error', (error) => {
+        console.error(`Failed to subscribe examiner to session ${sessionCode}:`, error);
+        resolve({ success: false });
+      });
+    });
+  }
+  
+  unsubscribeAsExaminer(): void {
+    if (!this.socket || !this.socket.connected) return;
+    
+    console.log('Unsubscribing examiner from session');
+    this.socket.emit('examiner-unsubscribe');
+    
+    // Clean up listeners
+    this.socket.off('student-list-update');
+    this.socket.off('student-session-update');
   }
 
   
