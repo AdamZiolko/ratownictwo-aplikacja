@@ -1,3 +1,5 @@
+// app/screens/student/StudentSessionScreen.tsx
+import ColorSensor from '@/components/ColorSensor';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   useTheme,
@@ -5,6 +7,7 @@ import {
   ActivityIndicator,
   Surface,
   Button,
+  Icon,
   Divider,
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -478,7 +481,24 @@ const StudentSessionScreen = () => {
               )}
             </View>
           </Surface>
+          
+          <Surface style={styles.vitalsCard} elevation={3}>
+          <View style={styles.cardHeaderRow}>
+          <Icon source="circle-outline" size={24} color={theme.colors.primary} />
+          <Text style={styles.cardHeaderTitle}>Sensor RGB</Text>
+          </View>
+          <ColorSensor />
+          </Surface>
 
+          <EkgDisplay
+            ekgType={Number(sessionData.rhythmType)}
+            bpm={Number(sessionData.beatsPerMinute)}
+            noiseType={sessionData.noiseLevel}
+            isRunning
+          />
+          
+          <Surface style={styles.vitalsCard} elevation={1}>
+            <Text style={styles.cardTitle}>Patient Vitals</Text>
           <Surface style={styles.ekgCard} elevation={3}>
             <View style={styles.cardHeaderRow}>
               <MaterialCommunityIcons name="heart-pulse" size={24} color={theme.colors.error} />
@@ -490,6 +510,7 @@ const StudentSessionScreen = () => {
               noiseType={sessionData.noiseLevel}
               isRunning
             />
+          </Surface>
           </Surface>
 
           <Surface style={styles.vitalsCard} elevation={3}>
@@ -563,6 +584,7 @@ const StudentSessionScreen = () => {
         </View>
       )}
     </SafeAreaView>
+
   );
 };
 
@@ -590,6 +612,7 @@ const styles = StyleSheet.create({
   vitalItem: { flex: 1, padding: 8 },
   vitalLabel: { fontSize: 14, opacity: 0.7, marginBottom: 4 },
   vitalValue: { fontSize: 18, fontWeight: '500' },
+
   contentContainer: { paddingBottom: 16 },
   sessionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   headerIcon: { marginRight: 8 },
