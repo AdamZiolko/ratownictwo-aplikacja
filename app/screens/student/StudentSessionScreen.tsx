@@ -265,7 +265,8 @@ const StudentSessionScreen = () => {
       for (const item of queue) {
         const snd = soundObjects.current[item.soundName];
         if (!snd) continue;
-  
+        await snd.setIsLoopingAsync(false);
+
         await snd.stopAsync();
         await snd.setPositionAsync(0);
         await snd.playAsync();
