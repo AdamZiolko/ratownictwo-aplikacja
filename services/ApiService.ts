@@ -1,8 +1,20 @@
 import AuthService from './AuthService';
+import { API_URL } from '../constants/Config';
 
-const API_URL = 'http://localhost:8080/api/';
+export const getSession = async (code: string) => {
+  const resp = await fetch(`${API_URL}/sessions/code/${code}`);
+  return resp.json();
+};
 
 class ApiService {
+
+  private buildUrl(endpoint: string): string {
+
+    const base = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
+
+    const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    return `${base}${path}`;
+  }
   
   private async getAuthHeader(): Promise<Headers> {
     const headers = new Headers({
@@ -138,7 +150,7 @@ class ApiService {
         }
       }
       
-      const request = new Request(`${API_URL}${endpoint}`, {
+      const request = new Request(this.buildUrl(endpoint), {
         method: 'GET',
         headers,
       });
@@ -172,7 +184,7 @@ class ApiService {
         }
       }
       
-      const request = new Request(`${API_URL}${endpoint}`, {
+      const request = new Request(this.buildUrl(endpoint), {
         method: 'POST',
         headers,
         body: JSON.stringify(data),
@@ -207,7 +219,7 @@ class ApiService {
         }
       }
       
-      const request = new Request(`${API_URL}${endpoint}`, {
+      const request = new Request(this.buildUrl(endpoint), {
         method: 'PUT',
         headers,
         body: JSON.stringify(data),
@@ -242,7 +254,7 @@ class ApiService {
         }
       }
       
-      const request = new Request(`${API_URL}${endpoint}`, {
+      const request = new Request(this.buildUrl(endpoint), {
         method: 'DELETE',
         headers,
       });

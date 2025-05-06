@@ -1,33 +1,18 @@
-import { Platform } from "react-native";
+// constants/Config.ts
 
+import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 
-export const API_URL =
-  Platform.OS === 'android' || Platform.OS === 'ios' 
-    ? 'http://192.168.0.139:8080'   
-    : 'http://localhost:8080'; 
+function getDevHost(): string {
+  const hostUri = (Constants.expoConfig as any)?.hostUri;
+  if (hostUri) return hostUri.split(':')[0];
+  const dbg = (Constants.manifest as any)?.debuggerHost;
+  if (dbg) return dbg.split(':')[0];
+  return 'localhost';
+}
 
+export const API_URL: string = __DEV__
+  ? `http://${getDevHost()}:8080/api`
+  : 'https://localhost/api';
 
-export const WS_URL = 
-  Platform.OS === 'web' 
-    ? 'ws://192.168.0.139:8080'  
-    : 'ws://localhost:8080'; 
-
-
-export const SESSION_CODE_LENGTH = 6;
-
-
-export const ENDPOINTS = {
-  AUTH: {
-    LOGIN: 'auth/signin',
-    REGISTER: 'auth/signup',
-    REFRESH: 'auth/refreshtoken',
-  },
-  SESSIONS: {
-    BASE: 'sessions',
-    BY_CODE: (code: number) => `sessions/code/${code}`,
-    VALIDATE: (code: number) => `sessions/validate/${code}`,
-  },
-  STUDENT: {
-    PROFILE: 'students/profile',
-  }
-};
+export {};
