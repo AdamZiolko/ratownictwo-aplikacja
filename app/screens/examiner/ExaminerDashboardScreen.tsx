@@ -1,11 +1,14 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   StyleSheet,
   View,
   ScrollView,
   RefreshControl,
   Platform,
+  Animated,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -66,7 +69,8 @@ const ExaminerDashboardScreen = () => {
   const [loadPresetDialogVisible, setLoadPresetDialogVisible] = useState(false);
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
   const [presets, setPresets] = useState<Preset[]>([]);
-
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const [headerVisible, setHeaderVisible] = useState(true);
   
   const storage: Storage = {
     getItem: async (key: string) => {
@@ -342,6 +346,16 @@ const ExaminerDashboardScreen = () => {
     }
   };
 
+  const handleScroll = Animated.event(
+    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+    {
+      listener: (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+        const currentOffset = event.nativeEvent.contentOffset.y;
+        setHeaderVisible(currentOffset <= 10);
+      },
+      useNativeDriver: false,
+    }
+  );
   
   const handleSavePreset = async (name: string) => {
     if (!name.trim()) {
@@ -505,34 +519,66 @@ const ExaminerDashboardScreen = () => {
           />
         </Menu>
       </Appbar.Header>
+  
       <View style={styles.contentContainer}>
-        <Card style={styles.statsCard}>
-          <Card.Content>
-            <View style={styles.statsRow}>
-              <View style={styles.statItem}>
-                <Text variant="titleLarge">{sessions?.length || 0}</Text>
-                <Text variant="bodyMedium">Wszystkie sesje</Text>
+        {/* Animowany nagłówek statystyk tylko dla mobilnych */}
+        {Platform.OS === 'android' && (
+          <Animated.View style={[
+            styles.statsHeader,
+            {
+              height: scrollY.interpolate({
+                inputRange: [0, 50],
+                outputRange: [80, 0],
+                extrapolate: 'clamp',
+              }),
+              opacity: scrollY.interpolate({
+                inputRange: [0, 30],
+                outputRange: [1, 0],
+                extrapolate: 'clamp',
+              }),
+            }
+          ]}>
+            <Card style={styles.statsCard}>
+              <Card.Content style={styles.statsContent}>
+                <View style={styles.statsRow}>
+                  <StatItem value={sessions?.length} label="Sesje" />
+                  <StatItem 
+                    value={sessions?.filter(s => s.beatsPerMinute > 100)?.length} 
+                    label="Tachykardia" 
+                  />
+                  <StatItem 
+                    value={sessions?.filter(s => s.beatsPerMinute < 60)?.length} 
+                    label="Bradykardia" 
+                  />
+                </View>
+              </Card.Content>
+            </Card>
+          </Animated.View>
+        )}
+  
+        {/* Dla wersji desktopowych */}
+        {Platform.OS !== 'android' && (
+          <Card style={styles.statsCard}>
+            <Card.Content>
+              <View style={styles.statsRow}>
+                <StatItem value={sessions?.length} label="Wszystkie sesje" />
+                <StatItem 
+                  value={sessions?.filter(s => s.beatsPerMinute > 100)?.length} 
+                  label="Tachykardia" 
+                />
+                <StatItem 
+                  value={sessions?.filter(s => s.beatsPerMinute < 60)?.length} 
+                  label="Bradykardia" 
+                />
               </View>
-              <View style={styles.statItem}>
-                <Text variant="titleLarge">
-                  {sessions?.filter((s) => s.beatsPerMinute > 100)?.length || 0}
-                </Text>
-                <Text variant="bodyMedium">Tachykardia</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text variant="titleLarge">
-                  {sessions?.filter((s) => s.beatsPerMinute < 60)?.length || 0}
-                </Text>
-                <Text variant="bodyMedium">Bradykardia</Text>
-              </View>
-            </View>
-          </Card.Content>
-        </Card>
-
+            </Card.Content>
+          </Card>
+        )}
+  
         <Text variant="titleMedium" style={styles.sectionTitle}>
           Aktywne Sesje
         </Text>
-
+  
         {loading && !refreshing ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" />
@@ -544,6 +590,8 @@ const ExaminerDashboardScreen = () => {
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
+            onScroll={Platform.OS === 'android' ? handleScroll : undefined}
+            scrollEventThrottle={16}
           >
             {sessions?.length === 0 ? (
               <View style={styles.emptyState}>
@@ -570,7 +618,7 @@ const ExaminerDashboardScreen = () => {
                     Akcje
                   </DataTable.Title>
                 </DataTable.Header>
-
+  
                 {sessions?.map((session) => (
                   <DataTable.Row
                     key={session.sessionId}
@@ -748,7 +796,14 @@ const ExaminerDashboardScreen = () => {
       </Snackbar>
     </SafeAreaView>
   );
+  
 };
+const StatItem = ({ value, label }: { value: number, label: string }) => (
+  <View style={styles.statItem}>
+    <Text variant="titleMedium" style={styles.statValue}>{value || 0}</Text>
+    <Text variant="labelSmall" style={styles.statLabel}>{label}</Text>
+  </View>
+);
 
 const styles = StyleSheet.create({
   container: {
@@ -765,30 +820,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-around",
   },
-  statItem: {
-    alignItems: "center",
-  },
   sectionTitle: {
-    marginBottom: 12,
+    marginBottom: 0,
     marginTop: 12,
     fontWeight: "bold",
-  },
-  tableContainer: {
-    flex: 1,
   },
   table: {
     marginBottom: 20,
   },
-  rhythmCell: {
-    maxWidth: 100,
-  },
   rowActions: {
     flexDirection: "row",
     justifyContent: "flex-end",
-  },
-  actionsColumn: {
-    flex: 1.5,
-    justifyContent: "center",
   },
   actionsTitleContainer: {
     flexDirection: 'column',
@@ -856,6 +898,67 @@ const styles = StyleSheet.create({
   },
   errorSnackbar: {
     backgroundColor: "#F44336",
+  },
+  statsHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1,
+    paddingHorizontal: Platform.select({
+      android: 8,
+      default: 16
+    }),
+  },
+  statsContent: {
+    paddingVertical: Platform.select({
+      android: 8,
+      default: 16
+    }),
+  },
+  statItem: {
+    alignItems: 'center',
+    flex: 1,
+    padding: Platform.select({
+      android: 4,
+      default: 8
+    }),
+  },
+  statValue: {
+    fontWeight: 'bold',
+    fontSize: Platform.select({
+      android: 16,
+      default: 20
+    }),
+  },
+  statLabel: {
+    textAlign: 'center',
+    fontSize: Platform.select({
+      android: 10,
+      default: 12
+    }),
+  },
+  tableContainer: {
+    marginTop: Platform.select({
+      android: 60,
+      default: 0
+    }),
+  },
+  rhythmCell: {
+    maxWidth: Platform.select({
+      android: 60,
+      default: 100
+    }),
+    fontSize: Platform.select({
+      android: 12,
+      default: 14
+    }),
+  },
+  actionsColumn: {
+    flex: Platform.select({
+      android: 2,
+      default: 1.5
+    }),
   },
 });
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { Button, Text, TextInput, HelperText, IconButton, useTheme, Snackbar, Title, SegmentedButtons } from 'react-native-paper';
+import { Button, Text, TextInput, HelperText, IconButton, useTheme, Snackbar, SegmentedButtons } from 'react-native-paper';
 import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -11,13 +11,11 @@ const ExaminerLoginScreen = () => {
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
   
-  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
-  
   
   const [regUsername, setRegUsername] = useState('');
   const [regEmail, setRegEmail] = useState('');
@@ -30,30 +28,23 @@ const ExaminerLoginScreen = () => {
 
   const { login, register } = useAuth();
 
-  
   const isValidEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
 
   const handleLogin = async () => {
-    
     setLoginError('');
-    
     
     if (!email.trim() || !password.trim()) {
       setLoginError('Email i hasło są wymagane');
       return;
     }
     
-    
     setLoginLoading(true);
     
     try {
-      
       await login(email, password);
-      
-      
       router.push('/routes/examiner-dashboard');
     } catch (err: any) {
       setLoginError(err.message || 'Logowanie nie powiodło się. Sprawdź swoje dane i spróbuj ponownie.');
@@ -65,9 +56,7 @@ const ExaminerLoginScreen = () => {
   };
 
   const handleRegister = async () => {
-    
     setRegisterError('');
-    
     
     if (!regUsername || !regEmail || !regPassword || !confirmPassword) {
       setRegisterError('Wszystkie pola są wymagane');
@@ -96,7 +85,6 @@ const ExaminerLoginScreen = () => {
       setSnackbarMessage('Rejestracja pomyślna! Możesz się teraz zalogować.');
       setSnackbarVisible(true);
       
-      
       setRegUsername('');
       setRegEmail('');
       setRegPassword('');
@@ -116,25 +104,52 @@ const ExaminerLoginScreen = () => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.keyboardView}
     >
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContainer}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.container}>
-          <IconButton
-            icon="arrow-left"
-            size={24}
-            onPress={() => router.back()}
-            style={styles.backButton}
-          />
-          
-          <Text variant="headlineMedium" style={styles.title}>
-            Panel Egzaminatora
-          </Text>
+          {/* Nagłówek z warunkowym renderowaniem */}
+          {Platform.OS === 'android' ? (
+            <View style={styles.androidHeader}>
+              <IconButton
+                icon="arrow-left"
+                size={24}
+                onPress={() => router.back()}
+                style={styles.androidBackButton}
+              />
+              <Text variant="headlineMedium" style={styles.androidTitle}>
+                Panel Egzaminatora
+              </Text>
+            </View>
+          ) : (
+            <>
+              <IconButton
+                icon="arrow-left"
+                size={28}
+                onPress={() => router.back()}
+                style={styles.backButton}
+              />
+              <Text variant="headlineLarge" style={styles.title}>
+                Panel Egzaminatora
+              </Text>
+            </>
+          )}
           
           <SegmentedButtons
             value={activeTab}
             onValueChange={setActiveTab}
             buttons={[
-              { value: 'login', label: 'Logowanie' },
-              { value: 'register', label: 'Rejestracja' }
+              { 
+                value: 'login', 
+                label: 'Logowanie',
+                style: Platform.OS === 'android' ? styles.androidButton : {} 
+              },
+              { 
+                value: 'register', 
+                label: 'Rejestracja',
+                style: Platform.OS === 'android' ? styles.androidButton : {} 
+              }
             ]}
             style={styles.segmentedButton}
           />
@@ -173,29 +188,53 @@ const ExaminerLoginScreen = () => {
                   {loginError}
                 </HelperText>
               ) : null}
-              
-              <Button
-                mode="contained"
-                onPress={handleLogin}
-                style={styles.actionButton}
-                loading={loginLoading}
-                disabled={loginLoading}
-              >
-                Zaloguj
-              </Button>
 
-              <Button
-                mode="text"
-                onPress={() => {
-                  
-                  console.log('Forgot password pressed');
-                  setSnackbarMessage('Funkcja resetowania hasła będzie dostępna wkrótce.');
-                  setSnackbarVisible(true);
-                }}
-                disabled={loginLoading}
-              >
-                Zapomniałeś hasła?
-              </Button>
+              {Platform.OS === 'android' ? (
+                <View style={styles.mobileButtonRow}>
+                  <Button
+                    mode="contained"
+                    onPress={handleLogin}
+                    style={[styles.actionButton, styles.mobileLoginButton]}
+                    loading={loginLoading}
+                    disabled={loginLoading}
+                  >
+                    Zaloguj
+                  </Button>
+                  <Button
+                    mode="text"
+                    onPress={() => {
+                      setSnackbarMessage('Funkcja resetowania hasła będzie dostępna wkrótce.');
+                      setSnackbarVisible(true);
+                    }}
+                    style={styles.mobileForgotButton}
+                    disabled={loginLoading}
+                  >
+                    Zapomniałeś hasła?
+                  </Button>
+                </View>
+              ) : (
+                <>
+                  <Button
+                    mode="contained"
+                    onPress={handleLogin}
+                    style={styles.actionButton}
+                    loading={loginLoading}
+                    disabled={loginLoading}
+                  >
+                    Zaloguj
+                  </Button>
+                  <Button
+                    mode="text"
+                    onPress={() => {
+                      setSnackbarMessage('Funkcja resetowania hasła będzie dostępna wkrótce.');
+                      setSnackbarVisible(true);
+                    }}
+                    disabled={loginLoading}
+                  >
+                    Zapomniałeś hasła?
+                  </Button>
+                </>
+              )}
             </View>
           ) : (
             <View style={styles.form}>
@@ -280,7 +319,11 @@ const ExaminerLoginScreen = () => {
           label: 'OK',
           onPress: () => setSnackbarVisible(false),
         }}
-        style={isSuccess ? styles.successSnackbar : undefined}
+        style={[
+          isSuccess ? styles.successSnackbar : undefined,
+          Platform.OS === 'android' && styles.androidSnackbar
+        ]}
+        wrapperStyle={styles.snackbarWrapper}
       >
         {snackbarMessage}
       </Snackbar>
@@ -294,11 +337,35 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
+    paddingBottom: Platform.select({
+      android: 16,
+      default: 0
+    }),
   },
   container: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 40,
+    paddingHorizontal: Platform.select({
+      android: 16,
+      default: 24
+    }),
+    paddingTop: Platform.select({
+      android: 8,
+      default: 40
+    }),
+  },
+  androidHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    width: '100%',
+  },
+  androidBackButton: {
+    marginRight: 16,
+  },
+  androidTitle: {
+    fontWeight: 'bold',
+    flex: 1,
+    marginLeft: 8,
   },
   backButton: {
     marginBottom: 20,
@@ -310,23 +377,65 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   segmentedButton: {
-    marginBottom: 24,
+    marginBottom: Platform.select({
+      android: 16,
+      default: 24
+    }),
+  },
+  androidButton: {
+    flex: 1,
+    minHeight: 48,
   },
   form: {
     width: '100%',
-    maxWidth: 400,
+    maxWidth: Platform.select({
+      android: '100%',
+      web: "100%"
+    }),
     alignSelf: 'center',
   },
   input: {
-    marginBottom: 16,
+    marginBottom: Platform.select({
+      android: 12,
+      default: 16
+    }),
   },
   actionButton: {
-    marginTop: 24,
-    marginBottom: 16,
+    marginTop: Platform.select({
+      android: 12,
+      default: 24
+    }),
+    marginBottom: Platform.select({
+      android: 0,
+      default: 16
+    }),
     paddingVertical: 6,
+  },
+  mobileButtonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 12,
+    gap: 8,
+  },
+  mobileLoginButton: {
+    flex: 2,
+  },
+  mobileForgotButton: {
+    flex: 1,
+    alignSelf: 'center',
   },
   successSnackbar: {
     backgroundColor: '#4CAF50',
+  },
+  androidSnackbar: {
+    marginBottom: 70,
+  },
+  snackbarWrapper: {
+    bottom: Platform.select({
+      android: 70,
+      default: 0
+    }),
   },
 });
 

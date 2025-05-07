@@ -89,6 +89,7 @@ export const LoadPresetDialog: React.FC<LoadPresetDialogProps> = ({
       const presetToLoad = presets.find(p => p.id === selectedPreset);
       if (presetToLoad) {
         onLoadPreset(presetToLoad);
+        
       }
     }
   };

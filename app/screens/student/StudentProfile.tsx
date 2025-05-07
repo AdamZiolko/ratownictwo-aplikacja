@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { StyleSheet, View, ScrollView } from 'react-native';
+import { StyleSheet, View, ScrollView, Platform } from 'react-native';
 import { Text, TextInput, Button, HelperText, IconButton, Card, Avatar } from 'react-native-paper';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -249,17 +249,21 @@ const StudentProfileScreen = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <IconButton
-          icon="arrow-left"
-          size={24}
-          onPress={() => router.back()}
-          style={styles.backButton}
-        />
-
-        <Text variant="headlineMedium" style={styles.title}>
-          Profil Studenta
-        </Text>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContainer}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.headerContainer}>
+          <IconButton
+            icon="arrow-left"
+            size={Platform.select({ android: 20, ios: 20, default: 24 })}
+            onPress={() => router.back()}
+            style={styles.backButton}
+          />
+          <Text variant="titleLarge" style={styles.title}>
+            Profil Studenta
+          </Text>
+        </View>
 
         <Text variant="bodyMedium" style={styles.subtitle}>
           {showForm ? 'Wprowadź swoje dane' : 'Czy to Ty?'}
@@ -285,21 +289,64 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
-    padding: 16,
+    padding: Platform.select({
+      android: 8,
+      ios: 12,
+      default: 16
+    }),
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Platform.select({
+      android: 8,
+      ios: 8,
+      default: 16
+    }),
   },
   backButton: {
-    marginBottom: 20,
-    alignSelf: 'flex-start',
+    marginRight: Platform.select({
+      android: 8,
+      ios: 8,
+      default: 12
+    }),
+    marginLeft: Platform.select({
+      android: -4,
+      ios: -4,
+      default: 0
+    }),
   },
   title: {
-    marginBottom: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontSize: Platform.select({
+      android: 18,
+      ios: 18,
+      default: 24
+    }),
+    fontWeight: '600',
+    flex: 1,
+    marginLeft: Platform.select({
+      android: 4,
+      ios: 4,
+      default: 8
+    }),
   },
   subtitle: {
-    marginBottom: 32,
+    marginBottom: Platform.select({
+      android: 16,
+      ios: 16,
+      default: 32
+    }),
     textAlign: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: Platform.select({
+      android: 8,
+      ios: 8,
+      default: 16
+    }),
+    fontSize: Platform.select({
+      android: 14,
+      ios: 14,
+      default: 16
+    }),
   },
   form: {
     width: '100%',
@@ -307,12 +354,33 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   input: {
-    marginBottom: 8,
-    fontSize: 18,
+    marginBottom: Platform.select({
+      android: 4,
+      ios: 4,
+      default: 8
+    }),
+    fontSize: Platform.select({
+      android: 14,
+      ios: 14,
+      default: 16
+    }),
+    height: Platform.select({
+      android: 48,
+      ios: 48,
+      default: 56
+    }),
   },
   submitButton: {
-    marginTop: 24,
-    paddingVertical: 6,
+    marginTop: Platform.select({
+      android: 16,
+      ios: 16,
+      default: 24
+    }),
+    paddingVertical: Platform.select({
+      android: 4,
+      ios: 4,
+      default: 6
+    }),
   },
   loadingContainer: {
     flex: 1,
@@ -323,30 +391,63 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 400,
     alignSelf: 'center',
-    marginBottom: 20,
+    marginBottom: Platform.select({
+      android: 12,
+      ios: 12,
+      default: 20
+    }),
   },
   cardAvatarContainer: {
-    marginRight: 16,
+    marginRight: Platform.select({
+      android: 12,
+      ios: 12,
+      default: 16
+    }),
   },
   cardContent: {
-    paddingVertical: 8,
+    paddingVertical: Platform.select({
+      android: 4,
+      ios: 4,
+      default: 8
+    }),
   },
   infoRow: {
     flexDirection: 'row',
-    marginVertical: 8,
+    marginVertical: Platform.select({
+      android: 4,
+      ios: 4,
+      default: 8
+    }),
     alignItems: 'center',
   },
   infoLabel: {
-    width: 120,
-    color: '#757575',
+    width: Platform.select({
+      android: 90,
+      ios: 90,
+      default: 120
+    }),
+    fontSize: Platform.select({
+      android: 13,
+      ios: 13,
+      default: 14
+    }),
   },
   infoValue: {
     flex: 1,
     fontWeight: '500',
+    fontSize: Platform.select({
+      android: 14,
+      ios: 14,
+      default: 16
+    }),
   },
   continueButton: {
     marginLeft: 'auto',
-    marginTop: 8,
+    marginTop: Platform.select({
+      android: 4,
+      ios: 4,
+      default: 8
+    }),
   },
 });
 

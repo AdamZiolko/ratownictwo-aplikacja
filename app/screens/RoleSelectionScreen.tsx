@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, Platform } from 'react-native';
 import { Text, Card, Surface, useTheme } from 'react-native-paper';
 import { router } from 'expo-router';
 
@@ -14,6 +14,11 @@ const RoleSelectionScreen = () => {
     }
   };
 
+  const platformLabel =
+    Platform.OS === 'android'
+      ? 'Wersja mobilna (Android)'
+      : 'Wersja webowa';
+
   return (
     <View style={styles.container}>
       <Text variant="headlineLarge" style={styles.title}>
@@ -25,11 +30,8 @@ const RoleSelectionScreen = () => {
       </Text>
 
       <View style={styles.cardsContainer}>
-        <Surface style={styles.cardSurface} elevation={2}>
-          <Card
-            style={styles.card}
-            onPress={() => handleRoleSelect('examiner')}
-          >
+        <Surface style={[styles.cardSurface, Platform.OS === 'android' && styles.androidCardSurface]} elevation={2}>
+          <Card style={[styles.card, styles.fillCard]} onPress={() => handleRoleSelect('examiner')}>
             <Card.Content style={styles.cardContent}>
               <Text variant="headlineSmall">Nauczyciel</Text>
               <Text variant="bodyMedium" style={styles.cardDescription}>
@@ -39,11 +41,8 @@ const RoleSelectionScreen = () => {
           </Card>
         </Surface>
 
-        <Surface style={styles.cardSurface} elevation={2}>
-          <Card
-            style={styles.card}
-            onPress={() => handleRoleSelect('student')}
-          >
+        <Surface style={[styles.cardSurface, Platform.OS === 'android' && styles.androidCardSurface]} elevation={2}>
+          <Card style={[styles.card, styles.fillCard]} onPress={() => handleRoleSelect('student')}>
             <Card.Content style={styles.cardContent}>
               <Text variant="headlineSmall">Student</Text>
               <Text variant="bodyMedium" style={styles.cardDescription}>
@@ -54,8 +53,7 @@ const RoleSelectionScreen = () => {
         </Surface>
       </View>
 
-      {}
-      {}
+      <Text style={styles.debugText}>{platformLabel}</Text>
     </View>
   );
 };
@@ -78,14 +76,42 @@ const styles = StyleSheet.create({
   },
   cardsContainer: {
     width: '100%',
-    gap: 24,
+    ...Platform.select({
+      android: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'stretch',
+        paddingHorizontal: 8,
+      },
+      default: {
+        flexDirection: 'column',
+      },
+    }),
   },
   cardSurface: {
-    marginBottom: 16,
     borderRadius: 12,
+    backgroundColor: '#f5f5f5',
+    ...Platform.select({
+      android: {
+        flex: 1,
+        marginHorizontal: 8,
+        minHeight: 100,
+        overflow: 'hidden',
+      },
+      default: {
+        marginBottom: 16,
+      },
+    }),
+  },
+  androidCardSurface: {
+    elevation: 4,
   },
   card: {
     borderRadius: 12,
+  },
+  fillCard: {
+    flex: 1,
+    justifyContent: 'center',
   },
   cardContent: {
     alignItems: 'center',
@@ -94,6 +120,11 @@ const styles = StyleSheet.create({
   cardDescription: {
     marginTop: 8,
     textAlign: 'center',
+  },
+  debugText: {
+    marginTop: 32,
+    fontSize: 12,
+    color: 'gray',
   },
 });
 

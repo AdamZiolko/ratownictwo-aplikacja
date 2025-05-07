@@ -44,7 +44,10 @@ const EditSessionDialog = ({
   const [formErrors, setFormErrors] = useState<FormErrors>({
     temperature: "",
     beatsPerMinute: "",
-    sessionCode: ""
+    sessionCode: "",
+    spo2: "",
+    etco2: "",
+    rr: ""
   });
 
   
@@ -71,7 +74,10 @@ const EditSessionDialog = ({
     const errors = {
       temperature: "",
       beatsPerMinute: "",
-      sessionCode: ""
+      sessionCode: "",
+      spo2: "",
+      etco2: "",
+      rr: ""
     };
     
     let isValid = true;
