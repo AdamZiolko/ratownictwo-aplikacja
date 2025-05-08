@@ -480,413 +480,199 @@ const StudentSessionScreen = () => {
           style={styles.content}
           contentContainerStyle={styles.contentContainer}
         >
-          {Platform.OS !== 'web' ? (
-            <View style={styles.mobileSessionHeader}>
-              <IconButton
-                icon={isSessionPanelExpanded ? "chevron-down" : "chevron-up"}
-                onPress={() => setIsSessionPanelExpanded(!isSessionPanelExpanded)}
-                size={20}
+          <Surface style={styles.sessionInfo} elevation={3}>
+            <View style={styles.sessionHeader}>
+              <MaterialCommunityIcons
+                name="medical-bag"
+                size={24}
+                color={theme.colors.primary}
+                style={styles.headerIcon}
               />
-              {isSessionPanelExpanded && (
-                <Surface style={styles.sessionInfo} elevation={3}>
-                  <View style={styles.sessionHeader}>
-                    <MaterialCommunityIcons
-                      name="medical-bag"
-                      size={24}
-                      color={theme.colors.primary}
-                      style={styles.headerIcon}
-                    />
-                    <Text style={styles.title}>Sesja #{accessCode}</Text>
-                  </View>
-                  <Divider style={styles.divider} />
-                  <View style={styles.patientInfoRow}>
-                    <MaterialCommunityIcons
-                      name="account"
-                      size={20}
-                      color={theme.colors.secondary}
-                    />
-                    <Text style={styles.patientInfoText}>
-                      {firstName} {lastName} ({albumNumber})
-                    </Text>
-                  </View>
-                  {sessionData?.name && (
-                    <View style={styles.patientInfoRow}>
-                      <MaterialCommunityIcons
-                        name="tag"
-                        size={20}
-                        color={theme.colors.secondary}
-                      />
-                      <Text style={styles.sessionName}>{sessionData.name}</Text>
-                    </View>
-                  )}
-                  <Divider style={[styles.divider, { marginVertical: 10 }]} />
-                  <View style={styles.sessionMetaInfo}>
-                    <View style={styles.metaItemRow}>
-                      <MaterialCommunityIcons
-                        name={sessionData?.isActive ? "check-circle" : "close-circle"}
-                        size={18}
-                        color={
-                          sessionData?.isActive
-                            ? theme.colors.primary
-                            : theme.colors.error
-                        }
-                      />
-                      <Text style={styles.metaItemLabel}>
-                        Status:{" "}
-                        <Text style={{ fontWeight: "500" }}>
-                          {sessionData?.isActive ? "Aktywna" : "Nieaktywna"}
-                        </Text>
-                      </Text>
-                    </View>
-                    {sessionData?.createdAt && (
-                      <View style={styles.metaItemRow}>
-                        <MaterialCommunityIcons
-                          name="calendar-plus"
-                          size={18}
-                          color={theme.colors.secondary}
-                        />
-                        <Text style={styles.metaItemLabel}>
-                          Utworzono:{" "}
-                          <Text style={{ fontWeight: "500" }}>
-                            {new Date(sessionData.createdAt).toLocaleString("pl-PL")}
-                          </Text>
-                        </Text>
-                      </View>
-                    )}
-                    {sessionData?.updatedAt && (
-                      <View style={styles.metaItemRow}>
-                        <MaterialCommunityIcons
-                          name="calendar-sync"
-                          size={18}
-                          color={theme.colors.secondary}
-                        />
-                        <Text style={styles.metaItemLabel}>
-                          Zaktualizowano:{" "}
-                          <Text style={{ fontWeight: "500" }}>
-                            {new Date(sessionData.updatedAt).toLocaleString("pl-PL")}
-                          </Text>
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                </Surface>
-              )}
+              <Text style={styles.title}>Sesja #{accessCode}</Text>
             </View>
-          ) : (
-            <Surface style={styles.sessionInfo} elevation={3}>
-              <View style={styles.sessionHeader}>
-                <MaterialCommunityIcons
-                  name="medical-bag"
-                  size={24}
-                  color={theme.colors.primary}
-                  style={styles.headerIcon}
-                />
-                <Text style={styles.title}>Sesja #{accessCode}</Text>
-              </View>
-              <Divider style={styles.divider} />
+            <Divider style={styles.divider} />
+            <View style={styles.patientInfoRow}>
+              <MaterialCommunityIcons
+                name="account"
+                size={20}
+                color={theme.colors.secondary}
+              />
+              <Text style={styles.patientInfoText}>
+                {firstName} {lastName} ({albumNumber})
+              </Text>
+            </View>
+            {sessionData?.name && (
               <View style={styles.patientInfoRow}>
                 <MaterialCommunityIcons
-                  name="account"
+                  name="tag"
                   size={20}
                   color={theme.colors.secondary}
                 />
-                <Text style={styles.patientInfoText}>
-                  {firstName} {lastName} ({albumNumber})
+                <Text style={styles.sessionName}>{sessionData.name}</Text>
+              </View>
+            )}
+            <Divider style={[styles.divider, { marginVertical: 10 }]} />
+            <View style={styles.sessionMetaInfo}>
+              <View style={styles.metaItemRow}>
+                <MaterialCommunityIcons
+                  name={sessionData?.isActive ? "check-circle" : "close-circle"}
+                  size={18}
+                  color={
+                    sessionData?.isActive
+                      ? theme.colors.primary
+                      : theme.colors.error
+                  }
+                />
+                <Text style={styles.metaItemLabel}>
+                  Status:{" "}
+                  <Text style={{ fontWeight: "500" }}>
+                    {sessionData?.isActive ? "Aktywna" : "Nieaktywna"}
+                  </Text>
                 </Text>
               </View>
-              {sessionData?.name && (
-                <View style={styles.patientInfoRow}>
-                  <MaterialCommunityIcons
-                    name="tag"
-                    size={20}
-                    color={theme.colors.secondary}
-                  />
-                  <Text style={styles.sessionName}>{sessionData.name}</Text>
-                </View>
-              )}
-              <Divider style={[styles.divider, { marginVertical: 10 }]} />
-              <View style={styles.sessionMetaInfo}>
+              {sessionData?.createdAt && (
                 <View style={styles.metaItemRow}>
                   <MaterialCommunityIcons
-                    name={sessionData?.isActive ? "check-circle" : "close-circle"}
+                    name="calendar-plus"
                     size={18}
-                    color={
-                      sessionData?.isActive
-                        ? theme.colors.primary
-                        : theme.colors.error
-                    }
+                    color={theme.colors.secondary}
                   />
                   <Text style={styles.metaItemLabel}>
-                    Status:{" "}
+                    Utworzono:{" "}
                     <Text style={{ fontWeight: "500" }}>
-                      {sessionData?.isActive ? "Aktywna" : "Nieaktywna"}
+                      {new Date(sessionData.createdAt).toLocaleString("pl-PL")}
                     </Text>
                   </Text>
                 </View>
-                {sessionData?.createdAt && (
-                  <View style={styles.metaItemRow}>
-                    <MaterialCommunityIcons
-                      name="calendar-plus"
-                      size={18}
-                      color={theme.colors.secondary}
-                    />
-                    <Text style={styles.metaItemLabel}>
-                      Utworzono:{" "}
-                      <Text style={{ fontWeight: "500" }}>
-                        {new Date(sessionData.createdAt).toLocaleString("pl-PL")}
-                      </Text>
+              )}
+              {sessionData?.updatedAt && (
+                <View style={styles.metaItemRow}>
+                  <MaterialCommunityIcons
+                    name="calendar-sync"
+                    size={18}
+                    color={theme.colors.secondary}
+                  />
+                  <Text style={styles.metaItemLabel}>
+                    Zaktualizowano:{" "}
+                    <Text style={{ fontWeight: "500" }}>
+                      {new Date(sessionData.updatedAt).toLocaleString("pl-PL")}
                     </Text>
-                  </View>
-                )}
-                {sessionData?.updatedAt && (
-                  <View style={styles.metaItemRow}>
-                    <MaterialCommunityIcons
-                      name="calendar-sync"
-                      size={18}
-                      color={theme.colors.secondary}
-                    />
-                    <Text style={styles.metaItemLabel}>
-                      Zaktualizowano:{" "}
-                      <Text style={{ fontWeight: "500" }}>
-                        {new Date(sessionData.updatedAt).toLocaleString("pl-PL")}
-                      </Text>
-                    </Text>
-                  </View>
-                )}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </Surface>
+          {!isWeb && (
+            <Surface style={styles.vitalsCard} elevation={3}>
+              <View style={styles.cardHeaderRow}>
+                <Icon
+                  source="circle-outline"
+                  size={24}
+                  color={theme.colors.primary}
+                />
+                <Text style={styles.cardHeaderTitle}>Sensor RGB</Text>
               </View>
+              {/* <ColorSensor /> */}
             </Surface>
           )}
-  
-          {Platform.OS !== 'web' ? (
-            <>
-              <Surface style={styles.ekgCard} elevation={3}>
-                <View style={styles.cardHeaderRow}>
-                  <MaterialCommunityIcons
-                    name="heart-pulse"
-                    size={24}
-                    color={theme.colors.error}
-                  />
-                  <Text style={styles.cardHeaderTitle}>Kardiomonitor</Text>
-                </View>
-                <EkgDisplay
-                  ekgType={Number(sessionData.rhythmType)}
-                  bpm={Number(sessionData.beatsPerMinute)}
-                  noiseType={sessionData.noiseLevel}
-                  isRunning
+
+          <Surface style={styles.vitalsCard} elevation={1}>
+              <View style={styles.cardHeaderRow}>
+                <MaterialCommunityIcons
+                  name="heart-pulse"
+                  size={24}
+                  color={theme.colors.error}
                 />
+                <Text style={styles.cardHeaderTitle}>Kardiomonitor</Text>
+              </View>
+              <EkgDisplay
+                ekgType={Number(sessionData.rhythmType)}
+                bpm={Number(sessionData.beatsPerMinute)}
+                noiseType={sessionData.noiseLevel}
+                isRunning
+              />
+          </Surface>
+
+          <Surface style={styles.vitalsCard} elevation={3}>
+            <View style={styles.cardHeaderRow}>
+              <MaterialCommunityIcons
+                name="clipboard-pulse"
+                size={24}
+                color={theme.colors.primary}
+              />
+              <Text style={styles.cardHeaderTitle}>Parametry pacjenta</Text>
+            </View>
+
+            <View style={styles.vitalsRow}>
+              <Surface style={styles.vitalItemCard} elevation={1}>
+                <MaterialCommunityIcons
+                  name="thermometer"
+                  size={22}
+                  color={theme.colors.tertiary}
+                />
+                <Text style={styles.vitalLabel}>Temperatura</Text>
+                <Text style={styles.vitalValue}>
+                  {temperature.currentValue !== null
+                    ? `${temperature.currentValue}${temperature.unit}`
+                    : "N/A"}
+                </Text>
               </Surface>
-  
-              <Surface style={styles.vitalsCard} elevation={3}>
-                <View style={styles.cardHeaderRow}>
-                  <MaterialCommunityIcons
-                    name="clipboard-pulse"
-                    size={24}
-                    color={theme.colors.primary}
-                  />
-                  <Text style={styles.cardHeaderTitle}>Parametry pacjenta</Text>
-                </View>
-  
-                <View style={styles.vitalsRow}>
-                  <Surface style={styles.vitalItemCard} elevation={1}>
-                    <MaterialCommunityIcons
-                      name="thermometer"
-                      size={22}
-                      color={theme.colors.tertiary}
-                    />
-                    <Text style={styles.vitalLabel}>Temperatura</Text>
-                    <Text style={styles.vitalValue}>
-                      {temperature.currentValue !== null
-                        ? `${temperature.currentValue}${temperature.unit}`
-                        : "N/A"}
-                    </Text>
-                  </Surface>
-                </View>
-  
-                <View style={styles.vitalsRow}>
-                  <Surface style={styles.vitalItemCard} elevation={1}>
-                    <MaterialCommunityIcons
-                      name="blood-bag"
-                      size={22}
-                      color={theme.colors.error}
-                    />
-                    <Text style={styles.vitalLabel}>Ciśnienie krwi</Text>
-                    <Text style={styles.vitalValue}>{formatBloodPressure()}</Text>
-                  </Surface>
-                  <Surface style={styles.vitalItemCard} elevation={1}>
-                    <MaterialCommunityIcons
-                      name="percent"
-                      size={22}
-                      color={theme.colors.primary}
-                    />
-                    <Text style={styles.vitalLabel}>SpO₂</Text>
-                    <Text style={styles.vitalValue}>
-                      {spo2.currentValue !== null
-                        ? `${spo2.currentValue}${spo2.unit}`
-                        : "N/A"}
-                    </Text>
-                  </Surface>
-                </View>
-  
-                <View style={styles.vitalsRow}>
-                  <Surface style={styles.vitalItemCard} elevation={1}>
-                    <MaterialCommunityIcons
-                      name="molecule-co2"
-                      size={22}
-                      color={theme.colors.secondary}
-                    />
-                    <Text style={styles.vitalLabel}>EtCO₂</Text>
-                    <Text style={styles.vitalValue}>
-                      {etco2.currentValue !== null
-                        ? `${etco2.currentValue} ${etco2.unit}`
-                        : "N/A"}
-                    </Text>
-                  </Surface>
-                  <Surface style={styles.vitalItemCard} elevation={1}>
-                    <MaterialCommunityIcons
-                      name="lungs"
-                      size={22}
-                      color={theme.colors.tertiary}
-                    />
-                    <Text style={styles.vitalLabel}>Częstość oddechów</Text>
-                    <Text style={styles.vitalValue}>
-                      {respiratoryRate.currentValue !== null
-                        ? `${respiratoryRate.currentValue} ${respiratoryRate.unit}`
-                        : "N/A"}
-                    </Text>
-                  </Surface>
-                </View>
+            </View>
+
+            <View style={styles.vitalsRow}>
+              <Surface style={styles.vitalItemCard} elevation={1}>
+                <MaterialCommunityIcons
+                  name="blood-bag"
+                  size={22}
+                  color={theme.colors.error}
+                />
+                <Text style={styles.vitalLabel}>Ciśnienie krwi</Text>
+                <Text style={styles.vitalValue}>{formatBloodPressure()}</Text>
               </Surface>
-  
-              <Surface style={styles.vitalsCard} elevation={3}>
-                <View style={styles.cardHeaderRow}>
-                  <Icon
-                    source="circle-outline"
-                    size={24}
-                    color={theme.colors.primary}
-                  />
-                  <Text style={styles.cardHeaderTitle}>Sensor RGB</Text>
-                </View>
-                <ColorSensor />
+              <Surface style={styles.vitalItemCard} elevation={1}>
+                <MaterialCommunityIcons
+                  name="percent"
+                  size={22}
+                  color={theme.colors.primary}
+                />
+                <Text style={styles.vitalLabel}>SpO₂</Text>
+                <Text style={styles.vitalValue}>
+                  {spo2.currentValue !== null
+                    ? `${spo2.currentValue}${spo2.unit}`
+                    : "N/A"}
+                </Text>
               </Surface>
-            </>
-          ) : (
-            <>
-              {!isWeb && (
-                <Surface style={styles.vitalsCard} elevation={3}>
-                  <View style={styles.cardHeaderRow}>
-                    <Icon
-                      source="circle-outline"
-                      size={24}
-                      color={theme.colors.primary}
-                    />
-                    <Text style={styles.cardHeaderTitle}>Sensor RGB</Text>
-                  </View>
-                  <ColorSensor />
-                </Surface>
-              )}
-  
-              <Surface style={styles.vitalsCard} elevation={1}>
-                <Text style={styles.cardTitle}>Patient Vitals</Text>
-                <Surface style={styles.ekgCard} elevation={3}>
-                  <View style={styles.cardHeaderRow}>
-                    <MaterialCommunityIcons
-                      name="heart-pulse"
-                      size={24}
-                      color={theme.colors.error}
-                    />
-                    <Text style={styles.cardHeaderTitle}>Kardiomonitor</Text>
-                  </View>
-                  <EkgDisplay
-                    ekgType={Number(sessionData.rhythmType)}
-                    bpm={Number(sessionData.beatsPerMinute)}
-                    noiseType={sessionData.noiseLevel}
-                    isRunning
-                  />
-                </Surface>
+            </View>
+
+            <View style={styles.vitalsRow}>
+              <Surface style={styles.vitalItemCard} elevation={1}>
+                <MaterialCommunityIcons
+                  name="molecule-co2"
+                  size={22}
+                  color={theme.colors.secondary}
+                />
+                <Text style={styles.vitalLabel}>EtCO₂</Text>
+                <Text style={styles.vitalValue}>
+                  {etco2.currentValue !== null
+                    ? `${etco2.currentValue} ${etco2.unit}`
+                    : "N/A"}
+                </Text>
               </Surface>
-  
-              <Surface style={styles.vitalsCard} elevation={3}>
-                <View style={styles.cardHeaderRow}>
-                  <MaterialCommunityIcons
-                    name="clipboard-pulse"
-                    size={24}
-                    color={theme.colors.primary}
-                  />
-                  <Text style={styles.cardHeaderTitle}>Parametry pacjenta</Text>
-                </View>
-  
-                <View style={styles.vitalsRow}>
-                  <Surface style={styles.vitalItemCard} elevation={1}>
-                    <MaterialCommunityIcons
-                      name="thermometer"
-                      size={22}
-                      color={theme.colors.tertiary}
-                    />
-                    <Text style={styles.vitalLabel}>Temperatura</Text>
-                    <Text style={styles.vitalValue}>
-                      {temperature.currentValue !== null
-                        ? `${temperature.currentValue}${temperature.unit}`
-                        : "N/A"}
-                    </Text>
-                  </Surface>
-                </View>
-  
-                <View style={styles.vitalsRow}>
-                  <Surface style={styles.vitalItemCard} elevation={1}>
-                    <MaterialCommunityIcons
-                      name="blood-bag"
-                      size={22}
-                      color={theme.colors.error}
-                    />
-                    <Text style={styles.vitalLabel}>Ciśnienie krwi</Text>
-                    <Text style={styles.vitalValue}>{formatBloodPressure()}</Text>
-                  </Surface>
-                  <Surface style={styles.vitalItemCard} elevation={1}>
-                    <MaterialCommunityIcons
-                      name="percent"
-                      size={22}
-                      color={theme.colors.primary}
-                    />
-                    <Text style={styles.vitalLabel}>SpO₂</Text>
-                    <Text style={styles.vitalValue}>
-                      {spo2.currentValue !== null
-                        ? `${spo2.currentValue}${spo2.unit}`
-                        : "N/A"}
-                    </Text>
-                  </Surface>
-                </View>
-  
-                <View style={styles.vitalsRow}>
-                  <Surface style={styles.vitalItemCard} elevation={1}>
-                    <MaterialCommunityIcons
-                      name="molecule-co2"
-                      size={22}
-                      color={theme.colors.secondary}
-                    />
-                    <Text style={styles.vitalLabel}>EtCO₂</Text>
-                    <Text style={styles.vitalValue}>
-                      {etco2.currentValue !== null
-                        ? `${etco2.currentValue} ${etco2.unit}`
-                        : "N/A"}
-                    </Text>
-                  </Surface>
-                  <Surface style={styles.vitalItemCard} elevation={1}>
-                    <MaterialCommunityIcons
-                      name="lungs"
-                      size={22}
-                      color={theme.colors.tertiary}
-                    />
-                    <Text style={styles.vitalLabel}>Częstość oddechów</Text>
-                    <Text style={styles.vitalValue}>
-                      {respiratoryRate.currentValue !== null
-                        ? `${respiratoryRate.currentValue} ${respiratoryRate.unit}`
-                        : "N/A"}
-                    </Text>
-                  </Surface>
-                </View>
+              <Surface style={styles.vitalItemCard} elevation={1}>
+                <MaterialCommunityIcons
+                  name="lungs"
+                  size={22}
+                  color={theme.colors.tertiary}
+                />
+                <Text style={styles.vitalLabel}>Częstość oddechów</Text>
+                <Text style={styles.vitalValue}>
+                  {respiratoryRate.currentValue !== null
+                    ? `${respiratoryRate.currentValue} ${respiratoryRate.unit}`
+                    : "N/A"}
+                </Text>
               </Surface>
-            </>
-          )}
+            </View>
+          </Surface>
         </ScrollView>
       ) : (
         <View style={styles.center}>

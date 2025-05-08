@@ -30,8 +30,7 @@ class SocketService {
   private socket: Socket | null = null;
   private listeners: Map<string, Set<(data: any) => void>> = new Map();
 
-  
-  connect(): Socket {
+    connect(): Socket {
     if (!this.socket || this.socket.disconnected) {
       console.log('Connecting to socket server at:', API_URL);
       this.socket = io(API_URL, {
@@ -40,6 +39,10 @@ class SocketService {
         withCredentials: true,
         autoConnect: true,
         reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        timeout: 20000
       });
 
       this.setupEventListeners();
@@ -200,7 +203,6 @@ class SocketService {
       console.log(`Removed all listeners for ${specificEvent}`);
     }
   }
-
   subscribeAsExaminer(
     sessionCode: string, 
     userId: string, 
@@ -209,9 +211,34 @@ class SocketService {
     onStudentSessionUpdate?: (data: StudentSessionUpdate) => void
   ): Promise<{ success: boolean }> {
     if (!this.socket || !this.socket.connected) {
+      console.log('Socket not connected, connecting before subscribing examiner...');
       this.connect();
+      
+      // Give the socket a moment to establish connection
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          if (this.socket?.connected) {
+            // Now try to subscribe with connected socket
+            this._doExaminerSubscribe(sessionCode, userId, token, onStudentListUpdate, onStudentSessionUpdate)
+              .then(resolve);
+          } else {
+            console.error('Socket connection failed, subscription will likely fail');
+            resolve({ success: false });
+          }
+        }, 1000);
+      });
     }
 
+    return this._doExaminerSubscribe(sessionCode, userId, token, onStudentListUpdate, onStudentSessionUpdate);
+  }
+  
+  private _doExaminerSubscribe(
+    sessionCode: string, 
+    userId: string, 
+    token?: string, 
+    onStudentListUpdate?: (data: StudentListUpdate) => void,
+    onStudentSessionUpdate?: (data: StudentSessionUpdate) => void
+  ): Promise<{ success: boolean }> {
     return new Promise((resolve) => {
       if (!this.socket) {
         resolve({ success: false });
@@ -235,20 +262,28 @@ class SocketService {
         this.on<StudentSessionUpdate>('student-session-update', onStudentSessionUpdate);
       }
       
-      // Listen for subscription confirmation
+      // Listen for subscription confirmation with timeout
+      const timeoutId = setTimeout(() => {
+        console.warn(`Subscription to ${sessionCode} timed out, assuming failure`);
+        this.socket?.off('examiner-subscribe-success');
+        this.socket?.off('examiner-subscribe-error');
+        resolve({ success: false });
+      }, 10000);
+      
       this.socket.once('examiner-subscribe-success', () => {
+        clearTimeout(timeoutId);
         console.log(`Successfully subscribed examiner to session ${sessionCode}`);
         resolve({ success: true });
       });
       
       this.socket.once('examiner-subscribe-error', (error) => {
+        clearTimeout(timeoutId);
         console.error(`Failed to subscribe examiner to session ${sessionCode}:`, error);
         resolve({ success: false });
       });
     });
   }
-  
-  unsubscribeAsExaminer(): void {
+    unsubscribeAsExaminer(): void {
     if (!this.socket || !this.socket.connected) return;
     
     console.log('Unsubscribing examiner from session');
@@ -257,6 +292,10 @@ class SocketService {
     // Clean up listeners
     this.socket.off('student-list-update');
     this.socket.off('student-session-update');
+    
+    // Clean up any event listeners related to examiner subscription
+    this.socket.off('examiner-subscribe-success');
+    this.socket.off('examiner-subscribe-error');
   }
 
   
