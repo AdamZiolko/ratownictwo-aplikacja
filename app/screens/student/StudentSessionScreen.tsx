@@ -575,8 +575,6 @@ const StudentSessionScreen = () => {
           )}
 
           <Surface style={styles.vitalsCard} elevation={1}>
-            <Text style={styles.cardTitle}>Patient Vitals</Text>
-            <Surface style={styles.ekgCard} elevation={3}>
               <View style={styles.cardHeaderRow}>
                 <MaterialCommunityIcons
                   name="heart-pulse"
@@ -591,7 +589,6 @@ const StudentSessionScreen = () => {
                 noiseType={sessionData.noiseLevel}
                 isRunning
               />
-            </Surface>
           </Surface>
 
           <Surface style={styles.vitalsCard} elevation={3}>

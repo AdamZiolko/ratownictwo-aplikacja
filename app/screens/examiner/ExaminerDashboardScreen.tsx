@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import {
   StyleSheet,
@@ -51,6 +50,9 @@ const ExaminerDashboardScreen = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  
+  
+  const subscribedSessions = useRef<Set<string>>(new Set());
 
   const [createDialogVisible, setCreateDialogVisible] = useState(false);
   const [editDialogVisible, setEditDialogVisible] = useState(false);
@@ -113,49 +115,63 @@ const ExaminerDashboardScreen = () => {
   );
 
   
-  const [menuVisible, setMenuVisible] = useState(false);
-
-  
-  useEffect(() => {
-    loadSessions();
-    
-    
+  const [menuVisible, setMenuVisible] = useState(false);    useEffect(() => {
     socketService.connect();
     
-    return () => {
+    const fetchAndSubscribe = async () => {
+      await loadSessions();
       
+      if (user) {
+        sessions.forEach(session => {
+          if (session.sessionCode) {
+            subscribeToStudentUpdates(session.sessionCode, user.id.toString());
+          }
+        });
+      }
+    };
+    
+    fetchAndSubscribe();
+    
+    return () => {
       socketService.unsubscribeAsExaminer();
+      
+      subscribedSessions.current.clear();
     };
   }, []);
   
-
-  useEffect(() => {
-    sessions.forEach(session => {
-      if (user && session.sessionCode) {
-        subscribeToStudentUpdates(session.sessionCode, user.id.toString());
-      }
-    });
-  }, []);
-
   
   useEffect(() => {
+    if (!user || sessions.length === 0) return;
     
     sessions.forEach(session => {
-      if (user && session.sessionCode) {
+      if (session.sessionCode) {
         subscribeToStudentUpdates(session.sessionCode, user.id.toString());
       }
     });
   }, [sessions, user]);
   
-  
-  const subscribeToStudentUpdates = async (sessionCode: string, userId: string) => {
+    const subscribeToStudentUpdates = async (sessionCode: string, userId: string) => {
+    
+    const subscriptionKey = `${sessionCode}-${userId}`;
+    if (subscribedSessions.current.has(subscriptionKey)) {
+      console.log(`Already subscribed to session ${sessionCode}, skipping duplicate subscription`);
+      return;
+    }
+    
+    
+    subscribedSessions.current.add(subscriptionKey);
+    
     try {
+      
+      socketService.connect();
+      
+      console.log(`Attempting to subscribe to session updates for ${sessionCode}`);
+      
       const { success } = await socketService.subscribeAsExaminer(
         sessionCode,
         userId,
         undefined, 
         (data) => {
-          
           console.log('Received student list update:', data);
           setSessionStudents(prev => ({
             ...prev,
@@ -163,13 +179,11 @@ const ExaminerDashboardScreen = () => {
           }));
         },
         (data) => {
-          
           console.log('Received student session update:', data);
           setSessionStudents(prev => {
             const currentStudents = prev[data.sessionCode] || [];
             
             if (data.type === 'join') {
-              
               const exists = currentStudents.some(s => s.id === data.student.id);
               if (!exists) {
                 return {
@@ -178,7 +192,6 @@ const ExaminerDashboardScreen = () => {
                 };
               }
             } else if (data.type === 'leave') {
-              
               return {
                 ...prev,
                 [data.sessionCode]: currentStudents.filter(s => s.id !== data.student.id)
@@ -194,9 +207,26 @@ const ExaminerDashboardScreen = () => {
         console.log(`Successfully subscribed to student updates for session ${sessionCode}`);
       } else {
         console.error(`Failed to subscribe to student updates for session ${sessionCode}`);
+        
+        
+        if (!subscribedSessions.current.has(`${subscriptionKey}-retry`)) {
+          subscribedSessions.current.add(`${subscriptionKey}-retry`);
+          setTimeout(() => {
+            console.log(`Retrying subscription once for session ${sessionCode}`);
+            
+            subscribedSessions.current.delete(subscriptionKey);
+            subscribeToStudentUpdates(sessionCode, userId);
+          }, 2000);
+        }
       }
     } catch (error) {
       console.error('Error subscribing to student updates:', error);
+      
+      
+      
+      setTimeout(() => {
+        subscribedSessions.current.delete(subscriptionKey);
+      }, 10000);
     }
   };
   
@@ -521,8 +551,7 @@ const ExaminerDashboardScreen = () => {
       </Appbar.Header>
   
       <View style={styles.contentContainer}>
-        {/* Animowany nagłówek statystyk tylko dla mobilnych */}
-        {Platform.OS === 'android' && (
+        {}        {Platform.OS === 'android' && (
           <Animated.View style={[
             styles.statsHeader,
             {
@@ -542,34 +571,17 @@ const ExaminerDashboardScreen = () => {
               <Card.Content style={styles.statsContent}>
                 <View style={styles.statsRow}>
                   <StatItem value={sessions?.length} label="Sesje" />
-                  <StatItem 
-                    value={sessions?.filter(s => s.beatsPerMinute > 100)?.length} 
-                    label="Tachykardia" 
-                  />
-                  <StatItem 
-                    value={sessions?.filter(s => s.beatsPerMinute < 60)?.length} 
-                    label="Bradykardia" 
-                  />
                 </View>
               </Card.Content>
             </Card>
           </Animated.View>
         )}
   
-        {/* Dla wersji desktopowych */}
-        {Platform.OS !== 'android' && (
+        {}        {Platform.OS !== 'android' && (
           <Card style={styles.statsCard}>
             <Card.Content>
               <View style={styles.statsRow}>
                 <StatItem value={sessions?.length} label="Wszystkie sesje" />
-                <StatItem 
-                  value={sessions?.filter(s => s.beatsPerMinute > 100)?.length} 
-                  label="Tachykardia" 
-                />
-                <StatItem 
-                  value={sessions?.filter(s => s.beatsPerMinute < 60)?.length} 
-                  label="Bradykardia" 
-                />
               </View>
             </Card.Content>
           </Card>

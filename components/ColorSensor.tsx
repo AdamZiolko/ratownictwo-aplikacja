@@ -1,4 +1,4 @@
-// components/ColorSensor.tsx
+
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -25,7 +25,7 @@ export default function ColorSensor() {
   const [status, setStatus] = useState<'idle'|'scanning'|'connected'|'monitoring'|'error'>('idle');
   const [error, setError] = useState<string|null>(null);
 
-  // 1) Śledzimy stan BLE adaptera
+  
   useEffect(() => {
     const stateSub = manager.onStateChange(state => {
       console.log('[BLE] State changed:', state);
@@ -49,7 +49,7 @@ export default function ColorSensor() {
     }
   };
 
-  // 2) Skan & łączenie & monitoring
+  
   const scanAndMonitor = async () => {
     setError(null);
     setStatus('scanning');
@@ -57,7 +57,7 @@ export default function ColorSensor() {
     try {
       await requestPermissions();
 
-      // Poczekaj na „PoweredOn”
+      
       if (bleState !== 'PoweredOn') {
         await new Promise<void>(resolve => {
           const sub = manager.onStateChange(s => {
@@ -78,7 +78,7 @@ export default function ColorSensor() {
           return;
         }
         if (!dev) return;
-        // Debug log
+        
         console.log('[BLE] Found device:', {
           name: dev.name,
           localName: dev.localName,

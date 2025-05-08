@@ -1,7 +1,7 @@
 import { EkgType, NoiseType, EkgFactory } from '@/services/EkgFactory';
 import React, { useEffect, useRef, useState, useLayoutEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import { View, StyleSheet, Text as RNText } from 'react-native';
+import Svg, { Path, Defs, Filter, FeGaussianBlur, FeDropShadow, Text, TSpan } from 'react-native-svg';
 
 interface EkgDisplayProps {
   ekgType?: EkgType ;
@@ -10,7 +10,8 @@ interface EkgDisplayProps {
   isRunning?: boolean ;
 }
 
-const BASELINE = 150;
+const BASELINE = 150; 
+const FLUCTUATION_RANGE = 2; 
 
 const EkgDisplay: React.FC<EkgDisplayProps> = ({ 
   ekgType, 
@@ -20,6 +21,7 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
 }) => {
   const [pathData, setPathData] = useState('');
   const [containerWidth, setContainerWidth] = useState(0);
+  const [displayBpm, setDisplayBpm] = useState<number | undefined>(bpm);
   const xOffsetRef = useRef(0);
   const previousXRef = useRef(0);
   const previousYRef = useRef(BASELINE);
@@ -27,8 +29,9 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
   const animationRef = useRef(0);
   const pathDataRef = useRef('');
   const containerRef = useRef<View>(null);
+  const fluctuationTimerRef = useRef<NodeJS.Timeout>();
 
-    useLayoutEffect(() => {
+  useLayoutEffect(() => {
     if (containerRef.current) {
       containerRef.current.measure((x, y, width, height, pageX, pageY) => {
         if (width > 0) {
@@ -37,14 +40,13 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
       });
     }
     
-    // Force a reset when ekgType changes (in addition to the useEffect)
+    
     if (ekgType !== undefined) {
       resetEkg();
     }
   }, [ekgType]);
 
-  
-  const draw = () => {
+    const draw = () => {
     if (!isRunning || containerWidth === 0) return;
     
     xOffsetRef.current += 2;
@@ -80,7 +82,7 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
 
     useEffect(() => {
     resetEkg();
-    // Immediately start drawing with the new parameters
+    
     if (isRunning && containerWidth > 0) {
       cancelAnimationFrame(animationRef.current);
       animationRef.current = requestAnimationFrame(draw);
@@ -102,24 +104,56 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
   
   useEffect(() => {
     EkgFactory.resetNoiseCache();
-  }, [noiseType]);
-  const resetEkg = () => {
-    // Cancel any ongoing animation frame
+  }, [noiseType]);  const resetEkg = () => {
+    
     cancelAnimationFrame(animationRef.current);
     
-    // Reset all state variables
+    
     xOffsetRef.current = 0;
     previousXRef.current = 0;
     previousYRef.current = BASELINE;
     isFirstPointRef.current = true;
     pathDataRef.current = '';
     setPathData('');
+    setDisplayBpm(bpm); 
     
-    // Reset factory noise cache for new parameters
+    
     EkgFactory.resetNoiseCache();
   };
 
   
+  const generateFluctuation = (value: number | undefined): number | undefined => {
+    if (value === undefined) return undefined;
+
+    const fluctPercent = (Math.random() - 0.5) * 2 * FLUCTUATION_RANGE;
+    const fluctAmount = value * (fluctPercent / 100);
+    return Math.round(value + fluctAmount);
+  };
+
+  
+  useEffect(() => {
+    
+    setDisplayBpm(bpm);
+    
+    
+    if (fluctuationTimerRef.current) {
+      clearInterval(fluctuationTimerRef.current);
+    }
+    
+    
+    if (isRunning && bpm !== undefined) {
+      fluctuationTimerRef.current = setInterval(() => {
+        setDisplayBpm(generateFluctuation(bpm));
+      }, 1000); 
+    }
+    
+    return () => {
+      if (fluctuationTimerRef.current) {
+        clearInterval(fluctuationTimerRef.current);
+      }
+    };
+  }, [bpm, isRunning]);
+
   const onLayout = () => {
     if (containerRef.current) {
       containerRef.current.measure((x, y, width, height, pageX, pageY) => {
@@ -128,17 +162,54 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
         }
       });
     }
-  };
-
-  return (
+  };  return (
     <View 
       style={styles.container} 
       ref={containerRef} 
       onLayout={onLayout}
-    >
-      <Svg height="300" width="100%" style={styles.svg}>
+    >      <Svg height="300" width="100%" style={styles.svg} viewBox={`0 0 ${containerWidth} 300`}>
+        <Defs>
+          <Filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+            <FeGaussianBlur stdDeviation="2" result="blur" />
+            <FeDropShadow dx="0" dy="0" stdDeviation="2" {...{'flood-color': "#00ff00", 'flood-opacity': "0.8"}} />
+          </Filter>
+        </Defs>
+        
+        {}
         {pathData ? (
           <Path d={pathData} stroke="#00ff00" strokeWidth="2" fill="none" />
+        ) : null}
+        
+        {}
+        {pathData ? (
+          <Path d={pathData} stroke="#00ff00" strokeWidth="3" fill="none" filter="url(#glow)" opacity="0.7" />
+        ) : null}          {}
+        {displayBpm ? (
+          <>
+            <Text 
+              x={containerWidth - 20} 
+              y="40" 
+              fill="#00ff00" 
+              fontSize="24" 
+              fontWeight="bold" 
+              textAnchor="end"
+            >
+              {displayBpm} BPM
+            </Text>
+            {}
+            <Text 
+              x={containerWidth - 20} 
+              y="40" 
+              fill="#00ff00" 
+              fontSize="24" 
+              fontWeight="bold" 
+              textAnchor="end"
+              filter="url(#glow)"
+              opacity="0.5"
+            >
+              {displayBpm} BPM
+            </Text>
+          </>
         ) : null}
       </Svg>
     </View>
@@ -148,10 +219,13 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
 const styles = StyleSheet.create({
   container: {
     width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   svg: {
     backgroundColor: 'black',
     borderRadius: 8,
+    overflow: 'hidden',
   },
 });
 

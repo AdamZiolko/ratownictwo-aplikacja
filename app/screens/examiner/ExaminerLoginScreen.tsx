@@ -109,7 +109,7 @@ const ExaminerLoginScreen = () => {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.container}>
-          {/* Nagłówek z warunkowym renderowaniem */}
+          {}
           {Platform.OS === 'android' ? (
             <View style={styles.androidHeader}>
               <IconButton
@@ -157,7 +157,7 @@ const ExaminerLoginScreen = () => {
           {activeTab === 'login' ? (
             <View style={styles.form}>
               <TextInput
-                label="Email"
+                label="Nazwa użytkownika"
                 value={email}
                 onChangeText={setEmail}
                 mode="outlined"
