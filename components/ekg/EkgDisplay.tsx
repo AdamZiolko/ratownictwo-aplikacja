@@ -10,7 +10,7 @@ interface EkgDisplayProps {
   isRunning?: boolean ;
 }
 
-const BASELINE = 150; 
+const BASELINE = 180; 
 const FLUCTUATION_RANGE = 2; 
 
 const EkgDisplay: React.FC<EkgDisplayProps> = ({ 
@@ -19,8 +19,7 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
   noiseType,
   isRunning 
 }) => {
-  const [pathData, setPathData] = useState('');
-  const [containerWidth, setContainerWidth] = useState(0);
+  const [pathData, setPathData] = useState('');  const [containerWidth, setContainerWidth] = useState(0);
   const [displayBpm, setDisplayBpm] = useState<number | undefined>(bpm);
   const xOffsetRef = useRef(0);
   const previousXRef = useRef(0);
@@ -44,9 +43,7 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
     if (ekgType !== undefined) {
       resetEkg();
     }
-  }, [ekgType]);
-
-    const draw = () => {
+  }, [ekgType]);    const draw = () => {
     if (!isRunning || containerWidth === 0) return;
     
     xOffsetRef.current += 2;
@@ -62,18 +59,22 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
       setPathData('');
     } else {
       
-      const ekgValue = EkgFactory.generateEkgValue(x, ekgType, bpm, noiseType);
+      const rawEkgValue = EkgFactory.generateEkgValue(x, ekgType, bpm, noiseType);
+      // Invert the ECG value to fix the drawing orientation
+      // We calculate 300 - rawEkgValue to flip the Y-coordinate (300 is the SVG height)
+      const ekgValue = 300 - rawEkgValue;
 
       if (isFirstPointRef.current) {
-        
-        pathDataRef.current = `M 0 ${BASELINE} L ${x} ${ekgValue}`;
+        // Start the path at the baseline (also inverted)
+        const invertedBaseline = 300 - BASELINE;
+        pathDataRef.current = `M 0 ${invertedBaseline} L ${x} ${ekgValue}`;
         isFirstPointRef.current = false;
       } else if (previousXRef.current <= x) {
         
         pathDataRef.current += ` L ${x} ${ekgValue}`;
       }
       previousXRef.current = x;
-      previousYRef.current = ekgValue;
+      previousYRef.current = rawEkgValue;
       setPathData(pathDataRef.current);
     }
 

@@ -224,26 +224,44 @@ export class EkgFactory {
         (Math.sin(seed) * 0.5 + 0.5) * strength;
     }
     return this.irregularityCache[cacheKey];
-  }
-  static generateEkgValue(
+  }  static generateEkgValue(
     x: number,
     ekgType: EkgType = EkgType.NORMAL,
     bpm: number = DEFAULT_BPM,
     noiseType: NoiseType = NoiseType.NONE
   ): number {
+    const config = this.getConfig(ekgType, bpm, noiseType);
     
-    const { EkgDataAdapter } = require('./EkgDataAdapter');
-    return EkgDataAdapter.getValue(x, ekgType, bpm, noiseType);
-  }
-  static resetNoiseCache(): void {
+    switch (ekgType) {
+      case EkgType.NORMAL:
+        return this.generateNormalSinusEkg(x, config);
+      case EkgType.TACHYCARDIA:
+        return this.generateTachycardiaEkg(x, config);
+      case EkgType.BRADYCARDIA:
+        return this.generateBradycardiaEkg(x, config);
+      case EkgType.AFIB:
+        return this.generateAFibEkg(x, config);
+      case EkgType.VFIB:
+        return this.generateVFibEkg(x, config);
+      case EkgType.VTACH:
+        return this.generateVTachEkg(x, config);
+      case EkgType.TORSADE:
+        return this.generateTorsadeEkg(x, config);
+      case EkgType.ASYSTOLE:
+        return this.generateAsystoleEkg(x, config);
+      case EkgType.HEART_BLOCK:
+        return this.generateHeartBlockEkg(x, config);
+      case EkgType.PVC:
+        return this.generatePVCEkg(x, config);
+      case EkgType.CUSTOM:
+      default:
+        return this.generateNormalSinusEkg(x, config);
+    }
+  }  static resetNoiseCache(): void {
     this.noiseCache = {};
     this.lastBaselineWander = 0;
     this.irregularityCache = {};
     this.pvcCounters = {};
-    
-    
-    const { EkgDataAdapter } = require('./EkgDataAdapter');
-    EkgDataAdapter.resetCache();
   }
 
   static generateNormalSinusEkg(x: number, config: EkgConfig): number {
