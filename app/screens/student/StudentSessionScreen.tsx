@@ -7,6 +7,7 @@ import {
   Button,
   Icon,
   Divider,
+  IconButton,
 } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams } from "expo-router";
@@ -58,6 +59,7 @@ const StudentSessionScreen = () => {
   const [sessionData, setSessionData] = useState<Session | null>(null);
   const [soundsLoaded, setSoundsLoaded] = useState(false);
   const isWeb = Platform.OS === "web";
+  const [isSessionPanelExpanded, setIsSessionPanelExpanded] = useState(false);
 
   const [studentInfo, setStudentInfo] = useState({
     firstName: firstName || "",
@@ -478,202 +480,413 @@ const StudentSessionScreen = () => {
           style={styles.content}
           contentContainerStyle={styles.contentContainer}
         >
-          <Surface style={styles.sessionInfo} elevation={3}>
-            <View style={styles.sessionHeader}>
-              <MaterialCommunityIcons
-                name="medical-bag"
-                size={24}
-                color={theme.colors.primary}
-                style={styles.headerIcon}
-              />
-              <Text style={styles.title}>Sesja #{accessCode}</Text>
-            </View>
-            <Divider style={styles.divider} />
-            <View style={styles.patientInfoRow}>
-              <MaterialCommunityIcons
-                name="account"
+          {Platform.OS !== 'web' ? (
+            <View style={styles.mobileSessionHeader}>
+              <IconButton
+                icon={isSessionPanelExpanded ? "chevron-down" : "chevron-up"}
+                onPress={() => setIsSessionPanelExpanded(!isSessionPanelExpanded)}
                 size={20}
-                color={theme.colors.secondary}
               />
-              <Text style={styles.patientInfoText}>
-                {firstName} {lastName} ({albumNumber})
-              </Text>
+              {isSessionPanelExpanded && (
+                <Surface style={styles.sessionInfo} elevation={3}>
+                  <View style={styles.sessionHeader}>
+                    <MaterialCommunityIcons
+                      name="medical-bag"
+                      size={24}
+                      color={theme.colors.primary}
+                      style={styles.headerIcon}
+                    />
+                    <Text style={styles.title}>Sesja #{accessCode}</Text>
+                  </View>
+                  <Divider style={styles.divider} />
+                  <View style={styles.patientInfoRow}>
+                    <MaterialCommunityIcons
+                      name="account"
+                      size={20}
+                      color={theme.colors.secondary}
+                    />
+                    <Text style={styles.patientInfoText}>
+                      {firstName} {lastName} ({albumNumber})
+                    </Text>
+                  </View>
+                  {sessionData?.name && (
+                    <View style={styles.patientInfoRow}>
+                      <MaterialCommunityIcons
+                        name="tag"
+                        size={20}
+                        color={theme.colors.secondary}
+                      />
+                      <Text style={styles.sessionName}>{sessionData.name}</Text>
+                    </View>
+                  )}
+                  <Divider style={[styles.divider, { marginVertical: 10 }]} />
+                  <View style={styles.sessionMetaInfo}>
+                    <View style={styles.metaItemRow}>
+                      <MaterialCommunityIcons
+                        name={sessionData?.isActive ? "check-circle" : "close-circle"}
+                        size={18}
+                        color={
+                          sessionData?.isActive
+                            ? theme.colors.primary
+                            : theme.colors.error
+                        }
+                      />
+                      <Text style={styles.metaItemLabel}>
+                        Status:{" "}
+                        <Text style={{ fontWeight: "500" }}>
+                          {sessionData?.isActive ? "Aktywna" : "Nieaktywna"}
+                        </Text>
+                      </Text>
+                    </View>
+                    {sessionData?.createdAt && (
+                      <View style={styles.metaItemRow}>
+                        <MaterialCommunityIcons
+                          name="calendar-plus"
+                          size={18}
+                          color={theme.colors.secondary}
+                        />
+                        <Text style={styles.metaItemLabel}>
+                          Utworzono:{" "}
+                          <Text style={{ fontWeight: "500" }}>
+                            {new Date(sessionData.createdAt).toLocaleString("pl-PL")}
+                          </Text>
+                        </Text>
+                      </View>
+                    )}
+                    {sessionData?.updatedAt && (
+                      <View style={styles.metaItemRow}>
+                        <MaterialCommunityIcons
+                          name="calendar-sync"
+                          size={18}
+                          color={theme.colors.secondary}
+                        />
+                        <Text style={styles.metaItemLabel}>
+                          Zaktualizowano:{" "}
+                          <Text style={{ fontWeight: "500" }}>
+                            {new Date(sessionData.updatedAt).toLocaleString("pl-PL")}
+                          </Text>
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                </Surface>
+              )}
             </View>
-            {sessionData?.name && (
+          ) : (
+            <Surface style={styles.sessionInfo} elevation={3}>
+              <View style={styles.sessionHeader}>
+                <MaterialCommunityIcons
+                  name="medical-bag"
+                  size={24}
+                  color={theme.colors.primary}
+                  style={styles.headerIcon}
+                />
+                <Text style={styles.title}>Sesja #{accessCode}</Text>
+              </View>
+              <Divider style={styles.divider} />
               <View style={styles.patientInfoRow}>
                 <MaterialCommunityIcons
-                  name="tag"
+                  name="account"
                   size={20}
                   color={theme.colors.secondary}
                 />
-                <Text style={styles.sessionName}>{sessionData.name}</Text>
-              </View>
-            )}
-            <Divider style={[styles.divider, { marginVertical: 10 }]} />
-            <View style={styles.sessionMetaInfo}>
-              <View style={styles.metaItemRow}>
-                <MaterialCommunityIcons
-                  name={sessionData?.isActive ? "check-circle" : "close-circle"}
-                  size={18}
-                  color={
-                    sessionData?.isActive
-                      ? theme.colors.primary
-                      : theme.colors.error
-                  }
-                />
-                <Text style={styles.metaItemLabel}>
-                  Status:{" "}
-                  <Text style={{ fontWeight: "500" }}>
-                    {sessionData?.isActive ? "Aktywna" : "Nieaktywna"}
-                  </Text>
+                <Text style={styles.patientInfoText}>
+                  {firstName} {lastName} ({albumNumber})
                 </Text>
               </View>
-              {sessionData?.createdAt && (
-                <View style={styles.metaItemRow}>
+              {sessionData?.name && (
+                <View style={styles.patientInfoRow}>
                   <MaterialCommunityIcons
-                    name="calendar-plus"
-                    size={18}
+                    name="tag"
+                    size={20}
                     color={theme.colors.secondary}
                   />
+                  <Text style={styles.sessionName}>{sessionData.name}</Text>
+                </View>
+              )}
+              <Divider style={[styles.divider, { marginVertical: 10 }]} />
+              <View style={styles.sessionMetaInfo}>
+                <View style={styles.metaItemRow}>
+                  <MaterialCommunityIcons
+                    name={sessionData?.isActive ? "check-circle" : "close-circle"}
+                    size={18}
+                    color={
+                      sessionData?.isActive
+                        ? theme.colors.primary
+                        : theme.colors.error
+                    }
+                  />
                   <Text style={styles.metaItemLabel}>
-                    Utworzono:{" "}
+                    Status:{" "}
                     <Text style={{ fontWeight: "500" }}>
-                      {new Date(sessionData.createdAt).toLocaleString("pl-PL")}
+                      {sessionData?.isActive ? "Aktywna" : "Nieaktywna"}
                     </Text>
                   </Text>
                 </View>
-              )}
-              {sessionData?.updatedAt && (
-                <View style={styles.metaItemRow}>
-                  <MaterialCommunityIcons
-                    name="calendar-sync"
-                    size={18}
-                    color={theme.colors.secondary}
-                  />
-                  <Text style={styles.metaItemLabel}>
-                    Zaktualizowano:{" "}
-                    <Text style={{ fontWeight: "500" }}>
-                      {new Date(sessionData.updatedAt).toLocaleString("pl-PL")}
+                {sessionData?.createdAt && (
+                  <View style={styles.metaItemRow}>
+                    <MaterialCommunityIcons
+                      name="calendar-plus"
+                      size={18}
+                      color={theme.colors.secondary}
+                    />
+                    <Text style={styles.metaItemLabel}>
+                      Utworzono:{" "}
+                      <Text style={{ fontWeight: "500" }}>
+                        {new Date(sessionData.createdAt).toLocaleString("pl-PL")}
+                      </Text>
                     </Text>
-                  </Text>
-                </View>
-              )}
-            </View>
-          </Surface>
-          {!isWeb && (
-            <Surface style={styles.vitalsCard} elevation={3}>
-              <View style={styles.cardHeaderRow}>
-                <Icon
-                  source="circle-outline"
-                  size={24}
-                  color={theme.colors.primary}
-                />
-                <Text style={styles.cardHeaderTitle}>Sensor RGB</Text>
+                  </View>
+                )}
+                {sessionData?.updatedAt && (
+                  <View style={styles.metaItemRow}>
+                    <MaterialCommunityIcons
+                      name="calendar-sync"
+                      size={18}
+                      color={theme.colors.secondary}
+                    />
+                    <Text style={styles.metaItemLabel}>
+                      Zaktualizowano:{" "}
+                      <Text style={{ fontWeight: "500" }}>
+                        {new Date(sessionData.updatedAt).toLocaleString("pl-PL")}
+                      </Text>
+                    </Text>
+                  </View>
+                )}
               </View>
-              <ColorSensor />
             </Surface>
           )}
-
-          <Surface style={styles.vitalsCard} elevation={1}>
-            <Text style={styles.cardTitle}>Patient Vitals</Text>
-            <Surface style={styles.ekgCard} elevation={3}>
-              <View style={styles.cardHeaderRow}>
-                <MaterialCommunityIcons
-                  name="heart-pulse"
-                  size={24}
-                  color={theme.colors.error}
+  
+          {Platform.OS !== 'web' ? (
+            <>
+              <Surface style={styles.ekgCard} elevation={3}>
+                <View style={styles.cardHeaderRow}>
+                  <MaterialCommunityIcons
+                    name="heart-pulse"
+                    size={24}
+                    color={theme.colors.error}
+                  />
+                  <Text style={styles.cardHeaderTitle}>Kardiomonitor</Text>
+                </View>
+                <EkgDisplay
+                  ekgType={Number(sessionData.rhythmType)}
+                  bpm={Number(sessionData.beatsPerMinute)}
+                  noiseType={sessionData.noiseLevel}
+                  isRunning
                 />
-                <Text style={styles.cardHeaderTitle}>Kardiomonitor</Text>
-              </View>
-              <EkgDisplay
-                ekgType={Number(sessionData.rhythmType)}
-                bpm={Number(sessionData.beatsPerMinute)}
-                noiseType={sessionData.noiseLevel}
-                isRunning
-              />
-            </Surface>
-          </Surface>
-
-          <Surface style={styles.vitalsCard} elevation={3}>
-            <View style={styles.cardHeaderRow}>
-              <MaterialCommunityIcons
-                name="clipboard-pulse"
-                size={24}
-                color={theme.colors.primary}
-              />
-              <Text style={styles.cardHeaderTitle}>Parametry pacjenta</Text>
-            </View>
-
-            <View style={styles.vitalsRow}>
-              <Surface style={styles.vitalItemCard} elevation={1}>
-                <MaterialCommunityIcons
-                  name="thermometer"
-                  size={22}
-                  color={theme.colors.tertiary}
-                />
-                <Text style={styles.vitalLabel}>Temperatura</Text>
-                <Text style={styles.vitalValue}>
-                  {temperature.currentValue !== null
-                    ? `${temperature.currentValue}${temperature.unit}`
-                    : "N/A"}
-                </Text>
               </Surface>
-            </View>
-
-            <View style={styles.vitalsRow}>
-              <Surface style={styles.vitalItemCard} elevation={1}>
-                <MaterialCommunityIcons
-                  name="blood-bag"
-                  size={22}
-                  color={theme.colors.error}
-                />
-                <Text style={styles.vitalLabel}>Ciśnienie krwi</Text>
-                <Text style={styles.vitalValue}>{formatBloodPressure()}</Text>
+  
+              <Surface style={styles.vitalsCard} elevation={3}>
+                <View style={styles.cardHeaderRow}>
+                  <MaterialCommunityIcons
+                    name="clipboard-pulse"
+                    size={24}
+                    color={theme.colors.primary}
+                  />
+                  <Text style={styles.cardHeaderTitle}>Parametry pacjenta</Text>
+                </View>
+  
+                <View style={styles.vitalsRow}>
+                  <Surface style={styles.vitalItemCard} elevation={1}>
+                    <MaterialCommunityIcons
+                      name="thermometer"
+                      size={22}
+                      color={theme.colors.tertiary}
+                    />
+                    <Text style={styles.vitalLabel}>Temperatura</Text>
+                    <Text style={styles.vitalValue}>
+                      {temperature.currentValue !== null
+                        ? `${temperature.currentValue}${temperature.unit}`
+                        : "N/A"}
+                    </Text>
+                  </Surface>
+                </View>
+  
+                <View style={styles.vitalsRow}>
+                  <Surface style={styles.vitalItemCard} elevation={1}>
+                    <MaterialCommunityIcons
+                      name="blood-bag"
+                      size={22}
+                      color={theme.colors.error}
+                    />
+                    <Text style={styles.vitalLabel}>Ciśnienie krwi</Text>
+                    <Text style={styles.vitalValue}>{formatBloodPressure()}</Text>
+                  </Surface>
+                  <Surface style={styles.vitalItemCard} elevation={1}>
+                    <MaterialCommunityIcons
+                      name="percent"
+                      size={22}
+                      color={theme.colors.primary}
+                    />
+                    <Text style={styles.vitalLabel}>SpO₂</Text>
+                    <Text style={styles.vitalValue}>
+                      {spo2.currentValue !== null
+                        ? `${spo2.currentValue}${spo2.unit}`
+                        : "N/A"}
+                    </Text>
+                  </Surface>
+                </View>
+  
+                <View style={styles.vitalsRow}>
+                  <Surface style={styles.vitalItemCard} elevation={1}>
+                    <MaterialCommunityIcons
+                      name="molecule-co2"
+                      size={22}
+                      color={theme.colors.secondary}
+                    />
+                    <Text style={styles.vitalLabel}>EtCO₂</Text>
+                    <Text style={styles.vitalValue}>
+                      {etco2.currentValue !== null
+                        ? `${etco2.currentValue} ${etco2.unit}`
+                        : "N/A"}
+                    </Text>
+                  </Surface>
+                  <Surface style={styles.vitalItemCard} elevation={1}>
+                    <MaterialCommunityIcons
+                      name="lungs"
+                      size={22}
+                      color={theme.colors.tertiary}
+                    />
+                    <Text style={styles.vitalLabel}>Częstość oddechów</Text>
+                    <Text style={styles.vitalValue}>
+                      {respiratoryRate.currentValue !== null
+                        ? `${respiratoryRate.currentValue} ${respiratoryRate.unit}`
+                        : "N/A"}
+                    </Text>
+                  </Surface>
+                </View>
               </Surface>
-              <Surface style={styles.vitalItemCard} elevation={1}>
-                <MaterialCommunityIcons
-                  name="percent"
-                  size={22}
-                  color={theme.colors.primary}
-                />
-                <Text style={styles.vitalLabel}>SpO₂</Text>
-                <Text style={styles.vitalValue}>
-                  {spo2.currentValue !== null
-                    ? `${spo2.currentValue}${spo2.unit}`
-                    : "N/A"}
-                </Text>
+  
+              <Surface style={styles.vitalsCard} elevation={3}>
+                <View style={styles.cardHeaderRow}>
+                  <Icon
+                    source="circle-outline"
+                    size={24}
+                    color={theme.colors.primary}
+                  />
+                  <Text style={styles.cardHeaderTitle}>Sensor RGB</Text>
+                </View>
+                <ColorSensor />
               </Surface>
-            </View>
-
-            <View style={styles.vitalsRow}>
-              <Surface style={styles.vitalItemCard} elevation={1}>
-                <MaterialCommunityIcons
-                  name="molecule-co2"
-                  size={22}
-                  color={theme.colors.secondary}
-                />
-                <Text style={styles.vitalLabel}>EtCO₂</Text>
-                <Text style={styles.vitalValue}>
-                  {etco2.currentValue !== null
-                    ? `${etco2.currentValue} ${etco2.unit}`
-                    : "N/A"}
-                </Text>
+            </>
+          ) : (
+            <>
+              {!isWeb && (
+                <Surface style={styles.vitalsCard} elevation={3}>
+                  <View style={styles.cardHeaderRow}>
+                    <Icon
+                      source="circle-outline"
+                      size={24}
+                      color={theme.colors.primary}
+                    />
+                    <Text style={styles.cardHeaderTitle}>Sensor RGB</Text>
+                  </View>
+                  <ColorSensor />
+                </Surface>
+              )}
+  
+              <Surface style={styles.vitalsCard} elevation={1}>
+                <Text style={styles.cardTitle}>Patient Vitals</Text>
+                <Surface style={styles.ekgCard} elevation={3}>
+                  <View style={styles.cardHeaderRow}>
+                    <MaterialCommunityIcons
+                      name="heart-pulse"
+                      size={24}
+                      color={theme.colors.error}
+                    />
+                    <Text style={styles.cardHeaderTitle}>Kardiomonitor</Text>
+                  </View>
+                  <EkgDisplay
+                    ekgType={Number(sessionData.rhythmType)}
+                    bpm={Number(sessionData.beatsPerMinute)}
+                    noiseType={sessionData.noiseLevel}
+                    isRunning
+                  />
+                </Surface>
               </Surface>
-              <Surface style={styles.vitalItemCard} elevation={1}>
-                <MaterialCommunityIcons
-                  name="lungs"
-                  size={22}
-                  color={theme.colors.tertiary}
-                />
-                <Text style={styles.vitalLabel}>Częstość oddechów</Text>
-                <Text style={styles.vitalValue}>
-                  {respiratoryRate.currentValue !== null
-                    ? `${respiratoryRate.currentValue} ${respiratoryRate.unit}`
-                    : "N/A"}
-                </Text>
+  
+              <Surface style={styles.vitalsCard} elevation={3}>
+                <View style={styles.cardHeaderRow}>
+                  <MaterialCommunityIcons
+                    name="clipboard-pulse"
+                    size={24}
+                    color={theme.colors.primary}
+                  />
+                  <Text style={styles.cardHeaderTitle}>Parametry pacjenta</Text>
+                </View>
+  
+                <View style={styles.vitalsRow}>
+                  <Surface style={styles.vitalItemCard} elevation={1}>
+                    <MaterialCommunityIcons
+                      name="thermometer"
+                      size={22}
+                      color={theme.colors.tertiary}
+                    />
+                    <Text style={styles.vitalLabel}>Temperatura</Text>
+                    <Text style={styles.vitalValue}>
+                      {temperature.currentValue !== null
+                        ? `${temperature.currentValue}${temperature.unit}`
+                        : "N/A"}
+                    </Text>
+                  </Surface>
+                </View>
+  
+                <View style={styles.vitalsRow}>
+                  <Surface style={styles.vitalItemCard} elevation={1}>
+                    <MaterialCommunityIcons
+                      name="blood-bag"
+                      size={22}
+                      color={theme.colors.error}
+                    />
+                    <Text style={styles.vitalLabel}>Ciśnienie krwi</Text>
+                    <Text style={styles.vitalValue}>{formatBloodPressure()}</Text>
+                  </Surface>
+                  <Surface style={styles.vitalItemCard} elevation={1}>
+                    <MaterialCommunityIcons
+                      name="percent"
+                      size={22}
+                      color={theme.colors.primary}
+                    />
+                    <Text style={styles.vitalLabel}>SpO₂</Text>
+                    <Text style={styles.vitalValue}>
+                      {spo2.currentValue !== null
+                        ? `${spo2.currentValue}${spo2.unit}`
+                        : "N/A"}
+                    </Text>
+                  </Surface>
+                </View>
+  
+                <View style={styles.vitalsRow}>
+                  <Surface style={styles.vitalItemCard} elevation={1}>
+                    <MaterialCommunityIcons
+                      name="molecule-co2"
+                      size={22}
+                      color={theme.colors.secondary}
+                    />
+                    <Text style={styles.vitalLabel}>EtCO₂</Text>
+                    <Text style={styles.vitalValue}>
+                      {etco2.currentValue !== null
+                        ? `${etco2.currentValue} ${etco2.unit}`
+                        : "N/A"}
+                    </Text>
+                  </Surface>
+                  <Surface style={styles.vitalItemCard} elevation={1}>
+                    <MaterialCommunityIcons
+                      name="lungs"
+                      size={22}
+                      color={theme.colors.tertiary}
+                    />
+                    <Text style={styles.vitalLabel}>Częstość oddechów</Text>
+                    <Text style={styles.vitalValue}>
+                      {respiratoryRate.currentValue !== null
+                        ? `${respiratoryRate.currentValue} ${respiratoryRate.unit}`
+                        : "N/A"}
+                    </Text>
+                  </Surface>
+                </View>
               </Surface>
-            </View>
-          </Surface>
+            </>
+          )}
         </ScrollView>
       ) : (
         <View style={styles.center}>
@@ -696,7 +909,6 @@ const StudentSessionScreen = () => {
     </SafeAreaView>
   );
 };
-
 const styles = StyleSheet.create({
   container: { flex: 1 },
   center: {
@@ -704,6 +916,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 16,
+  },
+  sessionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
   },
   content: { flex: 1, padding: 8 },
   sessionInfo: { padding: 16, marginBottom: 16, borderRadius: 8 },
@@ -716,22 +933,32 @@ const styles = StyleSheet.create({
     borderTopColor: "rgba(0, 0, 0, 0.1)",
   },
   metaItem: { fontSize: 14, marginVertical: 2, opacity: 0.8 },
-  vitalsCard: { padding: 16, margin: 8, borderRadius: 8 },
-  cardTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 12 },
+  vitalsCard: {
+    padding: Platform.select({
+      default: 16,
+      android: 12,
+      ios: 12
+    }),
+    margin: Platform.select({
+      default: 8,
+      android: 4,
+      ios: 4
+    }),
+    borderRadius: 8,
+  },  cardTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 12 },
   vitalsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 12,
   },
   vitalItem: { flex: 1, padding: 8 },
-  vitalLabel: { fontSize: 14, opacity: 0.7, marginBottom: 4 },
-  vitalValue: { fontSize: 18, fontWeight: "500" },
 
-  contentContainer: { paddingBottom: 16 },
-  sessionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
+  contentContainer: {
+    paddingBottom: Platform.select({
+      default: 16,
+      android: 8,
+      ios: 8
+    }),
   },
   headerIcon: { marginRight: 8 },
   patientInfoRow: {
@@ -747,21 +974,71 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   metaItemLabel: { marginLeft: 8, fontSize: 14, opacity: 0.8 },
-  ekgCard: { padding: 16, margin: 8, borderRadius: 8 },
-  cardHeaderRow: {
+  ekgCard: {
+    padding: Platform.select({
+      default: 16,
+      android: 12,
+      ios: 12
+    }),
+    margin: Platform.select({
+      default: 8,
+      android: 4,
+      ios: 4
+    }),
+    borderRadius: 8,
+  },  cardHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 8,
   },
-  cardHeaderTitle: { fontSize: 18, fontWeight: "bold", marginLeft: 8 },
+  cardHeaderTitle: {
+    fontSize: Platform.select({
+      default: 18,
+      android: 16,
+      ios: 16
+    }),
+    fontWeight: "bold",
+    marginLeft: 8,
+  },
+  noDataText: { fontSize: 18, fontWeight: "500", marginTop: 16 },
+  mobileSessionHeader: {
+    marginBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  
   vitalItemCard: {
     flex: 1,
-    padding: 8,
-    margin: 4,
+    padding: Platform.select({
+      default: 8,
+      android: 6,
+      ios: 6
+    }),
+    margin: Platform.select({
+      default: 4,
+      android: 2,
+      ios: 2
+    }),
     borderRadius: 8,
     alignItems: "center",
   },
-  noDataText: { fontSize: 18, fontWeight: "500", marginTop: 16 },
+  vitalLabel: {
+    fontSize: Platform.select({
+      default: 14,
+      android: 12,
+      ios: 12
+    }),
+    opacity: 0.7,
+    marginBottom: 4,
+  },
+  vitalValue: {
+    fontSize: Platform.select({
+      default: 18,
+      android: 16,
+      ios: 16
+    }),
+    fontWeight: "500",
+  },
+  
 });
-
 export default StudentSessionScreen;
