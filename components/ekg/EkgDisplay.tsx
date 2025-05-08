@@ -1,6 +1,6 @@
 import { EkgType, NoiseType, EkgFactory } from '@/services/EkgFactory';
 import React, { useEffect, useRef, useState, useLayoutEffect } from 'react';
-import { View, StyleSheet, Text as RNText, Platform } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 import Svg, {
   Path,
   Defs,
@@ -29,6 +29,7 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
   const [pathData, setPathData] = useState('');
   const [containerWidth, setContainerWidth] = useState(0);
   const [displayBpm, setDisplayBpm] = useState<number | undefined>(bpm);
+
   const xOffsetRef = useRef(0);
   const previousXRef = useRef(0);
   const previousYRef = useRef(BASELINE);
@@ -39,16 +40,10 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
   const fluctuationTimerRef = useRef<NodeJS.Timeout>();
 
   useLayoutEffect(() => {
-    if (containerRef.current) {
-      containerRef.current.measure((x, y, width) => {
-        if (width > 0) {
-          setContainerWidth(width);
-        }
-      });
-    }
-    if (ekgType !== undefined) {
-      resetEkg();
-    }
+    containerRef.current?.measure((_, __, width) => {
+      if (width > 0) setContainerWidth(width);
+    });
+    if (ekgType !== undefined) resetEkg();
   }, [ekgType]);
 
   const draw = () => {
@@ -58,7 +53,6 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
     const x = xOffsetRef.current;
 
     if (x > containerWidth) {
-      // restart path
       xOffsetRef.current = 0;
       previousXRef.current = 0;
       previousYRef.current = BASELINE;
@@ -66,14 +60,8 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
       pathDataRef.current = '';
       setPathData('');
     } else {
-      const rawEkgValue = EkgFactory.generateEkgValue(
-        x,
-        ekgType,
-        bpm,
-        noiseType
-      );
-      // flip y: SVG height is 300
-      const ekgValue = 300 - rawEkgValue;
+      const raw = EkgFactory.generateEkgValue(x, ekgType, bpm, noiseType);
+      const ekgValue = 300 - raw; // Flip
 
       if (isFirstPointRef.current) {
         const invertedBaseline = 300 - BASELINE;
@@ -84,7 +72,7 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
       }
 
       previousXRef.current = x;
-      previousYRef.current = rawEkgValue;
+      previousYRef.current = raw;
       setPathData(pathDataRef.current);
     }
 
@@ -93,7 +81,6 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
 
   useEffect(() => {
     resetEkg();
-
     if (isRunning && containerWidth > 0) {
       cancelAnimationFrame(animationRef.current);
       animationRef.current = requestAnimationFrame(draw);
@@ -110,7 +97,6 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
     return () => {
       cancelAnimationFrame(animationRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRunning, containerWidth]);
 
   useEffect(() => {
@@ -150,13 +136,11 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
   }, [bpm, isRunning]);
 
   const onLayout = () => {
-    if (containerRef.current) {
-      containerRef.current.measure((x, y, width) => {
-        if (width > 0 && width !== containerWidth) {
-          setContainerWidth(width);
-        }
-      });
-    }
+    containerRef.current?.measure((_, __, width) => {
+      if (width > 0 && width !== containerWidth) {
+        setContainerWidth(width);
+      }
+    });
   };
 
   return (
@@ -171,7 +155,6 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
         style={styles.svg}
         viewBox={`0 0 ${containerWidth} 300`}
       >
-        {/* glow only on web/desktop */}
         {Platform.OS === 'web' && (
           <Defs>
             <Filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
@@ -186,16 +169,16 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
           </Defs>
         )}
 
-        {pathData ? (
+        {pathData && (
           <Path
             d={pathData}
             stroke="#00ff00"
             strokeWidth="2"
             fill="none"
           />
-        ) : null}
+        )}
 
-        {pathData && Platform.OS === 'web' ? (
+        {pathData && Platform.OS === 'web' && (
           <Path
             d={pathData}
             stroke="#00ff00"
@@ -204,36 +187,20 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
             filter="url(#glow)"
             opacity="0.7"
           />
-        ) : null}
+        )}
 
-        {displayBpm ? (
-          <>
-            <Text
-              x={containerWidth - 20}
-              y="40"
-              fill="#00ff00"
-              fontSize="24"
-              fontWeight="bold"
-              textAnchor="end"
-            >
-              {displayBpm} BPM
-            </Text>
-            {Platform.OS === 'web' && (
-              <Text
-                x={containerWidth - 20}
-                y="40"
-                fill="#00ff00"
-                fontSize="24"
-                fontWeight="bold"
-                textAnchor="end"
-                filter="url(#glow)"
-                opacity="0.5"
-              >
-                {displayBpm} BPM
-              </Text>
-            )}
-          </>
-        ) : null}
+        {displayBpm != null && (
+          <Text
+            x={containerWidth - 20}
+            y="40"
+            fill="#00ff00"
+            fontSize="24"
+            fontWeight="bold"
+            textAnchor="end"
+          >
+            {displayBpm} BPM
+          </Text>
+        )}
       </Svg>
     </View>
   );

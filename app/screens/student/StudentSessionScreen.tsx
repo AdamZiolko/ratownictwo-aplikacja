@@ -573,6 +573,7 @@ const StudentSessionScreen = () => {
                 <Text style={styles.cardHeaderTitle}>Sensor RGB</Text>
               </View>
               {/* <ColorSensor /> */}
+              {/* <ColorSensor /> */}
             </Surface>
           )}
 
