@@ -17,6 +17,7 @@ import {
   type Subscription,
   type Characteristic,
 } from 'react-native-ble-plx';
+import { useAuth } from '../contexts/AuthContext';
 
 const SERVICE_UUID        = '12345678-1234-1234-1234-1234567890ab';
 const CHARACTERISTIC_UUID = 'abcd1234-5678-90ab-cdef-1234567890ab';
@@ -26,6 +27,7 @@ export default function ColorSensor() {
     return null;
   }
 
+  const { user } = useAuth();
   const [manager]    = useState<BleManagerType>(() => new BleManager());
   const [bleState, setBleState] = useState<string>('Unknown');
   const [status, setStatus] = useState<'idle'|'scanning'|'connected'|'monitoring'|'error'>('idle');
@@ -57,6 +59,25 @@ export default function ColorSensor() {
     };
   }, [manager]);
 
+  // Cleanup on logout
+  useEffect(() => {
+    if (!user) {
+      manager.stopDeviceScan();
+      subRef.current?.remove();
+      if (deviceRef.current) {
+        manager.cancelDeviceConnection(deviceRef.current.id).catch(() => {});
+        deviceRef.current = null;
+      }
+      subRef.current = null;
+      if (scanTimeoutRef.current) {
+        clearTimeout(scanTimeoutRef.current);
+      }
+      setStatus('idle');
+      setError(null);
+      setColor({ r: 0, g: 0, b: 0 });
+    }
+  }, [user, manager]);
+
   // Permissions (Android)
   const requestPermissions = async (): Promise<void> => {
     if (Platform.OS !== 'android') return;
@@ -78,6 +99,14 @@ export default function ColorSensor() {
   const scanAndMonitor = async (): Promise<void> => {
     setError(null);
     setStatus('scanning');
+
+    // clear previous
+    if (deviceRef.current) {
+      subRef.current?.remove();
+      await manager.cancelDeviceConnection(deviceRef.current.id).catch(() => {});
+      deviceRef.current = null;
+      subRef.current = null;
+    }
 
     try {
       await requestPermissions();
@@ -136,8 +165,8 @@ export default function ColorSensor() {
                 if (!char?.value) return;
                 const raw = atob(char.value);
                 const bytes = Uint8Array.from(
-                { length: raw.length },
-                (_, i) => raw.charCodeAt(i)
+                  { length: raw.length },
+                  (_, i) => raw.charCodeAt(i)
                 );
                 const r16 = (bytes[0] << 8) | bytes[1];
                 const g16 = (bytes[2] << 8) | bytes[3];

@@ -489,14 +489,6 @@ const StudentSessionScreen = () => {
           </View>
           <ColorSensor />
           </Surface>
-
-          <EkgDisplay
-            ekgType={Number(sessionData.rhythmType)}
-            bpm={Number(sessionData.beatsPerMinute)}
-            noiseType={sessionData.noiseLevel}
-            isRunning
-          />
-          
           <Surface style={styles.vitalsCard} elevation={1}>
             <Text style={styles.cardTitle}>Patient Vitals</Text>
           <Surface style={styles.ekgCard} elevation={3}>
