@@ -23,7 +23,8 @@ const FLUCTUATION_RANGE = 2;
 
 const EkgDisplay: React.FC<EkgDisplayProps> = ({
   ekgType,
-  bpm,  noiseType,
+  bpm,
+  noiseType,
   isRunning,
 }) => {
   const theme = useTheme();
@@ -39,6 +40,11 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
   const pathDataRef = useRef('');
   const containerRef = useRef<View>(null);
   const fluctuationTimerRef = useRef<NodeJS.Timeout>();
+
+  // Ustawienia rozmiarów dla różnych platform
+  const SVG_HEIGHT = Platform.OS === 'web' ? 300 : 150;
+  const VIEWBOX_HEIGHT = Platform.OS === 'web' ? 300 : 150;
+  const BPM_FONT_SIZE = Platform.OS === 'web' ? 24 : 18;
 
   useLayoutEffect(() => {
     containerRef.current?.measure((_, __, width) => {
@@ -62,10 +68,10 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
       setPathData('');
     } else {
       const raw = EkgFactory.generateEkgValue(x, ekgType, bpm, noiseType);
-      const ekgValue = 300 - raw; // Flip
+      const ekgValue = VIEWBOX_HEIGHT - (raw * (VIEWBOX_HEIGHT / 250));
 
       if (isFirstPointRef.current) {
-        const invertedBaseline = 300 - BASELINE;
+        const invertedBaseline = VIEWBOX_HEIGHT - (BASELINE * (VIEWBOX_HEIGHT / 300));
         pathDataRef.current = `M 0 ${invertedBaseline} L ${x} ${ekgValue}`;
         isFirstPointRef.current = false;
       } else {
@@ -86,7 +92,6 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
       cancelAnimationFrame(animationRef.current);
       animationRef.current = requestAnimationFrame(draw);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bpm, noiseType, ekgType]);
 
   useEffect(() => {
@@ -146,21 +151,24 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
 
   return (
     <View
-      style={styles.container}
+      style={[
+        styles.container,
+        Platform.OS !== 'web' && styles.mobileContainer
+      ]}
       ref={containerRef}
       onLayout={onLayout}
-    >      <Svg
-        height="300"
+    >
+      <Svg
+        height={SVG_HEIGHT}
         width="100%"
-        style={[
-          styles.svg, 
-        ]}
-        viewBox={`0 0 ${containerWidth} 300`}
+        style={styles.svg}
+        viewBox={`0 0 ${containerWidth} ${VIEWBOX_HEIGHT}`}
       >
         {Platform.OS === 'web' && (
           <Defs>
             <Filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-              <FeGaussianBlur stdDeviation="2" result="blur" />              <FeDropShadow
+              <FeGaussianBlur stdDeviation="2" result="blur" />
+              <FeDropShadow
                 dx="0"
                 dy="0"
                 stdDeviation="2"
@@ -168,14 +176,16 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
               />
             </Filter>
           </Defs>
-        )}        {pathData && (
+        )}
+        {pathData && (
           <Path
             d={pathData}
             stroke={theme.dark ? "#00ff00" : "#008800"}
-            strokeWidth="2"
+            strokeWidth={Platform.OS === 'web' ? 2 : 1.5}
             fill="none"
           />
-        )}        {pathData && Platform.OS === 'web' && (
+        )}
+        {pathData && Platform.OS === 'web' && (
           <Path
             d={pathData}
             stroke={theme.dark ? "#00ff00" : "#008800"}
@@ -184,27 +194,30 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
             filter="url(#glow)"
             opacity="0.7"
           />
-        )}        {displayBpm != null && Platform.OS === 'web' && (
+        )}
+        {displayBpm != null && Platform.OS === 'web' && (
           <SvgText
             x={containerWidth - 20}
             y="40"
             fill={theme.dark ? "#00ff00" : "#008800"}
-            fontSize="24"
+            fontSize={BPM_FONT_SIZE}
             fontWeight="bold"
             textAnchor="end"
           >
             {displayBpm} BPM
           </SvgText>
         )}
-      </Svg>      {displayBpm != null && Platform.OS !== 'web' && (        <Text 
+      </Svg>
+      {displayBpm != null && Platform.OS !== 'web' && (
+        <Text 
           style={[
             styles.bpmText,
+            styles.mobileBpmText,
             { 
               color: theme.dark ? '#00ff00' : '#008800',
               textShadowColor: theme.dark ? 'rgba(0, 255, 0, 0.8)' : 'rgba(0, 136, 0, 0.5)'
             }
           ]}
-          variant="headlineMedium"
         >
           {displayBpm} BPM
         </Text>
@@ -218,18 +231,25 @@ const styles = StyleSheet.create({
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-  },  svg: {
+  },
+  mobileContainer: {
+    height: 180,
+  },
+  svg: {
     backgroundColor: 'transparent',
     borderRadius: 8,
     overflow: 'hidden',
-  },  bpmText: {
+  },
+  bpmText: {
     position: 'absolute',
-    top: 10,
-    right: 20,
-    fontSize: 24,
     fontWeight: 'bold',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 5,
+  },
+  mobileBpmText: {
+    top: 8,
+    right: 16,
+    fontSize: 18,
   },
 });
 
