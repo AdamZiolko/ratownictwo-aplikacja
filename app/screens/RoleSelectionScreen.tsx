@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, View, Platform } from 'react-native';
 import { Text, Card, Surface, useTheme } from 'react-native-paper';
 import { router } from 'expo-router';
+import FloatingThemeToggle from '@/components/FloatingThemeToggle';
 
 const RoleSelectionScreen = () => {
   const theme = useTheme();
@@ -54,16 +55,21 @@ const RoleSelectionScreen = () => {
       </View>
 
       <Text style={styles.debugText}>{platformLabel}</Text>
+      
+      {/* Theme Toggle Button */}
+      <FloatingThemeToggle position="topRight" size={24} />
     </View>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
+const styles = StyleSheet.create({  container: {
     flex: 1,
     paddingHorizontal: 16,
-    paddingTop: 50,
+    paddingTop: Platform.OS === 'web' ? 80 : 50,
     alignItems: 'center',
+    width: '100%',
+    maxWidth: Platform.OS === 'web' ? 1200 : undefined,
+    alignSelf: Platform.OS === 'web' ? 'center' : undefined,
   },
   title: {
     marginBottom: 8,
@@ -73,8 +79,7 @@ const styles = StyleSheet.create({
   subtitle: {
     marginBottom: 40,
     textAlign: 'center',
-  },
-  cardsContainer: {
+  },  cardsContainer: {
     width: '100%',
     ...Platform.select({
       android: {
@@ -83,12 +88,18 @@ const styles = StyleSheet.create({
         alignItems: 'stretch',
         paddingHorizontal: 8,
       },
+      web: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        flexWrap: 'wrap',
+        maxWidth: 800,
+        alignSelf: 'center',
+      },
       default: {
         flexDirection: 'column',
       },
     }),
-  },
-  cardSurface: {
+  },  cardSurface: {
     borderRadius: 12,
     backgroundColor: '#f5f5f5',
     ...Platform.select({
@@ -98,20 +109,27 @@ const styles = StyleSheet.create({
         minHeight: 100,
         overflow: 'hidden',
       },
+      web: {
+        margin: 16,
+        width: 300,
+        minHeight: 140,
+        overflow: 'hidden',
+      },
       default: {
         marginBottom: 16,
+        width: '100%',
       },
     }),
   },
   androidCardSurface: {
     elevation: 4,
-  },
-  card: {
+  },  card: {
     borderRadius: 12,
   },
   fillCard: {
     flex: 1,
     justifyContent: 'center',
+    height: Platform.OS === 'web' ? 140 : undefined,
   },
   cardContent: {
     alignItems: 'center',

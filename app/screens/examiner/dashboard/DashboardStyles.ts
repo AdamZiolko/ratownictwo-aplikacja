@@ -1,19 +1,26 @@
-import { StyleSheet, Platform } from "react-native";
-import { Surface } from "react-native-paper";
+// filepath: c:\r\app\screens\examiner\dashboard\DashboardStyles.ts
+import { StyleSheet, Platform, Dimensions } from "react-native";
+import { Surface, MD3Theme } from "react-native-paper";
 
-export const dashboardStyles = StyleSheet.create({
+// Get screen dimensions for responsive design
+const { width } = Dimensions.get('window');
+const isSmallScreen = width < 380;
+
+export const createDashboardStyles = (theme: MD3Theme) => StyleSheet.create({
     container: {
+        padding: 0,
+        margin: 0,
         flex: 1,
-        backgroundColor: "#000",
     },
     contentContainer: {
         flex: 1,
-        padding: 16,
-        backgroundColor: "#000",
-    },
-    statsCard: {
-        marginBottom: 20,
-        backgroundColor: "#111",
+    },    statsCard: {
+        marginBottom: Platform.select({
+            ios: 12,
+            android: 12,
+            default: 20,
+        }),
+        backgroundColor: theme.colors.surface,
     },
     statsRow: {
         flexDirection: "row",
@@ -23,27 +30,45 @@ export const dashboardStyles = StyleSheet.create({
         marginBottom: 0,
         marginTop: 12,
         fontWeight: "bold",
-        color: "#fff",
+        color: theme.colors.onBackground,
     },
     table: {
         marginBottom: 20,
-    },    rowActions: {
-        flexDirection: "column",
+    },
+    rowActions: {
+        flexDirection: Platform.select({
+            android: "row",
+            ios: "row",
+            default: "column",
+        }),
         justifyContent: "center",
         alignItems: "center",
+        flexWrap: Platform.select({
+            android: "wrap",
+            ios: "wrap",
+            default: "nowrap",
+        }),
     },
     actionButtonRow: {
         flexDirection: "row",
         justifyContent: "center",
-        marginBottom: 4,
+        marginBottom: Platform.select({
+            android: 0,
+            ios: 0,
+            default: 4,
+        }),
+        marginRight: Platform.select({
+            android: 0,
+            ios: 0,
+            default: 0,
+        }),
     },
     actionsTitleContainer: {
         flexDirection: "column",
-    },
-    actionsSubtitle: {
+    },    actionsSubtitle: {
         fontSize: 10,
         opacity: 0.6,
-        color: "#fff",
+        color: theme.colors.onSurface,
     },
     studentButtonContainer: {
         position: "relative",
@@ -73,10 +98,9 @@ export const dashboardStyles = StyleSheet.create({
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
-    },
-    loadingText: {
+    },    loadingText: {
         marginTop: 16,
-        color: "#fff",
+        color: theme.colors.onBackground,
     },
     emptyState: {
         padding: 24,
@@ -87,7 +111,7 @@ export const dashboardStyles = StyleSheet.create({
         textAlign: "center",
         marginVertical: 16,
         opacity: 0.7,
-        color: "#fff",
+        color: theme.colors.onBackground,
     },
     emptyStateButton: {
         marginTop: 16,
@@ -131,14 +155,13 @@ export const dashboardStyles = StyleSheet.create({
             android: 4,
             default: 8,
         }),
-    },
-    statValue: {
+    },    statValue: {
         fontWeight: "bold",
         fontSize: Platform.select({
             android: 16,
             default: 20,
         }),
-        color: "#fff",
+        color: theme.colors.onSurface,
     },
     statLabel: {
         textAlign: "center",
@@ -146,31 +169,100 @@ export const dashboardStyles = StyleSheet.create({
             android: 10,
             default: 12,
         }),
-        color: "#fff",
+        color: theme.colors.onSurface,
     },
     tableContainer: {
         marginTop: Platform.select({
-            android: 60,
             default: 0,
         }),
-    },
-    rhythmCell: {
+        width: '100%',
+    },    rhythmCell: {
         maxWidth: Platform.select({
-            android: 60,
+            android: 80,
+            ios: 80,
             default: 100,
         }),
         fontSize: Platform.select({
-            android: 12,
+            android: 11,
+            ios: 11,
             default: 14,
         }),
-        color: "#fff",
-    },    tableColumn: {
-        flex: 1,
-        width: "20%",
+        color: theme.colors.onSurface,
+    },
+    tableColumn: {
+        flex: Platform.select({
+            android: 0.6,
+            ios: 0.6,
+            default: 0,
+        }),
+        width: Platform.select({
+            android: "auto",
+            ios: "auto",
+            default: "20%",
+        }),
+        maxWidth: Platform.select({
+            default: "20%",
+            android: undefined,
+            ios: undefined,
+        }),
     },
     actionsColumn: {
-        flex: 1,
+        flex: Platform.select({
+            android: 1,
+            ios: 1,
+            default: 0,
+        }),
         justifyContent: "flex-end",
-        width: "20%",
+        width: Platform.select({
+            android: "auto",
+            ios: "auto",
+            default: "20%",
+        }),
+        maxWidth: Platform.select({
+            default: "20%",
+            android: undefined,
+            ios: undefined,
+        }),
+    },    // Mobile card styles
+    mobileCard: {
+        marginBottom: 12, 
+        backgroundColor: theme.colors.surface,
+        borderRadius: 8,
     },
+    mobileCardTitle: {
+        fontSize: isSmallScreen ? 14 : 16,
+        fontWeight: "bold",
+        color: theme.colors.onSurface,
+    },
+    mobileCardSubtitle: { 
+        fontSize: isSmallScreen ? 12 : 14,
+        opacity: 0.7,
+        color: theme.colors.onSurface,
+    },
+    mobileCardContent: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+    },
+    mobileCardRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 10,
+    },    mobileCardText: {
+        fontSize: isSmallScreen ? 13 : 14,
+        color: theme.colors.onSurface,
+    },
+    mobileCardActions: {
+        flexDirection: 'row',
+        justifyContent: 'space-evenly',
+        flexWrap: 'wrap',
+        marginTop: 8,
+    },
+    mobileIconContainer: {
+        position: 'relative',
+    },
+    header: {
+        backgroundColor: theme.colors.primary,
+        padding: 16,
+        borderRadius: 8,
+    }
 });

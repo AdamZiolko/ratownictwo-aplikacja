@@ -1,14 +1,20 @@
 import React from "react";
 import { View, Text } from "react-native";
 import { EkgType, NoiseType } from "@/services/EkgFactory";
-import { dashboardStyles } from "../DashboardStyles";
+import { useTheme } from "react-native-paper";
+import { createDashboardStyles } from "../DashboardStyles";
 
-export const StatItem = ({ value, label }: { value: number, label: string }) => (
-  <View style={dashboardStyles.statItem}>
-    <Text style={dashboardStyles.statValue}>{value || 0}</Text>
-    <Text style={dashboardStyles.statLabel}>{label}</Text>
-  </View>
-);
+export const StatItem = ({ value, label }: { value: number, label: string }) => {
+  const theme = useTheme();
+  const styles = createDashboardStyles(theme);
+
+  return (
+    <View style={styles.statItem}>
+      <Text style={styles.statValue}>{value || 0}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </View>
+  );
+};
 
 export const getRhythmTypeName = (type: number): string => {
   switch (type as EkgType) {

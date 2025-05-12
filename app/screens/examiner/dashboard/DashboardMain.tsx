@@ -7,6 +7,7 @@ import {
   Animated,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -21,7 +22,6 @@ import {
   useTheme,
   ActivityIndicator,
   Snackbar,
-  Menu,
 } from "react-native-paper";
 import { router } from "expo-router";
 import { useAuth } from "@/contexts/AuthContext";
@@ -33,7 +33,6 @@ import {
   getNoiseLevelName,
 } from "./components/DashboardComponents";
 import { useSessionManager } from "./SessionManager";
-import { dashboardStyles } from "./DashboardStyles";
 
 // Import dialogs
 import CreateSessionDialog from "../modals/CreateSessionDialog";
@@ -44,6 +43,7 @@ import SoundSelectionDialog from "../modals/SoundSelectionDialog";
 import { SavePresetDialog, LoadPresetDialog } from "../modals/PresetDialogs";
 import StudentsListDialog from "../modals/StudentsListDialog";
 import { Session } from "../types/types";
+import { createDashboardStyles } from "./DashboardStyles";
 
 const ExaminerDashboardScreen = () => {
   const theme = useTheme();
@@ -60,7 +60,9 @@ const ExaminerDashboardScreen = () => {
   const [studentsDialogVisible, setStudentsDialogVisible] = useState(false);
   const [savePresetDialogVisible, setSavePresetDialogVisible] = useState(false);
   const [loadPresetDialogVisible, setLoadPresetDialogVisible] = useState(false);
-  const [menuVisible, setMenuVisible] = useState(false);
+  // Removed menu state as logout is now a direct button
+
+  const dashboardStyles = createDashboardStyles(theme);
 
   // Use the session manager hook
   const {
@@ -148,66 +150,23 @@ const ExaminerDashboardScreen = () => {
           title="Panel Egzaminatora"
           subtitle={user ? `Zalogowany jako: ${user.username}` : ""}
         />
-        <Appbar.Action
-          icon="dots-vertical"
-          onPress={() => setMenuVisible(true)}
-        />
-        <Menu
-          visible={menuVisible}
-          onDismiss={() => setMenuVisible(false)}
-          anchor={{ x: 0, y: 0 }}
-          anchorPosition="bottom"
-          style={{ marginTop: 40, marginRight: 10 }}
-        >
-          <Menu.Item
-            onPress={() => {
-              setMenuVisible(false);
-              handleLogout();
-            }}
-            title="Wyloguj"
-            leadingIcon="logout"
-          />
-        </Menu>
+      {/* Direct logout button */}
+      <Appbar.Action
+        icon="logout"
+        onPress={handleLogout}
+      />
       </Appbar.Header>
 
       <View style={dashboardStyles.contentContainer}>
         {/* Stats Header for Android */}
-        {Platform.OS === "android" && (
-          <Animated.View
-            style={[
-              dashboardStyles.statsHeader,
-              {
-                height: scrollY.interpolate({
-                  inputRange: [0, 50],
-                  outputRange: [80, 0],
-                  extrapolate: "clamp",
-                }),
-                opacity: scrollY.interpolate({
-                  inputRange: [0, 30],
-                  outputRange: [1, 0],
-                  extrapolate: "clamp",
-                }),
-              },
-            ]}
-          >
-            <Card style={dashboardStyles.statsCard}>
-              <Card.Content style={dashboardStyles.statsContent}>
-                <View style={dashboardStyles.statsRow}>
-                  <StatItem value={sessions?.length} label="Sesje" />
-                </View>
-              </Card.Content>
-            </Card>
-          </Animated.View>
-        )}
+
 
         {/* Stats Header for other platforms */}
         {Platform.OS !== "android" && (
           <Card
             style={{
               backgroundColor: theme.colors.surface,
-              margin: 10,
               borderRadius: 4,
-              elevation: 2,
             }}
           >
             <Card.Content>
@@ -225,9 +184,6 @@ const ExaminerDashboardScreen = () => {
           </Card>
         )}
 
-        <Text variant="titleMedium" style={dashboardStyles.sectionTitle}>
-          Aktywne Sesje
-        </Text>
 
         {loading && !refreshing ? (
           <View style={dashboardStyles.loadingContainer}>
@@ -242,8 +198,7 @@ const ExaminerDashboardScreen = () => {
             }
             onScroll={Platform.OS === "android" ? handleScroll : undefined}
             scrollEventThrottle={16}
-          >
-            {sessions?.length === 0 ? (
+          >            {sessions?.length === 0 ? (
               <View style={dashboardStyles.emptyState}>
                 <Text variant="bodyLarge">Brak aktywnych sesji</Text>
                 <Text
@@ -261,99 +216,86 @@ const ExaminerDashboardScreen = () => {
                 </Button>
               </View>
             ) : (
-              <DataTable style={dashboardStyles.table}>
-                {" "}
-                <DataTable.Header>
-                  <DataTable.Title style={dashboardStyles.tableColumn}>
-                    Kod
-                  </DataTable.Title>
-                  <DataTable.Title style={dashboardStyles.tableColumn}>
-                    Temp.
-                  </DataTable.Title>
-                  <DataTable.Title style={dashboardStyles.tableColumn}>
-                    Rytm
-                  </DataTable.Title>
-                  <DataTable.Title style={dashboardStyles.tableColumn} numeric>
-                    BPM
-                  </DataTable.Title>
-                  <DataTable.Title style={dashboardStyles.actionsColumn}>
-                    Akcje
-                  </DataTable.Title>
-                </DataTable.Header>
-                {sessions?.map((session) => (
-                  <DataTable.Row
-                    key={session.sessionId}
-                    onPress={() => openViewDialog(session)}
-                  >
-                    <DataTable.Cell style={dashboardStyles.tableColumn}>
-                      {session.sessionCode}
-                    </DataTable.Cell>
-                    <DataTable.Cell style={dashboardStyles.tableColumn}>
-                      {session.temperature}°C
-                    </DataTable.Cell>
-                    <DataTable.Cell style={dashboardStyles.tableColumn}>
-                      <Text
-                        numberOfLines={1}
-                        ellipsizeMode="tail"
-                        style={dashboardStyles.rhythmCell}
-                      >
-                        {getRhythmTypeName(session.rhythmType)}
-                      </Text>
-                    </DataTable.Cell>
-                    <DataTable.Cell style={dashboardStyles.tableColumn} numeric>
-                      {session.beatsPerMinute}
-                    </DataTable.Cell>
-                    <DataTable.Cell style={dashboardStyles.actionsColumn}>
-                      <View style={dashboardStyles.rowActions}>
-                        <View style={dashboardStyles.actionButtonRow}>
+              <>
+                {/* Desktop View: render same mobile cards */}
+                <View>
+                  {sessions?.map((session) => (
+                    <Card
+                      key={session.sessionId}
+                      style={dashboardStyles.mobileCard}
+                      onPress={() => openViewDialog(session)}
+                    >
+                      <Card.Title
+                        title={`Kod: ${session.sessionCode}`}
+                        titleStyle={dashboardStyles.mobileCardTitle}
+                        subtitle={
+                          `${getRhythmTypeName(session.rhythmType).slice(0, 30)}` +
+                          `${getRhythmTypeName(session.rhythmType).length > 30 ? '...' : ''}`
+                        }
+                        subtitleStyle={dashboardStyles.mobileCardSubtitle}
+                      />
+                      <Card.Content style={dashboardStyles.mobileCardContent}>
+                        <View style={dashboardStyles.mobileCardRow}>
+                          <Text style={dashboardStyles.mobileCardText}>
+                            Temperatura: {session.temperature}°C
+                          </Text>
+                          <Text style={dashboardStyles.mobileCardText}>
+                            BPM: {session.beatsPerMinute}
+                          </Text>
+                        </View>
+                        <View style={dashboardStyles.mobileCardActions}>
                           <IconButton
                             icon="pencil"
-                            size={20}
-                            onPress={() => openEditDialog(session)}
+                            size={24}
+                            onPress={(e) => {
+                              e.stopPropagation();
+                              openEditDialog(session);
+                            }}
                             iconColor={theme.colors.primary}
                           />
                           <IconButton
                             icon="delete"
-                            size={20}
-                            onPress={() => openDeleteDialog(session)}
+                            size={24}
+                            onPress={(e) => {
+                              e.stopPropagation();
+                              openDeleteDialog(session);
+                            }}
                             iconColor={theme.colors.error}
                           />
-                        </View>
-                        <View style={dashboardStyles.actionButtonRow}>
                           <IconButton
                             icon="volume-high"
-                            size={20}
-                            onPress={() => openSoundDialog(session)}
+                            size={24}
+                            onPress={(e) => {
+                              e.stopPropagation();
+                              openSoundDialog(session);
+                            }}
                             iconColor={theme.colors.secondary}
                           />
-                          <View style={dashboardStyles.studentButtonContainer}>
+                          <View style={dashboardStyles.mobileIconContainer}>
                             <IconButton
                               icon="account-group"
-                              size={20}
-                              onPress={() => openStudentsDialog(session)}
-                              iconColor={theme.colors.tertiary || "#9c27b0"}
+                              size={24}
+                              onPress={(e) => {
+                                e.stopPropagation();
+                                openStudentsDialog(session);
+                              }}
+                              iconColor={theme.colors.tertiary || '#9c27b0'}
                             />
                             {sessionStudents[session.sessionCode] &&
-                              sessionStudents[session.sessionCode].length >
-                                0 && (
+                              sessionStudents[session.sessionCode].length > 0 && (
                                 <View style={dashboardStyles.studentCountBadge}>
-                                  <Text
-                                    style={dashboardStyles.studentCountText}
-                                  >
-                                    {
-                                      sessionStudents[session.sessionCode]
-                                        .length
-                                    }
+                                  <Text style={dashboardStyles.studentCountText}>
+                                    {sessionStudents[session.sessionCode].length}
                                   </Text>
                                 </View>
-                              )}
+                            )}
                           </View>
                         </View>
-                      </View>
-                    </DataTable.Cell>
-                  </DataTable.Row>
-                ))}
-              </DataTable>
+                      </Card.Content>
+                    </Card>
+                  ))}
+                </View>
+              </>
             )}
           </ScrollView>
         )}
@@ -465,7 +407,9 @@ const ExaminerDashboardScreen = () => {
         style={[dashboardStyles.fab, { backgroundColor: theme.colors.primary }]}
         onPress={openCreateDialog}
         color="#fff"
-      />
+        label="Utwórz sesję"
+      >
+      </FAB>
       <Snackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}

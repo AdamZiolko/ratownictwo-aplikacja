@@ -200,17 +200,6 @@ const ExaminerLoginScreen = () => {
                   >
                     Zaloguj
                   </Button>
-                  <Button
-                    mode="text"
-                    onPress={() => {
-                      setSnackbarMessage('Funkcja resetowania hasła będzie dostępna wkrótce.');
-                      setSnackbarVisible(true);
-                    }}
-                    style={styles.mobileForgotButton}
-                    disabled={loginLoading}
-                  >
-                    Zapomniałeś hasła?
-                  </Button>
                 </View>
               ) : (
                 <>
@@ -222,16 +211,6 @@ const ExaminerLoginScreen = () => {
                     disabled={loginLoading}
                   >
                     Zaloguj
-                  </Button>
-                  <Button
-                    mode="text"
-                    onPress={() => {
-                      setSnackbarMessage('Funkcja resetowania hasła będzie dostępna wkrótce.');
-                      setSnackbarVisible(true);
-                    }}
-                    disabled={loginLoading}
-                  >
-                    Zapomniałeś hasła?
                   </Button>
                 </>
               )}

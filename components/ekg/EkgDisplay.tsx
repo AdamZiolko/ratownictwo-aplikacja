@@ -1,13 +1,14 @@
 import { EkgType, NoiseType, EkgFactory } from '@/services/EkgFactory';
 import React, { useEffect, useRef, useState, useLayoutEffect } from 'react';
 import { View, StyleSheet, Platform } from 'react-native';
+import { Text, useTheme } from 'react-native-paper';
 import Svg, {
   Path,
   Defs,
   Filter,
   FeGaussianBlur,
   FeDropShadow,
-  Text,
+  Text as SvgText,
 } from 'react-native-svg';
 
 interface EkgDisplayProps {
@@ -22,10 +23,10 @@ const FLUCTUATION_RANGE = 2;
 
 const EkgDisplay: React.FC<EkgDisplayProps> = ({
   ekgType,
-  bpm,
-  noiseType,
+  bpm,  noiseType,
   isRunning,
 }) => {
+  const theme = useTheme();
   const [pathData, setPathData] = useState('');
   const [containerWidth, setContainerWidth] = useState(0);
   const [displayBpm, setDisplayBpm] = useState<number | undefined>(bpm);
@@ -148,60 +149,66 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
       style={styles.container}
       ref={containerRef}
       onLayout={onLayout}
-    >
-      <Svg
+    >      <Svg
         height="300"
         width="100%"
-        style={styles.svg}
+        style={[
+          styles.svg, 
+        ]}
         viewBox={`0 0 ${containerWidth} 300`}
       >
         {Platform.OS === 'web' && (
           <Defs>
             <Filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-              <FeGaussianBlur stdDeviation="2" result="blur" />
-              <FeDropShadow
+              <FeGaussianBlur stdDeviation="2" result="blur" />              <FeDropShadow
                 dx="0"
                 dy="0"
                 stdDeviation="2"
-                {...{ 'flood-color': '#00ff00', 'flood-opacity': '0.8' }}
+                {...{ 'flood-color': theme.dark ? '#00ff00' : '#008800', 'flood-opacity': '0.8' }}
               />
             </Filter>
           </Defs>
-        )}
-
-        {pathData && (
+        )}        {pathData && (
           <Path
             d={pathData}
-            stroke="#00ff00"
+            stroke={theme.dark ? "#00ff00" : "#008800"}
             strokeWidth="2"
             fill="none"
           />
-        )}
-
-        {pathData && Platform.OS === 'web' && (
+        )}        {pathData && Platform.OS === 'web' && (
           <Path
             d={pathData}
-            stroke="#00ff00"
+            stroke={theme.dark ? "#00ff00" : "#008800"}
             strokeWidth="3"
             fill="none"
             filter="url(#glow)"
             opacity="0.7"
           />
-        )}
-
-        {displayBpm != null && (
-          <Text
+        )}        {displayBpm != null && Platform.OS === 'web' && (
+          <SvgText
             x={containerWidth - 20}
             y="40"
-            fill="#00ff00"
+            fill={theme.dark ? "#00ff00" : "#008800"}
             fontSize="24"
             fontWeight="bold"
             textAnchor="end"
           >
             {displayBpm} BPM
-          </Text>
+          </SvgText>
         )}
-      </Svg>
+      </Svg>      {displayBpm != null && Platform.OS !== 'web' && (        <Text 
+          style={[
+            styles.bpmText,
+            { 
+              color: theme.dark ? '#00ff00' : '#008800',
+              textShadowColor: theme.dark ? 'rgba(0, 255, 0, 0.8)' : 'rgba(0, 136, 0, 0.5)'
+            }
+          ]}
+          variant="headlineMedium"
+        >
+          {displayBpm} BPM
+        </Text>
+      )}
     </View>
   );
 };
@@ -211,11 +218,18 @@ const styles = StyleSheet.create({
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  svg: {
-    backgroundColor: 'black',
+  },  svg: {
+    backgroundColor: 'transparent',
     borderRadius: 8,
     overflow: 'hidden',
+  },  bpmText: {
+    position: 'absolute',
+    top: 10,
+    right: 20,
+    fontSize: 24,
+    fontWeight: 'bold',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 5,
   },
 });
 

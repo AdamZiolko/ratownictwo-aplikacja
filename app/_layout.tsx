@@ -40,7 +40,6 @@ function ThemedLayout() {
       fontWeight: '900' as '900',
     },
   };
-
   const CombinedLightTheme = {
     ...MD3LightTheme,
     ...NavigationLightTheme,
@@ -50,17 +49,18 @@ function ThemedLayout() {
       primary: '#0077B6',
       secondary: '#48CAE4',
       background: '#ffffff',
+      surface: '#ffffff',
       
       onPrimary: '#FFFFFF',
       onSecondary: '#000000',
       onSurface: '#000000',
+      onBackground: '#000000',
       
       buttonTextColor: '#FFFFFF',
       error: '#B00020',
     },
     fonts: MD3LightTheme.fonts, 
   };
-
   const CombinedDarkTheme = {
     ...MD3DarkTheme,
     ...NavigationDarkTheme,
@@ -70,10 +70,12 @@ function ThemedLayout() {
       primary: '#48CAE4',
       secondary: '#90E0EF',
       background: '#121212',
+      surface: '#1E1E1E',
       
       onPrimary: '#000000',
       onSecondary: '#000000',
       onSurface: '#FFFFFF',
+      onBackground: '#FFFFFF',
       
       buttonTextColor: '#FFFFFF',
       error: '#CF6679',

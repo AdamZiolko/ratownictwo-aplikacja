@@ -177,7 +177,7 @@ const StudentAccessScreen = () => {
             disabled={isLoading}
             error={!!fieldErrors.accessCode || !!error}
             onSubmitEditing={handleSubmit}
-            keyboardType="number-pad"
+            keyboardType="default"
           />
           {errorMessage}
           
