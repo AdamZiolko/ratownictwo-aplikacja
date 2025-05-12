@@ -463,7 +463,6 @@ const StudentSessionScreen = () => {
           }
           
           try {
-            // Start monitoring network changes
             networkMonitorService.startMonitoring();
             console.log('Network monitoring started');
           } catch (error) {
@@ -515,7 +514,6 @@ const StudentSessionScreen = () => {
 
   const renderFullscreenView = () => (
     <View style={{ flex: 1 }}>
-      {/* Przycisk wyjścia z trybu pełnoekranowego w prawym górnym rogu */}
       <View style={styles.fullscreenExitButton}>
         <IconButton
           icon="arrow-collapse"
@@ -525,7 +523,6 @@ const StudentSessionScreen = () => {
       </View>
       
       <View style={styles.fullscreenContent}>
-        {/* Lewa kolumna - EKG */}
         <Surface style={styles.ekgCardFullscreen} elevation={2}>
           <EkgDisplay
             ekgType={Number(sessionData?.rhythmType)}
@@ -535,7 +532,6 @@ const StudentSessionScreen = () => {
           />
         </Surface>
   
-        {/* Prawa kolumna - Parametry */}
         <Surface style={styles.vitalsCardFullscreen} elevation={2}>
           <View style={styles.vitalsRow}>
             <Surface style={styles.vitalItemCard} elevation={1}>
@@ -1079,6 +1075,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 16,
+  },
+  fullscreenExitButton: {
+    position: "absolute",
+    top: 16,
+    right: 16,
+    zIndex: 10,
   },
   sessionHeader: {
     flexDirection: "row",
