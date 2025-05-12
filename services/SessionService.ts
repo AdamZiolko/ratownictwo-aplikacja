@@ -103,12 +103,11 @@ export class SessionService {
     code: string, 
     onUpdate: (session: Session) => void,
     studentInfo?: { name?: string, surname?: string, albumNumber?: string }
-  ): Promise<() => void> {
-  try {
+  ): Promise<() => void> {  try {
+    // Make sure to await the socket connection
+    await socketService.connect();
     
-    socketService.connect();
-    
-    
+    // Join the session code
     const joinResult = await socketService.joinSessionCode(code, studentInfo);
     console.log(`Socket joined code ${code}: ${joinResult.success ? 'Success' : 'Failed'}`);
     

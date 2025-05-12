@@ -17,7 +17,7 @@ import { EkgType, NoiseType } from "@/services/EkgFactory";
 import { sessionService } from "@/services/SessionService";
 import RhythmSelectionSlider from "./RhythmSelectionSlider";
 
-interface SessionFormFieldsWithSliderProps {
+interface SessionFormFieldsProps {
   formData: FormData;
   setFormData: React.Dispatch<React.SetStateAction<FormData>>;
   formErrors: FormErrors;
@@ -52,7 +52,7 @@ const MedicalSliderInput = ({
   const [modalVisible, setModalVisible] = useState(false);
   const [tempValue, setTempValue] = useState(min);
   const [displayValue, setDisplayValue] = useState(min);
-  const isMobile = Platform.OS === "android" || Platform.OS === "ios";
+  const isWeb = Platform.OS === "web";
   const timeoutRef = useRef<NodeJS.Timeout>();
   const buttonCooldownRef = useRef(false);
 
@@ -110,24 +110,44 @@ const MedicalSliderInput = ({
       buttonCooldownRef.current = false;
     }, 300);
   };
-
-  const decimalPlaces = step % 1 !== 0 ? 1 : 0;
-
-  if (!isMobile) {
+  const decimalPlaces = step % 1 !== 0 ? 1 : 0;  // Web-friendly inline slider for web platform
+  if (isWeb) {
     return (
-      <TextInput
-        label={label}
-        value={value}
-        onChangeText={onChange}
-        keyboardType="decimal-pad"
-        mode="outlined"
-        style={styles.input}
-        error={error}
-        right={suffix && <TextInput.Affix text={suffix} />}
-      />
+      <View style={styles.webSliderContainer}>
+        <Text style={{ color: theme.colors.onSurface, marginBottom: 4 }}>
+          {`${label}: ${displayValue.toFixed(decimalPlaces)}${suffix ? ' ' + suffix : ''}`}
+        </Text>
+        <View style={styles.webSliderRow}>
+          <Text style={{ color: theme.colors.onSurface, width: 35 }}>{min}</Text>
+          <Slider
+            style={[styles.webSlider, { flex: 1 }]}
+            minimumValue={min}
+            maximumValue={max}
+            step={step}
+            value={parseFloat(value) || min}
+            onValueChange={(v) => {
+              const roundedValue = Math.round(v / step) * step;
+              setDisplayValue(roundedValue);
+              onChange(roundedValue.toFixed(decimalPlaces));
+            }}
+            minimumTrackTintColor={theme.colors.primary}
+            maximumTrackTintColor={theme.colors.outline}
+            thumbTintColor={theme.colors.primary}
+          />
+          <Text style={{ color: theme.colors.onSurface, width: 35, textAlign: 'right' }}>{max}</Text>
+        </View>
+        <View style={styles.tickLabelContainer}>
+          {ticks.map((t) => (
+            <Text key={t} style={[styles.webTickLabel, { color: theme.colors.onSurface }]}>
+              {t}
+            </Text>
+          ))}
+        </View>
+      </View>
     );
   }
 
+  // Mobile implementation with modal dialog
   return (
     <>
       <Button
@@ -136,7 +156,7 @@ const MedicalSliderInput = ({
         style={[styles.sliderButton, { backgroundColor: theme.colors.surface }]}
         labelStyle={{ color: theme.colors.onSurface }}
       >
-        {`${label}: ${value} ${suffix}`}
+        {`${label}: ${value}${suffix ? ' ' + suffix : ''}`}
       </Button>
 
       <Portal>
@@ -187,7 +207,7 @@ const MedicalSliderInput = ({
             </Button>
             
             <Text style={[styles.displayValue, { color: theme.colors.onSurface }]}>
-              {displayValue.toFixed(decimalPlaces)} {suffix}
+              {displayValue.toFixed(decimalPlaces)}{suffix ? ' ' + suffix : ''}
             </Text>
             
             <Button
@@ -214,12 +234,12 @@ const MedicalSliderInput = ({
   );
 };
 
-const SessionFormFieldsWithSlider = ({
+const SessionFormFields = ({
   formData,
   setFormData,
   formErrors,
   showGenerateCodeButton = false,
-}: SessionFormFieldsWithSliderProps) => {
+}: SessionFormFieldsProps) => {
   const theme = useTheme();
 
   return (
@@ -463,6 +483,25 @@ const styles = StyleSheet.create({
   tickLabel: {
     fontSize: 12,
   },
+  // Web-specific styles
+  webSliderContainer: {
+    marginBottom: 16,
+    width: "100%",
+  },
+  webSliderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  webSlider: {
+    height: 40,
+    marginHorizontal: 8,
+  },
+  webTickLabel: {
+    fontSize: 10,
+    textAlign: "center",
+  },
 });
 
-export default SessionFormFieldsWithSlider;
+export default SessionFormFields;

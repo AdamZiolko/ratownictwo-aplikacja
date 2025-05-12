@@ -25,6 +25,9 @@ import {
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { SoundQueueItem } from "../examiner/types/types";
 import ColorSensor from "@/components/ColorSensor";
+import SocketConnectionStatus from "@/components/SocketConnectionStatus";
+import { networkMonitorService } from "@/services/NetworkMonitorService";
+import { wifiKeepAliveService } from "@/services/WifiKeepAliveService";
 
 const soundFiles: Record<string, any> = {
   kaszel: require("../../../assets/sounds/kaszel.mp3"),
@@ -441,6 +444,67 @@ const StudentSessionScreen = () => {
 
     return () => clearInterval(fluctuationTimer);
   }, [sessionData]);
+  // Network and WiFi lock management for Android
+  useEffect(() => {
+    // Only needed for Android
+    if (Platform.OS !== 'android') return;
+    
+    const setupNetworkMonitoring = async () => {
+      try {
+        console.log('Setting up network monitoring for Android...');
+        
+        // Make sure socket is connected first
+        await socketService.connect();
+        
+        // Delay the WiFi lock to ensure all setup is complete
+        setTimeout(async () => {
+          try {
+            // Enable WiFi lock to prevent Android from disconnecting WiFi when screen is off
+            await wifiKeepAliveService.enableWebSocketKeepAlive();
+            console.log('WebSocket keep-alive enabled');
+          } catch (error) {
+            console.error('Error enabling WebSocket keep-alive:', error);
+          }
+          
+          try {
+            // Start monitoring network changes
+            networkMonitorService.startMonitoring();
+            console.log('Network monitoring started');
+          } catch (error) {
+            console.error('Error starting network monitoring:', error);
+          }
+        }, 1000);
+      } catch (error) {
+        console.error('Error setting up network monitoring:', error);
+      }
+    };
+    
+    setupNetworkMonitoring();
+    
+    // Clean up when component unmounts
+    return () => {
+      if (Platform.OS !== 'android') return;
+      
+      try {
+        // Try to clean up everything
+        Promise.all([
+          wifiKeepAliveService.disableWebSocketKeepAlive()
+            .then(() => console.log('WebSocket keep-alive disabled'))
+            .catch(e => console.error('Error disabling WebSocket keep-alive:', e)),
+          
+          new Promise<void>(resolve => {
+            networkMonitorService.stopMonitoring();
+            console.log('Network monitoring stopped');
+            resolve();
+          })
+        ]).catch(error => {
+          console.error('Error during cleanup:', error);
+        });
+      } catch (error) {
+        console.error('Error during cleanup:', error);
+      }
+    };
+  }, []);
 
   const formatBloodPressure = (): string => {
     if (
@@ -670,10 +734,14 @@ const StudentSessionScreen = () => {
                   {respiratoryRate.currentValue !== null
                     ? `${respiratoryRate.currentValue} ${respiratoryRate.unit}`
                     : "N/A"}
-                </Text>
-              </Surface>
+                </Text>          </Surface>
             </View>
           </Surface>
+          
+          {/* Socket Debug Component */}
+          <View style={{ marginTop: 16, marginHorizontal: 8, marginBottom: 8 }}>
+            <SocketConnectionStatus />
+          </View>
         </ScrollView>
       ) : (
         <View style={styles.center}>

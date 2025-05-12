@@ -1,16 +1,30 @@
 import { Platform } from "react-native";
 
 
-export const API_URL =
-  Platform.OS === 'android' || Platform.OS === 'ios' 
-    ? 'http://192.168.100.7:8080'   
-    : 'http://localhost:8080'; 
+// Configuration for server connections
+const SERVER_PORT = '8080';
 
+// Special handling for Android emulator
+// 10.0.2.2 is the special IP to access the host machine from Android emulator
+// For physical devices, use your actual IP address (e.g., 192.168.100.7)
+const getServerIP = () => {
+  if (Platform.OS === 'android') {
+    // Use the special 10.0.2.2 IP for Android emulators
+    return '10.0.2.2';
+  } else if (Platform.OS === 'ios') {
+    // For iOS simulators, localhost works
+    return 'localhost';
+  } else if (Platform.OS === 'web') {
+    // For web, use the current window location or localhost
+    return 'localhost';
+  }
+  // Default to localhost for any other platform
+  return 'localhost';
+};
 
-export const WS_URL = 
-  Platform.OS === 'web' 
-    ? 'ws://192.168.100.7:8080'  
-    : 'ws://localhost:8080'; 
+export const API_URL = `http://${getServerIP()}:${SERVER_PORT}`;
+
+export const WS_URL = `ws://${getServerIP()}:${SERVER_PORT}`;
 
 
 export const SESSION_CODE_LENGTH = 6;

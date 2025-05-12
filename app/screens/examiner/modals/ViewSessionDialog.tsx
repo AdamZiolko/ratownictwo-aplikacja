@@ -15,6 +15,7 @@ interface ViewSessionDialogProps {
   getNoiseLevelName: (type: number) => string;
 }
 
+
 const ViewSessionDialog: React.FC<ViewSessionDialogProps> = ({
   visible,
   onDismiss,
@@ -130,14 +131,15 @@ const DetailRow: React.FC<DetailRowProps> = ({ label, value, fullWidth = false }
 
 const styles = StyleSheet.create({
   viewDialog: {
-    maxWidth: 480,
-    maxHeight: '80%',
+    width: "80%",
+    maxHeight: "80%",
+    alignSelf: "center", // dodane, aby wycentrować dialog
   },
   mobileDialog: {
     width: SCREEN_WIDTH * 0.95,
     maxWidth: SCREEN_WIDTH * 0.95,
     margin: 8,
-    alignSelf: 'center',
+    alignSelf: "center",
   },
   dialogTitle: {
     paddingBottom: 4,

@@ -51,6 +51,9 @@ export interface FormErrors {
   temperature: string;
   beatsPerMinute: string;
   sessionCode: string;
+  spo2: string;
+  etco2: string;
+  rr: string;
 }
 
 export type Preset = {

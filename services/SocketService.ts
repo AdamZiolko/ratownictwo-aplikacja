@@ -1,6 +1,8 @@
 import { io, Socket } from 'socket.io-client';
 import { Session } from './SessionService';
-import { API_URL } from '@/constants/Config';
+import { WS_URL } from '@/constants/Config';
+import { Platform } from 'react-native';
+import { wifiKeepAliveService } from './WifiKeepAliveService';
 
 export interface StudentListUpdate {
   sessionId: string;
@@ -28,22 +30,56 @@ export interface StudentSessionUpdate {
 
 class SocketService {
   private socket: Socket | null = null;
-  private listeners: Map<string, Set<(data: any) => void>> = new Map();
-
-    connect(): Socket {
+  private listeners: Map<string, Set<(data: any) => void>> = new Map();    async connect(): Promise<Socket> {
     if (!this.socket || this.socket.disconnected) {
-      console.log('Connecting to socket server at:', API_URL);
-      this.socket = io(API_URL, {
-        path: '/socket.io',        
-        transports: ['websocket'],
-        withCredentials: true,
+      console.log('Connecting to socket server at:', WS_URL);
+      
+      // For Android: Enable WiFi keep-alive to prevent disconnect when screen is off
+      if (Platform.OS === 'android') {
+        try {
+          console.log('Enabling WebSocket keep-alive for Android');
+          await wifiKeepAliveService.enableWebSocketKeepAlive();
+        } catch (error) {
+          console.warn('Failed to enable WebSocket keep-alive:', error);
+        }
+      }
+      
+      // Try to use websocket transport first, fallback to polling if needed
+      const socketOptions = {
+        path: '/socket.io',
+        transports: Platform.OS === 'android' ? ['polling', 'websocket'] : ['websocket', 'polling'],
+        withCredentials: false,
         autoConnect: true,
         reconnection: true,
-        reconnectionAttempts: 5,
+        reconnectionAttempts: Infinity,
         reconnectionDelay: 1000,
         reconnectionDelayMax: 5000,
-        timeout: 20000
-      });
+        timeout: 20000,
+        forceNew: true,
+      };
+      
+      // Add Android-specific options
+      if (Platform.OS === 'android') {
+        Object.assign(socketOptions, {
+          pingTimeout: 30000,
+          pingInterval: 25000
+        });
+      }
+      
+      try {
+        this.socket = io(WS_URL, socketOptions);
+      } catch (error) {
+        console.error('Failed to initialize socket:', error);
+        
+        // Try alternative connection (http polling as a last resort)
+        console.log('Trying alternative connection method...');
+        const altOptions = {
+          ...socketOptions,
+          transports: ['polling'],
+          upgrade: false
+        };
+        this.socket = io(WS_URL, altOptions);
+      }
 
       this.setupEventListeners();
     }
@@ -55,39 +91,63 @@ class SocketService {
     if (!this.socket) return;
 
     this.socket.on('connect', () => {
-      console.log('Connected to socket server with ID:', this.socket?.id);
+      console.log('🟢 Connected to socket server with ID:', this.socket?.id);
+    });    this.socket.on('connect_error', (error) => {
+      console.error('🔴 Socket connection error:', error.message);
+      
+      // If we're on Android, try to use polling as a fallback
+      if (Platform.OS === 'android') {
+        console.log('⚠️ WebSocket connection failed on Android, will try polling');
+        this.reconnectWithPolling();
+      }
+    });
+
+    this.socket.on('connect_timeout', () => {
+      console.error('🔴 Socket connection timeout');
+      
+      if (Platform.OS === 'android') {
+        this.reconnectWithPolling();
+      }
     });
 
     this.socket.on('disconnect', (reason) => {
-      console.log('Disconnected from socket server. Reason:', reason);
+      console.log('🟠 Disconnected from socket server. Reason:', reason);
     });
 
     this.socket.on('error', (error) => {
-      console.error('Socket error:', error);
+      console.error('🔴 Socket error:', error);
     });
 
     this.socket.on('reconnect', (attemptNumber) => {
-      console.log('Reconnected to socket server after', attemptNumber, 'attempts');
+      console.log('🟢 Reconnected to socket server after', attemptNumber, 'attempts');
+    });
+
+    this.socket.on('reconnect_attempt', (attemptNumber) => {
+      console.log('🟠 Attempting to reconnect:', attemptNumber);
+    });
+
+    this.socket.on('reconnect_error', (error) => {
+      console.error('🔴 Socket reconnection error:', error);
+    });
+
+    this.socket.on('reconnect_failed', () => {
+      console.error('🔴 Failed to reconnect to socket server');
     });
 
     this.socket.onAny((event, ...args) => {
-      console.log(`DEBUG: Socket event received: ${event}`, args);
+      console.log(`🔵 DEBUG: Socket event received: ${event}`, args);
     });
-  }
-    joinSessionCode(code: string, studentInfo?: { name?: string, surname?: string, albumNumber?: string }): Promise<{ success: boolean, code: string }> {
+  }    async joinSessionCode(code: string, studentInfo?: { name?: string, surname?: string, albumNumber?: string }): Promise<{ success: boolean, code: string }> {
     if (!this.socket || !this.socket.connected) {
-      this.connect();
+      await this.connect();
     }
 
     return new Promise((resolve) => {
       if (!this.socket) {
         resolve({ success: false, code });
         return;
-      }
-
-      if (studentInfo && studentInfo.name && studentInfo.surname && studentInfo.albumNumber) {
-        
-        this.socket.emit('join-code', {
+      }      if (studentInfo && studentInfo.name && studentInfo.surname && studentInfo.albumNumber) {
+        this.safeEmit('join-code', {
           code,
           name: studentInfo.name,
           surname: studentInfo.surname,
@@ -95,8 +155,7 @@ class SocketService {
         });
         console.log('Joining code room with student info:', code, studentInfo);
       } else {
-        
-        this.socket.emit('join-code', code);
+        this.safeEmit('join-code', code);
         console.log('Joining code room:', code);
       }
       
@@ -107,10 +166,9 @@ class SocketService {
     });
   }
 
-  
   on<T = any>(eventName: string, callback: (data: T) => void): () => void {
     if (!this.socket || !this.socket.connected) {
-      this.connect();
+      this.connect(); // We'll handle this differently, keeping it synchronous
     }
 
     console.log(`Listening for event: ${eventName}`);
@@ -136,10 +194,9 @@ class SocketService {
     callback: (session: Session) => void,
     studentInfo?: { name?: string, surname?: string, albumNumber?: string }
   ): Promise<() => void> {
-    
-    if (!this.socket || !this.socket.connected) {
+      if (!this.socket || !this.socket.connected) {
       console.log(`Socket not connected, reconnecting before subscribing to session ${code}...`);
-      this.connect();
+      await this.connect();
     }
 
     
@@ -181,16 +238,14 @@ class SocketService {
       soundName,
       loop 
     };
-  
     console.log(`Emitting audio-command: ${command}`, payload);
-    this.socket?.emit('audio-command', payload);
+    this.safeEmit('audio-command', payload);
   }
-  
-  leaveSession(code: string): void {
+    leaveSession(code: string): void {
     if (!this.socket || !this.socket.connected) return;
     
     console.log(`Leaving session room for code: ${code}`);
-    this.socket.emit('leave-code', code);
+    this.safeEmit('leave-code', code);
     
     // Also unsubscribe from specific session update events for this code
     const specificEvent = `session-update-${code}`;
@@ -243,11 +298,9 @@ class SocketService {
       if (!this.socket) {
         resolve({ success: false });
         return;
-      }
-
-      console.log(`Subscribing examiner to session: ${sessionCode}`);
+      }      console.log(`Subscribing examiner to session: ${sessionCode}`);
       
-      this.socket.emit('examiner-subscribe', { 
+      this.safeEmit('examiner-subscribe', { 
         sessionCode, 
         userId, 
         token 
@@ -285,9 +338,8 @@ class SocketService {
   }
     unsubscribeAsExaminer(): void {
     if (!this.socket || !this.socket.connected) return;
-    
-    console.log('Unsubscribing examiner from session');
-    this.socket.emit('examiner-unsubscribe');
+      console.log('Unsubscribing examiner from session');
+    this.safeEmit('examiner-unsubscribe', {});
     
     // Clean up listeners
     this.socket.off('student-list-update');
@@ -298,12 +350,82 @@ class SocketService {
     this.socket.off('examiner-subscribe-error');
   }
 
-  
-  disconnect(): void {
+  /**
+   * Force reconnection with polling transport (fallback for Android when WebSockets fail)
+   */
+  private async reconnectWithPolling(): Promise<void> {
+    console.log('🔄 Reconnecting with polling transport...');
+    
+    try {
+      // Disconnect current socket
+      if (this.socket) {
+        this.socket.disconnect();
+      }
+      
+      // Create new socket with polling transport only
+      this.socket = io(WS_URL, {
+        path: '/socket.io',
+        transports: ['polling'],
+        withCredentials: false,
+        autoConnect: true,
+        reconnection: true,
+        reconnectionAttempts: Infinity,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        timeout: 30000,
+        forceNew: true
+      });
+      
+      // Setup event listeners again
+      this.setupEventListeners();
+      
+      console.log('🔄 Socket recreated with polling transport');
+    } catch (error) {
+      console.error('Failed to reconnect with polling:', error);
+    }
+  }
+
+  /**
+   * Safely emit an event to the socket server with error handling
+   */
+  safeEmit(eventName: string, data: any): void {
+    if (!this.socket) {
+      console.warn(`Cannot emit ${eventName}, socket not initialized`);
+      return;
+    }
+    
+    try {
+      this.socket.emit(eventName, data);
+    } catch (error) {
+      console.error(`Error emitting ${eventName}:`, error);
+    }
+  }
+
+  /**
+   * Gets the current connection status of the socket
+   * @returns An object with connection status information
+   */
+  getConnectionStatus(): {connected: boolean; id: string | null; url: string} {
+    return {
+      connected: this.socket?.connected || false,
+      id: this.socket?.id || null,
+      url: WS_URL
+    };
+  }
+    async disconnect(): Promise<void> {
     if (this.socket) {
       this.socket.disconnect();
       this.socket = null;
       this.listeners.clear();
+      
+      // Release WiFi lock on Android
+      if (Platform.OS === 'android') {
+        try {
+          await wifiKeepAliveService.disableWebSocketKeepAlive();
+        } catch (error) {
+          console.warn('Failed to disable WebSocket keep-alive:', error);
+        }
+      }
     }
   }
 }
