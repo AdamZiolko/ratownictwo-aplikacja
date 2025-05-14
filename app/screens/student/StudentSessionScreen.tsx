@@ -270,6 +270,36 @@ const StudentSessionScreen = () => {
     };
   }, []);
 
+useEffect(() => {
+  if (Platform.OS === "web" || !accessCode || !soundsLoaded) return;
+
+  const handleAudioCommand = async (payload: {
+    command: string;
+    soundName: string | SoundQueueItem[];
+    loop?: boolean;
+  }) => {
+    console.log("Received audio command:", payload);
+    
+    if (payload.command === 'PLAY' && typeof payload.soundName === 'string') {
+      const snd = soundObjects.current[payload.soundName];
+      if (!snd) {
+        console.error(`Sound ${payload.soundName} not found!`);
+        return;
+      }
+      
+      console.log(`Processing PLAY command for ${payload.soundName}`);
+      await snd.stopAsync();
+      await snd.setPositionAsync(0);
+      await snd.setIsLoopingAsync(!!payload.loop);
+      await snd.playAsync();
+    }
+  };
+
+  const unsubscribe = socketService.on("audio-command", handleAudioCommand);
+
+  return () => unsubscribe();
+}, [accessCode, soundsLoaded]);
+  
   useEffect(() => {
     if (Platform.OS === "web" || !accessCode || !soundsLoaded) return;
 

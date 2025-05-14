@@ -1,7 +1,8 @@
 import React from "react";
 import { StyleSheet, View, ScrollView } from "react-native";
-import { Dialog, Button, Text, List, Avatar, Chip, Divider } from "react-native-paper";
+import { Dialog, Button, Text, List, Avatar, Chip, Divider, IconButton } from "react-native-paper";
 import { Session, StudentInSession } from "../types/types";
+import { socketService } from "@/services/SocketService";
 
 interface StudentsListDialogProps {
   visible: boolean;
@@ -18,10 +19,9 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
 }) => {
   if (!session) return null;
 
-  
   const studentsList = students.length > 0 ? students : (session.students || []);
   const hasStudents = studentsList && studentsList.length > 0;
-  
+
   const formatJoinTime = (dateString?: string) => {
     if (!dateString) return "-";
     
@@ -29,6 +29,14 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
       return new Date(dateString).toLocaleString('pl-PL');
     } catch (error) {
       return dateString;
+    }
+  };
+
+  const handleSendToStudent = (studentId: number, command: 'PLAY' | 'STOP', soundName?: string) => {
+    if (command === 'PLAY' && soundName) {
+      socketService.emitStudentAudioCommand(studentId, 'PLAY', soundName);
+    } else {
+      socketService.emitStudentAudioCommand(studentId, 'STOP', '');
     }
   };
 
@@ -87,6 +95,22 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
                       <Text style={styles.joinTime}>
                         Dołączył: {formatJoinTime(student.student_sessions?.joinedAt)}
                       </Text>
+                      <View style={styles.audioControls}>
+                        <IconButton
+                          icon="play"
+                          size={20}
+                          mode="contained"
+                          onPress={() => handleSendToStudent(student.id, 'PLAY', 'serce')}
+                          style={styles.audioButton}
+                        />
+                        <IconButton
+                          icon="stop"
+                          size={20}
+                          mode="contained"
+                          onPress={() => handleSendToStudent(student.id, 'STOP')}
+                          style={styles.audioButton}
+                        />
+                      </View>
                     </View>
                   )}
                 />
@@ -148,6 +172,15 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 8,
     opacity: 0.7,
+  },
+  audioControls: {
+    flexDirection: "row",
+    marginTop: 8,
+    gap: 4,
+  },
+  audioButton: {
+    margin: 0,
+    backgroundColor: "#f0f0f0",
   },
 });
 

@@ -3,6 +3,7 @@ import { Session } from './SessionService';
 import { WS_URL } from '@/constants/Config';
 import { Platform } from 'react-native';
 import { wifiKeepAliveService } from './WifiKeepAliveService';
+import { SoundQueueItem } from '@/app/screens/examiner/types/types';
 
 export interface StudentListUpdate {
   sessionId: string;
@@ -287,6 +288,32 @@ class SocketService {
     return this._doExaminerSubscribe(sessionCode, userId, token, onStudentListUpdate, onStudentSessionUpdate);
   }
   
+     emitStudentAudioCommand(
+  studentId: number, 
+  command: 'PLAY' | 'PAUSE' | 'RESUME' | 'STOP' | 'PLAY_QUEUE', 
+  soundName: string | SoundQueueItem[],
+  loop: boolean = false
+): void {
+  if (!this.socket || !this.socket.connected) {
+    this.connect();
+  }
+  
+  if (typeof studentId !== 'number') {
+    console.error('Invalid student ID type');
+    return;
+  }
+
+  const payload = {
+    studentId,
+    command,
+    soundName,
+    loop
+  };
+  
+  console.log(`Emitting student audio-command: ${command}`, payload);
+  this.safeEmit('student-audio-command', payload);
+}
+
   private _doExaminerSubscribe(
     sessionCode: string, 
     userId: string, 
