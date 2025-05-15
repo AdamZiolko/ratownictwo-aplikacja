@@ -30,9 +30,112 @@ import { networkMonitorService } from "@/services/NetworkMonitorService";
 import { wifiKeepAliveService } from "@/services/WifiKeepAliveService";
 
 const soundFiles: Record<string, any> = {
-  kaszel: require("../../../assets/sounds/kaszel.mp3"),
-  serce: require("../../../assets/sounds/serce.mp3"),
+  // Adult/Female
+  'Adult/Female/Breathing through contractions.wav': require('../../../assets/sounds/Adult/Female/Breathingthroughcontractions.wav'),
+  'Adult/Female/Coughing.wav':              require('../../../assets/sounds/Adult/Female/Coughing.wav'),
+  'Adult/Female/Distressed.wav':           require('../../../assets/sounds/Adult/Female/Distressed.wav'),
+  'Adult/Female/Hawk.wav':                 require('../../../assets/sounds/Adult/Female/Hawk.wav'),
+  'Adult/Female/Moaning.wav':              require('../../../assets/sounds/Adult/Female/Moaning.wav'),
+  'Adult/Female/No.wav':                   require('../../../assets/sounds/Adult/Female/No.wav'),
+  'Adult/Female/Ok.wav':                   require('../../../assets/sounds/Adult/Female/Ok.wav'),
+  'Adult/Female/Pain.wav':                 require('../../../assets/sounds/Adult/Female/Pain.wav'),
+  'Adult/Female/Pushing - long double.wav':require('../../../assets/sounds/Adult/Female/Pushinglongdouble.wav'),
+  'Adult/Female/Pushing - long.wav':       require('../../../assets/sounds/Adult/Female/Pushinglong.wav'),
+  'Adult/Female/Pushing - single.wav':     require('../../../assets/sounds/Adult/Female/Pushingsingle.wav'),
+  'Adult/Female/Screaming.wav':            require('../../../assets/sounds/Adult/Female/Screaming.wav'),
+  'Adult/Female/Sob breathing (type 2).wav': require('../../../assets/sounds/Adult/Female/Sobbreathing(type2).wav'),
+  'Adult/Female/Sob breathing.wav':        require('../../../assets/sounds/Adult/Female/Sobbreathing.wav'),
+  'Adult/Female/Vomiting.wav':             require('../../../assets/sounds/Adult/Female/Vomiting.wav'),
+  'Adult/Female/Yes.wav':                  require('../../../assets/sounds/Adult/Female/Yes.wav'),
+
+   // Adult/Male/General
+  'Adult/Male/General/Coughing (long).wav': require('../../../assets/sounds/Adult/Male/Coughing(long).wav'),
+  'Adult/Male/General/Coughing.wav':        require('../../../assets/sounds/Adult/Male/Coughing.wav'),
+  'Adult/Male/General/Difficult breathing.wav': require('../../../assets/sounds/Adult/Male/Difficultbreathing.wav'),
+  'Adult/Male/General/Hawk.wav':            require('../../../assets/sounds/Adult/Male/Hawk.wav'),
+  'Adult/Male/General/Moaning (long).wav':  require('../../../assets/sounds/Adult/Male/Moaning(long).wav'),
+  'Adult/Male/General/Moaning.wav':         require('../../../assets/sounds/Adult/Male/Moaning.wav'),
+  'Adult/Male/General/No.wav':              require('../../../assets/sounds/Adult/Male/No.wav'),
+  'Adult/Male/General/Ok.wav':              require('../../../assets/sounds/Adult/Male/Ok.wav'),
+  'Adult/Male/General/Screaming (type 2).wav': require('../../../assets/sounds/Adult/Male/Screaming(type2).wav'),
+  'Adult/Male/General/Screaming.wav':       require('../../../assets/sounds/Adult/Male/Screaming.wav'),
+  'Adult/Male/General/Sob breathing.wav':   require('../../../assets/sounds/Adult/Male/Sobbreathing.wav'),
+  'Adult/Male/General/Vomiting (type 2).wav': require('../../../assets/sounds/Adult/Male/Vomiting(type2).wav'),
+  'Adult/Male/General/Vomiting (type 3).wav': require('../../../assets/sounds/Adult/Male/Vomiting(type3).wav'),
+  'Adult/Male/General/Vomiting.wav':       require('../../../assets/sounds/Adult/Male/Vomiting.wav'),
+  'Adult/Male/General/Yes.wav':            require('../../../assets/sounds/Adult/Male/Yes.wav'),
+
+
+  // Speech
+  'Speech/Chest hurts.wav':     require('../../../assets/sounds/Speech/Chesthurts.wav'),
+  'Speech/Doc I feel I could die.wav': require('../../../assets/sounds/Speech/DocIfeelIcoulddie.wav'),
+  'Speech/Go away.wav':         require('../../../assets/sounds/Speech/Goaway.wav'),
+  'Speech/I don\'t feel dizzy.wav': require('../../../assets/sounds/Speech/Idontfeeldizzy.wav'),
+  'Speech/I don\'t feel well.wav': require('../../../assets/sounds/Speech/Idontfeelwell.wav'),
+  'Speech/I feel better now.wav': require('../../../assets/sounds/Speech/Ifeelbetternow.wav'),
+  'Speech/I feel really bad.wav': require('../../../assets/sounds/Speech/Ifeelreallybad.wav'),
+  'Speech/I\'m feeling very dizzy.wav': require('../../../assets/sounds/Speech/Imfeelingverydizzy.wav'),
+  'Speech/I\'m fine.wav':       require('../../../assets/sounds/Speech/Imfine.wav'),
+  'Speech/I\'m quite nauseous.wav': require('../../../assets/sounds/Speech/Imquitenauseous.wav'),
+  'Speech/I\'m really hungry.wav': require('../../../assets/sounds/Speech/Imreallyhungry.wav'),
+  'Speech/I\'m really thirsty.wav': require('../../../assets/sounds/Speech/Imreallythirsty.wav'),
+  'Speech/I\'m so sick.wav':    require('../../../assets/sounds/Speech/Imsosick.wav'),
+  'Speech/Never had pain like this before.wav': require('../../../assets/sounds/Speech/Neverhadpainlikethisbefore.wav'),
+  'Speech/No allergies.wav':    require('../../../assets/sounds/Speech/Noallergies.wav'),
+  'Speech/No diabetes.wav':     require('../../../assets/sounds/Speech/Nodiabetes.wav'),
+  'Speech/No lung or cardiac problems.wav': require('../../../assets/sounds/Speech/Nolungorcardiacproblems.wav'),
+  'Speech/No.wav':              require('../../../assets/sounds/Speech/No.wav'),
+  'Speech/Pain for 2 hours.wav':require('../../../assets/sounds/Speech/Painfor2hours.wav'),
+  'Speech/Something for this pain.wav': require('../../../assets/sounds/Speech/Somethingforthispain.wav'),
+  'Speech/Thank you.wav':       require('../../../assets/sounds/Speech/Thankyou.wav'),
+  'Speech/That helped.wav':     require('../../../assets/sounds/Speech/Thathelped.wav'),
+  'Speech/Yes.wav':             require('../../../assets/sounds/Speech/Yes.wav'),
+
+  // Child
+  'Child/Coughing.wav': require('../../../assets/sounds/Child/Coughing.wav'),
+  'Child/Hawk.wav':     require('../../../assets/sounds/Child/Hawk.wav'),
+  'Child/Moaning.wav':  require('../../../assets/sounds/Child/Moaning.wav'),
+  'Child/No.wav':       require('../../../assets/sounds/Child/No.wav'),
+  'Child/Ok.wav':       require('../../../assets/sounds/Child/Ok.wav'),
+  'Child/Screaming.wav':require('../../../assets/sounds/Child/Screaming.wav'),
+  'Child/Sob breathing.wav': require('../../../assets/sounds/Child/Sobbreathing.wav'),
+  'Child/Vomiting (type 2).wav': require('../../../assets/sounds/Child/Vomiting(type2).wav'),
+  'Child/Vomiting.wav': require('../../../assets/sounds/Child/Vomiting.wav'),
+  'Child/Yes.wav':      require('../../../assets/sounds/Child/Yes.wav'),
+
+  // Geriatric
+  'Geriatric/Female/Coughing.wav': require('../../../assets/sounds/Geriatric/Female/Coughing.wav'),
+  'Geriatric/Female/Moaning.wav':  require('../../../assets/sounds/Geriatric/Female/Moaning.wav'),
+  'Geriatric/Female/No.wav':       require('../../../assets/sounds/Geriatric/Female/No.wav'),
+  'Geriatric/Female/Screaming.wav':require('../../../assets/sounds/Geriatric/Female/Screaming.wav'),
+  'Geriatric/Female/Vomiting.wav': require('../../../assets/sounds/Geriatric/Female/Vomiting.wav'),
+  'Geriatric/Female/Yes.wav':      require('../../../assets/sounds/Geriatric/Female/Yes.wav'),
+
+  'Geriatric/Male/Coughing.wav':   require('../../../assets/sounds/Geriatric/Male/Coughing.wav'),
+  'Geriatric/Male/Moaning.wav':    require('../../../assets/sounds/Geriatric/Male/Moaning.wav'),
+  'Geriatric/Male/No.wav':         require('../../../assets/sounds/Geriatric/Male/No.wav'),
+  'Geriatric/Male/Screaming.wav':  require('../../../assets/sounds/Geriatric/Male/Screaming.wav'),
+  'Geriatric/Male/Vomiting.wav':   require('../../../assets/sounds/Geriatric/Male/Vomiting.wav'),
+  'Geriatric/Male/Yes.wav':        require('../../../assets/sounds/Geriatric/Male/Yes.wav'),
+
+  // Infant
+  'Infant/Content.wav':            require('../../../assets/sounds/Infant/Content.wav'),
+  'Infant/Cough.wav':              require('../../../assets/sounds/Infant/Cough.wav'),
+  'Infant/Grunt.wav':              require('../../../assets/sounds/Infant/Grunt.wav'),
+  'Infant/Hawk.wav':               require('../../../assets/sounds/Infant/Hawk.wav'),
+  'Infant/Hiccup.wav':             require('../../../assets/sounds/Infant/Hiccup.wav'),
+  'Infant/Screaming.wav':          require('../../../assets/sounds/Infant/Screaming.wav'),
+  'Infant/Strongcry (type 2).wav': require('../../../assets/sounds/Infant/Strongcry(type2).wav'),
+  'Infant/Strongcry.wav':          require('../../../assets/sounds/Infant/Strongcry.wav'),
+  'Infant/Weakcry.wav':            require('../../../assets/sounds/Infant/Weakcry.wav'),
+
+  // Root files
+  'drzwi.mp3': require('../../../assets/sounds/drzwi.mp3'),
+  'kaszel.mp3':require('../../../assets/sounds/kaszel.mp3'),
+  'Ok.wav':    require('../../../assets/sounds/Ok.wav'),
+  'serce.mp3': require('../../../assets/sounds/serce.mp3')
 };
+
 
 interface VitalWithFluctuation {
   baseValue: number | null;
@@ -234,41 +337,44 @@ const StudentSessionScreen = () => {
   }, [accessCode, firstName, lastName, albumNumber]);
 
   useEffect(() => {
-    if (Platform.OS === "web") return;
+  if (Platform.OS === "web") return;
 
-    Audio.setAudioModeAsync({
-      allowsRecordingIOS: false,
-      staysActiveInBackground: false,
-      interruptionModeIOS: InterruptionModeIOS.DoNotMix,
-      playsInSilentModeIOS: true,
-      shouldDuckAndroid: true,
-      interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
-    });
+  Audio.setAudioModeAsync({
+    allowsRecordingIOS: false,
+    staysActiveInBackground: true, // Zmiana na true
+    interruptionModeIOS: InterruptionModeIOS.DuckOthers,
+    playsInSilentModeIOS: true,
+    shouldDuckAndroid: true,
+    interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
+  });
 
-    let isMounted = true;
-    (async () => {
-      try {
-        for (const [name, module] of Object.entries(soundFiles)) {
+  let isMounted = true;
+  (async () => {
+    try {
+      const loadPromises = Object.entries(soundFiles).map(async ([name, module]) => {
+        try {
           const { sound } = await Audio.Sound.createAsync(module);
-          if (!isMounted) {
-            await sound.unloadAsync();
-          } else {
-            soundObjects.current[name] = sound;
-          }
+          soundObjects.current[name] = sound;
+          console.log(`Załadowano: ${name}`); // Logowanie załadowanych plików
+        } catch (error) {
+          console.error(`Błąd ładowania ${name}:`, error);
         }
-        console.log("🔉 Sounds loaded");
-        setSoundsLoaded(true);
-      } catch (error) {
-        console.error("Błąd ładowania dźwięków:", error);
-      }
-    })();
+      });
 
-    return () => {
-      isMounted = false;
-      Object.values(soundObjects.current).forEach((s) => s.unloadAsync());
-      setSoundsLoaded(false);
-    };
-  }, []);
+      await Promise.all(loadPromises);
+      console.log("🔉 Wszystkie dźwięki załadowane");
+      setSoundsLoaded(true);
+    } catch (error) {
+      console.error("Błąd ładowania dźwięków:", error);
+    }
+  })();
+
+  return () => {
+    isMounted = false;
+    Object.values(soundObjects.current).forEach((s) => s.unloadAsync());
+    setSoundsLoaded(false);
+  };
+}, []);
 
 useEffect(() => {
   if (Platform.OS === "web" || !accessCode || !soundsLoaded) return;
@@ -281,17 +387,25 @@ useEffect(() => {
     console.log("Received audio command:", payload);
     
     if (payload.command === 'PLAY' && typeof payload.soundName === 'string') {
+      console.log('Dostępne dźwięki:', Object.keys(soundObjects.current)); // Dodatkowe logowanie
+      const soundPath = payload.soundName.replace('.wav', ''); 
       const snd = soundObjects.current[payload.soundName];
+      
       if (!snd) {
-        console.error(`Sound ${payload.soundName} not found!`);
+        console.error(`Nie znaleziono dźwięku: ${payload.soundName}`);
+        console.log('Zarejestrowane ścieżki:', Object.keys(soundObjects.current));
         return;
       }
       
-      console.log(`Processing PLAY command for ${payload.soundName}`);
-      await snd.stopAsync();
-      await snd.setPositionAsync(0);
-      await snd.setIsLoopingAsync(!!payload.loop);
-      await snd.playAsync();
+      console.log(`Odtwarzanie: ${payload.soundName}`);
+      try {
+        await snd.stopAsync();
+        await snd.setPositionAsync(0);
+        await snd.setIsLoopingAsync(!!payload.loop);
+        await snd.playAsync();
+      } catch (error) {
+        console.error('Błąd odtwarzania:', error);
+      }
     }
   };
 

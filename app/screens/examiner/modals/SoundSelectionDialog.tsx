@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, ScrollView } from 'react-native';
 import { Dialog, Button, RadioButton, Text, List, TextInput, IconButton, Checkbox } from 'react-native-paper';
 import { Session, SoundQueueItem } from '../types/types';
 
@@ -14,8 +14,113 @@ interface SoundSelectionDialogProps {
   onPauseAudioCommand: () => void;
   onResumeAudioCommand: () => void;
   onStopAudioCommand: () => void;
-  
 }
+
+const soundStructure = {
+  'Adult': {
+    'Female': [
+      'Breathing through contractions',
+      'Coughing',
+      'Distressed',
+      'Hawk',
+      'Moaning',
+      'No',
+      'Ok',
+      'Pain',
+      'Pushing - long double',
+      'Pushing - long',
+      'Pushing - single',
+      'Screaming',
+      'Sob breathing (type 2)',
+      'Sob breathing',
+      'Vomiting',
+      'Yes'
+    ],
+    'Male': [
+      'Coughing (long)',
+      'Coughing',
+      'Difficult breathing',
+      'Hawk',
+      'Moaning (long)',
+      'Moaning',
+      'No',
+      'Ok',
+      'Screaming (type 2)',
+      'Screaming',
+      'Sob breathing',
+      'Vomiting (type 2)',
+      'Vomiting (type 3)',
+      'Vomiting',
+      'Yes'
+    ],
+  },
+  'Child': [
+    'Coughing',
+    'Hawk',
+    'Moaning',
+    'No',
+    'Ok',
+    'Screaming',
+    'Sob breathing',
+    'Vomiting (type 2)',
+    'Vomiting',
+    'Yes'
+  ],
+  'Geriatric': {
+    'Female': [
+      'Coughing',
+      'Moaning',
+      'No',
+      'Screaming',
+      'Vomiting',
+      'Yes'
+    ],
+    'Male': [
+      'Coughing',
+      'Moaning',
+      'No',
+      'Screaming',
+      'Vomiting',
+      'Yes'
+    ]
+  },
+  'Infant': [
+    'Content',
+    'Cough',
+    'Grunt',
+    'Hawk',
+    'Hiccup',
+    'Screaming',
+    'Strongcry (type 2)',
+    'Strongcry',
+    'Weakcry'
+  ],
+  'Speech': [
+    'Chest hurts',
+    'Doc I feel I could die',
+    'Go away',
+    'I don\'t feel dizzy',
+    'I don\'t feel well',
+    'I feel better now',
+    'I feel really bad',
+    'I\'m feeling very dizzy',
+    'I\'m fine',
+    'I\'m quite nauseous',
+    'I\'m really hungry',
+    'I\'m really thirsty',
+    'I\'m so sick',
+    'Never had pain like this before',
+    'No allergies',
+    'No diabetes',
+    'No lung or cardiac problems',
+    'No',
+    'Pain for 2 hours',
+    'Something for this pain',
+    'Thank you',
+    'That helped',
+    'Yes'
+  ]
+};
 
 const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
   visible,
@@ -25,7 +130,7 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
   setSelectedSound,
   onSendAudioCommand,
   onSendQueue,
-  onPauseAudioCommand, 
+  onPauseAudioCommand,
   onResumeAudioCommand,
   onStopAudioCommand,
 }) => {
@@ -34,6 +139,72 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
   const [activeTab, setActiveTab] = useState<'single' | 'queue'>('single');
   const [isLooping, setIsLooping] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [currentPath, setCurrentPath] = useState<string[]>([]);
+  const [navigationStack, setNavigationStack] = useState<string[][]>([[]]);
+
+  const getCurrentLevel = () => {
+    let currentLevel: any = soundStructure;
+    for (const pathPart of currentPath) {
+      currentLevel = currentLevel[pathPart];
+    }
+    return currentLevel;
+  };
+
+  const handleNavigate = (item: string) => {
+    const newPath = [...currentPath, item];
+    setCurrentPath(newPath);
+    setNavigationStack([...navigationStack, newPath]);
+  };
+
+  const handleGoBack = () => {
+    if (currentPath.length === 0) return;
+    const newStack = navigationStack.slice(0, -1);
+    setNavigationStack(newStack);
+    setCurrentPath(newStack[newStack.length - 1]);
+  };
+
+  const renderScrollableContent = (items: JSX.Element[]) => (
+    <ScrollView style={styles.scrollContainer}>
+      {items}
+    </ScrollView>
+  );
+
+  const renderNavigationItems = () => {
+    const currentLevel = getCurrentLevel();
+
+    if (Array.isArray(currentLevel)) {
+      const items = currentLevel.map((sound) => (
+        <List.Item
+          key={sound}
+          title={sound.replace(/\.[^/.]+$/, "")}
+          onPress={() => {
+            const fullPath = [...currentPath, sound].join('/') + '.wav';
+            setSelectedSound(fullPath);
+          }}
+          right={props => (
+            <RadioButton 
+              {...props} 
+              value={[...currentPath, sound].join('/') + '.wav'}
+              status={selectedSound === [...currentPath, sound].join('/') + '.wav' ? 'checked' : 'unchecked'}
+            />
+          )}
+        />
+      ));
+      
+      return renderScrollableContent(items);
+    }
+
+    const items = Object.keys(currentLevel).map((key) => (
+      <List.Item
+        key={key}
+        title={key}
+        onPress={() => handleNavigate(key)}
+        right={props => <List.Icon {...props} icon="chevron-right" />}
+      />
+    ));
+
+    return renderScrollableContent(items);
+  };
 
   const addToQueue = () => {
     if (selectedSound) {
@@ -61,14 +232,15 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
   if (!session) return null;
 
   return (
-    <Dialog visible={visible} onDismiss={onDismiss}>
-      <Dialog.Title>Odtwórz dźwięk</Dialog.Title>
+    <Dialog visible={visible} onDismiss={onDismiss} style={styles.dialog}>
+      <Dialog.Title style={styles.title}>Odtwórz dźwięk</Dialog.Title>
 
       <View style={styles.tabsContainer}>
         <Button
           mode={activeTab === 'single' ? 'contained' : 'outlined'}
           onPress={() => setActiveTab('single')}
           style={styles.tabButton}
+          labelStyle={styles.tabLabel}
         >
           Pojedynczy
         </Button>
@@ -76,42 +248,43 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
           mode={activeTab === 'queue' ? 'contained' : 'outlined'}
           onPress={() => setActiveTab('queue')}
           style={styles.tabButton}
+          labelStyle={styles.tabLabel}
         >
           Kolejka
         </Button>
       </View>
 
-      <Dialog.Content>
+      <Dialog.Content style={styles.content}>
         <Text style={styles.sectionHeader}>Wybierz dźwięk:</Text>
+
+        {currentPath.length > 0 && (
+          <Button 
+            mode="text" 
+            onPress={handleGoBack}
+            icon="arrow-left"
+            style={styles.backButton}
+            labelStyle={styles.backLabel}
+          >
+            Powrót
+          </Button>
+        )}
+
         <RadioButton.Group
           onValueChange={setSelectedSound}
           value={selectedSound || ''}
         >
-          {[
-            { label: 'Kaszel', value: 'kaszel' },
-            { label: 'Szum serca', value: 'serce' },
-            { label: 'Normalne bicie', value: 'normalne-bicie' },
-          ].map(option => (
-            <List.Item
-              key={option.value}
-              title={option.label}
-              onPress={() => setSelectedSound(option.value)}
-              right={props => (
-                <RadioButton {...props} value={option.value} />
-              )}
-            />
-          ))}
+          {renderNavigationItems()}
         </RadioButton.Group>
 
         {activeTab === 'single' && (
           <>
-            <Text style={styles.sectionHeader}>Odtwarzaj w pętli:</Text>
+            <Text style={styles.sectionHeader}>Opcje odtwarzania:</Text>
             <View style={styles.checkboxRow}>
               <Checkbox
                 status={isLooping ? 'checked' : 'unchecked'}
                 onPress={() => setIsLooping(!isLooping)}
               />
-              <Text style={{ alignSelf: 'center' }}>Odtwarzaj w pętli</Text>
+              <Text style={styles.checkboxLabel}>Odtwarzaj w pętli</Text>
             </View>
 
             <Button
@@ -121,35 +294,39 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
               }}
               disabled={!selectedSound}
               mode="contained"
+              style={styles.playButton}
+              labelStyle={styles.buttonLabel}
             >
               Odtwórz
             </Button>
 
-                    {isLooping && (
-          <View style={styles.controlIcons}>
-            <IconButton
-              icon={isPlaying ? 'pause-circle' : 'play-circle'}
-              size={32}
-              onPress={() => {
-                if (isPlaying) {
-                  onPauseAudioCommand();
-                } else {
-                  onResumeAudioCommand();
-                }
-                setIsPlaying(!isPlaying);
-              }}
-            />
-            <IconButton
-              icon="stop-circle"
-              size={32}
-              onPress={() => {
-                onStopAudioCommand();
-                setIsPlaying(false);
-                setIsLooping(false);
-              }}
-            />
-          </View>
-        )}
+            {isLooping && (
+              <View style={styles.controlIcons}>
+                <IconButton
+                  icon={isPlaying ? 'pause-circle' : 'play-circle'}
+                  size={32}
+                  onPress={() => {
+                    if (isPlaying) {
+                      onPauseAudioCommand();
+                    } else {
+                      onResumeAudioCommand();
+                    }
+                    setIsPlaying(!isPlaying);
+                  }}
+                  style={styles.controlIcon}
+                />
+                <IconButton
+                  icon="stop-circle"
+                  size={32}
+                  onPress={() => {
+                    onStopAudioCommand();
+                    setIsPlaying(false);
+                    setIsLooping(false);
+                  }}
+                  style={styles.controlIcon}
+                />
+              </View>
+            )}
           </>
         )}
 
@@ -162,6 +339,8 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
               value={delay}
               onChangeText={setDelay}
               style={styles.input}
+              outlineColor="#ddd"
+              activeOutlineColor="#6200ee"
             />
 
             <Button
@@ -169,35 +348,45 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
               onPress={addToQueue}
               disabled={!selectedSound}
               style={styles.addButton}
+              labelStyle={styles.buttonLabel}
             >
               Dodaj do kolejki
             </Button>
 
             <Text style={styles.sectionHeader}>Kolejka dźwięków:</Text>
-            {queue.map((item, index) => (
-              <View key={index} style={styles.queueItem}>
-                <Text>
-                  {item.soundName} (+{item.delay}ms)
-                </Text>
-                <Button
-                  icon="close"
-                  compact
-                  onPress={() => removeFromQueue(index)}
-                  children={undefined}
-                />
-              </View>
-            ))}
+            <ScrollView style={styles.queueList}>
+              {queue.map((item, index) => (
+                <View key={index} style={styles.queueItem}>
+                  <Text style={styles.queueText}>
+                    {item.soundName.replace(/\.wav$/, '')} (+{item.delay}ms)
+                  </Text>
+                  <IconButton
+                    icon="close"
+                    size={20}
+                    onPress={() => removeFromQueue(index)}
+                    style={styles.queueIcon}
+                  />
+                </View>
+              ))}
+            </ScrollView>
           </>
         )}
       </Dialog.Content>
 
-      <Dialog.Actions>
-        <Button onPress={onDismiss}>Anuluj</Button>
+      <Dialog.Actions style={styles.actions}>
+        <Button 
+          onPress={onDismiss}
+          labelStyle={styles.cancelLabel}
+        >
+          Anuluj
+        </Button>
         {activeTab === 'queue' && (
           <Button
             onPress={handleSendQueue}
             disabled={queue.length === 0}
             mode="contained"
+            style={styles.sendButton}
+            labelStyle={styles.buttonLabel}
           >
             Wyślij kolejkę ({queue.length})
           </Button>
@@ -208,42 +397,122 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
 };
 
 const styles = StyleSheet.create({
+  dialog: {
+    borderRadius: 8,
+    maxWidth: 500,
+    width: '90%',
+    alignSelf: 'center',
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    paddingHorizontal: 16,
+  },
   tabsContainer: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     marginTop: 10,
-    paddingHorizontal: 16,
+    paddingHorizontal: 8,
   },
   tabButton: {
     flex: 1,
     marginHorizontal: 4,
+    paddingVertical: 8,
+    borderRadius: 4,
+  },
+  tabLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  content: {
+    paddingHorizontal: 16,
+  },
+  scrollContainer: {
+    maxHeight: 300,
+    marginVertical: 8,
   },
   sectionHeader: {
-    fontWeight: 'bold',
-    marginTop: 15,
-    marginBottom: 5,
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 12,
+    marginBottom: 8,
+    color: '#333',
+  },
+  backButton: {
+    alignSelf: 'flex-start',
+    marginBottom: 8,
+  },
+  backLabel: {
+    color: '#6200ee',
+  },
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 12,
+  },
+  checkboxLabel: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#444',
+  },
+  playButton: {
+    marginTop: 12,
+    borderRadius: 4,
+    backgroundColor: '#6200ee',
+  },
+  controlIcons: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 16,
+    gap: 20,
+  },
+  controlIcon: {
+    marginHorizontal: 8,
   },
   input: {
-    marginVertical: 10,
+    marginVertical: 8,
+    backgroundColor: '#fff',
   },
   addButton: {
-    marginVertical: 10,
+    marginVertical: 12,
+    borderColor: '#6200ee',
+  },
+  queueList: {
+    maxHeight: 150,
+    marginTop: 8,
   },
   queueItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 5,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
-  checkboxRow: {
+  queueText: {
+    fontSize: 14,
+    color: '#444',
+  },
+  queueIcon: {
+    margin: 0,
+  },
+  actions: {
+    padding: 16,
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginVertical: 10,
   },
-  controlIcons: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 10,
+  cancelLabel: {
+    color: '#666',
+  },
+  sendButton: {
+    borderRadius: 4,
+    backgroundColor: '#6200ee',
+  },
+  buttonLabel: {
+    color: '#fff',
+    fontWeight: '500',
   },
 });
 
