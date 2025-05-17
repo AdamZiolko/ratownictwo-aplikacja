@@ -35,11 +35,10 @@ export const useSessionManager = (user: any) => {
       }
     },
   };
-  
-  const [formData, setFormData] = useState<FormData>({
+    const [formData, setFormData] = useState<FormData>({
     name: "",
     temperature: "36.6",
-    rhythmType: 0, // EkgType.NORMAL
+    rhythmType: 0, // EkgType.NORMAL_SINUS_RHYTHM
     beatsPerMinute: "72",
     noiseLevel: 0, // NoiseType.NONE
     sessionCode: "",

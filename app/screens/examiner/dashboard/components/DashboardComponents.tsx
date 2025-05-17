@@ -18,26 +18,60 @@ export const StatItem = ({ value, label }: { value: number, label: string }) => 
 
 export const getRhythmTypeName = (type: number): string => {
   switch (type as EkgType) {
-    case EkgType.NORMAL:
-      return "Rytm normalny (Zatokowy)";
-    case EkgType.TACHYCARDIA:
+    case EkgType.NORMAL_SINUS_RHYTHM:
+      return "Prawidłowy rytm zatokowy";
+    case EkgType.SINUS_TACHYCARDIA:
       return "Tachykardia zatokowa";
-    case EkgType.BRADYCARDIA:
+    case EkgType.SINUS_BRADYCARDIA:
       return "Bradykardia zatokowa";
-    case EkgType.AFIB:
+    case EkgType.ATRIAL_FIBRILLATION:
       return "Migotanie przedsionków";
-    case EkgType.VFIB:
+    case EkgType.VENTRICULAR_FIBRILLATION:
       return "Migotanie komór";
-    case EkgType.VTACH:
+    case EkgType.VENTRICULAR_TACHYCARDIA:
       return "Częstoskurcz komorowy";
-    case EkgType.TORSADE:
+    case EkgType.TORSADE_DE_POINTES:
       return "Torsade de pointes";
     case EkgType.ASYSTOLE:
       return "Asystolia";
-    case EkgType.HEART_BLOCK:
-      return "Blok serca";
-    case EkgType.PVC:
+    case EkgType.FIRST_DEGREE_AV_BLOCK:
+      return "Blok przedsionkowo-komorowy 1 stopnia";
+    case EkgType.SECOND_DEGREE_AV_BLOCK:
+      return "Blok przedsionkowo-komorowy 2 stopnia";
+    case EkgType.MOBITZ_TYPE_AV_BLOCK:
+      return "Blok przedsionkowo-komorowy 2 stopnia typu Mobitza";
+    case EkgType.SA_BLOCK:
+      return "Blok zatokowo-przedsionkowy";
+    case EkgType.WANDERING_ATRIAL_PACEMAKER:
+      return "Nadkomorowe wędrowanie rozrusznika";
+    case EkgType.SINUS_ARRHYTHMIA:
+      return "Nadmiarowość zatokowa";
+    case EkgType.PREMATURE_VENTRICULAR_CONTRACTION:
       return "Przedwczesne pobudzenie komorowe";
+    case EkgType.PREMATURE_ATRIAL_CONTRACTION:
+      return "Przedwczesne pobudzenie przedsionkowe";
+    case EkgType.PREMATURE_JUNCTIONAL_CONTRACTION:
+      return "Przedwczesne pobudzenie węzłowe";
+    case EkgType.ACCELERATED_VENTRICULAR_RHYTHM:
+      return "Przyspieszony rytm komorowy";
+    case EkgType.ACCELERATED_JUNCTIONAL_RHYTHM:
+      return "Przyspieszony rytm węzłowy";
+    case EkgType.IDIOVENTRICULAR_RHYTHM:
+      return "Rytm komorowy idowentrykularny";
+    case EkgType.VENTRICULAR_FLUTTER:
+      return "Trzepotanie komór";
+    case EkgType.ATRIAL_FLUTTER_A:
+      return "Trzepotanie przedsionków typu A";
+    case EkgType.ATRIAL_FLUTTER_B:
+      return "Trzepotanie przedsionków typu B";
+    case EkgType.MULTIFOCAL_ATRIAL_TACHYCARDIA:
+      return "Wieloogniskowy częstoskurcz przedsionkowy";
+    case EkgType.SINUS_ARREST:
+      return "Zahamowanie zatokowe";
+    case EkgType.VENTRICULAR_ESCAPE_BEAT:
+      return "Zastępcze pobudzenie komorowe";
+    case EkgType.JUNCTIONAL_ESCAPE_BEAT:
+      return "Zastępcze pobudzenie węzłowe";
     case EkgType.CUSTOM:
       return "Niestandardowy";
     default:

@@ -25,11 +25,10 @@ const EditSessionDialog = ({
   session,
   onUpdateSession,
 }: EditSessionDialogProps) => {
-  
-  const [formData, setFormData] = useState<FormData>({
+    const [formData, setFormData] = useState<FormData>({
     name: "", 
     temperature: "36.6",
-    rhythmType: EkgType.NORMAL,
+    rhythmType: EkgType.NORMAL_SINUS_RHYTHM,
     beatsPerMinute: "72",
     noiseLevel: NoiseType.NONE,
     sessionCode: "", 

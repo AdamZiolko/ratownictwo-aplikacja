@@ -50,7 +50,11 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
     containerRef.current?.measure((_, __, width) => {
       if (width > 0) setContainerWidth(width);
     });
-    if (ekgType !== undefined) resetEkg();
+    if (ekgType !== undefined) {
+      // Force a complete reset when EKG type changes
+      EkgFactory.refreshEkgDisplay();
+      resetEkg();
+    }
   }, [ekgType]);
 
   const draw = () => {
@@ -65,8 +69,12 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
       previousYRef.current = BASELINE;
       isFirstPointRef.current = true;
       pathDataRef.current = '';
-      setPathData('');
-    } else {
+      setPathData('');    } else {
+      // Periodically log the current EKG type for debugging
+      if (x % 500 === 0) {
+        console.log(`Drawing EKG type: ${ekgType}, BPM: ${bpm}`);
+      }
+      
       const raw = EkgFactory.generateEkgValue(x, ekgType, bpm, noiseType);
       const ekgValue = VIEWBOX_HEIGHT - (raw * (VIEWBOX_HEIGHT / 250));
 
@@ -85,9 +93,14 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
 
     animationRef.current = requestAnimationFrame(draw);
   };
-
   useEffect(() => {
+    // Force reset whenever key parameters change
+    EkgFactory.refreshEkgDisplay();
     resetEkg();
+    
+    // Console log that we're switching parameters
+    console.log(`EKG parameters changed: type=${ekgType}, bpm=${bpm}, noise=${noiseType}`);
+    
     if (isRunning && containerWidth > 0) {
       cancelAnimationFrame(animationRef.current);
       animationRef.current = requestAnimationFrame(draw);
@@ -107,10 +120,11 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
 
   useEffect(() => {
     EkgFactory.resetNoiseCache();
-  }, [noiseType]);
-
-  const resetEkg = () => {
+  }, [noiseType]);  const resetEkg = () => {
+    // Cancel the animation frame
     cancelAnimationFrame(animationRef.current);
+    
+    // Reset all local state
     xOffsetRef.current = 0;
     previousXRef.current = 0;
     previousYRef.current = BASELINE;
@@ -118,7 +132,32 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
     pathDataRef.current = '';
     setPathData('');
     setDisplayBpm(bpm);
+    
+    // Reset EKG factory caches
     EkgFactory.resetNoiseCache();
+    
+    // Reset all related services
+    try {
+      const { EkgDataAdapter } = require('@/services/EkgDataAdapter');
+      const { EkgJsonDataLoader } = require('@/services/EkgJsonDataLoader');
+      
+      // Reset both data sources completely
+      EkgDataAdapter.resetCache();
+      EkgJsonDataLoader.resetCache();
+      
+      console.log(`Complete EKG reset for type: ${ekgType}, bpm: ${bpm}`);
+    } catch (e) {
+      console.error('Error during EKG reset:', e);
+    }
+    
+    // Force garbage collection of old values
+    setTimeout(() => {
+      console.log('EKG Display reset complete');
+      // Start with a clean animation frame if running
+      if (isRunning && containerWidth > 0) {
+        animationRef.current = requestAnimationFrame(draw);
+      }
+    }, 50); // Give a bit more time for cleanup
   };
 
   const generateFluctuation = (value?: number): number | undefined => {

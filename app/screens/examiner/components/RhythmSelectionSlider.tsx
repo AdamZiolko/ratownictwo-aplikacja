@@ -28,25 +28,41 @@ interface RhythmSelectionSliderProps {
 }
 
 const RhythmSelectionSlider = ({
-  selectedType = EkgType.NORMAL,
+  selectedType = EkgType.NORMAL_SINUS_RHYTHM,
   setSelectedType,
 }: RhythmSelectionSliderProps) => {
   const theme = useTheme();
   const scrollX = useRef(new Animated.Value(0)).current;
   const flatListRef = useRef<FlatList>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-
   const rhythmTypes = [
-    EkgType.NORMAL,
-    EkgType.TACHYCARDIA,
-    EkgType.BRADYCARDIA,
-    EkgType.AFIB,
-    EkgType.VTACH,
-    EkgType.TORSADE,
-    EkgType.VFIB,
-    EkgType.HEART_BLOCK,
-    EkgType.PVC,
+    EkgType.NORMAL_SINUS_RHYTHM,
+    EkgType.SINUS_TACHYCARDIA,
+    EkgType.SINUS_BRADYCARDIA,
+    EkgType.ATRIAL_FIBRILLATION,
+    EkgType.VENTRICULAR_TACHYCARDIA,
+    EkgType.TORSADE_DE_POINTES,
+    EkgType.VENTRICULAR_FIBRILLATION,
+    EkgType.FIRST_DEGREE_AV_BLOCK,
+    EkgType.PREMATURE_VENTRICULAR_CONTRACTION,
     EkgType.ASYSTOLE,
+    EkgType.SECOND_DEGREE_AV_BLOCK,
+    EkgType.MOBITZ_TYPE_AV_BLOCK,
+    EkgType.SA_BLOCK,
+    EkgType.WANDERING_ATRIAL_PACEMAKER,
+    EkgType.SINUS_ARRHYTHMIA,
+    EkgType.PREMATURE_ATRIAL_CONTRACTION,
+    EkgType.PREMATURE_JUNCTIONAL_CONTRACTION,
+    EkgType.ACCELERATED_VENTRICULAR_RHYTHM,
+    EkgType.ACCELERATED_JUNCTIONAL_RHYTHM,
+    EkgType.IDIOVENTRICULAR_RHYTHM,
+    EkgType.VENTRICULAR_FLUTTER,
+    EkgType.ATRIAL_FLUTTER_A,
+    EkgType.ATRIAL_FLUTTER_B,
+    EkgType.MULTIFOCAL_ATRIAL_TACHYCARDIA,
+    EkgType.SINUS_ARREST,
+    EkgType.VENTRICULAR_ESCAPE_BEAT,
+    EkgType.JUNCTIONAL_ESCAPE_BEAT,
   ];
 
   const selectedIndex = rhythmTypes.findIndex(type => type === selectedType);
@@ -223,20 +239,25 @@ const RhythmCard: React.FC<RhythmCardProps> = ({
   const name = EkgFactory.getNameForType(type);
   const description = EkgFactory.getDescriptionForType(type);
   const bpm = EkgFactory.getBpmForType(type);
-
   const getSeverityColor = () => {
     switch (type) {
-      case EkgType.VFIB:
-      case EkgType.VTACH:
-      case EkgType.TORSADE:
+      case EkgType.VENTRICULAR_FIBRILLATION:
+      case EkgType.VENTRICULAR_TACHYCARDIA:
+      case EkgType.TORSADE_DE_POINTES:
       case EkgType.ASYSTOLE:
+      case EkgType.VENTRICULAR_FLUTTER:
         return theme.colors.error;
-      case EkgType.AFIB:
-      case EkgType.HEART_BLOCK:
+      case EkgType.ATRIAL_FIBRILLATION:
+      case EkgType.FIRST_DEGREE_AV_BLOCK:
+      case EkgType.SECOND_DEGREE_AV_BLOCK:
+      case EkgType.MOBITZ_TYPE_AV_BLOCK:
+      case EkgType.SA_BLOCK:
         return '#E65100';
-      case EkgType.TACHYCARDIA:
-      case EkgType.BRADYCARDIA:
-      case EkgType.PVC:
+      case EkgType.SINUS_TACHYCARDIA:
+      case EkgType.SINUS_BRADYCARDIA:
+      case EkgType.PREMATURE_VENTRICULAR_CONTRACTION:
+      case EkgType.PREMATURE_ATRIAL_CONTRACTION:
+      case EkgType.PREMATURE_JUNCTIONAL_CONTRACTION:
         return theme.colors.secondary;
       default:
         return theme.colors.primary;
