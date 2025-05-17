@@ -129,15 +129,11 @@ const soundFiles: Record<string, any> = {
   'Infant/Strongcry.wav':          require('../../../assets/sounds/Infant/Strongcry.wav'),
   'Infant/Weakcry.wav':            require('../../../assets/sounds/Infant/Weakcry.wav'),
 
-<<<<<<< HEAD
-
-=======
-  
+  // Root files
   'drzwi.mp3': require('../../../assets/sounds/drzwi.mp3'),
   'kaszel.mp3':require('../../../assets/sounds/kaszel.mp3'),
   'Ok.wav':    require('../../../assets/sounds/Ok.wav'),
   'serce.mp3': require('../../../assets/sounds/serce.mp3')
->>>>>>> de22a143d345dfc6c6ede44fb71770a8f32b5ad0
 };
 
 
@@ -343,45 +339,6 @@ const StudentSessionScreen = () => {
  
   const soundInstances = useRef<Record<string, Audio.Sound>>({});
 
-<<<<<<< HEAD
-=======
-  Audio.setAudioModeAsync({
-    allowsRecordingIOS: false,
-    staysActiveInBackground: true, 
-    interruptionModeIOS: InterruptionModeIOS.DuckOthers,
-    playsInSilentModeIOS: true,
-    shouldDuckAndroid: true,
-    interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
-  });
-
-  let isMounted = true;
-  (async () => {
-    try {
-      const loadPromises = Object.entries(soundFiles).map(async ([name, module]) => {
-        try {
-          const { sound } = await Audio.Sound.createAsync(module);
-          soundObjects.current[name] = sound;
-          console.log(`Załadowano: ${name}`); 
-        } catch (error) {
-          console.error(`Błąd ładowania ${name}:`, error);
-        }
-      });
-
-      await Promise.all(loadPromises);
-      console.log("🔉 Wszystkie dźwięki załadowane");
-      setSoundsLoaded(true);
-    } catch (error) {
-      console.error("Błąd ładowania dźwięków:", error);
-    }
-  })();
-
-  return () => {
-    isMounted = false;
-    Object.values(soundObjects.current).forEach((s) => s.unloadAsync());
-    setSoundsLoaded(false);
-  };
-}, []);
->>>>>>> de22a143d345dfc6c6ede44fb71770a8f32b5ad0
 
 useEffect(() => {
   if (Platform.OS === "web" || !accessCode) return;
@@ -396,22 +353,7 @@ useEffect(() => {
   if (payload.command === "PLAY_QUEUE" && Array.isArray(payload.soundName)) {
     console.log('Starting sound queue:', JSON.stringify(payload.soundName));
     
-<<<<<<< HEAD
     for (const item of payload.soundName) {
-=======
-    if (payload.command === 'PLAY' && typeof payload.soundName === 'string') {
-      console.log('Dostępne dźwięki:', Object.keys(soundObjects.current)); 
-      const soundPath = payload.soundName.replace('.wav', ''); 
-      const snd = soundObjects.current[payload.soundName];
-      
-      if (!snd) {
-        console.error(`Nie znaleziono dźwięku: ${payload.soundName}`);
-        console.log('Zarejestrowane ścieżki:', Object.keys(soundObjects.current));
-        return;
-      }
-      
-      console.log(`Odtwarzanie: ${payload.soundName}`);
->>>>>>> de22a143d345dfc6c6ede44fb71770a8f32b5ad0
       try {
         if (item.delay && item.delay > 0) {
           console.log(`Waiting ${item.delay}ms before ${item.soundName}`);
