@@ -12,11 +12,11 @@ import {
   Card,
   Title,
   Paragraph,
-  useTheme,
-  IconButton,
+  useTheme,  IconButton,
 } from "react-native-paper";
 import Svg, { Path } from "react-native-svg";
 import { EkgType, EkgFactory, NoiseType } from "../../../../services/EkgFactory";
+import { EkgDataAdapter } from "../../../../services/EkgDataAdapter";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_WIDTH = SCREEN_WIDTH * 0.85;
@@ -209,7 +209,7 @@ const RhythmCard: React.FC<RhythmCardProps> = ({
 }) => {
   const [pathData, setPathData] = useState("");
   const svgWidth = CARD_WIDTH - 32;
-  const svgHeight = 150;
+  const svgHeight = 225; 
 
   const animatedStyle = React.useMemo(() => {
     const baseStyle = { width: CARD_WIDTH, marginHorizontal: CARD_SPACING / 2 };
@@ -221,24 +221,47 @@ const RhythmCard: React.FC<RhythmCardProps> = ({
     ];
     const scale = scrollX.interpolate({ inputRange, outputRange: [0.9, 1, 0.9], extrapolate: 'clamp' });
     return { ...baseStyle, transform: [{ scale }] };
-  }, [scrollX, index]);
-
-  useEffect(() => {
-    const bpm = EkgFactory.getBpmForType(type);
-    const baseline = svgHeight / 4;
-    const pointsCount = 500;
+  }, [scrollX, index]);  useEffect(() => {
+    
+    EkgDataAdapter.initialize();
+    
+    
+    const fixedBpm = 60;
+    
+    
+    const baseline = svgHeight / 2;
+    const pointsCount = 300; 
     let path = "";
+    
     for (let i = 0; i < pointsCount; i++) {
       const x = (i / pointsCount) * svgWidth;
-      const y = baseline + EkgFactory.generateEkgValue(x, type, bpm, NoiseType.NONE);
+      
+      
+      const ekgValue = EkgDataAdapter.getValueAtTime(type, x, fixedBpm, NoiseType.NONE);
+        
+      
+      let verticalScale = 0.6; 
+      
+      
+      if (type === EkgType.ASYSTOLE) {
+        
+        verticalScale = 0.15; 
+      } else if (type === EkgType.VENTRICULAR_FIBRILLATION || 
+                type === EkgType.ATRIAL_FIBRILLATION) {
+        
+        verticalScale = 0.9; 
+      }
+      
+      
+      const y = baseline + (ekgValue - 150) * verticalScale; 
       path += i === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`;
     }
     setPathData(path);
-  }, [type]);
-
+  }, [type, svgWidth, svgHeight]);
   const name = EkgFactory.getNameForType(type);
   const description = EkgFactory.getDescriptionForType(type);
-  const bpm = EkgFactory.getBpmForType(type);
+  
+  const fixedBpm = 60;
   const getSeverityColor = () => {
     switch (type) {
       case EkgType.VENTRICULAR_FIBRILLATION:
@@ -275,16 +298,19 @@ const RhythmCard: React.FC<RhythmCardProps> = ({
         >
           <Card.Content>
             <View style={styles.cardHeader}>
-              <View style={styles.titleContainer}>
-                <Title style={styles.cardTitle}>{name}</Title>
+              <View style={styles.titleContainer}>                <Title style={styles.cardTitle}>{name}</Title>
                 <View style={[styles.bpmBadge, { backgroundColor: getSeverityColor() }]}>  
-                  <Text style={styles.bpmText}>{bpm} uderzeń/min</Text>
+                  <Text style={styles.bpmText}>{fixedBpm} uderzeń/min</Text>
                 </View>
               </View>
-            </View>
-            <View style={styles.ekgPreviewContainer}>
+            </View>            <View style={styles.ekgPreviewContainer}>
               <Svg height={svgHeight} width={svgWidth}>
-                <Path d={pathData} stroke={getSeverityColor()} strokeWidth={2} transform={`translate(0, ${-svgHeight/2})`} fill="none" />
+                <Path 
+                  d={pathData} 
+                  stroke={getSeverityColor()} 
+                  strokeWidth={2.5} 
+                  fill="none" 
+                />
               </Svg>
             </View>
             <Paragraph style={styles.cardDescription}>{description}</Paragraph>
@@ -295,20 +321,26 @@ const RhythmCard: React.FC<RhythmCardProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  sliderContainer: { marginBottom: 16 },
+const styles = StyleSheet.create({  sliderContainer: { marginBottom: 16 },
   sliderTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 8, textAlign: 'center' },
   container: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   navigationButton: { margin: 0, padding: 0 },
   flatListContent: { paddingVertical: 16, paddingHorizontal: 8 },
-  cardTouchable: { flex: 1 },
-  cardContent: { elevation: 4, height: '100%' },
+  cardTouchable: { flex: 1 },  cardContent: { 
+    elevation: 4, 
+    height: 'auto', 
+    minHeight: 340,  
+    paddingBottom: 8 
+  },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  titleContainer: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' },
-  cardTitle: { fontSize: 16, fontWeight: 'bold', marginRight: 8 },
+  titleContainer: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' },  cardTitle: { fontSize: 16, fontWeight: 'bold', marginRight: 8 },
   bpmBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   bpmText: { color: 'white', fontSize: 12, fontWeight: 'bold' },
-  ekgPreviewContainer: { marginVertical: 8, borderRadius: 8, overflow: 'hidden' },
+  ekgPreviewContainer: { 
+    marginVertical: 8, 
+    borderRadius: 8, 
+    overflow: 'hidden'
+  },
   cardDescription: { fontSize: 12, opacity: 0.8, maxHeight: 100 },
   paginationContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 8, marginBottom: 16 },
   dot: { height: 8, borderRadius: 4, marginHorizontal: 4, width: 8 },

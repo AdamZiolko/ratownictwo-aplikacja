@@ -24,7 +24,7 @@ const SocketConnectionStatus: React.FC = () => {
       let wifiLockStatus = 'Nie dotyczy';
       let networkInfo = { isConnected: true, connectionType: 'nieznany' };
       
-      // Pobierz stan blokady WiFi i informacje o sieci w Androidzie
+      
       if (Platform.OS === 'android') {
         try {
           wifiLockStatus = await wifiKeepAliveService.getStatus();
@@ -34,7 +34,7 @@ const SocketConnectionStatus: React.FC = () => {
         }
       }
       
-      // Śledzenie udanych połączeń
+      
       let lastSuccessful = status.lastSuccessfulConnection;
       let attempts = status.connectionAttempts;
       
@@ -57,12 +57,12 @@ const SocketConnectionStatus: React.FC = () => {
       }));
     };
 
-    // Pierwsza kontrola
+    
     checkStatus();
 
-    // Ustaw interwał, aby okresowo sprawdzać stan połączenia
+    
     const interval = setInterval(checkStatus, 2000);
-      // Wyczyść interwał przy odmontowaniu komponentu
+      
     return () => clearInterval(interval);
   }, [refreshKey]);
   const reconnectSocket = async () => {
@@ -73,7 +73,7 @@ const SocketConnectionStatus: React.FC = () => {
     }, 500);
   };
   
-  // Uproszczona funkcja bez opcji zwalniania blokady
+  
   const enableWifiLock = async () => {
     if (Platform.OS !== 'android') return;
     await wifiKeepAliveService.enableWebSocketKeepAlive();

@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   viewDialog: {
     width: "80%",
     maxHeight: "80%",
-    alignSelf: "center", // dodane, aby wycentrować dialog
+    alignSelf: "center", 
   },
   mobileDialog: {
     width: SCREEN_WIDTH * 0.95,

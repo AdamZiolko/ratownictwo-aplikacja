@@ -110,7 +110,7 @@ const MedicalSliderInput = ({
       buttonCooldownRef.current = false;
     }, 300);
   };
-  const decimalPlaces = step % 1 !== 0 ? 1 : 0;  // Web-friendly inline slider for web platform
+  const decimalPlaces = step % 1 !== 0 ? 1 : 0;  
   if (isWeb) {
     return (
       <View style={styles.webSliderContainer}>
@@ -147,7 +147,7 @@ const MedicalSliderInput = ({
     );
   }
 
-  // Mobile implementation with modal dialog
+  
   return (
     <>
       <Button
@@ -483,7 +483,7 @@ const styles = StyleSheet.create({
   tickLabel: {
     fontSize: 12,
   },
-  // Web-specific styles
+  
   webSliderContainer: {
     marginBottom: 16,
     width: "100%",

@@ -30,7 +30,7 @@ import { networkMonitorService } from "@/services/NetworkMonitorService";
 import { wifiKeepAliveService } from "@/services/WifiKeepAliveService";
 
 const soundFiles: Record<string, any> = {
-  // Adult/Female
+  
   'Adult/Female/Breathing through contractions.wav': require('../../../assets/sounds/Adult/Female/Breathingthroughcontractions.wav'),
   'Adult/Female/Coughing.wav':              require('../../../assets/sounds/Adult/Female/Coughing.wav'),
   'Adult/Female/Distressed.wav':           require('../../../assets/sounds/Adult/Female/Distressed.wav'),
@@ -48,7 +48,7 @@ const soundFiles: Record<string, any> = {
   'Adult/Female/Vomiting.wav':             require('../../../assets/sounds/Adult/Female/Vomiting.wav'),
   'Adult/Female/Yes.wav':                  require('../../../assets/sounds/Adult/Female/Yes.wav'),
 
-   // Adult/Male/General
+   
   'Adult/Male/General/Coughing (long).wav': require('../../../assets/sounds/Adult/Male/Coughing(long).wav'),
   'Adult/Male/General/Coughing.wav':        require('../../../assets/sounds/Adult/Male/Coughing.wav'),
   'Adult/Male/General/Difficult breathing.wav': require('../../../assets/sounds/Adult/Male/Difficultbreathing.wav'),
@@ -66,7 +66,7 @@ const soundFiles: Record<string, any> = {
   'Adult/Male/General/Yes.wav':            require('../../../assets/sounds/Adult/Male/Yes.wav'),
 
 
-  // Speech
+  
   'Speech/Chest hurts.wav':     require('../../../assets/sounds/Speech/Chesthurts.wav'),
   'Speech/Doc I feel I could die.wav': require('../../../assets/sounds/Speech/DocIfeelIcoulddie.wav'),
   'Speech/Go away.wav':         require('../../../assets/sounds/Speech/Goaway.wav'),
@@ -91,7 +91,7 @@ const soundFiles: Record<string, any> = {
   'Speech/That helped.wav':     require('../../../assets/sounds/Speech/Thathelped.wav'),
   'Speech/Yes.wav':             require('../../../assets/sounds/Speech/Yes.wav'),
 
-  // Child
+  
   'Child/Coughing.wav': require('../../../assets/sounds/Child/Coughing.wav'),
   'Child/Hawk.wav':     require('../../../assets/sounds/Child/Hawk.wav'),
   'Child/Moaning.wav':  require('../../../assets/sounds/Child/Moaning.wav'),
@@ -103,7 +103,7 @@ const soundFiles: Record<string, any> = {
   'Child/Vomiting.wav': require('../../../assets/sounds/Child/Vomiting.wav'),
   'Child/Yes.wav':      require('../../../assets/sounds/Child/Yes.wav'),
 
-  // Geriatric
+  
   'Geriatric/Female/Coughing.wav': require('../../../assets/sounds/Geriatric/Female/Coughing.wav'),
   'Geriatric/Female/Moaning.wav':  require('../../../assets/sounds/Geriatric/Female/Moaning.wav'),
   'Geriatric/Female/No.wav':       require('../../../assets/sounds/Geriatric/Female/No.wav'),
@@ -118,7 +118,7 @@ const soundFiles: Record<string, any> = {
   'Geriatric/Male/Vomiting.wav':   require('../../../assets/sounds/Geriatric/Male/Vomiting.wav'),
   'Geriatric/Male/Yes.wav':        require('../../../assets/sounds/Geriatric/Male/Yes.wav'),
 
-  // Infant
+  
   'Infant/Content.wav':            require('../../../assets/sounds/Infant/Content.wav'),
   'Infant/Cough.wav':              require('../../../assets/sounds/Infant/Cough.wav'),
   'Infant/Grunt.wav':              require('../../../assets/sounds/Infant/Grunt.wav'),
@@ -129,7 +129,7 @@ const soundFiles: Record<string, any> = {
   'Infant/Strongcry.wav':          require('../../../assets/sounds/Infant/Strongcry.wav'),
   'Infant/Weakcry.wav':            require('../../../assets/sounds/Infant/Weakcry.wav'),
 
-  // Root files
+  
   'drzwi.mp3': require('../../../assets/sounds/drzwi.mp3'),
   'kaszel.mp3':require('../../../assets/sounds/kaszel.mp3'),
   'Ok.wav':    require('../../../assets/sounds/Ok.wav'),
@@ -341,7 +341,7 @@ const StudentSessionScreen = () => {
 
   Audio.setAudioModeAsync({
     allowsRecordingIOS: false,
-    staysActiveInBackground: true, // Zmiana na true
+    staysActiveInBackground: true, 
     interruptionModeIOS: InterruptionModeIOS.DuckOthers,
     playsInSilentModeIOS: true,
     shouldDuckAndroid: true,
@@ -355,7 +355,7 @@ const StudentSessionScreen = () => {
         try {
           const { sound } = await Audio.Sound.createAsync(module);
           soundObjects.current[name] = sound;
-          console.log(`Załadowano: ${name}`); // Logowanie załadowanych plików
+          console.log(`Załadowano: ${name}`); 
         } catch (error) {
           console.error(`Błąd ładowania ${name}:`, error);
         }
@@ -387,7 +387,7 @@ useEffect(() => {
     console.log("Received audio command:", payload);
     
     if (payload.command === 'PLAY' && typeof payload.soundName === 'string') {
-      console.log('Dostępne dźwięki:', Object.keys(soundObjects.current)); // Dodatkowe logowanie
+      console.log('Dostępne dźwięki:', Object.keys(soundObjects.current)); 
       const soundPath = payload.soundName.replace('.wav', ''); 
       const snd = soundObjects.current[payload.soundName];
       
@@ -1185,7 +1185,7 @@ useEffect(() => {
               </>
             )}
   
-            {/* Socket Debug Component */}
+            {}
             <View style={{ marginTop: 16, marginHorizontal: 8, marginBottom: 8 }}>
               <SocketConnectionStatus />
             </View>

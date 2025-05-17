@@ -56,7 +56,7 @@ const RoleSelectionScreen = () => {
 
       <Text style={styles.debugText}>{platformLabel}</Text>
       
-      {/* Theme Toggle Button */}
+      {}
       <FloatingThemeToggle position="topRight" size={24} />
     </View>
   );

@@ -8,7 +8,7 @@ export const ekgTypeToFilename: Record<EkgType, string> = {
   [EkgType.VENTRICULAR_FIBRILLATION]: 'migotanie-komor',
   [EkgType.VENTRICULAR_TACHYCARDIA]: 'czestoskurcz-komorowy',
   [EkgType.TORSADE_DE_POINTES]: 'torsade-de-pointes',
-  [EkgType.ASYSTOLE]: 'asystolia', // Need to create this file if doesn't exist
+  [EkgType.ASYSTOLE]: 'asystolia', 
   [EkgType.FIRST_DEGREE_AV_BLOCK]: 'blok-przedsionkowo-komorowy-1-stopnia',
   [EkgType.SECOND_DEGREE_AV_BLOCK]: 'blok-przedsionkowo-komorowy-2-stopnia',
   [EkgType.MOBITZ_TYPE_AV_BLOCK]: 'blok-przedsionkowo-komorowy-2-stopnia-typu-mobitza',
@@ -28,5 +28,5 @@ export const ekgTypeToFilename: Record<EkgType, string> = {
   [EkgType.SINUS_ARREST]: 'zahamowanie-zatokowe',
   [EkgType.VENTRICULAR_ESCAPE_BEAT]: 'zastepcze-pobudzenie-komorowe',
   [EkgType.JUNCTIONAL_ESCAPE_BEAT]: 'zastepcze-pobudzenie-wezlowe',
-  [EkgType.CUSTOM]: 'prawidłowy-rytm-zatokowy', // Default to normal rhythm for custom type
+  [EkgType.CUSTOM]: 'prawidłowy-rytm-zatokowy', 
 };

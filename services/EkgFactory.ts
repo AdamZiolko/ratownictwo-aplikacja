@@ -1,9 +1,4 @@
-/**
- * EkgFactory.ts - Updated to use JSON data from heart_beat_data directory instead of algorithmic generation
- * 
- * This class has been refactored to load EKG data from JSON files instead of generating it algorithmically.
- * The previous algorithmic implementations have been replaced by data-driven approach.
- */
+
 
 export const DEFAULT_BASELINE = 150;
 const DEFAULT_PHASE_SHIFT = 5;
@@ -76,24 +71,21 @@ export class EkgFactory {
   private static lastBaselineWander = 0;
   private static irregularityCache: { [key: string]: number } = {};
   private static pvcCounters: { [key: number]: number } = {};
-  /**
-   * Initialize the EKG factory and preload JSON data
-   * Call this method early in your application lifecycle
-   */
+  
   static async initialize(): Promise<void> {
     try {
-      // Import necessary modules
+      
       const { EkgJsonDataLoader } = require('./EkgJsonDataLoader');
       const { EkgDataAdapter } = require('./EkgDataAdapter');
       
-      // Initialize the data loader and adapter
+      
       await EkgJsonDataLoader.initialize();
       EkgDataAdapter.initialize();
       
       console.log('EkgFactory initialized with JSON data');
     } catch (e) {
       console.error('Failed to initialize EkgFactory with JSON data:', e);
-      throw e; // Re-throw to allow proper error handling
+      throw e; 
     }
   }
 
@@ -217,55 +209,47 @@ export class EkgFactory {
     }
   }
 
-  /**
-   * @deprecated Noise generation is now handled in EkgJsonDataLoader
-   */
+  
   static generateNoise(x: number, amplitude: number): number {
-    return 0; // No longer used
+    return 0; 
   }
 
-  /**
-   * @deprecated Baseline wander is now handled in EkgJsonDataLoader
-   */
+  
   static generateBaselineWander(x: number, amplitude: number): number {
-    return 0; // No longer used
+    return 0; 
   }
 
-  /**
-   * @deprecated Muscle artifact is now handled in EkgJsonDataLoader
-   */
+  
   static generateMuscleArtifact(probability: number, amplitude: number): number {
-    return 0; // No longer used
+    return 0; 
   }
 
-  /**
-   * @deprecated Irregularity generation is now handled through JSON data
-   */
+  
   static generateIrregularity(x: number, cycleCount: number, strength: number): number {
-    return 0; // No longer used
+    return 0; 
   }  static generateEkgValue(
     x: number,
     ekgType: EkgType = EkgType.NORMAL_SINUS_RHYTHM,
     bpm: number = DEFAULT_BPM,
     noiseType: NoiseType = NoiseType.NONE
   ): number {
-    // Use the EkgDataAdapter to get fresh data and values
+    
     try {
-      // Use the adapter for data access
+      
       const { EkgDataAdapter } = require('./EkgDataAdapter');
       
-      // Get the value directly from the adapter's static method
+      
       return EkgDataAdapter.getValueAtTime(ekgType, x, bpm, noiseType);
     } catch (e) {
       console.error('Error loading EKG data, falling back to default:', e);
       
-      // Generate a minimal pattern as fallback
+      
       if (ekgType === EkgType.ASYSTOLE) {
-        return 150; // Flat line
+        return 150; 
       } else if (ekgType === EkgType.VENTRICULAR_FIBRILLATION) {
-        return 150 + (Math.random() - 0.5) * 80; // Chaotic pattern
+        return 150 + (Math.random() - 0.5) * 80; 
       } else {
-        // Basic sine wave pattern
+        
         return 150 + Math.sin(x * 0.1) * 30;
       }
     }
@@ -277,24 +261,18 @@ export class EkgFactory {
     this.irregularityCache = {};
     this.pvcCounters = {};
     
-    // Also reset the EkgJsonDataLoader cache if available
+    
     try {
       const { EkgJsonDataLoader } = require('./EkgJsonDataLoader');
       EkgJsonDataLoader.resetCache();
     } catch (e) {
-      // Ignore if EkgJsonDataLoader is not available
+      
     }
   }
 
-  /**
-   * These EKG generation functions have been replaced by data from JSON files.
-   * The previous algorithmic implementations have been removed.
-   * 
-   * All EKG data is now loaded from the assets/heart_beat_data directory
-   * using the EkgJsonDataLoader class.
-   */
   
-  // Individual EKG type generation methods now use the JSON data approach
+  
+  
   static generateNormalSinusEkg(x: number, config: EkgConfig): number {
     return this.generateEkgValue(x, EkgType.NORMAL_SINUS_RHYTHM, config.bpm, config.noiseType);
   }
@@ -328,7 +306,7 @@ export class EkgFactory {
   }
 
   static generateHeartBlockEkg(x: number, config: EkgConfig): number {
-    // Determine the specific heart block type based on the configuration
+    
     switch(config.ekgType) {
       case EkgType.SECOND_DEGREE_AV_BLOCK:
         return this.generateEkgValue(x, EkgType.SECOND_DEGREE_AV_BLOCK, config.bpm, config.noiseType);
@@ -344,12 +322,7 @@ export class EkgFactory {
     return this.generateEkgValue(x, EkgType.PREMATURE_VENTRICULAR_CONTRACTION, config.bpm, config.noiseType);
   }
 
-  /**
-   * Method addNoiseToSignal has been replaced by functionality in EkgJsonDataLoader
-   * which applies noise directly to the EKG values from JSON files.
-   * 
-   * @deprecated This method is maintained for backward compatibility
-   */
+  
   private static addNoiseToSignal(
     x: number,
     y: number,
@@ -357,7 +330,7 @@ export class EkgFactory {
     baselineWanderAmplitude: number,
     muscleArtifactProbability: number
   ): number {
-    // Simply pass through the value as noise is now handled elsewhere
+    
     return y;
   }
 
@@ -366,7 +339,7 @@ export class EkgFactory {
       const { EkgJsonDataLoader } = require('./EkgJsonDataLoader');
       return EkgJsonDataLoader.getBpmForType(type);
     } catch (e) {
-      // Fallback to hardcoded values if the loader isn't available
+      
       switch (type) {
         case EkgType.NORMAL_SINUS_RHYTHM:
           return 72;
@@ -550,15 +523,13 @@ export class EkgFactory {
     }
   }
 
-  /**
-   * Get the list of available EKG types with data files
-   */
+  
   static getAvailableTypes(): EkgType[] {
     try {
       const { EkgJsonDataLoader } = require('./EkgJsonDataLoader');
       return EkgJsonDataLoader.getAvailableTypes();
     } catch (e) {
-      // Fallback to a small subset of types
+      
       return [
         EkgType.NORMAL_SINUS_RHYTHM,
         EkgType.SINUS_TACHYCARDIA,
@@ -566,35 +537,32 @@ export class EkgFactory {
         EkgType.ATRIAL_FIBRILLATION,
       ];
     }
-  }  /**
-   * Reset all caches and reload everything
-   * Call this when switching between EKG types to ensure clean data
-   */
+  }  
   static async resetAllCaches(): Promise<void> {
     console.log('Resetting all EKG caches...');
     
-    // Reset internal caches
+    
     this.noiseCache = {};
     this.lastBaselineWander = 0;
     this.irregularityCache = {};
     this.pvcCounters = {};
     
     try {
-      // Reset EkgJsonDataLoader caches
+      
       const { EkgJsonDataLoader } = require('./EkgJsonDataLoader');
       EkgJsonDataLoader.resetCache();
       
-      // Reset EkgDataAdapter cache - this is key to fixing our issue
+      
       const { EkgDataAdapter } = require('./EkgDataAdapter');
       EkgDataAdapter.resetCache();
       
-      // Force cache clearing on critical global objects
+      
       (global as any).EkgCacheObject = null;
       
-      // Re-initialize the data
+      
       await EkgJsonDataLoader.initialize();
       
-      // Log out current memory usage to help debug caching issues
+      
       console.log('All EKG caches have been reset successfully');
       console.log(`Memory cleanup timestamp: ${Date.now()}`);
     } catch (e) {
@@ -602,18 +570,15 @@ export class EkgFactory {
       throw e;
     }
   }
-  /**
-   * Force a refresh of the EKG charts when switching types
-   * Call this when changing to a different EKG type to ensure different patterns are displayed
-   */
+  
   static async refreshEkgDisplay(): Promise<void> {
     console.log('Forcing EKG display refresh...');
     
-    // Reset all caches first
+    
     await this.resetAllCaches();
     
     try {
-      // Call the initialization again to ensure fresh data is loaded
+      
       const { EkgJsonDataLoader } = require('./EkgJsonDataLoader');
       await EkgJsonDataLoader.initialize();
       console.log('EKG display refresh completed');

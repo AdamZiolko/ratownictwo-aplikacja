@@ -1,5 +1,4 @@
-import { EkgType, NoiseType, EkgFactory } from '@/services/EkgFactory';
-import React, { useEffect, useRef, useState, useLayoutEffect } from 'react';
+import React, { useEffect, useRef, useState, useLayoutEffect, useCallback } from 'react';
 import { View, StyleSheet, Platform } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import Svg, {
@@ -10,6 +9,9 @@ import Svg, {
   FeDropShadow,
   Text as SvgText,
 } from 'react-native-svg';
+import { EkgType, NoiseType, EkgFactory } from '../../services/EkgFactory';
+import { EkgDataAdapter } from '../../services/EkgDataAdapter';
+import { EkgJsonDataLoader } from '../../services/EkgJsonDataLoader';
 
 interface EkgDisplayProps {
   ekgType?: EkgType;
@@ -18,7 +20,9 @@ interface EkgDisplayProps {
   isRunning?: boolean;
 }
 
-const BASELINE = 180;
+
+const DEFAULT_MIDPOINT = 44.98086978240213;
+const BASELINE = 50;
 const FLUCTUATION_RANGE = 2;
 
 const EkgDisplay: React.FC<EkgDisplayProps> = ({
@@ -31,6 +35,8 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
   const [pathData, setPathData] = useState('');
   const [containerWidth, setContainerWidth] = useState(0);
   const [displayBpm, setDisplayBpm] = useState<number | undefined>(bpm);
+  
+  const [renderKey, setRenderKey] = useState(0);
 
   const xOffsetRef = useRef(0);
   const previousXRef = useRef(0);
@@ -40,91 +46,189 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
   const pathDataRef = useRef('');
   const containerRef = useRef<View>(null);
   const fluctuationTimerRef = useRef<NodeJS.Timeout>();
+  
+  const currentEkgType = useRef<EkgType | undefined>(ekgType);
 
-  // Ustawienia rozmiarów dla różnych platform
+  
   const SVG_HEIGHT = Platform.OS === 'web' ? 300 : 150;
   const VIEWBOX_HEIGHT = Platform.OS === 'web' ? 300 : 150;
   const BPM_FONT_SIZE = Platform.OS === 'web' ? 24 : 18;
-
+  
   useLayoutEffect(() => {
     containerRef.current?.measure((_, __, width) => {
       if (width > 0) setContainerWidth(width);
     });
-    if (ekgType !== undefined) {
-      // Force a complete reset when EKG type changes
-      EkgFactory.refreshEkgDisplay();
-      resetEkg();
-    }
-  }, [ekgType]);
-
-  const draw = () => {
-    if (!isRunning || containerWidth === 0) return;
-
-    xOffsetRef.current += 2;
-    const x = xOffsetRef.current;
-
-    if (x > containerWidth) {
+    
+    
+    if (ekgType !== undefined && ekgType !== currentEkgType.current) {
+      console.log(`EKG type changed from ${currentEkgType.current} to ${ekgType}`);
+      
+      cancelAnimationFrame(animationRef.current);
+      
+      
       xOffsetRef.current = 0;
       previousXRef.current = 0;
       previousYRef.current = BASELINE;
       isFirstPointRef.current = true;
       pathDataRef.current = '';
-      setPathData('');    } else {
-      // Periodically log the current EKG type for debugging
-      if (x % 500 === 0) {
-        console.log(`Drawing EKG type: ${ekgType}, BPM: ${bpm}`);
-      }
       
-      const raw = EkgFactory.generateEkgValue(x, ekgType, bpm, noiseType);
-      const ekgValue = VIEWBOX_HEIGHT - (raw * (VIEWBOX_HEIGHT / 250));
+      
+      EkgFactory.refreshEkgDisplay();
+      
+      
+      setRenderKey(prev => prev + 1);
+      currentEkgType.current = ekgType;
+    }
+  }, [ekgType]);
+  
+  
+  const drawFrame = useCallback(() => {
+    if (!isRunning || containerWidth === 0) return;
 
-      if (isFirstPointRef.current) {
-        const invertedBaseline = VIEWBOX_HEIGHT - (BASELINE * (VIEWBOX_HEIGHT / 300));
-        pathDataRef.current = `M 0 ${invertedBaseline} L ${x} ${ekgValue}`;
-        isFirstPointRef.current = false;
+    xOffsetRef.current += 2;
+    const x = xOffsetRef.current;
+    
+    
+    
+    let ekgValue;
+    try {
+      ekgValue = EkgDataAdapter.getValueAtTime(
+        ekgType || EkgType.NORMAL_SINUS_RHYTHM,
+        x,
+        bpm || 72,
+        noiseType || NoiseType.NONE
+      );
+        
+      
+      
+      const centeredValue = BASELINE + (ekgValue - DEFAULT_MIDPOINT);
+      
+      if (x > containerWidth) {
+        
+        xOffsetRef.current = 0;
+        previousXRef.current = 0;
+        previousYRef.current = BASELINE;
+        isFirstPointRef.current = true;
+        pathDataRef.current = '';
+        setPathData('');
       } else {
-        pathDataRef.current += ` L ${x} ${ekgValue}`;
+        
+        if (isFirstPointRef.current) {
+          pathDataRef.current = `M 0 ${centeredValue} L ${x} ${centeredValue}`;
+          isFirstPointRef.current = false;
+        } else {
+          pathDataRef.current += ` L ${x} ${centeredValue}`;
+        }
+        
+        previousXRef.current = x;
+        previousYRef.current = centeredValue;
+        setPathData(pathDataRef.current);
       }
-
-      previousXRef.current = x;
-      previousYRef.current = raw;
-      setPathData(pathDataRef.current);
+    } catch (error) {
+      console.error('Error drawing EKG:', error);
     }
 
-    animationRef.current = requestAnimationFrame(draw);
-  };
-  useEffect(() => {
-    // Force reset whenever key parameters change
-    EkgFactory.refreshEkgDisplay();
-    resetEkg();
     
-    // Console log that we're switching parameters
-    console.log(`EKG parameters changed: type=${ekgType}, bpm=${bpm}, noise=${noiseType}`);
-    
-    if (isRunning && containerWidth > 0) {
-      cancelAnimationFrame(animationRef.current);
-      animationRef.current = requestAnimationFrame(draw);
+    if (isRunning) {
+      animationRef.current = requestAnimationFrame(drawFrame);
     }
-  }, [bpm, noiseType, ekgType]);
+  }, [containerWidth, ekgType, bpm, noiseType, isRunning]);
+  
+  
+  const startAnimation = useCallback(() => {
+    
+    cancelAnimationFrame(animationRef.current);
+    console.log(`Starting EKG animation for type ${ekgType}`);
+    animationRef.current = requestAnimationFrame(drawFrame);
+  }, [drawFrame, ekgType]);
 
+  const stopAnimation = useCallback(() => {
+    cancelAnimationFrame(animationRef.current);
+    console.log('Stopping EKG animation');
+  }, []);
+
+  
   useEffect(() => {
+    
+    if (ekgType !== undefined && ekgType !== currentEkgType.current) {
+      console.log(`EKG type changed from ${currentEkgType.current} to ${ekgType}`);
+      
+      
+      stopAnimation();
+      
+      
+      xOffsetRef.current = 0;
+      previousXRef.current = 0;
+      previousYRef.current = BASELINE;
+      isFirstPointRef.current = true;
+      pathDataRef.current = '';
+      setPathData('');
+      
+      
+      EkgFactory.refreshEkgDisplay().then(() => {
+        console.log('EKG Factory refreshed successfully');
+        
+        
+        setRenderKey(prev => prev + 1);
+        
+        
+        if (isRunning && containerWidth > 0) {
+          setTimeout(() => startAnimation(), 100);
+        }
+      });
+      
+      
+      currentEkgType.current = ekgType;
+    }
+  }, [ekgType, stopAnimation, startAnimation, isRunning, containerWidth]);
+  
+  
+  useEffect(() => {
+    if (isRunning) {
+      
+      console.log(`BPM/Noise parameters changed: bpm=${bpm}, noise=${noiseType}`);
+      
+      
+      EkgFactory.resetNoiseCache();
+      
+      
+      
+    }
+  }, [bpm, noiseType, isRunning]);
+
+  
+  useEffect(() => {
+    let animationTimeout: NodeJS.Timeout;
+    
     if (isRunning && containerWidth > 0) {
-      animationRef.current = requestAnimationFrame(draw);
+      
+      
+      animationTimeout = setTimeout(() => {
+        console.log(`Starting EKG animation for type ${ekgType}`);
+        startAnimation();
+      }, 50);
     } else {
-      cancelAnimationFrame(animationRef.current);
+      stopAnimation();
     }
+    
+    
     return () => {
-      cancelAnimationFrame(animationRef.current);
+      stopAnimation();
+      if (animationTimeout) {
+        clearTimeout(animationTimeout);
+      }
     };
-  }, [isRunning, containerWidth]);
+  }, [isRunning, containerWidth, startAnimation, stopAnimation, ekgType]);
 
   useEffect(() => {
     EkgFactory.resetNoiseCache();
-  }, [noiseType]);  const resetEkg = () => {
-    // Cancel the animation frame
+  }, [noiseType]);
+  
+  const resetEkg = () => {
+    
     cancelAnimationFrame(animationRef.current);
     
-    // Reset all local state
+    
     xOffsetRef.current = 0;
     previousXRef.current = 0;
     previousYRef.current = BASELINE;
@@ -133,15 +237,12 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
     setPathData('');
     setDisplayBpm(bpm);
     
-    // Reset EKG factory caches
+    
     EkgFactory.resetNoiseCache();
     
-    // Reset all related services
+    
     try {
-      const { EkgDataAdapter } = require('@/services/EkgDataAdapter');
-      const { EkgJsonDataLoader } = require('@/services/EkgJsonDataLoader');
       
-      // Reset both data sources completely
       EkgDataAdapter.resetCache();
       EkgJsonDataLoader.resetCache();
       
@@ -150,16 +251,19 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
       console.error('Error during EKG reset:', e);
     }
     
-    // Force garbage collection of old values
+    
     setTimeout(() => {
       console.log('EKG Display reset complete');
-      // Start with a clean animation frame if running
+      
       if (isRunning && containerWidth > 0) {
-        animationRef.current = requestAnimationFrame(draw);
+        
+        setTimeout(() => {
+          animationRef.current = requestAnimationFrame(drawFrame);
+        }, 16); 
       }
-    }, 50); // Give a bit more time for cleanup
+    }, 50); 
   };
-
+  
   const generateFluctuation = (value?: number): number | undefined => {
     if (value == null) return undefined;
     const fluctPercent = (Math.random() - 0.5) * 2 * FLUCTUATION_RANGE;
@@ -187,9 +291,10 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
       }
     });
   };
-
+  
   return (
     <View
+      key={renderKey}
       style={[
         styles.container,
         Platform.OS !== 'web' && styles.mobileContainer
@@ -203,6 +308,47 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
         style={styles.svg}
         viewBox={`0 0 ${containerWidth} ${VIEWBOX_HEIGHT}`}
       >
+        {}
+        {containerWidth > 0 && (
+          <>
+            {}
+            {Array.from({ length: Math.ceil(VIEWBOX_HEIGHT / 50) + 1 }, (_, i) => (
+              <Path
+                key={`h-major-${i}`}
+                d={`M 0 ${i * 50} H ${containerWidth}`}
+                stroke={theme.dark ? "rgba(0, 255, 0, 0.2)" : "rgba(0, 136, 0, 0.15)"}
+                strokeWidth="1"
+              />
+            ))}
+            {Array.from({ length: Math.ceil(containerWidth / 50) + 1 }, (_, i) => (
+              <Path
+                key={`v-major-${i}`}
+                d={`M ${i * 50} 0 V ${VIEWBOX_HEIGHT}`}
+                stroke={theme.dark ? "rgba(0, 255, 0, 0.2)" : "rgba(0, 136, 0, 0.15)"}
+                strokeWidth="1"
+              />
+            ))}
+            
+            {}
+            {Platform.OS === 'web' && Array.from({ length: Math.ceil(VIEWBOX_HEIGHT / 10) + 1 }, (_, i) => (
+              <Path
+                key={`h-minor-${i}`}
+                d={`M 0 ${i * 10} H ${containerWidth}`}
+                stroke={theme.dark ? "rgba(0, 255, 0, 0.1)" : "rgba(0, 136, 0, 0.05)"}
+                strokeWidth="0.5"
+              />
+            ))}
+            {Platform.OS === 'web' && Array.from({ length: Math.ceil(containerWidth / 10) + 1 }, (_, i) => (
+              <Path
+                key={`v-minor-${i}`}
+                d={`M ${i * 10} 0 V ${VIEWBOX_HEIGHT}`}
+                stroke={theme.dark ? "rgba(0, 255, 0, 0.1)" : "rgba(0, 136, 0, 0.05)"}
+                strokeWidth="0.5"
+              />
+            ))}
+          </>
+        )}
+        
         {Platform.OS === 'web' && (
           <Defs>
             <Filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
@@ -211,11 +357,14 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
                 dx="0"
                 dy="0"
                 stdDeviation="2"
-                {...{ 'flood-color': theme.dark ? '#00ff00' : '#008800', 'flood-opacity': '0.8' }}
+                flood-color={theme.dark ? '#00ff00' : '#008800'}
+                flood-opacity="0.8"
               />
             </Filter>
           </Defs>
         )}
+        
+        {}
         {pathData && (
           <Path
             d={pathData}
@@ -270,6 +419,9 @@ const styles = StyleSheet.create({
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: Platform.OS === 'web' ? 'rgba(0, 0, 0, 0.03)' : 'transparent',
   },
   mobileContainer: {
     height: 180,
