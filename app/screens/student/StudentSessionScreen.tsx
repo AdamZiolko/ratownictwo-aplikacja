@@ -49,21 +49,21 @@ const soundFiles: Record<string, any> = {
   'Adult/Female/Yes.wav':                  require('../../../assets/sounds/Adult/Female/Yes.wav'),
 
    
-  'Adult/Male/General/Coughing (long).wav': require('../../../assets/sounds/Adult/Male/Coughing(long).wav'),
-  'Adult/Male/General/Coughing.wav':        require('../../../assets/sounds/Adult/Male/Coughing.wav'),
-  'Adult/Male/General/Difficult breathing.wav': require('../../../assets/sounds/Adult/Male/Difficultbreathing.wav'),
-  'Adult/Male/General/Hawk.wav':            require('../../../assets/sounds/Adult/Male/Hawk.wav'),
-  'Adult/Male/General/Moaning (long).wav':  require('../../../assets/sounds/Adult/Male/Moaning(long).wav'),
-  'Adult/Male/General/Moaning.wav':         require('../../../assets/sounds/Adult/Male/Moaning.wav'),
-  'Adult/Male/General/No.wav':              require('../../../assets/sounds/Adult/Male/No.wav'),
-  'Adult/Male/General/Ok.wav':              require('../../../assets/sounds/Adult/Male/Ok.wav'),
-  'Adult/Male/General/Screaming (type 2).wav': require('../../../assets/sounds/Adult/Male/Screaming(type2).wav'),
-  'Adult/Male/General/Screaming.wav':       require('../../../assets/sounds/Adult/Male/Screaming.wav'),
-  'Adult/Male/General/Sob breathing.wav':   require('../../../assets/sounds/Adult/Male/Sobbreathing.wav'),
-  'Adult/Male/General/Vomiting (type 2).wav': require('../../../assets/sounds/Adult/Male/Vomiting(type2).wav'),
-  'Adult/Male/General/Vomiting (type 3).wav': require('../../../assets/sounds/Adult/Male/Vomiting(type3).wav'),
-  'Adult/Male/General/Vomiting.wav':       require('../../../assets/sounds/Adult/Male/Vomiting.wav'),
-  'Adult/Male/General/Yes.wav':            require('../../../assets/sounds/Adult/Male/Yes.wav'),
+  'Adult/Male/Coughing (long).wav': require('../../../assets/sounds/Adult/Male/Coughing(long).wav'),
+  'Adult/Male/Coughing.wav':        require('../../../assets/sounds/Adult/Male/Coughing.wav'),
+  'Adult/Male/Difficult breathing.wav': require('../../../assets/sounds/Adult/Male/Difficultbreathing.wav'),
+  'Adult/Male//Hawk.wav':            require('../../../assets/sounds/Adult/Male/Hawk.wav'),
+  'Adult/Male/Moaning (long).wav':  require('../../../assets/sounds/Adult/Male/Moaning(long).wav'),
+  'Adult/Male/oaning.wav':         require('../../../assets/sounds/Adult/Male/Moaning.wav'),
+  'Adult/Male/No.wav':              require('../../../assets/sounds/Adult/Male/No.wav'),
+  'Adult/Male/Ok.wav':              require('../../../assets/sounds/Adult/Male/Ok.wav'),
+  'Adult/Male/Screaming (type 2).wav': require('../../../assets/sounds/Adult/Male/Screaming(type2).wav'),
+  'Adult/Male/Screaming.wav':       require('../../../assets/sounds/Adult/Male/Screaming.wav'),
+  'Adult/Male/Sob breathing.wav':   require('../../../assets/sounds/Adult/Male/Sobbreathing.wav'),
+  'Adult/Male/Vomiting (type 2).wav': require('../../../assets/sounds/Adult/Male/Vomiting(type2).wav'),
+  'Adult/Male/Vomiting (type 3).wav': require('../../../assets/sounds/Adult/Male/Vomiting(type3).wav'),
+  'Adult/Male/Vomiting.wav':       require('../../../assets/sounds/Adult/Male/Vomiting.wav'),
+  'Adult/Male/Yes.wav':            require('../../../assets/sounds/Adult/Male/Yes.wav'),
 
 
   
@@ -129,11 +129,7 @@ const soundFiles: Record<string, any> = {
   'Infant/Strongcry.wav':          require('../../../assets/sounds/Infant/Strongcry.wav'),
   'Infant/Weakcry.wav':            require('../../../assets/sounds/Infant/Weakcry.wav'),
 
-  // Root files
-  'drzwi.mp3': require('../../../assets/sounds/drzwi.mp3'),
-  'kaszel.mp3':require('../../../assets/sounds/kaszel.mp3'),
-  'Ok.wav':    require('../../../assets/sounds/Ok.wav'),
-  'serce.mp3': require('../../../assets/sounds/serce.mp3')
+
 };
 
 

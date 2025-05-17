@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, ScrollView } from 'react-native';
-import { Dialog, Button, RadioButton, Text, List, TextInput, IconButton, Checkbox } from 'react-native-paper';
+import { Dialog, Button, RadioButton, Text, List, TextInput, IconButton, Checkbox, useTheme } from 'react-native-paper';
 import { Session, SoundQueueItem } from '../types/types';
 
 interface SoundSelectionDialogProps {
@@ -134,6 +134,7 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
   onResumeAudioCommand,
   onStopAudioCommand,
 }) => {
+  const theme = useTheme();
   const [delay, setDelay] = useState('0');
   const [queue, setQueue] = useState<SoundQueueItem[]>([]);
   const [activeTab, setActiveTab] = useState<'single' | 'queue'>('single');
@@ -231,6 +232,132 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
 
   if (!session) return null;
 
+  const styles = StyleSheet.create({
+    dialog: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 8,
+      maxWidth: 500,
+      width: '90%',
+      alignSelf: 'center',
+    },
+    title: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      paddingHorizontal: 16,
+      color: theme.colors.onSurface,
+    },
+    tabsContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginTop: 10,
+      paddingHorizontal: 8,
+    },
+    tabButton: {
+      flex: 1,
+      marginHorizontal: 4,
+      paddingVertical: 8,
+      borderRadius: 4,
+    },
+    tabLabel: {
+      fontSize: 14,
+      fontWeight: '500',
+    },
+    content: {
+      paddingHorizontal: 16,
+    },
+    scrollContainer: {
+      maxHeight: 300,
+      marginVertical: 8,
+    },
+    sectionHeader: {
+      fontSize: 16,
+      fontWeight: '600',
+      marginTop: 12,
+      marginBottom: 8,
+      color: theme.colors.onSurface,
+    },
+    backButton: {
+      alignSelf: 'flex-start',
+      marginBottom: 8,
+    },
+    backLabel: {
+      color: theme.colors.primary,
+    },
+    checkboxRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginVertical: 12,
+    },
+    checkboxLabel: {
+      marginLeft: 8,
+      fontSize: 14,
+      color: theme.colors.onSurface,
+    },
+    playButton: {
+      marginTop: 12,
+      borderRadius: 4,
+      backgroundColor: theme.colors.primary,
+    },
+    controlIcons: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      marginTop: 16,
+      gap: 20,
+    },
+    controlIcon: {
+      marginHorizontal: 8,
+    },
+    input: {
+      marginVertical: 8,
+      backgroundColor: theme.colors.surface,
+    },
+    textInput: {
+      color: theme.colors.onSurface,
+    },
+    addButton: {
+      marginVertical: 12,
+      borderColor: theme.colors.primary,
+    },
+    queueList: {
+      maxHeight: 150,
+      marginTop: 8,
+      backgroundColor: theme.colors.surface,
+    },
+    queueItem: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.outline,
+    },
+    queueText: {
+      fontSize: 14,
+      color: theme.colors.onSurface,
+    },
+    queueIcon: {
+      margin: 0,
+    },
+    actions: {
+      padding: 16,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    cancelLabel: {
+      color: theme.colors.onSurface,
+    },
+    sendButton: {
+      borderRadius: 4,
+      backgroundColor: theme.colors.primary,
+    },
+    buttonLabel: {
+      color: theme.colors.onPrimary,
+      fontWeight: '500',
+    },
+  });
+
   return (
     <Dialog visible={visible} onDismiss={onDismiss} style={styles.dialog}>
       <Dialog.Title style={styles.title}>Odtwórz dźwięk</Dialog.Title>
@@ -283,6 +410,7 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
               <Checkbox
                 status={isLooping ? 'checked' : 'unchecked'}
                 onPress={() => setIsLooping(!isLooping)}
+                color={theme.colors.primary}
               />
               <Text style={styles.checkboxLabel}>Odtwarzaj w pętli</Text>
             </View>
@@ -314,6 +442,7 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
                     setIsPlaying(!isPlaying);
                   }}
                   style={styles.controlIcon}
+                  iconColor={theme.colors.primary}
                 />
                 <IconButton
                   icon="stop-circle"
@@ -324,6 +453,7 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
                     setIsLooping(false);
                   }}
                   style={styles.controlIcon}
+                  iconColor={theme.colors.primary}
                 />
               </View>
             )}
@@ -338,9 +468,14 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
               keyboardType="numeric"
               value={delay}
               onChangeText={setDelay}
-              style={styles.input}
-              outlineColor="#ddd"
-              activeOutlineColor="#6200ee"
+              style={[styles.input, styles.textInput]}
+              theme={{
+                colors: {
+                  text: theme.colors.onSurface,
+                  placeholder: theme.colors.onSurfaceVariant,
+                  primary: theme.colors.primary,
+                }
+              }}
             />
 
             <Button
@@ -348,7 +483,8 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
               onPress={addToQueue}
               disabled={!selectedSound}
               style={styles.addButton}
-              labelStyle={styles.buttonLabel}
+              labelStyle={{ color: theme.colors.primary }}
+              textColor={theme.colors.primary}
             >
               Dodaj do kolejki
             </Button>
@@ -365,6 +501,7 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
                     size={20}
                     onPress={() => removeFromQueue(index)}
                     style={styles.queueIcon}
+                    iconColor={theme.colors.error}
                   />
                 </View>
               ))}
@@ -395,125 +532,5 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
     </Dialog>
   );
 };
-
-const styles = StyleSheet.create({
-  dialog: {
-    borderRadius: 8,
-    maxWidth: 500,
-    width: '90%',
-    alignSelf: 'center',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    paddingHorizontal: 16,
-  },
-  tabsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 10,
-    paddingHorizontal: 8,
-  },
-  tabButton: {
-    flex: 1,
-    marginHorizontal: 4,
-    paddingVertical: 8,
-    borderRadius: 4,
-  },
-  tabLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  content: {
-    paddingHorizontal: 16,
-  },
-  scrollContainer: {
-    maxHeight: 300,
-    marginVertical: 8,
-  },
-  sectionHeader: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginTop: 12,
-    marginBottom: 8,
-    color: '#333',
-  },
-  backButton: {
-    alignSelf: 'flex-start',
-    marginBottom: 8,
-  },
-  backLabel: {
-    color: '#6200ee',
-  },
-  checkboxRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 12,
-  },
-  checkboxLabel: {
-    marginLeft: 8,
-    fontSize: 14,
-    color: '#444',
-  },
-  playButton: {
-    marginTop: 12,
-    borderRadius: 4,
-    backgroundColor: '#6200ee',
-  },
-  controlIcons: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 16,
-    gap: 20,
-  },
-  controlIcon: {
-    marginHorizontal: 8,
-  },
-  input: {
-    marginVertical: 8,
-    backgroundColor: '#fff',
-  },
-  addButton: {
-    marginVertical: 12,
-    borderColor: '#6200ee',
-  },
-  queueList: {
-    maxHeight: 150,
-    marginTop: 8,
-  },
-  queueItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  queueText: {
-    fontSize: 14,
-    color: '#444',
-  },
-  queueIcon: {
-    margin: 0,
-  },
-  actions: {
-    padding: 16,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  cancelLabel: {
-    color: '#666',
-  },
-  sendButton: {
-    borderRadius: 4,
-    backgroundColor: '#6200ee',
-  },
-  buttonLabel: {
-    color: '#fff',
-    fontWeight: '500',
-  },
-});
 
 export default SoundSelectionDialog;
