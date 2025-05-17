@@ -42,7 +42,7 @@ const CreateSessionDialog = ({
   const [formData, setFormData] = useState<FormData>(initialData || {
     name: "", 
     temperature: "36.6",
-    rhythmType: EkgType.NORMAL,
+    rhythmType: EkgType.NORMAL_SINUS_RHYTHM,
     beatsPerMinute: "72",
     noiseLevel: NoiseType.NONE,
     sessionCode: sessionService.generateSessionCode(), 

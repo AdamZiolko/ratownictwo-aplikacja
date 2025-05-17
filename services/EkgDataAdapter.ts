@@ -1,195 +1,185 @@
 
-import { heartbeat_data } from './ekg_data';
+
 import { EkgType, NoiseType } from './EkgFactory';
+import { EkgJsonDataLoader } from './EkgJsonDataLoader';
+
+
+interface EkgData {
+  timestamps: number[];
+  values: number[];
+  sampleRate: number;
+  midpoint?: number; 
+}
+
 
 export class EkgDataAdapter {
-  private static dataPoints = {
-    timestamps: heartbeat_data.timestamps,
-    amplitudes: heartbeat_data.amplitudes
-  };
-
+  private static instance: EkgDataAdapter;
+  private dataCache: Map<number, EkgData> = new Map();  private fallbackData: EkgData;
+  private static DEFAULT_MIDPOINT = 44.98086978240213; 
+  
+  constructor() {
+    
+    this.fallbackData = {
+      timestamps: Array.from({length: 100}, (_, i) => i),
+      values: Array.from({length: 100}, (_, i) => 150 + Math.sin(i * 0.2) * 50),
+      sampleRate: 100,
+      midpoint: EkgDataAdapter.DEFAULT_MIDPOINT
+    };
+  }
   
   
-  private static valueCache: { [key: string]: number } = {};
-
+  public static getInstance(): EkgDataAdapter {
+    if (!EkgDataAdapter.instance) {
+      EkgDataAdapter.instance = new EkgDataAdapter();
+    }
+    return EkgDataAdapter.instance;
+  }
   
-  public static getValue(x: number, ekgType: EkgType, bpm: number, noiseType: NoiseType): number {
-    
-    const bpmScaleFactor = this.getBpmScaleFactor(ekgType, bpm);
-    const scaledX = x * bpmScaleFactor;
-    
-    
-    const dataLength = this.dataPoints.timestamps.length;
-    const maxTime = this.dataPoints.timestamps[dataLength - 1];
-    const normalizedX = scaledX % maxTime;  
-    
-    
-    const cacheKey = `${normalizedX.toFixed(2)}_${ekgType}_${noiseType}`;
-    if (this.valueCache[cacheKey] !== undefined) {
-      return this.valueCache[cacheKey];
-    }
-    
-    
-    let indexLow = 0;
-    let indexHigh = this.dataPoints.timestamps.length - 1;
-    
-    
-    while (indexHigh - indexLow > 1) {
-      const mid = Math.floor((indexLow + indexHigh) / 2);
-      if (this.dataPoints.timestamps[mid] > normalizedX) {
-        indexHigh = mid;
-      } else {
-        indexLow = mid;
-      }
-    }
-    
-    
-    if (this.dataPoints.timestamps[indexLow] === normalizedX) {
-      const value = this.applyEkgTypeTransformation(
-        this.dataPoints.amplitudes[indexLow], 
-        ekgType,
-        noiseType
-      );
-      this.valueCache[cacheKey] = value;
-      return value;
-    }
-    
-    
-    const x0 = this.dataPoints.timestamps[indexLow];
-    const x1 = this.dataPoints.timestamps[indexHigh];
-    const y0 = this.dataPoints.amplitudes[indexLow];
-    const y1 = this.dataPoints.amplitudes[indexHigh];
-    
-    
-    const interpolatedValue = y0 + (normalizedX - x0) * (y1 - y0) / (x1 - x0);
-    
-    
-    const value = this.applyEkgTypeTransformation(interpolatedValue, ekgType, noiseType);
-    
-    this.valueCache[cacheKey] = value;
-    return value;
+  
+  public static initialize(): void {
+    EkgDataAdapter.getInstance();
+    console.log("EKG data adapter initialized");
+  }
+  
+  
+  public static getDataForType(ekgType: EkgType): EkgData {
+    return EkgDataAdapter.getInstance().getDataForType(ekgType);
+  }
+  
+  
+  public static getValueAtTime(ekgType: EkgType, time: number, bpm: number, noiseType: NoiseType): number {
+    return EkgDataAdapter.getInstance().getValueAtTime(ekgType, time, bpm, noiseType);
   }
   
   
   public static resetCache(): void {
-    this.valueCache = {};
+    return EkgDataAdapter.getInstance().resetCache();
   }
   
-    private static applyEkgTypeTransformation(value: number, ekgType: EkgType, noiseType: NoiseType): number {
-    
-    const BASELINE_VALUE = 110;
-    const AVERAGE_AMPLITUDE = 35; 
-
-    
-    let transformedValue = BASELINE_VALUE + (value - AVERAGE_AMPLITUDE);
-    
-    
-    switch (ekgType) {
-      case EkgType.NORMAL:
+  
+  public resetCache(): void {
+    this.dataCache.clear();
+  }
+  
+  
+  public getDataForType(ekgType: EkgType): EkgData {
+    try {
+      
+      if (this.dataCache.has(ekgType)) {
+        return this.dataCache.get(ekgType)!;
+      }
+      
+      
+      const rawData = EkgJsonDataLoader.loadEkgDataForAdapter(ekgType);
+      
+      if (!rawData) {
+        console.error(`EkgDataAdapter error: No data available for EKG type ${ekgType}`);
+        return this.fallbackData; 
+      }
         
-        break;
-      case EkgType.TACHYCARDIA:
-        transformedValue = BASELINE_VALUE + (transformedValue - BASELINE_VALUE) * 1.3;
-        break;
-      case EkgType.BRADYCARDIA:
-        transformedValue = BASELINE_VALUE + (transformedValue - BASELINE_VALUE) * 1.2;
-        break;
-      case EkgType.AFIB:
-        
-        transformedValue += (Math.sin(value * 0.3) * 5);
-        break;
-      case EkgType.VFIB:
-        
-        transformedValue = BASELINE_VALUE + (value - AVERAGE_AMPLITUDE) * 0.8 + (Math.sin(value * 0.7) * 10);
-        break;
-      case EkgType.VTACH:
-        transformedValue = BASELINE_VALUE + (transformedValue - BASELINE_VALUE) * 1.5;
-        break;
-      case EkgType.TORSADE:
-        
-        transformedValue += Math.sin(value * 0.01) * 20;
-        break;
-      case EkgType.ASYSTOLE:
-        
-        transformedValue = BASELINE_VALUE + (transformedValue - BASELINE_VALUE) * 0.05;
-        break;
-      case EkgType.HEART_BLOCK:
-        
-        if (Math.floor(value / 30) % 3 === 2) {
-          transformedValue = BASELINE_VALUE;
-        }
-        break;
-      case EkgType.PVC:
-        
-        if (Math.floor(value / 40) % 5 === 0) {
-          transformedValue += 20;
-        }
-        break;
+      const adaptedData: EkgData = {
+        timestamps: [...rawData.timestamps],
+        values: [...rawData.values],
+        sampleRate: rawData.sample_rate,
+        midpoint: rawData.midpoint || EkgDataAdapter.DEFAULT_MIDPOINT 
+      };
+      
+      
+      this.dataCache.set(ekgType, adaptedData);
+      return adaptedData;
+      
+    } catch (error) {
+      console.error(`EkgDataAdapter error:`, error);
+      
+      
+      return this.fallbackData;
     }
-    
-    
-    transformedValue += this.applyNoise(value, noiseType);
-    
-    return transformedValue;
+  }
+  
+    public getValueAtTime(ekgType: EkgType, time: number, bpm: number, noiseType: NoiseType): number {
+    try {
+      const ekgData = this.getDataForType(ekgType);
+        
+      const defaultBpm = ekgType === EkgType.ASYSTOLE ? 1 : 72;
+      
+      const bpmScale = Math.max(1, bpm) / defaultBpm;
+      const adjustedTime = time * bpmScale;
+      
+      
+      const maxTime = ekgData.timestamps[ekgData.timestamps.length - 1];
+      const normalizedTime = adjustedTime % maxTime;
+      
+      
+      let lowIndex = 0;
+      let highIndex = ekgData.timestamps.length - 1;
+      
+      
+      while (highIndex - lowIndex > 1) {
+        const midIndex = Math.floor((lowIndex + highIndex) / 2);
+        if (ekgData.timestamps[midIndex] > normalizedTime) {
+          highIndex = midIndex;
+        } else {
+          lowIndex = midIndex;
+        }
+      }
+      
+      
+      if (Math.abs(ekgData.timestamps[lowIndex] - normalizedTime) < 0.0001) {
+        return this.applyNoise(ekgData.values[lowIndex], noiseType);
+      }      
+      const t1 = ekgData.timestamps[lowIndex];
+      const t2 = ekgData.timestamps[highIndex];
+      const v1 = ekgData.values[lowIndex];
+      const v2 = ekgData.values[highIndex];
+      
+      const factor = (normalizedTime - t1) / (t2 - t1);
+      let interpolatedValue = v1 + factor * (v2 - v1);
+      
+      
+      if (ekgData.midpoint) {
+        
+        
+        const baseline = 150; 
+        const deviation = interpolatedValue - ekgData.midpoint;
+        interpolatedValue = baseline + deviation;
+      }
+      
+      
+      return this.applyNoise(interpolatedValue, noiseType);
+      
+      
+    } catch (error) {
+      console.error(`Error getting EKG value at time ${time}:`, error);
+      return 150; 
+    }
   }
   
   
-  private static applyNoise(value: number, noiseType: NoiseType): number {
+  private applyNoise(value: number, noiseType: NoiseType): number {
+    let noiseLevel = 0;
+    let baselineWander = 0;
+    
     switch (noiseType) {
-      case NoiseType.NONE:
-        return 0;
       case NoiseType.MILD:
-        return (Math.random() - 0.5) * 3;
+        noiseLevel = 1.0;
+        baselineWander = 3.0;
+        break;
       case NoiseType.MODERATE:
-        return (Math.random() - 0.5) * 8 + Math.sin(value * 0.1) * 3;
+        noiseLevel = 2.5;
+        baselineWander = 8.0;
+        break;
       case NoiseType.SEVERE:
-        return (Math.random() - 0.5) * 15 + Math.sin(value * 0.2) * 5;
+        noiseLevel = 5.0;
+        baselineWander = 15.0;
+        break;
+      case NoiseType.NONE:
       default:
-        return 0;
-    }
-  }
-  
-  
-  private static getBpmScaleFactor(ekgType: EkgType, userBpm: number): number {
-    
-    const dataBaseBpm = 72;
-    
-    
-    let typeBpm = dataBaseBpm;
-    switch (ekgType) {
-      case EkgType.TACHYCARDIA:
-        typeBpm = 120;
-        break;
-      case EkgType.BRADYCARDIA:
-        typeBpm = 45;
-        break;
-      case EkgType.AFIB:
-        typeBpm = 110;
-        break;
-      case EkgType.VFIB:
-        typeBpm = 300;
-        break;
-      case EkgType.VTACH:
-        typeBpm = 180;
-        break;
-      case EkgType.TORSADE:
-        typeBpm = 200;
-        break;
-      case EkgType.ASYSTOLE:
-        typeBpm = 0.1;  
-        break;
-      case EkgType.HEART_BLOCK:
-        typeBpm = 40;
-        break;
-      case EkgType.PVC:
-        typeBpm = 70;
-        break;
+        return value;
     }
     
+    const noise = (Math.random() * 2 - 1) * noiseLevel;
+    const wander = Math.sin(Date.now() * 0.001) * baselineWander;
     
-    const effectiveBpm = userBpm || typeBpm;
-    
-    
-    return effectiveBpm / dataBaseBpm;
+    return value + noise + wander;
   }
 }

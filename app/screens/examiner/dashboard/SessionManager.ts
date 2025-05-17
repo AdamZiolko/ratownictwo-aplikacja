@@ -35,13 +35,12 @@ export const useSessionManager = (user: any) => {
       }
     },
   };
-  
-  const [formData, setFormData] = useState<FormData>({
+    const [formData, setFormData] = useState<FormData>({
     name: "",
     temperature: "36.6",
-    rhythmType: 0, // EkgType.NORMAL
+    rhythmType: 0, 
     beatsPerMinute: "72",
-    noiseLevel: 0, // NoiseType.NONE
+    noiseLevel: 0, 
     sessionCode: "",
     isActive: true,
     bp: "120/80",
@@ -185,7 +184,7 @@ export const useSessionManager = (user: any) => {
     }
   };
 
-  // Session CRUD operations
+  
   const handleCreateSession = async (data: FormData) => {
     try {
       const newSession = {
@@ -262,7 +261,7 @@ export const useSessionManager = (user: any) => {
     }
   };
 
-  // Preset operations
+  
   const handleSavePreset = async (name: string) => {
     if (!name.trim()) {
       showSnackbar("Podaj nazwę presetu", "error");
@@ -300,7 +299,7 @@ export const useSessionManager = (user: any) => {
     }
   };
 
-  // Audio commands
+  
   const handleSendAudioCommand = (loop?: boolean) => {
     if (!currentSession || !selectedSound) return false;
   
@@ -356,7 +355,7 @@ export const useSessionManager = (user: any) => {
     return true;
   };
 
-  // UI helpers  
+  
   const showSnackbar = (
     message: string,
     type: "success" | "error" = "success"

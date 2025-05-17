@@ -26,7 +26,7 @@ import {
 import { router } from "expo-router";
 import { useAuth } from "@/contexts/AuthContext";
 
-// Import refactored components
+
 import {
   StatItem,
   getRhythmTypeName,
@@ -34,7 +34,7 @@ import {
 } from "./components/DashboardComponents";
 import { useSessionManager } from "./SessionManager";
 
-// Import dialogs
+
 import CreateSessionDialog from "../modals/CreateSessionDialog";
 import EditSessionDialog from "../modals/EditSessionDialog";
 import ViewSessionDialog from "../modals/ViewSessionDialog";
@@ -51,7 +51,7 @@ const ExaminerDashboardScreen = () => {
   const scrollY = useRef(new Animated.Value(0)).current;
   const [headerVisible, setHeaderVisible] = useState(true);
 
-  // Dialog visibility states
+  
   const [createDialogVisible, setCreateDialogVisible] = useState(false);
   const [editDialogVisible, setEditDialogVisible] = useState(false);
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
@@ -60,11 +60,11 @@ const ExaminerDashboardScreen = () => {
   const [studentsDialogVisible, setStudentsDialogVisible] = useState(false);
   const [savePresetDialogVisible, setSavePresetDialogVisible] = useState(false);
   const [loadPresetDialogVisible, setLoadPresetDialogVisible] = useState(false);
-  // Removed menu state as logout is now a direct button
+  
 
   const dashboardStyles = createDashboardStyles(theme);
 
-  // Use the session manager hook
+  
   const {
     sessions,
     loading,
@@ -94,7 +94,7 @@ const ExaminerDashboardScreen = () => {
     handleSendQueue,
   } = useSessionManager(user);
 
-  // Dialog management
+  
   const openCreateDialog = () => {
     setCreateDialogVisible(true);
   };
@@ -150,7 +150,7 @@ const ExaminerDashboardScreen = () => {
           title="Panel Egzaminatora"
           subtitle={user ? `Zalogowany jako: ${user.username}` : ""}
         />
-      {/* Direct logout button */}
+      {}
       <Appbar.Action
         icon="logout"
         onPress={handleLogout}
@@ -158,10 +158,10 @@ const ExaminerDashboardScreen = () => {
       </Appbar.Header>
 
       <View style={dashboardStyles.contentContainer}>
-        {/* Stats Header for Android */}
+        {}
 
 
-        {/* Stats Header for other platforms */}
+        {}
         {Platform.OS !== "android" && (
           <Card
             style={{
@@ -217,7 +217,7 @@ const ExaminerDashboardScreen = () => {
               </View>
             ) : (
               <>
-                {/* Desktop View: render same mobile cards */}
+                {}
                 <View>
                   {sessions?.map((session) => (
                     <Card
@@ -301,7 +301,7 @@ const ExaminerDashboardScreen = () => {
         )}
       </View>
       <Portal>
-        {/* Dialog components */}
+        {}
         <CreateSessionDialog
           visible={createDialogVisible}
           onDismiss={() => setCreateDialogVisible(false)}

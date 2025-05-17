@@ -1,8 +1,8 @@
-// filepath: c:\r\app\screens\examiner\dashboard\DashboardStyles.ts
+
 import { StyleSheet, Platform, Dimensions } from "react-native";
 import { Surface, MD3Theme } from "react-native-paper";
 
-// Get screen dimensions for responsive design
+
 const { width } = Dimensions.get('window');
 const isSmallScreen = width < 380;
 
@@ -223,7 +223,7 @@ export const createDashboardStyles = (theme: MD3Theme) => StyleSheet.create({
             android: undefined,
             ios: undefined,
         }),
-    },    // Mobile card styles
+    },    
     mobileCard: {
         marginBottom: 12, 
         backgroundColor: theme.colors.surface,

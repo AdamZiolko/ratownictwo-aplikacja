@@ -35,7 +35,7 @@ class SocketService {
     if (!this.socket || this.socket.disconnected) {
       console.log('Connecting to socket server at:', WS_URL);
       
-      // For Android: Enable WiFi keep-alive to prevent disconnect when screen is off
+      
       if (Platform.OS === 'android') {
         try {
           console.log('Enabling WebSocket keep-alive for Android');
@@ -45,7 +45,7 @@ class SocketService {
         }
       }
       
-      // Try to use websocket transport first, fallback to polling if needed
+      
       const socketOptions = {
         path: '/socket.io',
         transports: Platform.OS === 'android' ? ['polling', 'websocket'] : ['websocket', 'polling'],
@@ -59,7 +59,7 @@ class SocketService {
         forceNew: true,
       };
       
-      // Add Android-specific options
+      
       if (Platform.OS === 'android') {
         Object.assign(socketOptions, {
           pingTimeout: 30000,
@@ -72,7 +72,7 @@ class SocketService {
       } catch (error) {
         console.error('Failed to initialize socket:', error);
         
-        // Try alternative connection (http polling as a last resort)
+        
         console.log('Trying alternative connection method...');
         const altOptions = {
           ...socketOptions,
@@ -96,7 +96,7 @@ class SocketService {
     });    this.socket.on('connect_error', (error) => {
       console.error('🔴 Socket connection error:', error.message);
       
-      // If we're on Android, try to use polling as a fallback
+      
       if (Platform.OS === 'android') {
         console.log('⚠️ WebSocket connection failed on Android, will try polling');
         this.reconnectWithPolling();
@@ -169,7 +169,7 @@ class SocketService {
 
   on<T = any>(eventName: string, callback: (data: T) => void): () => void {
     if (!this.socket || !this.socket.connected) {
-      this.connect(); // We'll handle this differently, keeping it synchronous
+      this.connect(); 
     }
 
     console.log(`Listening for event: ${eventName}`);
@@ -377,9 +377,7 @@ class SocketService {
     this.socket.off('examiner-subscribe-error');
   }
 
-  /**
-   * Force reconnection with polling transport (fallback for Android when WebSockets fail)
-   */
+  
   private async reconnectWithPolling(): Promise<void> {
     console.log('🔄 Reconnecting with polling transport...');
     
@@ -412,9 +410,7 @@ class SocketService {
     }
   }
 
-  /**
-   * Safely emit an event to the socket server with error handling
-   */
+  
   safeEmit(eventName: string, data: any): void {
     if (!this.socket) {
       console.warn(`Cannot emit ${eventName}, socket not initialized`);
@@ -428,10 +424,7 @@ class SocketService {
     }
   }
 
-  /**
-   * Gets the current connection status of the socket
-   * @returns An object with connection status information
-   */
+  
   getConnectionStatus(): {connected: boolean; id: string | null; url: string} {
     return {
       connected: this.socket?.connected || false,

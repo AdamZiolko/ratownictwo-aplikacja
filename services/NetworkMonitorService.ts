@@ -1,7 +1,7 @@
 import { NativeModules, Platform, NativeEventEmitter } from 'react-native';
 import { socketService } from './SocketService';
 
-// Define interface for the native module
+
 interface NetworkUtilsInterface {
   getNetworkInfo(): Promise<{
     isConnected: boolean;
@@ -11,7 +11,7 @@ interface NetworkUtilsInterface {
   stopNetworkMonitoring(): void;
 }
 
-// Get the native module or create a mock implementation for non-Android platforms
+
 const NativeNetworkUtils: NetworkUtilsInterface = Platform.OS === 'android'
   ? (NativeModules.NetworkUtils || {
       getNetworkInfo: async () => {
@@ -45,10 +45,7 @@ class NetworkMonitorService {
     }
   }
 
-  /**
-   * Start monitoring network connectivity changes
-   * This is particularly important for WebSockets to reconnect when network changes
-   */
+  
   startMonitoring() {
     if (Platform.OS !== 'android') {
       console.log('Network monitoring is only implemented for Android');
@@ -56,15 +53,15 @@ class NetworkMonitorService {
     }
 
     try {
-      // Start the native module monitoring
+      
       NativeNetworkUtils.startNetworkMonitoring();
       
-      // Add listener for network changes
+      
       const subscription = this.eventEmitter?.addListener('networkChanged', async (event) => {
         console.log('Network changed:', event);
         
         if (event.isConnected) {
-          // Network is available, try to reconnect WebSocket if needed
+          
           try {
             const status = socketService.getConnectionStatus();
             if (!status.connected) {
@@ -89,18 +86,16 @@ class NetworkMonitorService {
     }
   }
 
-  /**
-   * Stop monitoring network connectivity changes
-   */
+  
   stopMonitoring() {
     if (Platform.OS !== 'android') return;
     
     try {
-      // Remove all listeners
+      
       this.listeners.forEach(remove => remove());
       this.listeners = [];
       
-      // Stop the native module monitoring
+      
       NativeNetworkUtils.stopNetworkMonitoring();
       
       console.log('Network monitoring stopped');
@@ -109,9 +104,7 @@ class NetworkMonitorService {
     }
   }
 
-  /**
-   * Get current network connectivity status
-   */
+  
   async getNetworkInfo(): Promise<{
     isConnected: boolean;
     connectionType: string;
@@ -125,5 +118,5 @@ class NetworkMonitorService {
   }
 }
 
-// Export a singleton instance
+
 export const networkMonitorService = new NetworkMonitorService();

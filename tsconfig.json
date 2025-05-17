@@ -4,6 +4,8 @@
     "skipLibCheck": true,
     "jsx": "react",
     "strict": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
     "paths": {
       "@/*": [
         "./*"
