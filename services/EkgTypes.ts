@@ -18,6 +18,7 @@ export interface EkgTimeSeriesData {
   values: number[];
   bpm: number;
   noiseType: NoiseType;
+  xOffset?: number; // Offset for the x-axis (positive number shifts left)
 }
 
 
@@ -30,6 +31,7 @@ export interface EkgRenderConfig {
   timeScale: number;
   amplitudeScale: number;
   showGrid: boolean;
+  xOffset?: number; // Offset for the x-axis (positive number shifts left)
 }
 
 

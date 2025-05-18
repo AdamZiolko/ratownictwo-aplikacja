@@ -1,7 +1,7 @@
-
-
 export const DEFAULT_BASELINE = 150;
 const DEFAULT_PHASE_SHIFT = 5;
+// Default X-axis offset for EKG rendering (positive value shifts left)
+export var DEFAULT_X_OFFSET = 5;
 
 const DEFAULT_BPM = 72;
 const MIN_BPM = 30;
@@ -59,6 +59,7 @@ export interface EkgConfig {
   noiseAmplitude: number;
   baselineWanderAmplitude: number;
   muscleArtifactProbability: number;
+  xOffset?: number; // Offset for the x-axis (positive number shifts left)
 
   amplitude?: number;
   irregularity?: number;
@@ -140,17 +141,16 @@ export class EkgFactory {
     noiseType: NoiseType = NoiseType.NONE
   ): EkgConfig {
     const noiseConfig = this.getNoiseConfig(noiseType);
-    const safeBpm = Math.max(MIN_BPM, Math.min(MAX_BPM, bpm));
-
-    const baseConfig = {
+    const safeBpm = Math.max(MIN_BPM, Math.min(MAX_BPM, bpm));    const baseConfig = {
       baseline: DEFAULT_BASELINE,
       bpm: safeBpm,
       period: this.bpmToPeriod(safeBpm),
       phaseShift: DEFAULT_PHASE_SHIFT,
       noiseType,
       ekgType,
+      xOffset: DEFAULT_X_OFFSET, // Adding the default x offset
       ...noiseConfig,
-    };    
+    };
     
     switch (ekgType) {
       case EkgType.SINUS_TACHYCARDIA:
@@ -231,14 +231,14 @@ export class EkgFactory {
     x: number,
     ekgType: EkgType = EkgType.NORMAL_SINUS_RHYTHM,
     bpm: number = DEFAULT_BPM,
-    noiseType: NoiseType = NoiseType.NONE
+    noiseType: NoiseType = NoiseType.NONE,
+    xOffset: number = DEFAULT_X_OFFSET
   ): number {
     
     try {
+        const { EkgDataAdapter } = require('./EkgDataAdapter');
       
-      const { EkgDataAdapter } = require('./EkgDataAdapter');
-      
-      
+      // Pass the current x value with the offset to the data adapter
       return EkgDataAdapter.getValueAtTime(ekgType, x, bpm, noiseType);
     } catch (e) {
       console.error('Error loading EKG data, falling back to default:', e);
@@ -254,6 +254,21 @@ export class EkgFactory {
       }
     }
   }
+
+  /**
+   * Get EKG value with applied x-offset
+   * This is a convenience method that applies the x-offset automatically
+   */
+  static getEkgValueWithOffset(
+    x: number,
+    ekgType: EkgType = EkgType.NORMAL_SINUS_RHYTHM,
+    bpm: number = DEFAULT_BPM,
+    noiseType: NoiseType = NoiseType.NONE,
+    xOffset: number = DEFAULT_X_OFFSET
+  ): number {
+    return this.generateEkgValue(x, ekgType, bpm, noiseType, xOffset);
+  }
+
   
   static resetNoiseCache(): void {
     this.noiseCache = {};
@@ -272,54 +287,51 @@ export class EkgFactory {
 
   
   
-  
-  static generateNormalSinusEkg(x: number, config: EkgConfig): number {
-    return this.generateEkgValue(x, EkgType.NORMAL_SINUS_RHYTHM, config.bpm, config.noiseType);
+    static generateNormalSinusEkg(x: number, config: EkgConfig): number {
+    return this.generateEkgValue(x, EkgType.NORMAL_SINUS_RHYTHM, config.bpm, config.noiseType, config.xOffset);
   }
 
   static generateTachycardiaEkg(x: number, config: EkgConfig): number {
-    return this.generateEkgValue(x, EkgType.SINUS_TACHYCARDIA, config.bpm, config.noiseType);
+    return this.generateEkgValue(x, EkgType.SINUS_TACHYCARDIA, config.bpm, config.noiseType, config.xOffset);
   }
 
   static generateBradycardiaEkg(x: number, config: EkgConfig): number {
-    return this.generateEkgValue(x, EkgType.SINUS_BRADYCARDIA, config.bpm, config.noiseType);
+    return this.generateEkgValue(x, EkgType.SINUS_BRADYCARDIA, config.bpm, config.noiseType, config.xOffset);
   }
 
   static generateAFibEkg(x: number, config: EkgConfig): number {
-    return this.generateEkgValue(x, EkgType.ATRIAL_FIBRILLATION, config.bpm, config.noiseType);
+    return this.generateEkgValue(x, EkgType.ATRIAL_FIBRILLATION, config.bpm, config.noiseType, config.xOffset);
   }
 
   static generateVFibEkg(x: number, config: EkgConfig): number {
-    return this.generateEkgValue(x, EkgType.VENTRICULAR_FIBRILLATION, config.bpm, config.noiseType);
+    return this.generateEkgValue(x, EkgType.VENTRICULAR_FIBRILLATION, config.bpm, config.noiseType, config.xOffset);
   }
 
   static generateVTachEkg(x: number, config: EkgConfig): number {
-    return this.generateEkgValue(x, EkgType.VENTRICULAR_TACHYCARDIA, config.bpm, config.noiseType);
+    return this.generateEkgValue(x, EkgType.VENTRICULAR_TACHYCARDIA, config.bpm, config.noiseType, config.xOffset);
   }
-
   static generateTorsadeEkg(x: number, config: EkgConfig): number {
-    return this.generateEkgValue(x, EkgType.TORSADE_DE_POINTES, config.bpm, config.noiseType);
+    return this.generateEkgValue(x, EkgType.TORSADE_DE_POINTES, config.bpm, config.noiseType, config.xOffset);
   }
 
   static generateAsystoleEkg(x: number, config: EkgConfig): number {
-    return this.generateEkgValue(x, EkgType.ASYSTOLE, config.bpm, config.noiseType);
+    return this.generateEkgValue(x, EkgType.ASYSTOLE, config.bpm, config.noiseType, config.xOffset);
   }
 
   static generateHeartBlockEkg(x: number, config: EkgConfig): number {
     
     switch(config.ekgType) {
       case EkgType.SECOND_DEGREE_AV_BLOCK:
-        return this.generateEkgValue(x, EkgType.SECOND_DEGREE_AV_BLOCK, config.bpm, config.noiseType);
+        return this.generateEkgValue(x, EkgType.SECOND_DEGREE_AV_BLOCK, config.bpm, config.noiseType, config.xOffset);
       case EkgType.MOBITZ_TYPE_AV_BLOCK:
-        return this.generateEkgValue(x, EkgType.MOBITZ_TYPE_AV_BLOCK, config.bpm, config.noiseType);
+        return this.generateEkgValue(x, EkgType.MOBITZ_TYPE_AV_BLOCK, config.bpm, config.noiseType, config.xOffset);
       case EkgType.FIRST_DEGREE_AV_BLOCK:
       default:
-        return this.generateEkgValue(x, EkgType.FIRST_DEGREE_AV_BLOCK, config.bpm, config.noiseType);
+        return this.generateEkgValue(x, EkgType.FIRST_DEGREE_AV_BLOCK, config.bpm, config.noiseType, config.xOffset);
     }
   }
-
   static generatePVCEkg(x: number, config: EkgConfig): number {
-    return this.generateEkgValue(x, EkgType.PREMATURE_VENTRICULAR_CONTRACTION, config.bpm, config.noiseType);
+    return this.generateEkgValue(x, EkgType.PREMATURE_VENTRICULAR_CONTRACTION, config.bpm, config.noiseType, config.xOffset);
   }
 
   
@@ -586,5 +598,14 @@ export class EkgFactory {
       console.error('Error refreshing EKG display:', e);
       throw e;
     }
+  }
+
+  /**
+   * Set a custom x-offset for EKG rendering
+   * @param offset The offset value to set (positive shifts left)
+   * @returns The updated default offset value
+   */
+  static setDefaultXOffset(offset: number): number {
+    return (DEFAULT_X_OFFSET = offset);
   }
 }

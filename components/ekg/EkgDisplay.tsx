@@ -391,6 +391,7 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
             fontSize={BPM_FONT_SIZE}
             fontWeight="bold"
             textAnchor="end"
+            fontFamily={theme.fonts.labelLarge.fontFamily}
           >
             {displayBpm} BPM
           </SvgText>
@@ -398,6 +399,7 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
       </Svg>
       {displayBpm != null && Platform.OS !== 'web' && (
         <Text 
+          variant="labelLarge"
           style={[
             styles.bpmText,
             styles.mobileBpmText,
@@ -433,14 +435,12 @@ const styles = StyleSheet.create({
   },
   bpmText: {
     position: 'absolute',
-    fontWeight: 'bold',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 5,
   },
   mobileBpmText: {
     top: 8,
     right: 16,
-    fontSize: 18,
   },
 });
 

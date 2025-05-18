@@ -1,10 +1,27 @@
-import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
-import { StyleSheet, View, Keyboard, ScrollView } from 'react-native';
-import { Text, TextInput, Button, HelperText, IconButton } from 'react-native-paper';
-import { router } from 'expo-router';
-import { sessionService } from '@/services/SessionService';
-import { StudentStorageService } from '@/services/StudentStorageService';
-
+import React, {
+  useState,
+  useRef,
+  useCallback,
+  useMemo,
+  useEffect,
+} from "react";
+import { StyleSheet, View, Keyboard, ScrollView, Platform } from "react-native";
+import {
+  Text,
+  TextInput,
+  Button,
+  HelperText,
+  IconButton,
+  Appbar,
+  useTheme,
+  Card,
+} from "react-native-paper";
+import { router } from "expo-router";
+import { sessionService } from "@/services/SessionService";
+import { StudentStorageService } from "@/services/StudentStorageService";
+import { LinearGradient } from "expo-linear-gradient";
+import FloatingThemeToggle from "@/components/FloatingThemeToggle";
+import BackgroundGradient from "@/components/BackgroundGradient";
 
 const MemoizedTitle = React.memo(({ title }: { title: string }) => (
   <Text variant="headlineMedium" style={styles.title}>
@@ -27,21 +44,21 @@ const MemoizedHelpSection = React.memo(() => (
 ));
 
 const StudentAccessScreen = () => {
-  const [accessCode, setAccessCode] = useState('');
+  const theme = useTheme();
+  const [accessCode, setAccessCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({
-    accessCode: '',
+    accessCode: "",
   });
   const [studentData, setStudentData] = useState<{
     firstName: string;
     lastName: string;
     albumNumber: string;
   } | null>(null);
-  
+
   const accessCodeInputRef = useRef<any>(null);
-  
-  
+
   useEffect(() => {
     async function loadStudentProfile() {
       try {
@@ -50,21 +67,21 @@ const StudentAccessScreen = () => {
           setStudentData(studentProfile);
         }
       } catch (error) {
-        console.error('Failed to load student profile:', error);
+        console.error("Failed to load student profile:", error);
       }
     }
-    
+
     loadStudentProfile();
   }, []);
 
   const validateFields = useCallback(() => {
     const errors = {
-      accessCode: '',
+      accessCode: "",
     };
     let isValid = true;
 
     if (!accessCode.trim()) {
-      errors.accessCode = 'Kod dostępu jest wymagany';
+      errors.accessCode = "Kod dostępu jest wymagany";
       isValid = false;
     }
 
@@ -73,67 +90,66 @@ const StudentAccessScreen = () => {
   }, [accessCode]);
 
   const handleSubmit = useCallback(async () => {
-    
     Keyboard.dismiss();
-    
-    
-    setError('');
-    
-    
+
+    setError("");
+
     if (!validateFields()) {
       return;
     }
-    
-    
-    setIsLoading(true);
-    
-    try {
-      const isSessionValid = await sessionService.getSessionByCode(accessCode.trim());
 
-      if(!isSessionValid) {
-        setError('Nieprawidłowy kod dostępu');
+    setIsLoading(true);
+
+    try {
+      const isSessionValid = await sessionService.getSessionByCode(
+        accessCode.trim()
+      );
+
+      if (!isSessionValid) {
+        setError("Nieprawidłowy kod dostępu");
         setIsLoading(false);
         return;
-      }      
+      }
       if (studentData) {
         router.push({
-          pathname: '/routes/student-session',
-          params: { 
+          pathname: "/routes/student-session",
+          params: {
             accessCode: accessCode.trim(),
             firstName: studentData.firstName,
             lastName: studentData.lastName,
             albumNumber: studentData.albumNumber,
-          }
+          },
         });
       } else {
-        
         router.push({
-          pathname: '/routes/student-profile',
-          params: { 
+          pathname: "/routes/student-profile",
+          params: {
             accessCode: accessCode.trim(),
-          }
+          },
         });
       }
     } catch (err) {
-      setError('Wystąpił błąd. Sprawdź wprowadzone dane i spróbuj ponownie.');
+      setError("Wystąpił błąd. Sprawdź wprowadzone dane i spróbuj ponownie.");
     } finally {
       setIsLoading(false);
     }
   }, [accessCode, validateFields]);
 
-  const handleTextChange = useCallback((text: string) => {
-    setAccessCode(text);
-    if (fieldErrors.accessCode || error) {
-      setFieldErrors(prev => ({...prev, accessCode: ''}));
-      setError('');
-    }
-  }, [fieldErrors.accessCode, error]);
+  const handleTextChange = useCallback(
+    (text: string) => {
+      setAccessCode(text);
+      if (fieldErrors.accessCode || error) {
+        setFieldErrors((prev) => ({ ...prev, accessCode: "" }));
+        setError("");
+      }
+    },
+    [fieldErrors.accessCode, error]
+  );
 
   const handleBackPress = useCallback(() => {
     router.back();
   }, []);
 
-  
   const errorMessage = useMemo(() => {
     if (fieldErrors.accessCode) {
       return (
@@ -152,98 +168,123 @@ const StudentAccessScreen = () => {
   }, [fieldErrors.accessCode, error]);
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContainer}>
-      <View style={styles.container}>
-        <IconButton
-          icon="arrow-left"
-          size={24}
-          onPress={handleBackPress}
-          style={styles.backButton}
+    <BackgroundGradient>
+      <Appbar.Header style={{ backgroundColor: "#8B0000" }}>
+        <Appbar.BackAction onPress={handleBackPress} color="#fff" />
+        <Appbar.Content
+          title="Dołącz do sesji"
+          titleStyle={{ color: "#fff", fontWeight: "bold" }}
         />
-        
-        <MemoizedTitle title="Dołącz do sesji" />
-        <MemoizedSubtitle subtitle="Podaj kod dostępu otrzymany od nauczyciela" />
-        
-        <View style={styles.form}>
-          <TextInput
-            ref={accessCodeInputRef}
-            label="Kod dostępu"
-            value={accessCode}
-            onChangeText={handleTextChange}
-            mode="outlined"
-            autoCapitalize="characters"
-            autoCorrect={false}
-            style={styles.input}
-            disabled={isLoading}
-            error={!!fieldErrors.accessCode || !!error}
-            onSubmitEditing={handleSubmit}
-            keyboardType="default"
+      </Appbar.Header>
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text
+          variant="titleMedium"
+          style={[styles.subtitle, { color: theme.colors.onBackground }]}
+        >
+          Podaj kod dostępu otrzymany od nauczyciela
+        </Text>
+        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+          <Card.Title
+            title="Wprowadź kod dostępu"
+            titleStyle={{ color: theme.colors.onSurface }}
           />
-          {errorMessage}
-          
-          <Button
-            mode="contained"
-            onPress={handleSubmit}
-            style={styles.submitButton}
-            loading={isLoading}
-            disabled={isLoading}
-          >
-            Dołącz do sesji
-          </Button>
-        </View>
-        
-        <MemoizedHelpSection />
-      </View>
-    </ScrollView>
+          <Card.Content>
+            <View style={styles.form}>
+              <TextInput
+                ref={accessCodeInputRef}
+                label="Kod dostępu"
+                value={accessCode}
+                onChangeText={handleTextChange}
+                mode="outlined"
+                autoCapitalize="characters"
+                autoCorrect={false}
+                style={[styles.input, { backgroundColor: "transparent" }]}
+                disabled={isLoading}
+                error={!!fieldErrors.accessCode || !!error}
+                onSubmitEditing={handleSubmit}
+                keyboardType="default"
+              />
+              {errorMessage}
+            </View>
+          </Card.Content>
+          <Card.Actions>
+            <Button
+              mode="contained"
+              onPress={handleSubmit}
+              style={styles.submitButton}
+              loading={isLoading}
+              disabled={isLoading}
+              buttonColor={theme.colors.primary}
+            >
+              Dołącz do sesji
+            </Button>
+          </Card.Actions>
+        </Card>
+        <MemoizedHelpSection />{" "}
+      </ScrollView>
+    </BackgroundGradient>
   );
 };
 
 const styles = StyleSheet.create({
-  
   scrollContainer: {
     flexGrow: 1,
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 40,
-    paddingBottom: 24,
+    paddingHorizontal: Platform.OS === "web" ? 16 : 16,
+    paddingVertical: 24,
+    alignItems: "center",
+    justifyContent: "center", // Center vertically
+    minHeight: '100%',
   },
   backButton: {
     marginBottom: 20,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
   },
   title: {
     marginBottom: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
   },
   subtitle: {
-    marginBottom: 32,
-    textAlign: 'center',
-    paddingHorizontal: 16,
+    marginBottom: 40,
+    textAlign: "center",
+  },
+  card: {
+    width: "100%",
+    maxWidth: 400,
+    alignSelf: "center",
+    marginBottom: 20,
+    borderRadius: 12,
   },
   form: {
-    width: '100%',
+    width: "100%",
     maxWidth: 400,
-    alignSelf: 'center',
+    alignSelf: "center",
+    ...Platform.select({
+      web: {
+        maxWidth: 600,
+      },
+    }),
   },
   input: {
     marginBottom: 8,
     fontSize: 18,
   },
   submitButton: {
-    marginTop: 24,
+    marginLeft: "auto",
+    marginTop: 8,
     paddingVertical: 6,
   },
   helpSection: {
     marginTop: 36,
-    alignItems: 'center',
+    alignItems: "center",
   },
   helpText: {
-    textAlign: 'center',
+    textAlign: "center",
     opacity: 0.7,
-  }
+  },
 });
 
 export default React.memo(StudentAccessScreen);

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, View, ScrollView } from "react-native";
+import { StyleSheet, View, ScrollView, Dimensions } from "react-native";
 import { Dialog, Button, Text, List, Avatar, Chip, Divider, IconButton, Menu } from "react-native-paper";
 import { Session, StudentInSession } from "../types/types";
 import { socketService } from "@/services/SocketService";
@@ -118,7 +118,14 @@ const getAvailableSubcategories = (studentId: number) => {
   };
 
   return (
-    <Dialog visible={visible} onDismiss={onDismiss} style={styles.dialog}>
+    <Dialog 
+      visible={visible} 
+      onDismiss={onDismiss} 
+      style={{
+        ...styles.dialog,
+        maxHeight: Dimensions.get('window').height * 0.8
+      }}
+    >
       <Dialog.Title>Studenci w sesji</Dialog.Title>
       <Dialog.Content>
         <View style={styles.sessionHeader}>
@@ -299,8 +306,9 @@ const getAvailableSubcategories = (studentId: number) => {
 
 const styles = StyleSheet.create({
   dialog: {
-    maxWidth: 800,
-    width: "100%",
+    maxWidth: 500,
+    width: "90%",
+    alignSelf: "center",
   },
   sessionHeader: {
     flexDirection: "row",
@@ -318,9 +326,8 @@ const styles = StyleSheet.create({
   },
   divider: {
     marginVertical: 12,
-  },
-  studentsList: {
-    maxHeight: 500,
+  },  studentsList: {
+    maxHeight: Dimensions.get('window').height * 0.6,
   },
   avatar: {
     backgroundColor: "#3498db",

@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Dimensions } from 'react-native';
 import { Dialog, Button, Text } from 'react-native-paper';
 import { Session } from '../types/types';
 
@@ -19,9 +19,16 @@ const DeleteSessionDialog: React.FC<DeleteSessionDialogProps> = ({
   errorColor,
 }) => {
   if (!session) return null;
-
   return (
-    <Dialog visible={visible} onDismiss={onDismiss}>
+    <Dialog 
+      visible={visible} 
+      onDismiss={onDismiss}
+      style={{
+        maxHeight: Dimensions.get('window').height * 0.8,
+        width: '90%',
+        alignSelf: 'center'
+      }}
+    >
       <Dialog.Title>Usuń sesję</Dialog.Title>
       <Dialog.Content>
         <Text>Czy na pewno chcesz usunąć sesję o kodzie {session.sessionCode}?</Text>

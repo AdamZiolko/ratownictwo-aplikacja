@@ -15,7 +15,8 @@ import {
 import { FormData, FormErrors } from "../types/types";
 import { EkgType, NoiseType } from "@/services/EkgFactory";
 import { sessionService } from "@/services/SessionService";
-import RhythmSelectionSlider from "./RhythmSelectionSlider";
+import RhythmSelectionGrid from "./RhythmSelectionGrid";
+import RhythmSelectionButton from "./RhythmSelectionButton";
 
 interface SessionFormFieldsProps {
   formData: FormData;
@@ -114,10 +115,10 @@ const MedicalSliderInput = ({
   if (isWeb) {
     return (
       <View style={styles.webSliderContainer}>
-        <Text style={{ color: theme.colors.onSurface, marginBottom: 4 }}>
+        <Text style={{ color: theme.colors.onSurface, marginBottom: 4, paddingHorizontal: 5 }}>
           {`${label}: ${displayValue.toFixed(decimalPlaces)}${suffix ? ' ' + suffix : ''}`}
         </Text>
-        <View style={styles.webSliderRow}>
+        <View style={[styles.webSliderRow, { paddingHorizontal: 5 }]}>
           <Text style={{ color: theme.colors.onSurface, width: 35 }}>{min}</Text>
           <Slider
             style={[styles.webSlider, { flex: 1 }]}
@@ -136,7 +137,7 @@ const MedicalSliderInput = ({
           />
           <Text style={{ color: theme.colors.onSurface, width: 35, textAlign: 'right' }}>{max}</Text>
         </View>
-        <View style={styles.tickLabelContainer}>
+        <View style={[styles.tickLabelContainer, { paddingHorizontal: 5 }]}>
           {ticks.map((t) => (
             <Text key={t} style={[styles.webTickLabel, { color: theme.colors.onSurface }]}>
               {t}
@@ -153,7 +154,7 @@ const MedicalSliderInput = ({
       <Button
         mode="outlined"
         onPress={() => setModalVisible(true)}
-        style={[styles.sliderButton, { backgroundColor: theme.colors.surface }]}
+        style={[styles.sliderButton, { backgroundColor: theme.colors.surface, paddingHorizontal: 5 }]}
         labelStyle={{ color: theme.colors.onSurface }}
       >
         {`${label}: ${value}${suffix ? ' ' + suffix : ''}`}
@@ -241,9 +242,16 @@ const SessionFormFields = ({
   showGenerateCodeButton = false,
 }: SessionFormFieldsProps) => {
   const theme = useTheme();
-
+  
+  // Handle BPM input to accept only digits
+  const handleBpmChange = (text: string) => {
+    // Only allow digits
+    const numericValue = text.replace(/[^0-9]/g, '');
+    setFormData({ ...formData, beatsPerMinute: numericValue });
+  };
+  
   return (
-    <>
+    <View style={styles.container}>
       <TextInput
         label="Nazwa sesji"
         value={formData.name}
@@ -268,7 +276,7 @@ const SessionFormFields = ({
       {formErrors.temperature && <HelperText type="error">{formErrors.temperature}</HelperText>}
 
       <Text variant="titleSmall">Typ rytmu serca</Text>
-      <RhythmSelectionSlider
+      <RhythmSelectionButton
         selectedType={formData.rhythmType}
         setSelectedType={(type) => setFormData({ ...formData, rhythmType: type })}
       />
@@ -276,13 +284,19 @@ const SessionFormFields = ({
       <TextInput
         label="Tętno (BPM)"
         value={formData.beatsPerMinute}
-        onChangeText={(t) => setFormData({ ...formData, beatsPerMinute: t })}
+        onChangeText={handleBpmChange}
         keyboardType="number-pad"
         mode="outlined"
         style={styles.input}
         error={!!formErrors.beatsPerMinute}
+        placeholder="Wprowadź wartość BPM"
+        maxLength={3} // Reasonable limit for human heart rate
       />
-      {formErrors.beatsPerMinute && <HelperText type="error">{formErrors.beatsPerMinute}</HelperText>}
+      {formErrors.beatsPerMinute ? (
+        <HelperText type="error">{formErrors.beatsPerMinute}</HelperText>
+      ) : (
+        <HelperText type="info">Tylko cyfry (30-220)</HelperText>
+      )}
 
       <Text variant="titleSmall">Poziom szumów</Text>
       <SegmentedButtons
@@ -383,7 +397,7 @@ const SessionFormFields = ({
         ticks={[10, 15, 20, 25, 30]}
       />
       {formErrors.rr && <HelperText type="error">{formErrors.rr}</HelperText>}
-    </>
+    </View>
   );
 };
 
@@ -403,15 +417,18 @@ const styles = StyleSheet.create({
   },
   segmentedButtons: {
     marginBottom: 16,
+    paddingHorizontal: 5,
   },
   generateButton: {
     marginTop: 0,
     alignSelf: "flex-start",
+    paddingHorizontal: 5,
   },
   sectionTitle: {
     marginBottom: 12,
     marginTop: 12,
     fontWeight: "bold",
+    paddingHorizontal: 5,
   },
   divider: {
     marginVertical: 16,
@@ -419,6 +436,7 @@ const styles = StyleSheet.create({
   sliderButton: {
     marginBottom: 8,
     borderRadius: 4,
+    paddingHorizontal: 5,
   },
   modalContent: {
     padding: 20,
@@ -431,6 +449,7 @@ const styles = StyleSheet.create({
   },
   sliderContainer: {
     marginVertical: 10,
+    paddingHorizontal: 5,
   },
   slider: {
     width: "100%",
@@ -487,6 +506,7 @@ const styles = StyleSheet.create({
   webSliderContainer: {
     marginBottom: 16,
     width: "100%",
+    paddingHorizontal: 5,
   },
   webSliderRow: {
     flexDirection: "row",
@@ -502,6 +522,9 @@ const styles = StyleSheet.create({
     fontSize: 10,
     textAlign: "center",
   },
+  container: {
+    paddingHorizontal: 5,
+  }
 });
 
 export default SessionFormFields;

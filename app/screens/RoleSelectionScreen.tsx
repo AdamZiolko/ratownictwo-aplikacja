@@ -1,148 +1,240 @@
-import React from 'react';
-import { StyleSheet, View, Platform } from 'react-native';
-import { Text, Card, Surface, useTheme } from 'react-native-paper';
-import { router } from 'expo-router';
-import FloatingThemeToggle from '@/components/FloatingThemeToggle';
+import React from "react";
+import { StyleSheet, View, Platform } from "react-native";
+import {
+  Text,
+  Card,
+  Surface,
+  useTheme,
+  Appbar,
+  Avatar,
+} from "react-native-paper";
+import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
+import FloatingThemeToggle from "@/components/FloatingThemeToggle";
+import BackgroundGradient from "@/components/BackgroundGradient";
 
 const RoleSelectionScreen = () => {
   const theme = useTheme();
 
-  const handleRoleSelect = (role: 'examiner' | 'student') => {
-    if (role === 'examiner') {
-      router.push('/routes/examiner-login');
+  const handleRoleSelect = (role: "examiner" | "student") => {
+    if (role === "examiner") {
+      router.push("/routes/examiner-login");
     } else {
-      router.push('/routes/student-profile');
+      router.push("/routes/student-profile");
     }
   };
 
   const platformLabel =
-    Platform.OS === 'android'
-      ? 'Wersja mobilna (Android)'
-      : 'Wersja webowa';
+    Platform.OS === "android" ? "Wersja mobilna (Android)" : "Wersja webowa";
+
+  const cardBackgroundColor = theme.dark
+    ? "rgba(255, 255, 255, 0.05)"
+    : "rgba(0, 0, 0, 0.03)";
+  const cardContentBackgroundColor = theme.dark
+    ? "rgba(255, 255, 255, 0.03)"
+    : "rgba(0, 0, 0, 0.02)";
 
   return (
-    <View style={styles.container}>
-      <Text variant="headlineLarge" style={styles.title}>
-        Trening Ratownictwa Medycznego
-      </Text>
-
-      <Text variant="titleMedium" style={styles.subtitle}>
-        Wybierz swoją rolę
-      </Text>
-
+    <BackgroundGradient containerStyle={styles.container}>
       <View style={styles.cardsContainer}>
-        <Surface style={[styles.cardSurface, Platform.OS === 'android' && styles.androidCardSurface]} elevation={2}>
-          <Card style={[styles.card, styles.fillCard]} onPress={() => handleRoleSelect('examiner')}>
-            <Card.Content style={styles.cardContent}>
-              <Text variant="headlineSmall">Nauczyciel</Text>
-              <Text variant="bodyMedium" style={styles.cardDescription}>
-                Zaloguj się aby tworzyć sesje treningowe dla studentów
-              </Text>
-            </Card.Content>
+        <Text variant="titleLarge" style={styles.subtitle}>
+          Wybierz swoją rolę:
+        </Text>
+        <Surface
+          style={[
+            styles.cardSurface,
+            Platform.OS === "android" && styles.androidCardSurface,
+            { backgroundColor: cardBackgroundColor },
+          ]}
+          elevation={2}
+        >
+          <Card
+            style={[
+              styles.card,
+              styles.fillCard,
+              { backgroundColor: cardContentBackgroundColor },
+            ]}
+            onPress={() => handleRoleSelect("examiner")}
+          >
+            <Card.Title
+              title="Nauczyciel"
+              subtitle="Zaloguj się aby tworzyć sesje treningowe dla studentów"
+              titleNumberOfLines={2}
+              subtitleNumberOfLines={3}
+              left={(props) => (
+                <LinearGradient
+                  colors={["#8B0000", "#D32F2F"]}
+                  style={styles.iconGradient}
+                >
+                  <Avatar.Icon
+                    {...props}
+                    icon="account-tie"
+                    size={36}
+                    color="#fff"
+                    style={{ backgroundColor: "transparent" }}
+                  />
+                </LinearGradient>
+              )}
+              titleStyle={{ fontWeight: "600" }}
+            />
           </Card>
         </Surface>
 
-        <Surface style={[styles.cardSurface, Platform.OS === 'android' && styles.androidCardSurface]} elevation={2}>
-          <Card style={[styles.card, styles.fillCard]} onPress={() => handleRoleSelect('student')}>
-            <Card.Content style={styles.cardContent}>
-              <Text variant="headlineSmall">Student</Text>
-              <Text variant="bodyMedium" style={styles.cardDescription}>
-                Wpisz kod dostępu aby dołączyć do sesji
-              </Text>
-            </Card.Content>
+        <Surface
+          style={[
+            styles.cardSurface,
+            Platform.OS === "android" && styles.androidCardSurface,
+            { backgroundColor: cardBackgroundColor },
+          ]}
+          elevation={2}
+        >
+          <Card
+            style={[
+              styles.card,
+              styles.fillCard,
+              { backgroundColor: cardContentBackgroundColor },
+            ]}
+            onPress={() => handleRoleSelect("student")}
+          >
+            <Card.Title
+              title="Student"
+              subtitle="Wpisz kod dostępu aby dołączyć do sesji"
+              titleNumberOfLines={2}
+              subtitleNumberOfLines={3}
+              left={(props) => (
+                <LinearGradient
+                  colors={["#8B0000", "#D32F2F"]}
+                  style={styles.iconGradient}
+                >
+                  <Avatar.Icon
+                    {...props}
+                    icon="account"
+                    size={36}
+                    color="#fff"
+                    style={{ backgroundColor: "transparent" }}
+                  />
+                </LinearGradient>
+              )}
+              titleStyle={{ fontWeight: "600" }}
+            />
           </Card>
         </Surface>
+
+        <Text variant="titleSmall" style={styles.subtitle}>
+          Aplikacja służąca do nauki i ćwiczeń z zakresu ratownictwa medycznego.
+        </Text>
       </View>
-
       <Text style={styles.debugText}>{platformLabel}</Text>
-      
-      {}
       <FloatingThemeToggle position="topRight" size={24} />
-    </View>
+    </BackgroundGradient>
   );
 };
 
-const styles = StyleSheet.create({  container: {
+const styles = StyleSheet.create({
+  container: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'web' ? 80 : 50,
-    alignItems: 'center',
-    width: '100%',
-    maxWidth: Platform.OS === 'web' ? 1200 : undefined,
-    alignSelf: Platform.OS === 'web' ? 'center' : undefined,
+    paddingHorizontal: Platform.OS === "web" ? 16 : 16,
+    paddingTop: Platform.OS === "web" ? 80 : 50,
+    alignItems: "center",
+    width: "100%",
+    alignSelf: "center",
+    justifyContent: "center", // Add vertical centering
   },
   title: {
     marginBottom: 8,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
   },
   subtitle: {
-    marginBottom: 40,
-    textAlign: 'center',
-  },  cardsContainer: {
-    width: '100%',
+    textAlign: "center",
+  },
+  cardsContainer: {
+    width: "100%",
+    flex: 1, // Take remaining space
+    justifyContent: "center", // Center content vertically
     ...Platform.select({
       android: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'stretch',
-        paddingHorizontal: 8,
+        flexDirection: "column",
+        alignItems: "stretch",
+        paddingHorizontal: 16,
+        marginHorizontal: 0,
+      },
+      ios: {
+        flexDirection: "column",
+        alignItems: "stretch",
+        paddingHorizontal: 16,
+        marginHorizontal: 0,
       },
       web: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        flexWrap: 'wrap',
-        maxWidth: 800,
-        alignSelf: 'center',
+        flexDirection: "column",
+        alignItems: "stretch",
+        maxWidth: 600,
+        alignSelf: "center",
       },
       default: {
-        flexDirection: 'column',
+        flexDirection: "column",
+        width: "100%",
       },
     }),
-  },  cardSurface: {
+  },
+  cardSurface: {
     borderRadius: 12,
-    backgroundColor: '#f5f5f5',
     ...Platform.select({
       android: {
-        flex: 1,
-        marginHorizontal: 8,
-        minHeight: 100,
-        overflow: 'hidden',
+        marginVertical: 8,
+        marginHorizontal: 0,
+        minHeight: 120,
+        overflow: "hidden",
+        alignSelf: "stretch",
+      },
+      ios: {
+        marginVertical: 8,
+        marginHorizontal: 0,
+        minHeight: 120,
+        overflow: "hidden",
+        alignSelf: "stretch",
       },
       web: {
         margin: 16,
-        width: 300,
         minHeight: 140,
-        overflow: 'hidden',
+        overflow: "hidden",
       },
       default: {
         marginBottom: 16,
-        width: '100%',
+        width: "100%",
       },
     }),
   },
   androidCardSurface: {
     elevation: 4,
-  },  card: {
+  },
+  card: {
     borderRadius: 12,
   },
   fillCard: {
     flex: 1,
-    justifyContent: 'center',
-    height: Platform.OS === 'web' ? 140 : undefined,
+    justifyContent: "center",
   },
   cardContent: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: 24,
   },
   cardDescription: {
     marginTop: 8,
-    textAlign: 'center',
+    textAlign: "center",
   },
   debugText: {
     marginTop: 32,
     fontSize: 12,
-    color: 'gray',
+    color: "gray",
+  },
+
+  iconGradient: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
 

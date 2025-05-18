@@ -187,9 +187,7 @@ export class EkgJsonDataLoader {
     }
 
     return this.ekgDataCache[cacheKey];
-  }
-
-   static async getEkgValueFromJson(
+  }   static async getEkgValueFromJson(
     x: number,
     ekgType: EkgType,
     bpm: number,
@@ -201,7 +199,9 @@ export class EkgJsonDataLoader {
     
     const defaultBpm = ekgType === EkgType.ASYSTOLE ? 1 : 72;
     const bpmScale = defaultBpm / Math.max(1, bpm);
-    const adjustedX = x * bpmScale;
+    // Apply the -5 points shift
+    const offsetX = x + 5; // Shift by +5 to render 5 points earlier
+    const adjustedX = offsetX * bpmScale;
 
     
     const maxTime = ekgData.timestamps[ekgData.timestamps.length - 1];
@@ -270,12 +270,12 @@ export class EkgJsonDataLoader {
       console.log(`Getting EKG value for type ${ekgType}, bpm ${bpm}, at x=${x}`);
 
       
-      const ekgData = this.loadEkgDataSync(ekgType);
-
-      
+      const ekgData = this.loadEkgDataSync(ekgType);      
       const defaultBpm = ekgType === EkgType.ASYSTOLE ? 1 : 72;
       const bpmScale = defaultBpm / Math.max(1, bpm);
-      const adjustedX = x * bpmScale;
+      // Apply the -5 points shift
+      const offsetX = x + 5; // Shift by +5 to render 5 points earlier
+      const adjustedX = offsetX * bpmScale;
 
       
       const maxTime = ekgData.timestamps[ekgData.timestamps.length - 1];

@@ -1,129 +1,102 @@
-
 import { StyleSheet, Platform, Dimensions } from "react-native";
-import { Surface, MD3Theme } from "react-native-paper";
-
+import { MD3Theme } from "react-native-paper";
 
 const { width } = Dimensions.get('window');
 const isSmallScreen = width < 380;
 
 export const createDashboardStyles = (theme: MD3Theme) => StyleSheet.create({
     container: {
-        padding: 0,
-        margin: 0,
         flex: 1,
+        backgroundColor: 'transparent',
     },
     contentContainer: {
         flex: 1,
-    },    statsCard: {
-        marginBottom: Platform.select({
-            ios: 12,
-            android: 12,
-            default: 20,
-        }),
-        backgroundColor: theme.colors.surface,
-    },
-    statsRow: {
-        flexDirection: "row",
-        justifyContent: "space-around",
-    },
-    sectionTitle: {
-        marginBottom: 0,
-        marginTop: 12,
-        fontWeight: "bold",
-        color: theme.colors.onBackground,
-    },
-    table: {
-        marginBottom: 20,
-    },
-    rowActions: {
-        flexDirection: Platform.select({
-            android: "row",
-            ios: "row",
-            default: "column",
-        }),
-        justifyContent: "center",
-        alignItems: "center",
-        flexWrap: Platform.select({
-            android: "wrap",
-            ios: "wrap",
-            default: "nowrap",
-        }),
-    },
-    actionButtonRow: {
-        flexDirection: "row",
-        justifyContent: "center",
-        marginBottom: Platform.select({
-            android: 0,
+        paddingTop: Platform.select({
             ios: 0,
-            default: 4,
-        }),
-        marginRight: Platform.select({
             android: 0,
-            ios: 0,
-            default: 0,
+            default: 16,
         }),
     },
-    actionsTitleContainer: {
-        flexDirection: "column",
-    },    actionsSubtitle: {
-        fontSize: 10,
-        opacity: 0.6,
-        color: theme.colors.onSurface,
-    },
-    studentButtonContainer: {
-        position: "relative",
-        width: 40,
-        height: 40,
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    studentCountBadge: {
-        position: "absolute",
-        right: 2,
-        top: 2,
-        backgroundColor: "#ff5722",
-        borderRadius: 10,
-        minWidth: 16,
-        height: 16,
-        justifyContent: "center",
-        alignItems: "center",
-        paddingHorizontal: 2,
-    },
-    studentCountText: {
-        color: "white",
-        fontSize: 9,
-        fontWeight: "bold",
+    tableContainer: {
+        flex: 1,
+        backgroundColor: 'transparent',
     },
     loadingContainer: {
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
-    },    loadingText: {
-        marginTop: 16,
+    },
+    loadingText: {
         color: theme.colors.onBackground,
+        marginTop: 16,
     },
     emptyState: {
         padding: 24,
         alignItems: "center",
         justifyContent: "center",
+        marginTop: 40,
     },
     emptyStateText: {
         textAlign: "center",
         marginVertical: 16,
         opacity: 0.7,
         color: theme.colors.onBackground,
+        fontSize: 16,
     },
     emptyStateButton: {
         marginTop: 16,
+    },
+    mobileCard: {
+        marginBottom: 12,
+        backgroundColor: theme.colors.surface,
+        borderRadius: 12,
+        elevation: 2,
+        shadowColor: theme.dark ? 'rgba(0, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.1)',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.8,
+        shadowRadius: 2,
+    },
+    mobileCardTitle: {
+        fontSize: isSmallScreen ? 14 : 16,
+        fontWeight: "bold",
+    },
+    mobileCardSubtitle: {
+        fontSize: isSmallScreen ? 12 : 14,
+        opacity: 0.7,
+    },
+    mobileCardContent: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+    },
+    mobileCardRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 10,
+    },
+    mobileCardText: {
+        fontSize: isSmallScreen ? 13 : 14,
+    },
+    mobileCardActions: {
+        flexDirection: 'row',
+        justifyContent: 'flex-start',
+        paddingHorizontal: 8,
+        paddingVertical: 8,
     },
     fab: {
         position: "absolute",
         margin: 16,
         right: 0,
         bottom: 0,
+        borderRadius: 28,
+        elevation: 4,
+        shadowColor: theme.dark ? 'rgba(0, 0, 0, 0.9)' : 'rgba(0, 0, 0, 0.4)',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.8,
+        shadowRadius: 4,
     },
     snackbar: {
         margin: 16,
+        borderRadius: 4,
     },
     successSnackbar: {
         backgroundColor: "#4CAF50",
@@ -155,7 +128,8 @@ export const createDashboardStyles = (theme: MD3Theme) => StyleSheet.create({
             android: 4,
             default: 8,
         }),
-    },    statValue: {
+    },
+    statValue: {
         fontWeight: "bold",
         fontSize: Platform.select({
             android: 16,
@@ -171,12 +145,7 @@ export const createDashboardStyles = (theme: MD3Theme) => StyleSheet.create({
         }),
         color: theme.colors.onSurface,
     },
-    tableContainer: {
-        marginTop: Platform.select({
-            default: 0,
-        }),
-        width: '100%',
-    },    rhythmCell: {
+    rhythmCell: {
         maxWidth: Platform.select({
             android: 80,
             ios: 80,
@@ -223,42 +192,6 @@ export const createDashboardStyles = (theme: MD3Theme) => StyleSheet.create({
             android: undefined,
             ios: undefined,
         }),
-    },    
-    mobileCard: {
-        marginBottom: 12, 
-        backgroundColor: theme.colors.surface,
-        borderRadius: 8,
-    },
-    mobileCardTitle: {
-        fontSize: isSmallScreen ? 14 : 16,
-        fontWeight: "bold",
-        color: theme.colors.onSurface,
-    },
-    mobileCardSubtitle: { 
-        fontSize: isSmallScreen ? 12 : 14,
-        opacity: 0.7,
-        color: theme.colors.onSurface,
-    },
-    mobileCardContent: {
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-    },
-    mobileCardRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 10,
-    },    mobileCardText: {
-        fontSize: isSmallScreen ? 13 : 14,
-        color: theme.colors.onSurface,
-    },
-    mobileCardActions: {
-        flexDirection: 'row',
-        justifyContent: 'space-evenly',
-        flexWrap: 'wrap',
-        marginTop: 8,
-    },
-    mobileIconContainer: {
-        position: 'relative',
     },
     header: {
         backgroundColor: theme.colors.primary,

@@ -1,5 +1,3 @@
-
-
 import { EkgType, NoiseType } from './EkgFactory';
 import { EkgJsonDataLoader } from './EkgJsonDataLoader';
 
@@ -95,15 +93,24 @@ export class EkgDataAdapter {
       return this.fallbackData;
     }
   }
-  
     public getValueAtTime(ekgType: EkgType, time: number, bpm: number, noiseType: NoiseType): number {
     try {
+      // Special case for asystolia - return a flat line at baseline (150)
+      if (ekgType === EkgType.ASYSTOLE) {
+        // Still apply minimal noise if specified
+        return this.applyNoise(150, noiseType);
+      }
+
       const ekgData = this.getDataForType(ekgType);
         
-      const defaultBpm = ekgType === EkgType.ASYSTOLE ? 1 : 72;
+      const defaultBpm = 72;
       
       const bpmScale = Math.max(1, bpm) / defaultBpm;
-      const adjustedTime = time * bpmScale;
+      // Apply the -5 points shift requested
+      // Adding 5 to the time means we're reading from 5 time units ahead
+      // which visually shifts the graph 5 points to the left (shows earlier data)
+      const offsetTime = time + 10; // Shift by +5 to render 5 points earlier
+      const adjustedTime = offsetTime * bpmScale;
       
       
       const maxTime = ekgData.timestamps[ekgData.timestamps.length - 1];

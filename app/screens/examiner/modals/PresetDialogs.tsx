@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, View } from 'react-native';
+import { StyleSheet, ScrollView, View, Dimensions } from 'react-native';
 import { 
   Dialog, 
   Button, 
@@ -31,7 +31,6 @@ export const SavePresetDialog: React.FC<SavePresetDialogProps> = ({
       setPresetName("");
     }
   }, [visible]);
-
   const handleSavePreset = () => {
     if (presetName.trim() !== "") {
       onSavePreset(presetName);
@@ -40,7 +39,15 @@ export const SavePresetDialog: React.FC<SavePresetDialogProps> = ({
   };
 
   return (
-    <Dialog visible={visible} onDismiss={onDismiss}>
+    <Dialog 
+      visible={visible} 
+      onDismiss={onDismiss}
+      style={{
+        maxHeight: Dimensions.get('window').height * 0.8,
+        width: '90%',
+        alignSelf: 'center'
+      }}
+    >
       <Dialog.Title>Zapisz konfigurację jako preset</Dialog.Title>
       <Dialog.Content>
         <TextInput
@@ -83,7 +90,6 @@ export const LoadPresetDialog: React.FC<LoadPresetDialogProps> = ({
       setSelectedPreset(null);
     }
   }, [visible]);
-
   const handleLoadPreset = () => {
     if (selectedPreset) {
       const presetToLoad = presets.find(p => p.id === selectedPreset);
@@ -95,7 +101,15 @@ export const LoadPresetDialog: React.FC<LoadPresetDialogProps> = ({
   };
 
   return (
-    <Dialog visible={visible} onDismiss={onDismiss}>
+    <Dialog 
+      visible={visible} 
+      onDismiss={onDismiss}
+      style={{
+        maxHeight: Dimensions.get('window').height * 0.8,
+        width: '90%',
+        alignSelf: 'center'
+      }}
+    >
       <Dialog.Title>Wybierz preset do wczytania</Dialog.Title>
       <Dialog.ScrollArea style={styles.dialogScrollArea}>
         <ScrollView>
@@ -148,9 +162,8 @@ export const LoadPresetDialog: React.FC<LoadPresetDialogProps> = ({
 const styles = StyleSheet.create({
   input: {
     marginBottom: 8,
-  },
-  dialogScrollArea: {
-    maxHeight: 400,
+  },  dialogScrollArea: {
+    maxHeight: Dimensions.get('window').height * 0.6,
   },
   emptyStateText: {
     textAlign: "center",

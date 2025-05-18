@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, ScrollView } from 'react-native';
+import { StyleSheet, View, ScrollView, Dimensions } from 'react-native';
 import { Dialog, Button, RadioButton, Text, List, TextInput, IconButton, Checkbox, useTheme } from 'react-native-paper';
 import { Session, SoundQueueItem } from '../types/types';
 
@@ -359,7 +359,14 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
   });
 
   return (
-    <Dialog visible={visible} onDismiss={onDismiss} style={styles.dialog}>
+    <Dialog 
+      visible={visible} 
+      onDismiss={onDismiss} 
+      style={{
+        ...styles.dialog,
+        maxHeight: Dimensions.get('window').height * 0.8
+      }}
+    >
       <Dialog.Title style={styles.title}>Odtwórz dźwięk</Dialog.Title>
 
       <View style={styles.tabsContainer}>

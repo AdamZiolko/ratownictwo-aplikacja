@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import { 
   View, 
   ScrollView, 
-  StyleSheet 
+  StyleSheet,
+  Dimensions
 } from "react-native";
 import { 
   Button, 
@@ -84,15 +85,16 @@ const CreateSessionDialog = ({
     } else if (temp < 30 || temp > 43) {
       errors.temperature = "Temperatura musi być w zakresie 30-43°C";
       isValid = false;
-    }
-
-    
+    }    
     const bpm = parseInt(formData.beatsPerMinute);
     if (!formData.beatsPerMinute || isNaN(bpm)) {
       errors.beatsPerMinute = "Podaj prawidłowe tętno";
       isValid = false;
-    } else if (bpm < 0 || bpm > 300) {
-      errors.beatsPerMinute = "Tętno musi być w zakresie 0-300";
+    } else if (!/^\d+$/.test(formData.beatsPerMinute)) {
+      errors.beatsPerMinute = "Tętno może zawierać tylko cyfry";
+      isValid = false;
+    } else if (bpm < 30 || bpm > 220) {
+      errors.beatsPerMinute = "Tętno musi być w zakresie 30-220";
       isValid = false;
     }
     
@@ -120,9 +122,16 @@ const CreateSessionDialog = ({
   const handleOpenSavePreset = () => {
     onOpenSavePresetDialog(formData);
   };
-
   return (
-    <Dialog visible={visible} onDismiss={onDismiss}>
+    <Dialog 
+      visible={visible} 
+      onDismiss={onDismiss}
+      style={{
+        maxHeight: Dimensions.get('window').height * 0.8,
+        width: '90%',
+        alignSelf: 'center'
+      }}
+    >
       <Dialog.Title>Utwórz nową sesję</Dialog.Title>
       <Dialog.ScrollArea style={styles.dialogScrollArea}>
         <ScrollView>
@@ -163,10 +172,8 @@ const CreateSessionDialog = ({
 
 const styles = StyleSheet.create({
   dialogScrollArea: {
-    maxHeight: 400,
-  },
-  dialogContent: {
-    paddingHorizontal: 24,
+    maxHeight: Dimensions.get('window').height * 0.7,
+  },  dialogContent: {
     paddingVertical: 8,
   },
   presetButtonsContainer: {
