@@ -21,18 +21,6 @@ import { StudentStorageService } from "@/services/StudentStorageService";
 import BackgroundGradient from "@/components/BackgroundGradient";
 import { useOrientation } from "@/hooks/useOrientation";
 
-const MemoizedTitle = React.memo(({ title }: { title: string }) => (
-  <Text variant="headlineMedium" style={styles.title}>
-    {title}
-  </Text>
-));
-
-const MemoizedSubtitle = React.memo(({ subtitle }: { subtitle: string }) => (
-  <Text variant="bodyMedium" style={styles.subtitle}>
-    {subtitle}
-  </Text>
-));
-
 const MemoizedHelpSection = React.memo(() => (
   <View style={styles.helpSection}>
     <Text variant="bodySmall" style={styles.helpText}>
@@ -187,7 +175,10 @@ const StudentAccessScreen = () => {
           variant={isLandscape ? "titleSmall" : "titleMedium"}
           style={[
             styles.subtitle, 
-            { color: theme.colors.onBackground },
+            { 
+              color: theme.colors.onBackground,
+              backgroundColor: theme.colors.elevation.level1
+            },
             isLandscape && styles.landscapeSubtitle
           ]}
         >
@@ -243,7 +234,13 @@ const StudentAccessScreen = () => {
         </Card>
         {!isLandscape && <MemoizedHelpSection />}
         {isLandscape && (
-          <Text variant="bodySmall" style={[styles.landscapeHelpText, { color: theme.colors.onBackground }]}>
+          <Text variant="bodySmall" style={[
+            styles.landscapeHelpText, 
+            { 
+              color: theme.colors.onBackground,
+              backgroundColor: theme.colors.elevation.level1 
+            }
+          ]}>
             Potrzebujesz pomocy? Skontaktuj się z prowadzącym.
           </Text>
         )}
@@ -284,7 +281,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
-    backgroundColor: 'white',
     alignSelf: 'auto',
     ...Platform.select({
       ios: {
@@ -309,7 +305,6 @@ const styles = StyleSheet.create({
     flex: Platform.OS === "web" ? 0 : 1,
     maxWidth: Platform.OS === "web" ? "100%" : "30%",
     alignSelf: "center",
-    backgroundColor: 'white',
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
@@ -377,7 +372,6 @@ const styles = StyleSheet.create({
   helpText: {
     textAlign: "center",
     opacity: 0.7,
-    backgroundColor: 'white',
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
@@ -405,7 +399,6 @@ const styles = StyleSheet.create({
     maxWidth: Platform.OS === "web" ? "100%" : "30%",
     alignSelf: "center",
     includeFontPadding: false,
-    backgroundColor: 'white',
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,

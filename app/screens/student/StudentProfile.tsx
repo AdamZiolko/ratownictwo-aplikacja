@@ -12,7 +12,6 @@ import {
   useTheme,
 } from "react-native-paper";
 import { router, useLocalSearchParams } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Student,
   StudentStorageService,
@@ -385,7 +384,10 @@ const StudentProfileScreen = () => {
                 variant="titleSmall"
                 style={[
                   styles.subtitle, 
-                  { color: theme.colors.onBackground },
+                  { 
+                    color: theme.colors.onBackground,
+                    backgroundColor: theme.colors.elevation.level1 
+                  },
                   styles.landscapeSubtitle
                 ]}
               >
@@ -410,7 +412,13 @@ const StudentProfileScreen = () => {
             <View style={styles.landscapeRightColumn}>
               <Text
                 variant="bodySmall"
-                style={[styles.landscapeFooterText, { color: theme.colors.onBackground }]}
+                style={[
+                  styles.landscapeFooterText, 
+                  { 
+                    color: theme.colors.onBackground,
+                    backgroundColor: theme.colors.elevation.level1 
+                  }
+                ]}
               >
                 Pamiętaj aby poprawnie wprowadzić swoje dane, gdyż będą one
                 <Text style={{ fontWeight: "bold" }}> widoczne dla nauczyciela.</Text>
@@ -424,7 +432,10 @@ const StudentProfileScreen = () => {
               variant="titleLarge"
               style={[
                 styles.subtitle, 
-                { color: theme.colors.onBackground }
+                { 
+                  color: theme.colors.onBackground,
+                  backgroundColor: theme.colors.elevation.level1 
+                }
               ]}
             >
               {showForm ? "Wprowadź swoje dane" : "Czy to Ty?"}
@@ -444,7 +455,13 @@ const StudentProfileScreen = () => {
             )}
             <Text
               variant="titleMedium"
-              style={[styles.subtitle, { color: theme.colors.onBackground }]}
+              style={[
+                styles.subtitle, 
+                { 
+                  color: theme.colors.onBackground,
+                  backgroundColor: theme.colors.elevation.level1 
+                }
+              ]}
             >
               Pamiętaj aby poprawnie wprowadzić swoje dane, gdyż będą one
               <Text style={{ fontWeight: "bold" }}> widoczne dla nauczyciela.</Text>
@@ -506,7 +523,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
-    backgroundColor: 'white', // Zmiana na białe tło zamiast półprzezroczystego
     alignSelf: 'auto', // Reset alignSelf żeby szerokość była naturalna
     // Dodajemy lekki cień dla lepszego kontrastu na białym tle
     ...Platform.select({
@@ -532,7 +548,6 @@ const styles = StyleSheet.create({
     maxWidth: "90%", // Zwiększenie maxWidth
     textAlignVertical: "center", // Dodane dla lepszego centrowania na Androidzie
     alignSelf: "center", // Dodane dla lepszego centrowania
-    backgroundColor: 'white', // Zmiana na białe tło zamiast półprzezroczystego
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
@@ -665,7 +680,6 @@ const styles = StyleSheet.create({
     maxWidth: "90%", // Zwiększenie maxWidth
     alignSelf: "center",
     includeFontPadding: false, // Usuwa dodatkowy padding tekstów na Androidzie
-    backgroundColor: 'white', // Zmiana na białe tło zamiast półprzezroczystego
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
