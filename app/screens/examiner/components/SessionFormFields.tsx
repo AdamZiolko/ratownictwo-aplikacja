@@ -275,7 +275,6 @@ const SessionFormFields = ({
       />
       {formErrors.temperature && <HelperText type="error">{formErrors.temperature}</HelperText>}
 
-      <Text variant="titleSmall">Typ rytmu serca</Text>
       <RhythmSelectionButton
         selectedType={formData.rhythmType}
         setSelectedType={(type) => setFormData({ ...formData, rhythmType: type })}

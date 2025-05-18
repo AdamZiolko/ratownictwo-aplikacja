@@ -515,7 +515,7 @@ const ExaminerLoginScreen = () => {
                   isLandscape && styles.landscapeSegmentedButton,
                 ]}
               />
-              {activeTab === "login" ? renderLoginForm() : renderRegisterForm()}{" "}
+              {activeTab === "login" ? renderLoginForm() : renderRegisterForm()}
             </Surface>
           </View>
         </ScrollView>

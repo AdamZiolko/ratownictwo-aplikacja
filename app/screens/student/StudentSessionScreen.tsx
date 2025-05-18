@@ -17,16 +17,18 @@ import {
 } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import BackgroundGradient from "../../../components/BackgroundGradient";
+import BackgroundGradient from "@/components/BackgroundGradient";
 import { router, useLocalSearchParams } from "expo-router";
-import { Audio } from "expo-av";
-import EkgCardDisplay from "../../../components/ekg/EkgCardDisplay";
-import ColorSensor from "../../../components/ColorSensor";
-import SocketConnectionStatus from "../../../components/SocketConnectionStatus";
-import { socketService } from "../../../services/SocketService";
-import { sessionService } from "../../../services/SessionService";
-import type { Session } from "../../../services/SessionService";
+import { Audio, AVPlaybackStatus } from "expo-av";
+import EkgCardDisplay from "@/components/ekg/EkgCardDisplay";
+import ColorSensor from "@/components/ColorSensor";
+import SocketConnectionStatus from "@/components/SocketConnectionStatus";
+import { socketService } from "@/services/SocketService";
+import { sessionService } from "@/services/SessionService";
+import type { Session } from "@/services/SessionService";
 import { SoundQueueItem } from "../examiner/types/types";
+import { networkMonitorService } from "@/services/NetworkMonitorService";
+import { wifiKeepAliveService } from "@/services/WifiKeepAliveService";
 
 interface VitalWithFluctuation {
   baseValue: number | null;
@@ -230,10 +232,48 @@ const StudentSessionScreen = () => {
       setIsLoading(false);
     }
   };
-
   useEffect(() => {
     fetchSession();
   }, [accessCode]);
+
+  useEffect(() => {
+    let unsub: (() => void) | undefined;
+
+    async function setupSessionSubscription() {
+      if (!accessCode) return;
+
+      let name = firstName || "";
+      let surname = lastName || "";
+      let albumNum = albumNumber || "";
+
+      sessionService
+        .subscribeToSessionUpdates(
+          accessCode.toString(),
+          (updated) => {
+            setSessionData(updated);
+          },
+          {
+            name,
+            surname,
+            albumNumber: albumNum,
+          }
+        )
+        .then((fn) => {
+          unsub = fn;
+        })
+        .catch(console.error);
+    }
+
+    setupSessionSubscription();
+    return () => {
+      unsub?.();
+
+      if (accessCode) {
+        sessionService.leaveSession(accessCode.toString());
+        console.log(`Left session ${accessCode}`);
+      }
+    };
+  }, [accessCode, firstName, lastName, albumNumber]);
 
   useEffect(() => {
     if (!isWeb) return;
@@ -243,24 +283,47 @@ const StudentSessionScreen = () => {
       soundName: string | SoundQueueItem[];
       loop?: boolean;
     }) => {
-      if (Array.isArray(payload.soundName)) {
-        // Handle sound queue here if needed
+      console.log("Received audio command:", JSON.stringify(payload, null, 2));
+
+      if (payload.command === "PLAY_QUEUE" && Array.isArray(payload.soundName)) {
+        console.log('Starting sound queue:', JSON.stringify(payload.soundName));
+        
+        for (const item of payload.soundName) {
+          try {
+            if (item.delay && item.delay > 0) {
+              console.log(`Waiting ${item.delay}ms before ${item.soundName}`);
+              await new Promise(r => setTimeout(r, item.delay));
+            }
+            
+            console.log(`Playing: ${item.soundName}`);
+            await handleSoundPlayback(item.soundName, false);
+            
+          } catch (error) {
+            console.error('Error processing sound queue item:', error);
+          }
+        }
         return;
       }
 
-      switch (payload.command) {
-        case "play":
-          await handleSoundPlayback(payload.soundName, payload.loop || false);
-          break;
-        case "stop":
-          await handleSoundStop(payload.soundName);
-          break;
-        case "pause":
-          await handleSoundPause(payload.soundName);
-          break;
-        case "resume":
-          await handleSoundResume(payload.soundName);
-          break;
+      if (typeof payload.soundName === "string") {
+        switch (payload.command) {
+          case "PLAY":
+          case "play":
+            await handleSoundPlayback(payload.soundName, payload.loop || false);
+            break;
+          case "STOP":
+          case "stop":
+            await handleSoundStop(payload.soundName);
+            break;
+          case "PAUSE":
+          case "pause":
+            await handleSoundPause(payload.soundName);
+            break;
+          case "RESUME":
+          case "resume":
+            await handleSoundResume(payload.soundName);
+            break;
+        }
       }
     };
 
@@ -274,16 +337,62 @@ const StudentSessionScreen = () => {
   ): Promise<void> => {
     return new Promise(async (resolve) => {
       try {
-        if (!soundInstances.current[soundName]) {
-          const sound = new Audio.Sound();
-          await sound.loadAsync(soundFiles[soundName]);
+        let sound = soundInstances.current[soundName];
+        
+        if (!sound) {
+          const soundModule = soundFiles[soundName];
+          if (!soundModule) throw new Error(`Sound not found: ${soundName}`);
+          
+          const { sound: newSound } = await Audio.Sound.createAsync(soundModule);
+          sound = newSound;
           soundInstances.current[soundName] = sound;
         }
-        await soundInstances.current[soundName].setIsLoopingAsync(loop);
-        await soundInstances.current[soundName].playAsync();
-        resolve();
+
+        await sound.setIsLoopingAsync(loop);
+        await sound.stopAsync();
+        await sound.setPositionAsync(0);
+        
+        let playbackFinished = false;
+        
+        const onPlaybackStatusUpdate = (status: AVPlaybackStatus) => {
+          if (status.isLoaded) {
+            if (status.didJustFinish && !loop) {
+              playbackFinished = true;
+              sound.setOnPlaybackStatusUpdate(null);
+              resolve();
+            }
+            if (status.isPlaying && loop) {
+              resolve();
+            }
+          }
+        };
+
+        sound.setOnPlaybackStatusUpdate(onPlaybackStatusUpdate);
+        
+        const safetyTimeout = setTimeout(() => {
+          if (!playbackFinished) {
+            console.log(`Safety timeout for ${soundName}`);
+            resolve();
+          }
+        }, 30000); 
+
+        await sound.playAsync().then(() => {
+          console.log(`Started playing: ${soundName}`);
+        });
+
+        if (!loop) {
+          sound.setOnPlaybackStatusUpdate((status) => {
+            if (status.isLoaded && status.didJustFinish) {
+              clearTimeout(safetyTimeout);
+              playbackFinished = true;
+              sound.setOnPlaybackStatusUpdate(null);
+              resolve();
+            }
+          });
+        }
+
       } catch (error) {
-        console.error("Error playing sound:", error);
+        console.error('Error playing sound:', error);
         resolve();
       }
     });
@@ -292,12 +401,13 @@ const StudentSessionScreen = () => {
   const handleSoundStop = async (soundName: string) => {
     const sound = soundInstances.current[soundName];
     if (!sound) return;
-
+    
     try {
       await sound.stopAsync();
-      await sound.setPositionAsync(0);
+      await sound.unloadAsync();
+      delete soundInstances.current[soundName];
     } catch (error) {
-      console.error("Error stopping sound:", error);
+      console.error('Error stopping sound:', error);
     }
   };
 
@@ -315,11 +425,13 @@ const StudentSessionScreen = () => {
     return () => {
       Object.values(soundInstances.current).forEach(async (sound) => {
         try {
+          await sound.stopAsync();
           await sound.unloadAsync();
         } catch (error) {
           console.error("Error unloading sound:", error);
         }
       });
+      soundInstances.current = {};
     };
   }, []);
 
@@ -537,6 +649,60 @@ const StudentSessionScreen = () => {
     </View>
   );
 
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    
+    const setupNetworkMonitoring = async () => {
+      try {
+        console.log('Setting up network monitoring for Android...');
+        
+        await socketService.connect();
+        
+        setTimeout(async () => {
+          try {
+            await wifiKeepAliveService.enableWebSocketKeepAlive();
+            console.log('WebSocket keep-alive enabled');
+          } catch (error) {
+            console.error('Error enabling WebSocket keep-alive:', error);
+          }
+          
+          try {
+            networkMonitorService.startMonitoring();
+            console.log('Network monitoring started');
+          } catch (error) {
+            console.error('Error starting network monitoring:', error);
+          }
+        }, 1000);
+      } catch (error) {
+        console.error('Error setting up network monitoring:', error);
+      }
+    };
+    
+    setupNetworkMonitoring();
+    
+    return () => {
+      if (Platform.OS !== 'android') return;
+      
+      try {
+        Promise.all([
+          wifiKeepAliveService.disableWebSocketKeepAlive()
+            .then(() => console.log('WebSocket keep-alive disabled'))
+            .catch(e => console.error('Error disabling WebSocket keep-alive:', e)),
+          
+          new Promise<void>(resolve => {
+            networkMonitorService.stopMonitoring();
+            console.log('Network monitoring stopped');
+            resolve();
+          })
+        ]).catch(error => {
+          console.error('Error during cleanup:', error);
+        });
+      } catch (error) {
+        console.error('Error during cleanup:', error);
+      }
+    };
+  }, []);
+
   return (
     <BackgroundGradient>
       <Appbar.Header style={{ backgroundColor: "#8B0000" }}>
@@ -753,9 +919,8 @@ const StudentSessionScreen = () => {
                         </Text>
                       </View>
                     )}
-                  </View>
-                </Surface>
-              )}{" "}
+                  </View>                </Surface>
+              )}
               {Platform.OS !== "web" ? (
                 <>
                   <EkgCardDisplay
@@ -875,9 +1040,8 @@ const StudentSessionScreen = () => {
                         />
                         <Text style={styles.cardHeaderTitle}>Sensor RGB</Text>
                       </View>
-                      <ColorSensor />
-                    </Surface>
-                  )}{" "}
+                      <ColorSensor />                    </Surface>
+                  )}
                   <EkgCardDisplay
                     ekgType={Number(sessionData.rhythmType)}
                     bpm={Number(sessionData.beatsPerMinute)}
