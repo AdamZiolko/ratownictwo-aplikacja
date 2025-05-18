@@ -11,7 +11,6 @@ import {
   TextInput,
   Button,
   HelperText,
-  IconButton,
   Appbar,
   useTheme,
   Card,
@@ -19,9 +18,8 @@ import {
 import { router } from "expo-router";
 import { sessionService } from "@/services/SessionService";
 import { StudentStorageService } from "@/services/StudentStorageService";
-import { LinearGradient } from "expo-linear-gradient";
-import FloatingThemeToggle from "@/components/FloatingThemeToggle";
 import BackgroundGradient from "@/components/BackgroundGradient";
+import { useOrientation } from "@/hooks/useOrientation";
 
 const MemoizedTitle = React.memo(({ title }: { title: string }) => (
   <Text variant="headlineMedium" style={styles.title}>
@@ -45,6 +43,8 @@ const MemoizedHelpSection = React.memo(() => (
 
 const StudentAccessScreen = () => {
   const theme = useTheme();
+  const { orientation } = useOrientation();
+  const isLandscape = orientation === 'landscape';
   const [accessCode, setAccessCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -177,19 +177,33 @@ const StudentAccessScreen = () => {
         />
       </Appbar.Header>
       <ScrollView
-        contentContainerStyle={styles.scrollContainer}
+        contentContainerStyle={[
+          styles.scrollContainer,
+          isLandscape && styles.landscapeScrollContainer
+        ]}
         keyboardShouldPersistTaps="handled"
       >
         <Text
-          variant="titleMedium"
-          style={[styles.subtitle, { color: theme.colors.onBackground }]}
+          variant={isLandscape ? "titleSmall" : "titleMedium"}
+          style={[
+            styles.subtitle, 
+            { color: theme.colors.onBackground },
+            isLandscape && styles.landscapeSubtitle
+          ]}
         >
           Podaj kod dostępu otrzymany od nauczyciela
         </Text>
-        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+        <Card 
+          style={[
+            styles.card, 
+            { backgroundColor: theme.colors.surface },
+            isLandscape && styles.landscapeCard
+          ]}
+        >
           <Card.Title
             title="Wprowadź kod dostępu"
             titleStyle={{ color: theme.colors.onSurface }}
+            titleVariant={isLandscape ? "titleSmall" : "titleMedium"}
           />
           <Card.Content>
             <View style={styles.form}>
@@ -201,7 +215,11 @@ const StudentAccessScreen = () => {
                 mode="outlined"
                 autoCapitalize="characters"
                 autoCorrect={false}
-                style={[styles.input, { backgroundColor: "transparent" }]}
+                style={[
+                  styles.input, 
+                  { backgroundColor: "transparent" },
+                  isLandscape && styles.landscapeInput
+                ]}
                 disabled={isLoading}
                 error={!!fieldErrors.accessCode || !!error}
                 onSubmitEditing={handleSubmit}
@@ -214,7 +232,7 @@ const StudentAccessScreen = () => {
             <Button
               mode="contained"
               onPress={handleSubmit}
-              style={styles.submitButton}
+              style={[styles.submitButton, isLandscape && styles.landscapeSubmitButton]}
               loading={isLoading}
               disabled={isLoading}
               buttonColor={theme.colors.primary}
@@ -223,7 +241,12 @@ const StudentAccessScreen = () => {
             </Button>
           </Card.Actions>
         </Card>
-        <MemoizedHelpSection />{" "}
+        {!isLandscape && <MemoizedHelpSection />}
+        {isLandscape && (
+          <Text variant="bodySmall" style={[styles.landscapeHelpText, { color: theme.colors.onBackground }]}>
+            Potrzebujesz pomocy? Skontaktuj się z prowadzącym.
+          </Text>
+        )}
       </ScrollView>
     </BackgroundGradient>
   );
@@ -238,6 +261,13 @@ const styles = StyleSheet.create({
     justifyContent: "center", // Center vertically
     minHeight: '100%',
   },
+  landscapeScrollContainer: {
+    paddingVertical: 10,
+    flexDirection: Platform.OS === "web" ? "column" : "row",
+    alignItems: "center",
+    justifyContent: "space-around",
+    paddingHorizontal: Platform.OS === "web" ? 16 : 8,
+  },
   backButton: {
     marginBottom: 20,
     alignSelf: "flex-start",
@@ -250,6 +280,53 @@ const styles = StyleSheet.create({
   subtitle: {
     marginBottom: 40,
     textAlign: "center",
+    textAlignVertical: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: 'white',
+    alignSelf: 'auto',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 2,
+      },
+      web: {
+        boxShadow: '0px 2px 3px rgba(0, 0, 0, 0.1)',
+      },
+    }),
+  },
+  landscapeSubtitle: {
+    marginBottom: 15,
+    marginTop: 5,
+    fontSize: 16,
+    lineHeight: 20,
+    flex: Platform.OS === "web" ? 0 : 1,
+    maxWidth: Platform.OS === "web" ? "100%" : "30%",
+    alignSelf: "center",
+    backgroundColor: 'white',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 2,
+      },
+      web: {
+        boxShadow: '0px 2px 3px rgba(0, 0, 0, 0.1)',
+      },
+    }),
   },
   card: {
     width: "100%",
@@ -257,6 +334,12 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     marginBottom: 20,
     borderRadius: 12,
+  },
+  landscapeCard: {
+    maxWidth: Platform.OS === "web" ? 400 : 350,
+    flex: Platform.OS === "web" ? 0 : 2,
+    marginBottom: 10,
+    marginHorizontal: 10,
   },
   form: {
     width: "100%",
@@ -272,10 +355,20 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontSize: 18,
   },
+  landscapeInput: {
+    fontSize: 16,
+    marginBottom: 5,
+    height: 45,
+  },
   submitButton: {
     marginLeft: "auto",
     marginTop: 8,
     paddingVertical: 6,
+  },
+  landscapeSubmitButton: {
+    marginTop: 5,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
   },
   helpSection: {
     marginTop: 36,
@@ -284,6 +377,52 @@ const styles = StyleSheet.create({
   helpText: {
     textAlign: "center",
     opacity: 0.7,
+    backgroundColor: 'white',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 2,
+      },
+      web: {
+        boxShadow: '0px 2px 3px rgba(0, 0, 0, 0.1)',
+      },
+    }),
+  },
+  landscapeHelpText: {
+    textAlign: "center",
+    opacity: 0.8,
+    fontSize: 10,
+    marginTop: 5,
+    flex: Platform.OS === "web" ? 0 : 1,
+    maxWidth: Platform.OS === "web" ? "100%" : "30%",
+    alignSelf: "center",
+    includeFontPadding: false,
+    backgroundColor: 'white',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 2,
+      },
+      web: {
+        boxShadow: '0px 2px 3px rgba(0, 0, 0, 0.1)',
+      },
+    }),
   },
 });
 

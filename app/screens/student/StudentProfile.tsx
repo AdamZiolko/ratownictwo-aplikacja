@@ -17,12 +17,13 @@ import {
   Student,
   StudentStorageService,
 } from "@/services/StudentStorageService";
-import { LinearGradient } from "expo-linear-gradient";
-import FloatingThemeToggle from "@/components/FloatingThemeToggle";
 import BackgroundGradient from "@/components/BackgroundGradient";
+import { useOrientation } from "@/hooks/useOrientation";
 
 const StudentProfileScreen = () => {
   const theme = useTheme();
+  const { orientation } = useOrientation();
+  const isLandscape = orientation === 'landscape';
   const params = useLocalSearchParams();
   const accessCode = params.accessCode as string;
 
@@ -147,10 +148,15 @@ const StudentProfileScreen = () => {
 
   const renderStudentForm = () => {
     return (
-      <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+      <Card style={[
+        styles.card, 
+        { backgroundColor: theme.colors.surface },
+        isLandscape && styles.landscapeCard
+      ]}>
         <Card.Title
           title="Wprowadź dane studenta"
           titleStyle={{ color: theme.colors.onSurface }}
+          titleVariant={isLandscape ? "titleSmall" : "titleMedium"}
         />
         <Card.Content>
           <View style={styles.form}>
@@ -163,7 +169,7 @@ const StudentProfileScreen = () => {
               }}
               mode="outlined"
               autoCapitalize="words"
-              style={styles.input}
+              style={[styles.input, isLandscape && styles.landscapeInput]}
               disabled={isLoading}
               error={!!fieldErrors.firstName}
               onSubmitEditing={() => lastNameInputRef.current?.focus()}
@@ -185,7 +191,7 @@ const StudentProfileScreen = () => {
               }}
               mode="outlined"
               autoCapitalize="words"
-              style={styles.input}
+              style={[styles.input, isLandscape && styles.landscapeInput]}
               disabled={isLoading}
               error={!!fieldErrors.lastName}
               onSubmitEditing={() => albumNumberInputRef.current?.focus()}
@@ -207,7 +213,7 @@ const StudentProfileScreen = () => {
               }}
               mode="outlined"
               keyboardType="number-pad"
-              style={styles.input}
+              style={[styles.input, isLandscape && styles.landscapeInput]}
               disabled={isLoading}
               error={!!fieldErrors.albumNumber}
               onSubmitEditing={handleSubmit}
@@ -223,7 +229,7 @@ const StudentProfileScreen = () => {
           <Button
             mode="contained"
             onPress={handleSubmit}
-            style={styles.submitButton}
+            style={[styles.submitButton, isLandscape && styles.landscapeSubmitButton]}
             loading={isLoading}
             disabled={isLoading}
             buttonColor={theme.colors.primary}
@@ -237,34 +243,41 @@ const StudentProfileScreen = () => {
 
   const renderStudentCard = () => {
     return (
-      <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+      <Card style={[
+        styles.card, 
+        { backgroundColor: theme.colors.surface },
+        isLandscape && styles.landscapeCard
+      ]}>
         <Card.Title
           title="Dane studenta"
           titleStyle={{ color: theme.colors.onSurface }}
+          titleVariant={isLandscape ? "titleSmall" : "titleMedium"}
           right={(props) => (
             <IconButton
               {...props}
               icon="close"
               onPress={handleEditProfile}
               iconColor={theme.colors.onSurface}
+              size={isLandscape ? 20 : 24}
             />
           )}
           leftStyle={styles.cardAvatarContainer}
           left={(props) => (
-            <LinearGradient
-              colors={
-                theme.dark ? ["#4A0000", "#9A1515"] : ["#8B0000", "#D32F2F"]
-              }
-              style={styles.iconGradient}
+            <View
+              style={[
+                styles.iconBackground,
+                { backgroundColor: theme.dark ? "#9A1515" : "#8B0000" },
+                isLandscape && styles.landscapeIconBackground
+              ]}
             >
               <Avatar.Text
                 {...props}
-                size={40}
+                size={isLandscape ? 32 : 40}
                 label={`${firstName.charAt(0)}${lastName.charAt(0)}`}
                 color={theme.colors.onPrimary}
                 style={{ backgroundColor: "transparent" }}
               />
-            </LinearGradient>
+            </View>
           )}
         />
         <Card.Content style={styles.cardContent}>
@@ -274,13 +287,18 @@ const StudentProfileScreen = () => {
               style={[
                 styles.infoLabel,
                 { color: theme.colors.onSurfaceVariant },
+                isLandscape && styles.landscapeInfoLabel
               ]}
             >
               Imię:
             </Text>
             <Text
               variant="bodyLarge"
-              style={[styles.infoValue, { color: theme.colors.onSurface }]}
+              style={[
+                styles.infoValue, 
+                { color: theme.colors.onSurface },
+                isLandscape && styles.landscapeInfoValue
+              ]}
             >
               {firstName}
             </Text>
@@ -291,13 +309,18 @@ const StudentProfileScreen = () => {
               style={[
                 styles.infoLabel,
                 { color: theme.colors.onSurfaceVariant },
+                isLandscape && styles.landscapeInfoLabel
               ]}
             >
               Nazwisko:
             </Text>
             <Text
               variant="bodyLarge"
-              style={[styles.infoValue, { color: theme.colors.onSurface }]}
+              style={[
+                styles.infoValue, 
+                { color: theme.colors.onSurface },
+                isLandscape && styles.landscapeInfoValue
+              ]}
             >
               {lastName}
             </Text>
@@ -308,13 +331,18 @@ const StudentProfileScreen = () => {
               style={[
                 styles.infoLabel,
                 { color: theme.colors.onSurfaceVariant },
+                isLandscape && styles.landscapeInfoLabel
               ]}
             >
               Numer albumu:
             </Text>
             <Text
               variant="bodyLarge"
-              style={[styles.infoValue, { color: theme.colors.onSurface }]}
+              style={[
+                styles.infoValue, 
+                { color: theme.colors.onSurface },
+                isLandscape && styles.landscapeInfoValue
+              ]}
             >
               {albumNumber}
             </Text>
@@ -324,7 +352,7 @@ const StudentProfileScreen = () => {
           <Button
             mode="contained"
             onPress={navigateToSession}
-            style={styles.continueButton}
+            style={[styles.continueButton, isLandscape && styles.landscapeContinueButton]}
             buttonColor={theme.colors.primary}
           >
             Kontynuuj
@@ -333,7 +361,6 @@ const StudentProfileScreen = () => {
       </Card>
     );
   };
-
   return (
     <BackgroundGradient>
       <Appbar.Header style={{ backgroundColor: "#8B0000" }}>
@@ -344,35 +371,86 @@ const StudentProfileScreen = () => {
         />
       </Appbar.Header>
       <ScrollView
-        contentContainerStyle={styles.scrollContainer}
+        contentContainerStyle={[
+          styles.scrollContainer, 
+          isLandscape && styles.landscapeScrollContainer
+        ]}
         keyboardShouldPersistTaps="handled"
       >
-        <Text
-          variant="titleLarge"
-          style={[styles.subtitle, { color: theme.colors.onBackground }]}
-        >
-          {showForm ? "Wprowadź swoje dane" : "Czy to Ty?"}
-        </Text>
-        {isLoading ? (
-          <View style={styles.loadingContainer}>
-            <Text style={{ color: theme.colors.onBackground }}>
-              Ładowanie...
-            </Text>
-          </View>
-        ) : (
+        {isLandscape ? (
+          // Landscape layout (both web and mobile)
           <>
-            {hasExistingData && !showForm
-              ? renderStudentCard()
-              : renderStudentForm()}
+            <View style={styles.landscapeLeftColumn}>
+              <Text
+                variant="titleSmall"
+                style={[
+                  styles.subtitle, 
+                  { color: theme.colors.onBackground },
+                  styles.landscapeSubtitle
+                ]}
+              >
+                {showForm ? "Wprowadź swoje dane" : "Czy to Ty?"}
+              </Text>
+            </View>
+            
+            {isLoading ? (
+              <View style={styles.loadingContainer}>
+                <Text style={{ color: theme.colors.onBackground }}>
+                  Ładowanie...
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.landscapeMiddleColumn}>
+                {hasExistingData && !showForm
+                  ? renderStudentCard()
+                  : renderStudentForm()}
+              </View>
+            )}
+            
+            <View style={styles.landscapeRightColumn}>
+              <Text
+                variant="bodySmall"
+                style={[styles.landscapeFooterText, { color: theme.colors.onBackground }]}
+              >
+                Pamiętaj aby poprawnie wprowadzić swoje dane, gdyż będą one
+                <Text style={{ fontWeight: "bold" }}> widoczne dla nauczyciela.</Text>
+              </Text>
+            </View>
+          </>
+        ) : (
+          // Portrait layout
+          <>
+            <Text
+              variant="titleLarge"
+              style={[
+                styles.subtitle, 
+                { color: theme.colors.onBackground }
+              ]}
+            >
+              {showForm ? "Wprowadź swoje dane" : "Czy to Ty?"}
+            </Text>
+            {isLoading ? (
+              <View style={styles.loadingContainer}>
+                <Text style={{ color: theme.colors.onBackground }}>
+                  Ładowanie...
+                </Text>
+              </View>
+            ) : (
+              <>
+                {hasExistingData && !showForm
+                  ? renderStudentCard()
+                  : renderStudentForm()}
+              </>
+            )}
+            <Text
+              variant="titleMedium"
+              style={[styles.subtitle, { color: theme.colors.onBackground }]}
+            >
+              Pamiętaj aby poprawnie wprowadzić swoje dane, gdyż będą one
+              <Text style={{ fontWeight: "bold" }}> widoczne dla nauczyciela.</Text>
+            </Text>
           </>
         )}
-        <Text
-          variant="titleMedium"
-          style={[styles.subtitle, { color: theme.colors.onBackground }]}
-        >
-          Pamiętaj aby poprawnie wprowadzić swoje dane, gdyż będą one
-          <Text style={{ fontWeight: "bold" }}> widoczne dla nauczyciela.</Text>
-        </Text>
       </ScrollView>
     </BackgroundGradient>
   );
@@ -386,10 +464,93 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     minHeight: "100%",
+  },  
+  landscapeScrollContainer: {
+    paddingVertical: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-around",
+    paddingHorizontal: Platform.OS === "web" ? 16 : 8,
+    minHeight: "85%",
+  },
+  landscapeLeftColumn: {
+    flex: 1,
+    maxWidth: "30%",
+    justifyContent: "center",
+    alignItems: "center",
+    alignSelf: "center", // Dodane dla lepszego centrowania na urządzeniach mobilnych
+    paddingHorizontal: 8,
+    height: "100%", // Zapewnia pełną wysokość dla centrowania
+  },
+  landscapeMiddleColumn: {
+    flex: 2,
+    justifyContent: "center",
+    alignItems: "center",
+    alignSelf: "center", // Dodane dla lepszego centrowania na urządzeniach mobilnych
+    maxWidth: "40%",
+    height: "100%", // Zapewnia pełną wysokość dla centrowania
+  },
+  landscapeRightColumn: {
+    flex: 1,
+    maxWidth: "30%",
+    justifyContent: "center",
+    alignItems: "center",
+    alignSelf: "center", // Dodane dla lepszego centrowania na urządzeniach mobilnych
+    paddingHorizontal: 8,
+    height: "100%", // Zapewnia pełną wysokość dla centrowania
   },
   subtitle: {
     marginBottom: 20,
     textAlign: "center",
+    textAlignVertical: "center", // Dodane dla lepszego centrowania na Androidzie
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: 'white', // Zmiana na białe tło zamiast półprzezroczystego
+    alignSelf: 'auto', // Reset alignSelf żeby szerokość była naturalna
+    // Dodajemy lekki cień dla lepszego kontrastu na białym tle
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 2,
+      },
+      web: {
+        boxShadow: '0px 2px 3px rgba(0, 0, 0, 0.1)',
+      },
+    }),
+  },  
+  landscapeSubtitle: {
+    marginBottom: 0,
+    fontSize: 16,
+    lineHeight: 20,
+    flex: 0, // Zmiana z flex: 1 na flex: 0, aby szerokość dopasowała się do zawartości
+    maxWidth: "90%", // Zwiększenie maxWidth
+    textAlignVertical: "center", // Dodane dla lepszego centrowania na Androidzie
+    alignSelf: "center", // Dodane dla lepszego centrowania
+    backgroundColor: 'white', // Zmiana na białe tło zamiast półprzezroczystego
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    // Dodajemy lekki cień dla lepszego kontrastu na białym tle
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 2,
+      },
+      web: {
+        boxShadow: '0px 2px 3px rgba(0, 0, 0, 0.1)',
+      },
+    }),
   },
   form: {
     width: "100%",
@@ -400,15 +561,24 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     backgroundColor: "transparent",
   },
+  landscapeInput: {
+    marginBottom: 5,
+    height: 45,
+    fontSize: 14,
+  },
   submitButton: {
     marginTop: 24,
     paddingVertical: 6,
+  },
+  landscapeSubmitButton: {
+    marginTop: 10,
+    paddingVertical: 4,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-  },
+  },  
   card: {
     width: "100%",
     maxWidth: 400,
@@ -417,38 +587,104 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: "#fff",
   },
+  landscapeCard: {
+    maxWidth: Platform.OS === "web" ? 400 : 350,
+    flex: Platform.OS === "web" ? 0 : 2,
+    marginBottom: 0,
+    marginHorizontal: 10,
+  },
   cardAvatarContainer: {
     marginRight: 16,
   },
   cardContent: {
     paddingVertical: 8,
+    justifyContent: "center",
   },
   infoRow: {
     flexDirection: "row",
     marginVertical: 8,
     alignItems: "center",
+    minHeight: Platform.OS === "web" ? 24 : 30, // Zapewnia minimalną wysokość dla lepszego centrowania
+    backgroundColor: 'rgba(0, 0, 0, 0.02)', // Zostawiamy lekko szare tło dla wierszy
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    width: '100%', // Zapewnienie pełnej szerokości
   },
   infoLabel: {
     width: 120,
     fontSize: 14,
+    textAlignVertical: "center", // Dodane dla Androida
+    includeFontPadding: false, // Usuwa dodatkowy padding tekstów na Androidzie
+  },
+  landscapeInfoLabel: {
+    width: 90,
+    fontSize: 12,
+    textAlignVertical: "center", // Dodane dla Androida
+    includeFontPadding: false, // Usuwa dodatkowy padding tekstów na Androidzie
   },
   infoValue: {
     flex: 1,
     fontWeight: "500",
     fontSize: 16,
+    textAlignVertical: "center", // Dodane dla Androida
+    includeFontPadding: false, // Usuwa dodatkowy padding tekstów na Androidzie
+  },
+  landscapeInfoValue: {
+    fontSize: 14,
+    textAlignVertical: "center", // Dodane dla Androida
+    includeFontPadding: false, // Usuwa dodatkowy padding tekstów na Androidzie
   },
   continueButton: {
     marginLeft: "auto",
     marginTop: 8,
   },
-
-  iconGradient: {
+  landscapeContinueButton: {
+    marginTop: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+  },
+  iconBackground: {
     width: 48,
     height: 48,
     borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",
   },
+  landscapeIconBackground: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+  },  
+  landscapeFooterText: {
+    textAlign: "center",
+    textAlignVertical: "center", // Dodane dla Androida
+    opacity: 0.8, // Zwiększamy nieprzezroczystość dla lepszej czytelności
+    fontSize: 12,
+    flex: 0, // Zmiana z flex: 1 na flex: 0, aby szerokość dopasowała się do zawartości
+    maxWidth: "90%", // Zwiększenie maxWidth
+    alignSelf: "center",
+    includeFontPadding: false, // Usuwa dodatkowy padding tekstów na Androidzie
+    backgroundColor: 'white', // Zmiana na białe tło zamiast półprzezroczystego
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    // Dodajemy lekki cień dla lepszego kontrastu na białym tle
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 2,
+      },
+      web: {
+        boxShadow: '0px 2px 3px rgba(0, 0, 0, 0.1)',
+      },
+    }),
+  }
 });
 
 export default StudentProfileScreen;

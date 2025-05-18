@@ -6,7 +6,9 @@ import {
   Platform,
   ScrollView,
   useWindowDimensions,
+  Pressable,
 } from "react-native";
+import { useOrientation } from "@/hooks/useOrientation";
 import {
   Text,
   TextInput,
@@ -18,17 +20,21 @@ import {
   useTheme,
   HelperText,
   Avatar,
+  Card,
+  TouchableRipple,
 } from "react-native-paper";
 import { StatusBar } from "expo-status-bar";
 import { router } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
+import LinearGradient from "react-native-linear-gradient";
 import BackgroundGradient from "@/components/BackgroundGradient";
 import { useAuth } from "@/contexts/AuthContext";
 
 const ExaminerLoginScreen = () => {
   const theme = useTheme();
   const { width } = useWindowDimensions();
+  const { orientation } = useOrientation();
   const isLargeScreen = width > 768;
+  const isLandscape = orientation === "landscape";
   const [activeTab, setActiveTab] = useState("login");
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
@@ -128,12 +134,338 @@ const ExaminerLoginScreen = () => {
     router.back();
   };
 
+  const renderLoginForm = () => (
+    <View style={styles.form}>
+      <Text
+        variant={isLandscape ? "bodyLarge" : "titleMedium"}
+        style={[styles.formTitle, isLandscape && styles.landscapeFormTitle]}
+      >
+        Zaloguj się do konta
+      </Text>
+      <View style={isLandscape ? styles.landscapeInputsRow : undefined}>
+        <View
+          style={isLandscape ? styles.landscapeInputHalf : { width: "100%" }}
+        >
+          <Card style={styles.inputCard}>
+            <TouchableRipple onPress={() => {}} style={styles.inputCardContent}>
+              <View style={styles.inputRow}>
+                <Avatar.Icon
+                  size={isLandscape ? 24 : 28}
+                  icon="account"
+                  style={styles.inputIcon}
+                  color={theme.colors.primary}
+                />
+                <TextInput
+                  label="Email lub nazwa użytkownika"
+                  value={email}
+                  onChangeText={setEmail}
+                  mode="flat"
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  style={styles.flatInput}
+                  disabled={loginLoading}
+                  underlineColor="transparent"
+                  activeUnderlineColor="transparent"
+                  contentStyle={[
+                    styles.inputContentStyle,
+                    isLandscape && styles.landscapeInputContent,
+                  ]}
+                />
+              </View>
+            </TouchableRipple>
+          </Card>
+        </View>
+
+        <View
+          style={isLandscape ? styles.landscapeInputHalf : { width: "100%" }}
+        >
+          <Card style={styles.inputCard}>
+            <TouchableRipple onPress={() => {}} style={styles.inputCardContent}>
+              <View style={styles.inputRow}>
+                <Avatar.Icon
+                  size={isLandscape ? 24 : 28}
+                  icon="lock"
+                  style={styles.inputIcon}
+                  color={theme.colors.primary}
+                />
+                <TextInput
+                  label="Hasło"
+                  value={password}
+                  onChangeText={setPassword}
+                  mode="flat"
+                  secureTextEntry={!passwordVisible}
+                  style={styles.flatInput}
+                  disabled={loginLoading}
+                  underlineColor="transparent"
+                  activeUnderlineColor="transparent"
+                  contentStyle={[
+                    styles.inputContentStyle,
+                    isLandscape && styles.landscapeInputContent,
+                  ]}
+                  right={
+                    <TextInput.Icon
+                      icon={passwordVisible ? "eye-off" : "eye"}
+                      onPress={() => setPasswordVisible(!passwordVisible)}
+                      forceTextInputFocus={false}
+                    />
+                  }
+                />
+              </View>
+            </TouchableRipple>
+          </Card>
+        </View>
+      </View>
+
+      {loginError ? (
+        <HelperText
+          type="error"
+          visible={!!loginError}
+          style={styles.errorText}
+        >
+          {loginError}
+        </HelperText>
+      ) : null}
+      <Button
+        mode="contained"
+        onPress={handleLogin}
+        style={[
+          styles.actionButton,
+          isLandscape && styles.landscapeActionButton,
+        ]}
+        loading={loginLoading}
+        disabled={loginLoading}
+        contentStyle={[
+          styles.buttonContent,
+          isLandscape && styles.landscapeButtonContent,
+        ]}
+        labelStyle={
+          isLandscape
+            ? { fontSize: 14, fontWeight: "bold" }
+            : { fontSize: 16, fontWeight: "bold" }
+        }
+      >
+        Zaloguj
+      </Button>
+    </View>
+  );
+
+  const renderRegisterForm = () => (
+    <View style={styles.form}>
+      <Text
+        variant={isLandscape ? "bodyLarge" : "titleMedium"}
+        style={[styles.formTitle, isLandscape && styles.landscapeFormTitle]}
+      >
+        Rejestracja nauczyciela
+      </Text>
+
+      <View style={isLandscape ? styles.landscapeInputsRow : undefined}>
+        <View
+          style={isLandscape ? styles.landscapeInputHalf : { width: "100%" }}
+        >
+          <Card style={styles.inputCard}>
+            <TouchableRipple onPress={() => {}} style={styles.inputCardContent}>
+              <View style={styles.inputRow}>
+                <Avatar.Icon
+                  size={isLandscape ? 24 : 28}
+                  icon="account"
+                  style={styles.inputIcon}
+                  color={theme.colors.primary}
+                />
+                <TextInput
+                  label="Nazwa użytkownika"
+                  value={regUsername}
+                  onChangeText={setRegUsername}
+                  mode="flat"
+                  autoCapitalize="none"
+                  style={styles.flatInput}
+                  disabled={registerLoading}
+                  underlineColor="transparent"
+                  activeUnderlineColor="transparent"
+                  contentStyle={[
+                    styles.inputContentStyle,
+                    isLandscape && styles.landscapeInputContent,
+                  ]}
+                />
+              </View>
+            </TouchableRipple>
+          </Card>
+        </View>
+
+        <View
+          style={isLandscape ? styles.landscapeInputHalf : { width: "100%" }}
+        >
+          <Card style={styles.inputCard}>
+            <TouchableRipple onPress={() => {}} style={styles.inputCardContent}>
+              <View style={styles.inputRow}>
+                <Avatar.Icon
+                  size={isLandscape ? 24 : 28}
+                  icon="email"
+                  style={styles.inputIcon}
+                  color={theme.colors.primary}
+                />
+                <TextInput
+                  label="Email"
+                  value={regEmail}
+                  onChangeText={setRegEmail}
+                  mode="flat"
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  style={styles.flatInput}
+                  disabled={registerLoading}
+                  underlineColor="transparent"
+                  activeUnderlineColor="transparent"
+                  contentStyle={[
+                    styles.inputContentStyle,
+                    isLandscape && styles.landscapeInputContent,
+                  ]}
+                />
+              </View>
+            </TouchableRipple>
+          </Card>
+        </View>
+      </View>
+
+      <View style={isLandscape ? styles.landscapeInputsRow : undefined}>
+        <View
+          style={isLandscape ? styles.landscapeInputHalf : { width: "100%" }}
+        >
+          <Card style={styles.inputCard}>
+            <TouchableRipple onPress={() => {}} style={styles.inputCardContent}>
+              <View style={styles.inputRow}>
+                <Avatar.Icon
+                  size={isLandscape ? 24 : 28}
+                  icon="lock"
+                  style={styles.inputIcon}
+                  color={theme.colors.primary}
+                />
+                <TextInput
+                  label="Hasło"
+                  value={regPassword}
+                  onChangeText={setRegPassword}
+                  mode="flat"
+                  secureTextEntry={!regPasswordVisible}
+                  style={styles.flatInput}
+                  disabled={registerLoading}
+                  underlineColor="transparent"
+                  activeUnderlineColor="transparent"
+                  contentStyle={[
+                    styles.inputContentStyle,
+                    isLandscape && styles.landscapeInputContent,
+                  ]}
+                  right={
+                    <TextInput.Icon
+                      icon={regPasswordVisible ? "eye-off" : "eye"}
+                      onPress={() => setRegPasswordVisible(!regPasswordVisible)}
+                      forceTextInputFocus={false}
+                    />
+                  }
+                />
+              </View>
+            </TouchableRipple>
+          </Card>
+        </View>
+
+        <View
+          style={isLandscape ? styles.landscapeInputHalf : { width: "100%" }}
+        >
+          <Card style={styles.inputCard}>
+            <TouchableRipple onPress={() => {}} style={styles.inputCardContent}>
+              <View style={styles.inputRow}>
+                <Avatar.Icon
+                  size={isLandscape ? 24 : 28}
+                  icon="lock-check"
+                  style={styles.inputIcon}
+                  color={theme.colors.primary}
+                />
+                <TextInput
+                  label="Potwierdź hasło"
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  mode="flat"
+                  secureTextEntry={!confirmPasswordVisible}
+                  style={styles.flatInput}
+                  disabled={registerLoading}
+                  underlineColor="transparent"
+                  activeUnderlineColor="transparent"
+                  contentStyle={[
+                    styles.inputContentStyle,
+                    isLandscape && styles.landscapeInputContent,
+                  ]}
+                  right={
+                    <TextInput.Icon
+                      icon={confirmPasswordVisible ? "eye-off" : "eye"}
+                      onPress={() =>
+                        setConfirmPasswordVisible(!confirmPasswordVisible)
+                      }
+                      forceTextInputFocus={false}
+                    />
+                  }
+                />
+              </View>
+            </TouchableRipple>
+          </Card>
+        </View>
+      </View>
+
+      {registerError ? (
+        <HelperText
+          type="error"
+          visible={!!registerError}
+          style={styles.errorText}
+        >
+          {registerError}
+        </HelperText>
+      ) : null}
+
+      <View
+        style={[
+          styles.termsContainer,
+          isLandscape && styles.landscapeTermsContainer,
+        ]}
+      >
+        <Text
+          variant={isLandscape ? "bodySmall" : "bodySmall"}
+          style={styles.termsText}
+        >
+          Klikając Zarejestruj się, akceptujesz nasze Warunki korzystania z
+          usługi i Politykę prywatności.
+        </Text>
+      </View>
+
+      <Button
+        mode="contained"
+        onPress={handleRegister}
+        style={[
+          styles.actionButton,
+          isLandscape && styles.landscapeActionButton,
+        ]}
+        loading={registerLoading}
+        disabled={registerLoading}
+        contentStyle={[
+          styles.buttonContent,
+          isLandscape && styles.landscapeButtonContent,
+        ]}
+        labelStyle={
+          isLandscape
+            ? { fontSize: 14, fontWeight: "bold" }
+            : { fontSize: 16, fontWeight: "bold" }
+        }
+      >
+        Zarejestruj się
+      </Button>
+    </View>
+  );
+
   return (
     <BackgroundGradient>
       <Appbar.Header style={{ backgroundColor: "#8B0000" }}>
         <Appbar.BackAction onPress={handleBackPress} color="#fff" />
         <Appbar.Content
-          title={activeTab === "login" ? "Logowanie Nauczyciela" : "Rejestracja Nauczyciela"}
+          title={
+            activeTab === "login"
+              ? "Logowanie Nauczyciela"
+              : "Rejestracja Nauczyciela"
+          }
           titleStyle={{ color: "#fff", fontWeight: "bold" }}
         />
       </Appbar.Header>
@@ -149,7 +481,6 @@ const ExaminerLoginScreen = () => {
           ]}
           keyboardShouldPersistTaps="handled"
         >
-          {" "}
           <View
             style={[styles.container, isLargeScreen && styles.desktopContainer]}
           >
@@ -161,18 +492,7 @@ const ExaminerLoginScreen = () => {
               ]}
               elevation={2}
             >
-              {/* Logo and Brand Header */}
-              <View style={styles.logoContainer}>
-                <Avatar.Icon
-                  size={isLargeScreen ? 80 : 60}
-                  icon="medical-bag"
-                  style={[
-                    styles.logo,
-                    { backgroundColor: theme.colors.surfaceVariant },
-                  ]}
-                  color={theme.colors.primary}
-                />
-              </View>
+
               <SegmentedButtons
                 value={activeTab}
                 onValueChange={setActiveTab}
@@ -190,146 +510,12 @@ const ExaminerLoginScreen = () => {
                       Platform.OS === "android" ? styles.androidButton : {},
                   },
                 ]}
-                style={styles.segmentedButton}
+                style={[
+                  styles.segmentedButton,
+                  isLandscape && styles.landscapeSegmentedButton,
+                ]}
               />
-              {activeTab === "login" ? (
-                <View style={styles.form}>
-                  <Text variant="titleMedium" style={styles.formTitle}>
-                    Zaloguj się do konta
-                  </Text>
-                  <TextInput
-                    label="Email lub nazwa użytkownika"
-                    value={email}
-                    onChangeText={setEmail}
-                    mode="outlined"
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                    style={styles.input}
-                    disabled={loginLoading}
-                    left={<TextInput.Icon icon="account" />}
-                  />
-                  <TextInput
-                    label="Hasło"
-                    value={password}
-                    onChangeText={setPassword}
-                    mode="outlined"
-                    secureTextEntry={!passwordVisible}
-                    style={styles.input}
-                    left={<TextInput.Icon icon="lock" />}
-                    right={
-                      <TextInput.Icon
-                        icon={passwordVisible ? "eye-off" : "eye"}
-                        onPress={() => setPasswordVisible(!passwordVisible)}
-                      />
-                    }
-                    disabled={loginLoading}
-                  />
-                  {loginError ? (
-                    <HelperText type="error" visible={!!loginError}>
-                      {loginError}
-                    </HelperText>
-                  ) : null}{" "}
-                  <Button
-                    mode="contained"
-                    onPress={handleLogin}
-                    style={styles.actionButton}
-                    loading={loginLoading}
-                    disabled={loginLoading}
-                  >
-                    Zaloguj
-                  </Button>
-                </View>
-              ) : (
-                <View style={styles.form}>
-                  <Text variant="titleMedium" style={styles.formTitle}>
-                    Rejestracja nauczyciela
-                  </Text>
-
-                  <TextInput
-                    label="Nazwa użytkownika"
-                    value={regUsername}
-                    onChangeText={setRegUsername}
-                    mode="outlined"
-                    style={styles.input}
-                    autoCapitalize="none"
-                    left={<TextInput.Icon icon="account" />}
-                    disabled={registerLoading}
-                  />
-
-                  <TextInput
-                    label="Email"
-                    value={regEmail}
-                    onChangeText={setRegEmail}
-                    mode="outlined"
-                    style={styles.input}
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                    left={<TextInput.Icon icon="email" />}
-                    disabled={registerLoading}
-                  />
-
-                  <TextInput
-                    label="Hasło"
-                    value={regPassword}
-                    onChangeText={setRegPassword}
-                    mode="outlined"
-                    style={styles.input}
-                    secureTextEntry={!regPasswordVisible}
-                    left={<TextInput.Icon icon="lock" />}
-                    right={
-                      <TextInput.Icon
-                        icon={regPasswordVisible ? "eye-off" : "eye"}
-                        onPress={() =>
-                          setRegPasswordVisible(!regPasswordVisible)
-                        }
-                      />
-                    }
-                    disabled={registerLoading}
-                  />
-
-                  <TextInput
-                    label="Potwierdź hasło"
-                    value={confirmPassword}
-                    onChangeText={setConfirmPassword}
-                    mode="outlined"
-                    style={styles.input}
-                    secureTextEntry={!confirmPasswordVisible}
-                    left={<TextInput.Icon icon="lock-check" />}
-                    right={
-                      <TextInput.Icon
-                        icon={confirmPasswordVisible ? "eye-off" : "eye"}
-                        onPress={() =>
-                          setConfirmPasswordVisible(!confirmPasswordVisible)
-                        }
-                      />
-                    }
-                    disabled={registerLoading}
-                  />
-
-                  {registerError ? (
-                    <HelperText type="error" visible={!!registerError}>
-                      {registerError}
-                    </HelperText>
-                  ) : null}
-
-                  <View style={styles.termsContainer}>
-                    <Text variant="bodySmall" style={styles.termsText}>
-                      Klikając Zarejestruj się, akceptujesz nasze Warunki
-                      korzystania z usługi i Politykę prywatności.
-                    </Text>
-                  </View>
-
-                  <Button
-                    mode="contained"
-                    onPress={handleRegister}
-                    style={styles.actionButton}
-                    loading={registerLoading}
-                    disabled={registerLoading}
-                  >
-                    Zarejestruj się
-                  </Button>
-                </View>
-              )}{" "}
+              {activeTab === "login" ? renderLoginForm() : renderRegisterForm()}{" "}
             </Surface>
           </View>
         </ScrollView>
@@ -376,26 +562,34 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: Platform.select({
-      android: 16,
+      android: 8, // Reduced from 16 to 8
+      ios: 8, // Reduced from 16 to 8
       default: 24,
     }),
     paddingTop: Platform.select({
-      android: 16,
+      android: 12,
+      ios: 12,
       default: 40,
     }),
+    width: "100%", // Ensure full width
   },
   desktopContainer: {
     alignItems: "center",
     justifyContent: "center",
     paddingTop: 0,
+    width: "100%", // Ensure full width
   },
   formSurface: {
-    padding: 32,
+    padding: Platform.select({
+      android: 16,
+      ios: 16,
+      default: 32,
+    }),
     borderRadius: 8,
     width: "100%",
   },
   desktopFormSurface: {
-    maxWidth: 480,
+    maxWidth: 580, // Increased from 480 to 580
     width: "100%",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
@@ -409,6 +603,12 @@ const styles = StyleSheet.create({
   logo: {
     marginBottom: 16,
   },
+  landscapeLogoContainer: {
+    marginBottom: 16,
+  },
+  landscapeLogo: {
+    marginBottom: 8,
+  },
   brandText: {
     fontWeight: "500",
   },
@@ -417,6 +617,9 @@ const styles = StyleSheet.create({
       android: 20,
       default: 28,
     }),
+  },
+  landscapeSegmentedButton: {
+    marginBottom: 12,
   },
   androidButton: {
     flex: 1,
@@ -431,11 +634,17 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     textAlign: "center",
   },
+  landscapeFormTitle: {
+    marginBottom: 12,
+  },
   input: {
     marginBottom: Platform.select({
       android: 16,
       default: 20,
     }),
+  },
+  textInputContent: {
+    height: 48,
   },
   actionButton: {
     marginBottom: Platform.select({
@@ -443,7 +652,9 @@ const styles = StyleSheet.create({
       default: 24,
     }),
     paddingVertical: 6,
-    borderRadius: 4,
+    borderRadius: 8, // Increased from 4 to 8
+    marginTop: 8, // Added margin top
+    elevation: 2, // Added elevation for Android shadow
   },
   termsContainer: {
     marginBottom: 24,
@@ -481,6 +692,73 @@ const styles = StyleSheet.create({
   desktopSnackbarWrapper: {
     width: "50%",
     alignSelf: "center",
+  }, // New mobile-friendly input styles
+  inputCard: {
+    marginBottom: 16,
+    borderRadius: 12,
+    overflow: "hidden",
+    width: "100%", // Ensure full width
+  },
+  inputCardContent: {
+    paddingHorizontal: 0,
+    width: "100%", // Ensure full width
+  },
+  inputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12, // Increased from 8 to 12
+    width: "100%", // Ensure full width
+    minHeight: 60, // Ensure minimum height for better touch targets
+  },
+  inputIcon: {
+    backgroundColor: "transparent",
+    margin: 0,
+    paddingTop: 0,
+    marginRight: 12, // Increased from 8 to 12
+  },
+  flatInput: {
+    flex: 1,
+    backgroundColor: "transparent",
+    fontSize: Platform.select({
+      android: 16,
+      ios: 16,
+      default: 16,
+    }),
+    width: "100%", // Ensure full width
+  },
+  inputContentStyle: {
+    paddingTop: 10, // Increased from 8 to 10
+    paddingBottom: 10, // Increased from 8 to 10
+  },
+  errorText: {
+    textAlign: "center",
+    marginBottom: 16,
+    fontSize: 14,
+  },
+  buttonContent: {
+    paddingVertical: 10, // Increased from 8 to 10
+  },
+  landscapeInputsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  landscapeInputHalf: {
+    width: "49%",
+  },
+  landscapeActionButton: {
+    marginBottom: 12,
+    paddingVertical: 4,
+  },
+  landscapeButtonContent: {
+    paddingVertical: 6,
+  },
+  landscapeTermsContainer: {
+    marginBottom: 12,
+  },
+  landscapeInputContent: {
+    paddingTop: 6,
+    paddingBottom: 6,
   },
 });
 

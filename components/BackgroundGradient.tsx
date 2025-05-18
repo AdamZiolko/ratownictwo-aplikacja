@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, View, ViewStyle } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { useTheme as usePaperTheme } from 'react-native-paper';
 import { useTheme } from '@/contexts/ThemeContext';
 
 interface BackgroundGradientProps {
@@ -19,15 +19,20 @@ const BackgroundGradient: React.FC<BackgroundGradientProps> = ({
   darkColors = ['#4A0000', '#9A1515']
 }) => {
   const { theme } = useTheme();
+  const paperTheme = usePaperTheme();
   
-  // Wybierz kolory na podstawie aktualnego motywu
-  const gradientColors = colors || (theme === 'dark' ? darkColors : lightColors);
+  // Wybierz kolor na podstawie aktualnego motywu
+  const primaryColor = (theme === 'dark' ? darkColors[0] : lightColors[0]);
+  const secondaryColor = (theme === 'dark' ? darkColors[1] : lightColors[1]);
+  
   return (
     <View style={[styles.container, containerStyle]}>
-      {/* Diagonal gradient stripe */}
-      <LinearGradient
-        colors={gradientColors}
-        style={styles.diagonalStripe}
+      {/* Header color band */}
+      <View 
+        style={[
+          styles.diagonalStripe,
+          { backgroundColor: secondaryColor }
+        ]}
       />
       {children}
     </View>

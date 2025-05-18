@@ -1,19 +1,33 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Platform, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
-import { useTheme, Text, Surface, Button, Appbar, IconButton, Divider } from 'react-native-paper';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
-import BackgroundGradient from '../../../components/BackgroundGradient';
-import { router, useLocalSearchParams } from 'expo-router';
-import { Audio } from 'expo-av';
-import EkgDisplay from '../../../components/ekg/EkgDisplay';
-import ColorSensor from '../../../components/ColorSensor';
-import SocketConnectionStatus from '../../../components/SocketConnectionStatus';
-import { socketService } from '../../../services/SocketService';
-import { sessionService } from '../../../services/SessionService';
-import type { Session } from '../../../services/SessionService';
-import { SoundQueueItem } from '../examiner/types/types';
+import React, { useEffect, useRef, useState } from "react";
+import {
+  View,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  ActivityIndicator,
+} from "react-native";
+import {
+  useTheme,
+  Text,
+  Surface,
+  Button,
+  Appbar,
+  IconButton,
+  Divider,
+  Icon,
+} from "react-native-paper";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
+import BackgroundGradient from "../../../components/BackgroundGradient";
+import { router, useLocalSearchParams } from "expo-router";
+import { Audio } from "expo-av";
+import EkgCardDisplay from "../../../components/ekg/EkgCardDisplay";
+import ColorSensor from "../../../components/ColorSensor";
+import SocketConnectionStatus from "../../../components/SocketConnectionStatus";
+import { socketService } from "../../../services/SocketService";
+import { sessionService } from "../../../services/SessionService";
+import type { Session } from "../../../services/SessionService";
+import { SoundQueueItem } from "../examiner/types/types";
 
 interface VitalWithFluctuation {
   baseValue: number | null;
@@ -46,21 +60,21 @@ const soundFiles: Record<string, any> = {
   "Adult/Female/Sob breathing.wav": require("../../../assets/sounds/Adult/Female/Sobbreathing.wav"),
   "Adult/Female/Vomiting.wav": require("../../../assets/sounds/Adult/Female/Vomiting.wav"),
   "Adult/Female/Yes.wav": require("../../../assets/sounds/Adult/Female/Yes.wav"),
-  'Adult/Male/Coughing (long).wav': require('../../../assets/sounds/Adult/Male/Coughing(long).wav'),
-  'Adult/Male/Coughing.wav': require('../../../assets/sounds/Adult/Male/Coughing.wav'),
-  'Adult/Male/Difficult breathing.wav': require('../../../assets/sounds/Adult/Male/Difficultbreathing.wav'),
-  'Adult/Male//Hawk.wav': require('../../../assets/sounds/Adult/Male/Hawk.wav'),
-  'Adult/Male/Moaning (long).wav': require('../../../assets/sounds/Adult/Male/Moaning(long).wav'),
-  'Adult/Male/oaning.wav': require('../../../assets/sounds/Adult/Male/Moaning.wav'),
-  'Adult/Male/No.wav': require('../../../assets/sounds/Adult/Male/No.wav'),
-  'Adult/Male/Ok.wav': require('../../../assets/sounds/Adult/Male/Ok.wav'),
-  'Adult/Male/Screaming (type 2).wav': require('../../../assets/sounds/Adult/Male/Screaming(type2).wav'),
-  'Adult/Male/Screaming.wav': require('../../../assets/sounds/Adult/Male/Screaming.wav'),
-  'Adult/Male/Sob breathing.wav': require('../../../assets/sounds/Adult/Male/Sobbreathing.wav'),
-  'Adult/Male/Vomiting (type 2).wav': require('../../../assets/sounds/Adult/Male/Vomiting(type2).wav'),
-  'Adult/Male/Vomiting (type 3).wav': require('../../../assets/sounds/Adult/Male/Vomiting(type3).wav'),
-  'Adult/Male/Vomiting.wav': require('../../../assets/sounds/Adult/Male/Vomiting.wav'),
-  'Adult/Male/Yes.wav': require('../../../assets/sounds/Adult/Male/Yes.wav'),
+  "Adult/Male/Coughing (long).wav": require("../../../assets/sounds/Adult/Male/Coughing(long).wav"),
+  "Adult/Male/Coughing.wav": require("../../../assets/sounds/Adult/Male/Coughing.wav"),
+  "Adult/Male/Difficult breathing.wav": require("../../../assets/sounds/Adult/Male/Difficultbreathing.wav"),
+  "Adult/Male//Hawk.wav": require("../../../assets/sounds/Adult/Male/Hawk.wav"),
+  "Adult/Male/Moaning (long).wav": require("../../../assets/sounds/Adult/Male/Moaning(long).wav"),
+  "Adult/Male/oaning.wav": require("../../../assets/sounds/Adult/Male/Moaning.wav"),
+  "Adult/Male/No.wav": require("../../../assets/sounds/Adult/Male/No.wav"),
+  "Adult/Male/Ok.wav": require("../../../assets/sounds/Adult/Male/Ok.wav"),
+  "Adult/Male/Screaming (type 2).wav": require("../../../assets/sounds/Adult/Male/Screaming(type2).wav"),
+  "Adult/Male/Screaming.wav": require("../../../assets/sounds/Adult/Male/Screaming.wav"),
+  "Adult/Male/Sob breathing.wav": require("../../../assets/sounds/Adult/Male/Sobbreathing.wav"),
+  "Adult/Male/Vomiting (type 2).wav": require("../../../assets/sounds/Adult/Male/Vomiting(type2).wav"),
+  "Adult/Male/Vomiting (type 3).wav": require("../../../assets/sounds/Adult/Male/Vomiting(type3).wav"),
+  "Adult/Male/Vomiting.wav": require("../../../assets/sounds/Adult/Male/Vomiting.wav"),
+  "Adult/Male/Yes.wav": require("../../../assets/sounds/Adult/Male/Yes.wav"),
   "Speech/Chest hurts.wav": require("../../../assets/sounds/Speech/Chesthurts.wav"),
   "Speech/Doc I feel I could die.wav": require("../../../assets/sounds/Speech/DocIfeelIcoulddie.wav"),
   "Speech/Go away.wav": require("../../../assets/sounds/Speech/Goaway.wav"),
@@ -119,13 +133,14 @@ const soundFiles: Record<string, any> = {
 
 const StudentSessionScreen = () => {
   const theme = useTheme();
-  const { firstName, lastName, albumNumber, accessCode } = useLocalSearchParams<{
-    firstName: string;
-    lastName: string;
-    albumNumber: string;
-    accessCode: string;
-  }>();
-  
+  const { firstName, lastName, albumNumber, accessCode } =
+    useLocalSearchParams<{
+      firstName: string;
+      lastName: string;
+      albumNumber: string;
+      accessCode: string;
+    }>();
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sessionData, setSessionData] = useState<Session | null>(null);
@@ -133,7 +148,7 @@ const StudentSessionScreen = () => {
   const isWeb = Platform.OS === "web";
   const [isSessionPanelExpanded, setIsSessionPanelExpanded] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  
+
   const soundInstances = useRef<Record<string, Audio.Sound>>({});
 
   const [temperature, setTemperature] = useState<VitalWithFluctuation>({
@@ -171,14 +186,19 @@ const StudentSessionScreen = () => {
     fluctuationRange: 5,
   });
 
-  const generateFluctuation = (value: number | null, fluctuationRange: number): number | null => {
+  const generateFluctuation = (
+    value: number | null,
+    fluctuationRange: number
+  ): number | null => {
     if (value === null) return null;
     const fluctPercent = (Math.random() - 0.5) * 2 * fluctuationRange;
     const fluctAmount = value * (fluctPercent / 100);
     return Math.round((value + fluctAmount) * 10) / 10;
   };
 
-  const parseBloodPressure = (bpString: string | null | undefined): { systolic: number | null; diastolic: number | null } => {
+  const parseBloodPressure = (
+    bpString: string | null | undefined
+  ): { systolic: number | null; diastolic: number | null } => {
     if (!bpString) return { systolic: null, diastolic: null };
     const parts = bpString.split("/");
     if (parts.length !== 2) return { systolic: null, diastolic: null };
@@ -249,7 +269,10 @@ const StudentSessionScreen = () => {
     return () => unsubscribe();
   }, [accessCode]);
 
-  const handleSoundPlayback = async (soundName: string, loop: boolean): Promise<void> => {
+  const handleSoundPlayback = async (
+    soundName: string,
+    loop: boolean
+  ): Promise<void> => {
     return new Promise(async (resolve) => {
       try {
         if (!soundInstances.current[soundName]) {
@@ -334,7 +357,7 @@ const StudentSessionScreen = () => {
           : sessionData.rr
         : null;
 
-    setTemperature(prev => ({
+    setTemperature((prev) => ({
       ...prev,
       baseValue: tempValue,
       currentValue: tempValue,
@@ -345,17 +368,17 @@ const StudentSessionScreen = () => {
       currentSystolic: systolic,
       currentDiastolic: diastolic,
     });
-    setSpo2(prev => ({
+    setSpo2((prev) => ({
       ...prev,
       baseValue: spo2Value,
       currentValue: spo2Value,
     }));
-    setEtco2(prev => ({
+    setEtco2((prev) => ({
       ...prev,
       baseValue: etco2Value,
       currentValue: etco2Value,
     }));
-    setRespiratoryRate(prev => ({
+    setRespiratoryRate((prev) => ({
       ...prev,
       baseValue: rrValue,
       currentValue: rrValue,
@@ -363,26 +386,38 @@ const StudentSessionScreen = () => {
 
     // Update vital signs with small fluctuations
     const fluctuationTimer = setInterval(() => {
-      setTemperature(prev => ({
+      setTemperature((prev) => ({
         ...prev,
-        currentValue: generateFluctuation(prev.baseValue, prev.fluctuationRange),
+        currentValue: generateFluctuation(
+          prev.baseValue,
+          prev.fluctuationRange
+        ),
       }));
-      setBloodPressure(prev => ({
+      setBloodPressure((prev) => ({
         ...prev,
         currentSystolic: generateFluctuation(prev.systolic, 2),
         currentDiastolic: generateFluctuation(prev.diastolic, 2),
       }));
-      setSpo2(prev => ({
+      setSpo2((prev) => ({
         ...prev,
-        currentValue: generateFluctuation(prev.baseValue, prev.fluctuationRange),
+        currentValue: generateFluctuation(
+          prev.baseValue,
+          prev.fluctuationRange
+        ),
       }));
-      setEtco2(prev => ({
+      setEtco2((prev) => ({
         ...prev,
-        currentValue: generateFluctuation(prev.baseValue, prev.fluctuationRange),
+        currentValue: generateFluctuation(
+          prev.baseValue,
+          prev.fluctuationRange
+        ),
       }));
-      setRespiratoryRate(prev => ({
+      setRespiratoryRate((prev) => ({
         ...prev,
-        currentValue: generateFluctuation(prev.baseValue, prev.fluctuationRange),
+        currentValue: generateFluctuation(
+          prev.baseValue,
+          prev.fluctuationRange
+        ),
       }));
     }, 2000);
 
@@ -390,48 +425,67 @@ const StudentSessionScreen = () => {
   }, [sessionData]);
 
   const formatBloodPressure = (): string => {
-    if (bloodPressure.currentSystolic === null || bloodPressure.currentDiastolic === null) {
+    if (
+      bloodPressure.currentSystolic === null ||
+      bloodPressure.currentDiastolic === null
+    ) {
       return "N/A";
     }
-    return `${Math.round(bloodPressure.currentSystolic)}/${Math.round(bloodPressure.currentDiastolic)}`;
+    return `${Math.round(bloodPressure.currentSystolic)}/${Math.round(
+      bloodPressure.currentDiastolic
+    )}`;
   };
 
   const renderFullscreenView = () => (
     <View style={{ flex: 1 }}>
       <View style={styles.fullscreenExitButton}>
-        <IconButton icon="arrow-collapse" onPress={() => setIsFullscreen(false)} size={24} />
+        <IconButton
+          icon="arrow-collapse"
+          onPress={() => setIsFullscreen(false)}
+          size={24}
+        />
       </View>
-
       <View style={styles.fullscreenContent}>
-        <Surface style={styles.ekgCardFullscreen} elevation={3}>
-          <View style={styles.cardHeaderRow}>
-            <MaterialCommunityIcons name="heart-pulse" size={24} color={theme.colors.error} />
-            <Text style={styles.cardHeaderTitle}>Kardiomonitor</Text>
-          </View>
-          <EkgDisplay
+        <Surface style={styles.vitalItemCard} elevation={1}>
+          <EkgCardDisplay
             ekgType={Number(sessionData?.rhythmType)}
             bpm={Number(sessionData?.beatsPerMinute)}
             noiseType={sessionData?.noiseLevel}
             isRunning
+            title="Kardiomonitor"
           />
         </Surface>
 
         <Surface style={styles.vitalsCardFullscreen} elevation={3}>
           <View style={styles.cardHeaderRow}>
-            <MaterialCommunityIcons name="clipboard-pulse" size={24} color={theme.colors.primary} />
+            <MaterialCommunityIcons
+              name="clipboard-pulse"
+              size={24}
+              color={theme.colors.primary}
+            />
             <Text style={styles.cardHeaderTitle}>Parametry pacjenta</Text>
           </View>
           <View style={styles.fullscreenVitalsGrid}>
             <View style={styles.vitalsRow}>
               <Surface style={styles.vitalItemCard} elevation={1}>
-                <MaterialCommunityIcons name="thermometer" size={22} color={theme.colors.tertiary} />
+                <MaterialCommunityIcons
+                  name="thermometer"
+                  size={22}
+                  color={theme.colors.tertiary}
+                />
                 <Text style={styles.vitalLabel}>Temperatura</Text>
                 <Text style={styles.vitalValue}>
-                  {temperature.currentValue !== null ? `${temperature.currentValue}${temperature.unit}` : "N/A"}
+                  {temperature.currentValue !== null
+                    ? `${temperature.currentValue}${temperature.unit}`
+                    : "N/A"}
                 </Text>
               </Surface>
               <Surface style={styles.vitalItemCard} elevation={1}>
-                <MaterialCommunityIcons name="blood-bag" size={22} color={theme.colors.error} />
+                <MaterialCommunityIcons
+                  name="blood-bag"
+                  size={22}
+                  color={theme.colors.error}
+                />
                 <Text style={styles.vitalLabel}>Ciśnienie krwi</Text>
                 <Text style={styles.vitalValue}>{formatBloodPressure()}</Text>
               </Surface>
@@ -439,24 +493,42 @@ const StudentSessionScreen = () => {
 
             <View style={styles.vitalsRow}>
               <Surface style={styles.vitalItemCard} elevation={1}>
-                <MaterialCommunityIcons name="percent" size={22} color={theme.colors.primary} />
+                <MaterialCommunityIcons
+                  name="percent"
+                  size={22}
+                  color={theme.colors.primary}
+                />
                 <Text style={styles.vitalLabel}>SpO₂</Text>
                 <Text style={styles.vitalValue}>
-                  {spo2.currentValue !== null ? `${spo2.currentValue}${spo2.unit}` : "N/A"}
+                  {spo2.currentValue !== null
+                    ? `${spo2.currentValue}${spo2.unit}`
+                    : "N/A"}
                 </Text>
               </Surface>
               <Surface style={styles.vitalItemCard} elevation={1}>
-                <MaterialCommunityIcons name="molecule-co2" size={22} color={theme.colors.secondary} />
+                <MaterialCommunityIcons
+                  name="molecule-co2"
+                  size={22}
+                  color={theme.colors.secondary}
+                />
                 <Text style={styles.vitalLabel}>EtCO₂</Text>
                 <Text style={styles.vitalValue}>
-                  {etco2.currentValue !== null ? `${etco2.currentValue}${etco2.unit}` : "N/A"}
+                  {etco2.currentValue !== null
+                    ? `${etco2.currentValue}${etco2.unit}`
+                    : "N/A"}
                 </Text>
               </Surface>
               <Surface style={styles.vitalItemCard} elevation={1}>
-                <MaterialCommunityIcons name="lungs" size={22} color={theme.colors.tertiary} />
+                <MaterialCommunityIcons
+                  name="lungs"
+                  size={22}
+                  color={theme.colors.tertiary}
+                />
                 <Text style={styles.vitalLabel}>Częstość oddechów</Text>
                 <Text style={styles.vitalValue}>
-                  {respiratoryRate.currentValue !== null ? `${respiratoryRate.currentValue}${respiratoryRate.unit}` : "N/A"}
+                  {respiratoryRate.currentValue !== null
+                    ? `${respiratoryRate.currentValue}${respiratoryRate.unit}`
+                    : "N/A"}
                 </Text>
               </Surface>
             </View>
@@ -470,9 +542,12 @@ const StudentSessionScreen = () => {
     <BackgroundGradient>
       <Appbar.Header style={{ backgroundColor: "#8B0000" }}>
         <Appbar.BackAction onPress={() => router.back()} color="#fff" />
-        <Appbar.Content title="Sesja studenta" titleStyle={{ color: "#fff", fontWeight: "bold" }} />
+        <Appbar.Content
+          title="Sesja studenta"
+          titleStyle={{ color: "#fff", fontWeight: "bold" }}
+        />
       </Appbar.Header>
-      
+
       <SafeAreaView edges={["top"]} style={styles.safeArea}>
         {isLoading ? (
           <View style={styles.center}>
@@ -481,8 +556,14 @@ const StudentSessionScreen = () => {
           </View>
         ) : error ? (
           <Surface style={styles.center} elevation={2}>
-            <MaterialCommunityIcons name="alert-circle-outline" size={64} color={theme.colors.error} />
-            <Text style={{ color: theme.colors.error, marginVertical: 12 }}>Błąd: {error}</Text>
+            <MaterialCommunityIcons
+              name="alert-circle-outline"
+              size={64}
+              color={theme.colors.error}
+            />
+            <Text style={{ color: theme.colors.error, marginVertical: 12 }}>
+              Błąd: {error}
+            </Text>
             <Button mode="contained" onPress={handleRetry} icon="refresh">
               Spróbuj ponownie
             </Button>
@@ -491,27 +572,26 @@ const StudentSessionScreen = () => {
           isFullscreen && Platform.OS !== "web" ? (
             renderFullscreenView()
           ) : (
-            <ScrollView 
-              style={styles.content} 
+            <ScrollView
+              style={styles.content}
               contentContainerStyle={[
                 styles.contentContainer,
-                { flexGrow: 1, justifyContent: 'center', minHeight: '100%' }
-              ]}>
+                { flexGrow: 1, justifyContent: "center", minHeight: "100%" },
+              ]}
+            >
               {Platform.OS !== "web" ? (
                 <View style={styles.mobileSessionHeader}>
-                  <View style={styles.mobileHeaderButtons}>
-                    <Button
-                      mode="outlined"
-                      onPress={() => setIsSessionPanelExpanded(!isSessionPanelExpanded)}
-                      icon={isSessionPanelExpanded ? "chevron-up" : "chevron-down"}
+                  <View style={styles.mobileHeaderButtons}>                    <Button
+                    mode="elevated"
+                      onPress={() =>
+                        setIsSessionPanelExpanded(!isSessionPanelExpanded)
+                      }
+                      icon={
+                        isSessionPanelExpanded ? "chevron-up" : "chevron-down"
+                      }
                     >
                       Informacje o sesji
                     </Button>
-                    <IconButton
-                      icon="arrow-expand"
-                      onPress={() => setIsFullscreen(true)}
-                      size={24}
-                    />
                   </View>
                   {isSessionPanelExpanded && (
                     <Surface style={styles.sessionInfo} elevation={3}>
@@ -524,7 +604,6 @@ const StudentSessionScreen = () => {
                         />
                         <Text style={styles.title}>Sesja #{accessCode}</Text>
                       </View>
-                      <Divider style={styles.divider} />
                       <View style={styles.patientInfoRow}>
                         <MaterialCommunityIcons
                           name="account"
@@ -542,19 +621,30 @@ const StudentSessionScreen = () => {
                             size={20}
                             color={theme.colors.secondary}
                           />
-                          <Text style={styles.sessionName}>{sessionData.name}</Text>
+                          <Text style={styles.sessionName}>
+                            {sessionData.name}
+                          </Text>
                         </View>
                       )}
-                      <Divider style={[styles.divider, { marginVertical: 10 }]} />
+      
                       <View style={styles.sessionMetaInfo}>
                         <View style={styles.metaItemRow}>
                           <MaterialCommunityIcons
-                            name={sessionData?.isActive ? "check-circle" : "close-circle"}
+                            name={
+                              sessionData?.isActive
+                                ? "check-circle"
+                                : "close-circle"
+                            }
                             size={18}
-                            color={sessionData?.isActive ? theme.colors.primary : theme.colors.error}
+                            color={
+                              sessionData?.isActive
+                                ? theme.colors.primary
+                                : theme.colors.error
+                            }
                           />
                           <Text style={styles.metaItemLabel}>
-                            Status: {sessionData?.isActive ? "Aktywna" : "Nieaktywna"}
+                            Status:{" "}
+                            {sessionData?.isActive ? "Aktywna" : "Nieaktywna"}
                           </Text>
                         </View>
                         {sessionData?.createdAt && (
@@ -565,7 +655,8 @@ const StudentSessionScreen = () => {
                               color={theme.colors.secondary}
                             />
                             <Text style={styles.metaItemLabel}>
-                              Utworzono: {new Date(sessionData.createdAt).toLocaleString()}
+                              Utworzono:{" "}
+                              {new Date(sessionData.createdAt).toLocaleString()}
                             </Text>
                           </View>
                         )}
@@ -577,7 +668,8 @@ const StudentSessionScreen = () => {
                               color={theme.colors.secondary}
                             />
                             <Text style={styles.metaItemLabel}>
-                              Ostatnia aktualizacja: {new Date(sessionData.updatedAt).toLocaleString()}
+                              Ostatnia aktualizacja:{" "}
+                              {new Date(sessionData.updatedAt).toLocaleString()}
                             </Text>
                           </View>
                         )}
@@ -596,7 +688,6 @@ const StudentSessionScreen = () => {
                     />
                     <Text style={styles.title}>Sesja #{accessCode}</Text>
                   </View>
-                  <Divider style={styles.divider} />
                   <View style={styles.patientInfoRow}>
                     <MaterialCommunityIcons
                       name="account"
@@ -617,16 +708,24 @@ const StudentSessionScreen = () => {
                       <Text style={styles.sessionName}>{sessionData.name}</Text>
                     </View>
                   )}
-                  <Divider style={[styles.divider, { marginVertical: 10 }]} />
                   <View style={styles.sessionMetaInfo}>
                     <View style={styles.metaItemRow}>
                       <MaterialCommunityIcons
-                        name={sessionData?.isActive ? "check-circle" : "close-circle"}
+                        name={
+                          sessionData?.isActive
+                            ? "check-circle"
+                            : "close-circle"
+                        }
                         size={18}
-                        color={sessionData?.isActive ? theme.colors.primary : theme.colors.error}
+                        color={
+                          sessionData?.isActive
+                            ? theme.colors.primary
+                            : theme.colors.error
+                        }
                       />
                       <Text style={styles.metaItemLabel}>
-                        Status: {sessionData?.isActive ? "Aktywna" : "Nieaktywna"}
+                        Status:{" "}
+                        {sessionData?.isActive ? "Aktywna" : "Nieaktywna"}
                       </Text>
                     </View>
                     {sessionData?.createdAt && (
@@ -637,7 +736,8 @@ const StudentSessionScreen = () => {
                           color={theme.colors.secondary}
                         />
                         <Text style={styles.metaItemLabel}>
-                          Utworzono: {new Date(sessionData.createdAt).toLocaleString()}
+                          Utworzono:{" "}
+                          {new Date(sessionData.createdAt).toLocaleString()}
                         </Text>
                       </View>
                     )}
@@ -649,32 +749,23 @@ const StudentSessionScreen = () => {
                           color={theme.colors.secondary}
                         />
                         <Text style={styles.metaItemLabel}>
-                          Ostatnia aktualizacja: {new Date(sessionData.updatedAt).toLocaleString()}
+                          Ostatnia aktualizacja:{" "}
+                          {new Date(sessionData.updatedAt).toLocaleString()}
                         </Text>
                       </View>
                     )}
                   </View>
                 </Surface>
-              )}
-
+              )}{" "}
               {Platform.OS !== "web" ? (
                 <>
-                  <Surface style={styles.ekgCard} elevation={3}>
-                    <View style={styles.cardHeaderRow}>
-                      <MaterialCommunityIcons
-                        name="heart-pulse"
-                        size={24}
-                        color={theme.colors.error}
-                      />
-                      <Text style={styles.cardHeaderTitle}>Kardiomonitor</Text>
-                    </View>
-                    <EkgDisplay
-                      ekgType={Number(sessionData.rhythmType)}
-                      bpm={Number(sessionData.beatsPerMinute)}
-                      noiseType={sessionData.noiseLevel}
-                      isRunning
-                    />
-                  </Surface>
+                  <EkgCardDisplay
+                    ekgType={Number(sessionData.rhythmType)}
+                    bpm={Number(sessionData.beatsPerMinute)}
+                    noiseType={sessionData.noiseLevel}
+                    isRunning
+                    title="Kardiomonitor"
+                  />
 
                   <Surface style={styles.vitalsCard} elevation={3}>
                     <View style={styles.cardHeaderRow}>
@@ -683,7 +774,9 @@ const StudentSessionScreen = () => {
                         size={24}
                         color={theme.colors.primary}
                       />
-                      <Text style={styles.cardHeaderTitle}>Parametry pacjenta</Text>
+                      <Text style={styles.cardHeaderTitle}>
+                        Parametry pacjenta
+                      </Text>
                     </View>
 
                     <View style={styles.vitalsRow}>
@@ -707,7 +800,9 @@ const StudentSessionScreen = () => {
                           color={theme.colors.error}
                         />
                         <Text style={styles.vitalLabel}>Ciśnienie krwi</Text>
-                        <Text style={styles.vitalValue}>{formatBloodPressure()}</Text>
+                        <Text style={styles.vitalValue}>
+                          {formatBloodPressure()}
+                        </Text>
                       </Surface>
                     </View>
 
@@ -759,7 +854,11 @@ const StudentSessionScreen = () => {
 
                   <Surface style={styles.vitalsCard} elevation={3}>
                     <View style={styles.cardHeaderRow}>
-                      <Icon source="circle-outline" size={24} color={theme.colors.primary} />
+                      <Icon
+                        source="circle-outline"
+                        size={24}
+                        color={theme.colors.primary}
+                      />
                       <Text style={styles.cardHeaderTitle}>Sensor RGB</Text>
                     </View>
                     <ColorSensor />
@@ -770,26 +869,23 @@ const StudentSessionScreen = () => {
                   {!isWeb && (
                     <Surface style={styles.vitalsCard} elevation={3}>
                       <View style={styles.cardHeaderRow}>
-                        <Icon source="circle-outline" size={24} color={theme.colors.primary} />
+                        <Icon
+                          source="circle-outline"
+                          size={24}
+                          color={theme.colors.primary}
+                        />
                         <Text style={styles.cardHeaderTitle}>Sensor RGB</Text>
                       </View>
                       <ColorSensor />
                     </Surface>
-                  )}
-
-                  <Surface style={styles.ekgCard} elevation={3}>
-                    <View style={styles.cardHeaderRow}>
-                      <MaterialCommunityIcons name="heart-pulse" size={24} color={theme.colors.error} />
-                      <Text style={styles.cardHeaderTitle}>Kardiomonitor</Text>
-                    </View>
-                    <EkgDisplay
-                      ekgType={Number(sessionData.rhythmType)}
-                      bpm={Number(sessionData.beatsPerMinute)}
-                      noiseType={sessionData.noiseLevel}
-                      isRunning
-                    />
-                  </Surface>
-
+                  )}{" "}
+                  <EkgCardDisplay
+                    ekgType={Number(sessionData.rhythmType)}
+                    bpm={Number(sessionData.beatsPerMinute)}
+                    noiseType={sessionData.noiseLevel}
+                    isRunning
+                    title="Kardiomonitor"
+                  />
                   <Surface style={styles.vitalsCard} elevation={3}>
                     <View style={styles.cardHeaderRow}>
                       <MaterialCommunityIcons
@@ -797,7 +893,9 @@ const StudentSessionScreen = () => {
                         size={24}
                         color={theme.colors.primary}
                       />
-                      <Text style={styles.cardHeaderTitle}>Parametry pacjenta</Text>
+                      <Text style={styles.cardHeaderTitle}>
+                        Parametry pacjenta
+                      </Text>
                     </View>
 
                     <View style={styles.vitalsRow}>
@@ -824,7 +922,9 @@ const StudentSessionScreen = () => {
                           color={theme.colors.error}
                         />
                         <Text style={styles.vitalLabel}>Ciśnienie krwi</Text>
-                        <Text style={styles.vitalValue}>{formatBloodPressure()}</Text>
+                        <Text style={styles.vitalValue}>
+                          {formatBloodPressure()}
+                        </Text>
                       </Surface>
                       <Surface style={styles.vitalItemCard} elevation={1}>
                         <MaterialCommunityIcons
@@ -872,8 +972,9 @@ const StudentSessionScreen = () => {
                   </Surface>
                 </>
               )}
-
-              <View style={{ marginTop: 16, marginHorizontal: 8, marginBottom: 8 }}>
+              <View
+                style={{ marginTop: 16, marginHorizontal: 8, marginBottom: 8 }}
+              >
                 <SocketConnectionStatus />
               </View>
             </ScrollView>
@@ -886,7 +987,12 @@ const StudentSessionScreen = () => {
               color={theme.colors.secondary}
             />
             <Text style={styles.noDataText}>Brak dostępnych danych sesji</Text>
-            <Button mode="contained" onPress={handleRetry} icon="refresh" style={{ marginTop: 16 }}>
+            <Button
+              mode="contained"
+              onPress={handleRetry}
+              icon="refresh"
+              style={{ marginTop: 16 }}
+            >
               Odśwież
             </Button>
           </View>
@@ -898,37 +1004,29 @@ const StudentSessionScreen = () => {
 
 const styles = StyleSheet.create({
   safeArea: {
-    flex: 1
-  },
-  diagonalStripe: {
-    position: 'absolute',
-    width: '150%',
-    height: 120,
-    left: -50,
-    top: -50,
-    transform: [{ rotate: '-8deg' }],
+    flex: 1,
   },
   center: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 16,
   },
   fullscreenExitButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 16,
     right: 16,
     zIndex: 10,
   },
   sessionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 8,
   },
   mobileHeaderButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 8,
   },
   content: {
@@ -937,33 +1035,33 @@ const styles = StyleSheet.create({
   contentContainer: {
     padding: 16,
     flexGrow: 1,
-    justifyContent: 'center',
-    minHeight: '100%',
+    justifyContent: "center",
+    minHeight: "100%",
   },
   sessionInfo: {
     padding: 16,
     marginBottom: 16,
-    borderRadius: 8
+    borderRadius: 8,
   },
   title: {
     fontSize: 20,
-    fontWeight: 'bold'
+    fontWeight: "bold",
   },
   sessionName: {
     fontSize: 16,
     marginTop: 8,
-    fontStyle: 'italic'
+    fontStyle: "italic",
   },
   sessionMetaInfo: {
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0, 0, 0, 0.1)',
+    borderTopColor: "rgba(0, 0, 0, 0.1)",
   },
   metaItem: {
     fontSize: 14,
     marginVertical: 2,
-    opacity: 0.8
+    opacity: 0.8,
   },
   vitalsCard: {
     padding: Platform.select({
@@ -978,9 +1076,22 @@ const styles = StyleSheet.create({
     }),
     borderRadius: 8,
   },
+  ekgCard: {
+    padding: Platform.select({
+      default: 16,
+      android: 12,
+      ios: 12,
+    }),
+    margin: Platform.select({
+      default: 8,
+      android: 4,
+      ios: 4,
+    }),
+    borderRadius: 8,
+  },
   cardHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 8,
   },
   cardHeaderTitle: {
@@ -989,12 +1100,12 @@ const styles = StyleSheet.create({
       android: 16,
       ios: 16,
     }),
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginLeft: 8,
   },
   vitalsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 12,
   },
   vitalItemCard: {
@@ -1010,7 +1121,7 @@ const styles = StyleSheet.create({
       ios: 2,
     }),
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
   },
   vitalLabel: {
     fontSize: Platform.select({
@@ -1027,20 +1138,20 @@ const styles = StyleSheet.create({
       android: 16,
       ios: 16,
     }),
-    fontWeight: '500',
+    fontWeight: "500",
   },
   fullscreenHeader: {
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.12)',
+    borderBottomColor: "rgba(0, 0, 0, 0.12)",
   },
   fullscreenHeaderContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   fullscreenTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginLeft: 8,
   },
   fullscreenContent: {
@@ -1060,24 +1171,24 @@ const styles = StyleSheet.create({
   },
   fullscreenVitalsGrid: {
     flex: 1,
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
   },
   noDataText: {
     fontSize: 18,
-    fontWeight: '500',
+    fontWeight: "500",
     marginTop: 16,
   },
   mobileSessionHeader: {
     marginBottom: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: "#eee",
   },
   headerIcon: {
     marginRight: 8,
   },
   patientInfoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginVertical: 4,
   },
   patientInfoText: {
@@ -1088,8 +1199,8 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
   metaItemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginVertical: 4,
   },
   metaItemLabel: {
