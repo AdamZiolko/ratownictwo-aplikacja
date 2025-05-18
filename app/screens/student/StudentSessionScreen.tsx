@@ -275,128 +275,89 @@ const StudentSessionScreen = () => {
     };
   }, [accessCode, firstName, lastName, albumNumber]);
 
-  useEffect(() => {
-    if (!isWeb) return;
+useEffect(() => {
+  const handleAudioCommand = async (payload: {
+    command: string;
+    soundName: string | SoundQueueItem[];
+    loop?: boolean;
+  }) => {
+    console.log("Received audio command:", JSON.stringify(payload, null, 2));
 
-    const handleAudioCommand = async (payload: {
-      command: string;
-      soundName: string | SoundQueueItem[];
-      loop?: boolean;
-    }) => {
-      console.log("Received audio command:", JSON.stringify(payload, null, 2));
-
-      if (payload.command === "PLAY_QUEUE" && Array.isArray(payload.soundName)) {
-        console.log('Starting sound queue:', JSON.stringify(payload.soundName));
-        
-        for (const item of payload.soundName) {
-          try {
-            if (item.delay && item.delay > 0) {
-              console.log(`Waiting ${item.delay}ms before ${item.soundName}`);
-              await new Promise(r => setTimeout(r, item.delay));
-            }
-            
-            console.log(`Playing: ${item.soundName}`);
-            await handleSoundPlayback(item.soundName, false);
-            
-          } catch (error) {
-            console.error('Error processing sound queue item:', error);
+    // Obsługa kolejki dźwięków
+    if (payload.command === "PLAY_QUEUE" && Array.isArray(payload.soundName)) {
+      console.log('Starting sound queue:', JSON.stringify(payload.soundName));
+      
+      for (const item of payload.soundName) {
+        try {
+          if (item.delay && item.delay > 0) {
+            console.log(`Waiting ${item.delay}ms before ${item.soundName}`);
+            await new Promise(r => setTimeout(r, item.delay));
           }
-        }
-        return;
-      }
-
-      if (typeof payload.soundName === "string") {
-        switch (payload.command) {
-          case "PLAY":
-          case "play":
-            await handleSoundPlayback(payload.soundName, payload.loop || false);
-            break;
-          case "STOP":
-          case "stop":
-            await handleSoundStop(payload.soundName);
-            break;
-          case "PAUSE":
-          case "pause":
-            await handleSoundPause(payload.soundName);
-            break;
-          case "RESUME":
-          case "resume":
-            await handleSoundResume(payload.soundName);
-            break;
-        }
-      }
-    };
-
-    const unsubscribe = socketService.on("audio-command", handleAudioCommand);
-    return () => unsubscribe();
-  }, [accessCode]);
-
-  const handleSoundPlayback = async (
-    soundName: string,
-    loop: boolean
-  ): Promise<void> => {
-    return new Promise(async (resolve) => {
-      try {
-        let sound = soundInstances.current[soundName];
-        
-        if (!sound) {
-          const soundModule = soundFiles[soundName];
-          if (!soundModule) throw new Error(`Sound not found: ${soundName}`);
           
-          const { sound: newSound } = await Audio.Sound.createAsync(soundModule);
-          sound = newSound;
-          soundInstances.current[soundName] = sound;
+          console.log(`Playing: ${item.soundName}`);
+          await handleSoundPlayback(item.soundName, false);
+          
+        } catch (error) {
+          console.error('Error processing sound queue item:', error);
         }
-
-        await sound.setIsLoopingAsync(loop);
-        await sound.stopAsync();
-        await sound.setPositionAsync(0);
-        
-        let playbackFinished = false;
-        
-        const onPlaybackStatusUpdate = (status: AVPlaybackStatus) => {
-          if (status.isLoaded) {
-            if (status.didJustFinish && !loop) {
-              playbackFinished = true;
-              sound.setOnPlaybackStatusUpdate(null);
-              resolve();
-            }
-            if (status.isPlaying && loop) {
-              resolve();
-            }
-          }
-        };
-
-        sound.setOnPlaybackStatusUpdate(onPlaybackStatusUpdate);
-        
-        const safetyTimeout = setTimeout(() => {
-          if (!playbackFinished) {
-            console.log(`Safety timeout for ${soundName}`);
-            resolve();
-          }
-        }, 30000); 
-
-        await sound.playAsync().then(() => {
-          console.log(`Started playing: ${soundName}`);
-        });
-
-        if (!loop) {
-          sound.setOnPlaybackStatusUpdate((status) => {
-            if (status.isLoaded && status.didJustFinish) {
-              clearTimeout(safetyTimeout);
-              playbackFinished = true;
-              sound.setOnPlaybackStatusUpdate(null);
-              resolve();
-            }
-          });
-        }
-
-      } catch (error) {
-        console.error('Error playing sound:', error);
-        resolve();
       }
-    });
+      return;
+    }
+
+    // Obsługa pojedynczych komend
+    if (typeof payload.soundName === "string") {
+      switch (payload.command.toUpperCase()) {
+        case "PLAY":
+          await handleSoundPlayback(payload.soundName, payload.loop || false);
+          break;
+        case "STOP":
+          await handleSoundStop(payload.soundName);
+          break;
+        case "PAUSE":
+          await handleSoundPause(payload.soundName);
+          break;
+        case "RESUME":
+          await handleSoundResume(payload.soundName);
+          break;
+      }
+    }
   };
+
+  const unsubscribe = socketService.on("audio-command", handleAudioCommand);
+  return () => unsubscribe();
+}, [accessCode]);
+
+const handleSoundPlayback = async (soundName: string, loop: boolean): Promise<void> => {
+  try {
+    // Inicjalizacja audio dla web
+    if (Platform.OS === 'web') {
+      const audioElement = new window.Audio(soundFiles[soundName]);
+      audioElement.loop = loop;
+      await audioElement.play();
+      return;
+    }
+
+    // Implementacja dla mobile (Expo Audio)
+    let sound = soundInstances.current[soundName];
+    
+    if (!sound) {
+      const soundModule = soundFiles[soundName];
+      if (!soundModule) throw new Error(`Sound not found: ${soundName}`);
+      
+      const { sound: newSound } = await Audio.Sound.createAsync(
+        soundModule,
+        { shouldPlay: false, isLooping: loop }
+      );
+      sound = newSound;
+      soundInstances.current[soundName] = sound;
+    }
+
+    await sound.replayAsync({ positionMillis: 0, shouldPlay: true });
+
+  } catch (error) {
+    console.error('Error playing sound:', error);
+  }
+};
 
   const handleSoundStop = async (soundName: string) => {
     const sound = soundInstances.current[soundName];
