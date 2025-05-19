@@ -19,7 +19,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BackgroundGradient from "@/components/BackgroundGradient";
 import { router, useLocalSearchParams } from "expo-router";
-import { Audio, AVPlaybackStatus } from "expo-av";
+import { Audio, AVPlaybackStatus, InterruptionModeAndroid, InterruptionModeIOS } from "expo-av";
 import EkgCardDisplay from "@/components/ekg/EkgCardDisplay";
 import ColorSensor from "@/components/ColorSensor";
 import SocketConnectionStatus from "@/components/SocketConnectionStatus";
@@ -149,6 +149,7 @@ const StudentSessionScreen = () => {
   const isWeb = Platform.OS === "web";
   const [isSessionPanelExpanded, setIsSessionPanelExpanded] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [audioReady, setAudioReady] = useState(false);
 
   const soundInstances = useRef<Record<string, Audio.Sound>>({});
 
@@ -275,112 +276,166 @@ const StudentSessionScreen = () => {
     };
   }, [accessCode, firstName, lastName, albumNumber]);
 
-useEffect(() => {
-  const handleAudioCommand = async (payload: {
-    command: string;
-    soundName: string | SoundQueueItem[];
-    loop?: boolean;
-  }) => {
-    console.log("Received audio command:", JSON.stringify(payload, null, 2));
 
-    // Obsługa kolejki dźwięków
-    if (payload.command === "PLAY_QUEUE" && Array.isArray(payload.soundName)) {
-      console.log('Starting sound queue:', JSON.stringify(payload.soundName));
-      
+useEffect(() => {
+  async function initAudio() {
+    try {
+      if (Platform.OS !== 'web') {
+        const { status } = await Audio.requestPermissionsAsync();
+        if (status !== 'granted') {
+          console.warn('Brak uprawnień do odtwarzania audio – dźwięk może nie działać.');
+        }
+      }
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        interruptionModeIOS: InterruptionModeIOS.DoNotMix,
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: false,
+        shouldDuckAndroid: true,
+        interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
+        playThroughEarpieceAndroid: false,
+      });
+      console.log('✅ Audio poprawnie zainicjalizowane (platforma:', Platform.OS, ')');
+      setAudioReady(true);
+    } catch (err) {
+      console.warn('Błąd podczas inicjalizacji audio:', err);
+    }
+  }
+  initAudio();
+}, []);
+
+
+useEffect(() => {
+  // Nie uruchamiamy socketów zanim audioReady==true lub nie ma accessCode
+
+  console.log('🔌 Zakładam listener "audio-command" – audio jest gotowe');
+
+  // Funkcja, którą wywołam, gdy nadejdzie komenda z serwera
+  const handleAudioCommand = async (payload: {
+    command: 'PLAY' | 'STOP' | 'PAUSE' | 'RESUME' | 'PLAY_QUEUE',
+    soundName: string | SoundQueueItem[],
+    loop?: boolean
+  }) => {
+    console.log('▶️ Otrzymano komendę audio:', payload);
+
+    // Obsługa kolejki
+    if (payload.command === 'PLAY_QUEUE' && Array.isArray(payload.soundName)) {
       for (const item of payload.soundName) {
         try {
           if (item.delay && item.delay > 0) {
-            console.log(`Waiting ${item.delay}ms before ${item.soundName}`);
             await new Promise(r => setTimeout(r, item.delay));
           }
-          
-          console.log(`Playing: ${item.soundName}`);
           await handleSoundPlayback(item.soundName, false);
-          
-        } catch (error) {
-          console.error('Error processing sound queue item:', error);
+        } catch (e) {
+          console.error('Błąd w PLAY_QUEUE item:', e);
         }
       }
       return;
     }
 
     // Obsługa pojedynczych komend
-    if (typeof payload.soundName === "string") {
-      switch (payload.command.toUpperCase()) {
-        case "PLAY":
+    if (typeof payload.soundName === 'string') {
+      switch (payload.command) {
+        case 'PLAY':
           await handleSoundPlayback(payload.soundName, payload.loop || false);
           break;
-        case "STOP":
+        case 'STOP':
           await handleSoundStop(payload.soundName);
           break;
-        case "PAUSE":
+        case 'PAUSE':
           await handleSoundPause(payload.soundName);
           break;
-        case "RESUME":
+        case 'RESUME':
           await handleSoundResume(payload.soundName);
+          break;
+        default:
           break;
       }
     }
   };
 
-  const unsubscribe = socketService.on("audio-command", handleAudioCommand);
-  return () => unsubscribe();
-}, [accessCode]);
+  // Podpinasz listener i zapisujesz funkcję odpinającą
+  const unsubscribe = socketService.on('audio-command', handleAudioCommand);
+
+  // Cleanup: odpinamy listener przy unmount lub przy zmianie accessCode/audioReady
+  return () => {
+    console.log('🧹 Odpinam listener "audio-command"');
+    unsubscribe();
+  };
+}, [audioReady, accessCode]);
 
 const handleSoundPlayback = async (soundName: string, loop: boolean): Promise<void> => {
   try {
-    // Inicjalizacja audio dla web
-    if (Platform.OS === 'web') {
-      const audioElement = new window.Audio(soundFiles[soundName]);
-      audioElement.loop = loop;
-      await audioElement.play();
-      return;
-    }
-
-    // Implementacja dla mobile (Expo Audio)
     let sound = soundInstances.current[soundName];
-    
+
+    // Jeśli jeszcze nie mamy instancji, utwórz ją (ale nie odtwarzaj od razu)
     if (!sound) {
       const soundModule = soundFiles[soundName];
-      if (!soundModule) throw new Error(`Sound not found: ${soundName}`);
-      
+      if (!soundModule) {
+        console.error(`🔇 Nie znaleziono pliku dźwiękowego: ${soundName}`);
+        return;
+      }
       const { sound: newSound } = await Audio.Sound.createAsync(
         soundModule,
         { shouldPlay: false, isLooping: loop }
       );
+      soundInstances.current[soundName] = newSound;
       sound = newSound;
-      soundInstances.current[soundName] = sound;
     }
 
-    await sound.replayAsync({ positionMillis: 0, shouldPlay: true });
+    // Ustaw pętlę (jeśli potrzeba)
+    await sound.setIsLoopingAsync(loop);
 
+    // Jeżeli wcześniej ten sam dźwięk grał, zatrzymaj i cofnij
+    try {
+      await sound.stopAsync();
+    } catch (_) { /* może być już zatrzymany */ }
+    await sound.setPositionAsync(0);
+
+    // Odtwarzaj
+    await sound.playAsync();
+    console.log(`▶️ Rozpoczęto odtwarzanie: ${soundName} (loop=${loop})`);
   } catch (error) {
-    console.error('Error playing sound:', error);
+    console.error('❌ Błąd podczas odtwarzania dźwięku:', error);
   }
 };
 
-  const handleSoundStop = async (soundName: string) => {
-    const sound = soundInstances.current[soundName];
-    if (!sound) return;
-    
-    try {
-      await sound.stopAsync();
-      await sound.unloadAsync();
-      delete soundInstances.current[soundName];
-    } catch (error) {
-      console.error('Error stopping sound:', error);
-    }
-  };
 
-  const handleSoundPause = async (soundName: string) => {
-    const sound = soundInstances.current[soundName];
-    if (sound) await sound.pauseAsync();
-  };
+const handleSoundStop = async (soundName: string) => {
+  const sound = soundInstances.current[soundName];
+  if (!sound) return;
+  try {
+    await sound.stopAsync();
+    await sound.unloadAsync();
+    delete soundInstances.current[soundName];
+    console.log(`⏹️ Zatrzymano i usunięto: ${soundName}`);
+  } catch (error) {
+    console.error(`❌ Błąd przy STOP dla ${soundName}:`, error);
+  }
+};
 
-  const handleSoundResume = async (soundName: string) => {
-    const sound = soundInstances.current[soundName];
-    if (sound) await sound.playAsync();
-  };
+const handleSoundPause = async (soundName: string) => {
+  const sound = soundInstances.current[soundName];
+  if (!sound) return;
+  try {
+    await sound.pauseAsync();
+    console.log(`⏸️ Pauza: ${soundName}`);
+  } catch (error) {
+    console.error(`❌ Błąd przy PAUSE dla ${soundName}:`, error);
+  }
+};
+
+const handleSoundResume = async (soundName: string) => {
+  const sound = soundInstances.current[soundName];
+  if (!sound) return;
+  try {
+    await sound.playAsync();
+    console.log(`▶️ Wznowiono: ${soundName}`);
+  } catch (error) {
+    console.error(`❌ Błąd przy RESUME dla ${soundName}:`, error);
+  }
+};
+
 
   useEffect(() => {
     return () => {
