@@ -64,7 +64,7 @@ const soundFiles: Record<string, any> = {
   "Adult/Male/Coughing (long).wav": require("../../../assets/sounds/Adult/Male/Coughing(long).wav"),
   "Adult/Male/Coughing.wav": require("../../../assets/sounds/Adult/Male/Coughing.wav"),
   "Adult/Male/Difficult breathing.wav": require("../../../assets/sounds/Adult/Male/Difficultbreathing.wav"),
-  "Adult/Male//Hawk.wav": require("../../../assets/sounds/Adult/Male/Hawk.wav"),
+  "Adult/Male/Hawk.wav": require("../../../assets/sounds/Adult/Male/Hawk.wav"),
   "Adult/Male/Moaning (long).wav": require("../../../assets/sounds/Adult/Male/Moaning(long).wav"),
   "Adult/Male/oaning.wav": require("../../../assets/sounds/Adult/Male/Moaning.wav"),
   "Adult/Male/No.wav": require("../../../assets/sounds/Adult/Male/No.wav"),
@@ -306,11 +306,9 @@ useEffect(() => {
 
 
 useEffect(() => {
-  // Nie uruchamiamy socketów zanim audioReady==true lub nie ma accessCode
 
   console.log('🔌 Zakładam listener "audio-command" – audio jest gotowe');
 
-  // Funkcja, którą wywołam, gdy nadejdzie komenda z serwera
   const handleAudioCommand = async (payload: {
     command: 'PLAY' | 'STOP' | 'PAUSE' | 'RESUME' | 'PLAY_QUEUE',
     soundName: string | SoundQueueItem[],
@@ -318,7 +316,6 @@ useEffect(() => {
   }) => {
     console.log('▶️ Otrzymano komendę audio:', payload);
 
-    // Obsługa kolejki
     if (payload.command === 'PLAY_QUEUE' && Array.isArray(payload.soundName)) {
       for (const item of payload.soundName) {
         try {
@@ -333,7 +330,6 @@ useEffect(() => {
       return;
     }
 
-    // Obsługa pojedynczych komend
     if (typeof payload.soundName === 'string') {
       switch (payload.command) {
         case 'PLAY':
@@ -354,10 +350,8 @@ useEffect(() => {
     }
   };
 
-  // Podpinasz listener i zapisujesz funkcję odpinającą
   const unsubscribe = socketService.on('audio-command', handleAudioCommand);
 
-  // Cleanup: odpinamy listener przy unmount lub przy zmianie accessCode/audioReady
   return () => {
     console.log('🧹 Odpinam listener "audio-command"');
     unsubscribe();
@@ -368,7 +362,6 @@ const handleSoundPlayback = async (soundName: string, loop: boolean): Promise<vo
   try {
     let sound = soundInstances.current[soundName];
 
-    // Jeśli jeszcze nie mamy instancji, utwórz ją (ale nie odtwarzaj od razu)
     if (!sound) {
       const soundModule = soundFiles[soundName];
       if (!soundModule) {
@@ -383,16 +376,13 @@ const handleSoundPlayback = async (soundName: string, loop: boolean): Promise<vo
       sound = newSound;
     }
 
-    // Ustaw pętlę (jeśli potrzeba)
     await sound.setIsLoopingAsync(loop);
 
-    // Jeżeli wcześniej ten sam dźwięk grał, zatrzymaj i cofnij
     try {
       await sound.stopAsync();
     } catch (_) { /* może być już zatrzymany */ }
     await sound.setPositionAsync(0);
 
-    // Odtwarzaj
     await sound.playAsync();
     console.log(`▶️ Rozpoczęto odtwarzanie: ${soundName} (loop=${loop})`);
   } catch (error) {
@@ -511,7 +501,6 @@ const handleSoundResume = async (soundName: string) => {
       currentValue: rrValue,
     }));
 
-    // Update vital signs with small fluctuations
     const fluctuationTimer = setInterval(() => {
       setTemperature((prev) => ({
         ...prev,
