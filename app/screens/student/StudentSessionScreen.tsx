@@ -306,13 +306,16 @@ useEffect(() => {
 
 
 useEffect(() => {
-
+   if (!audioReady || !accessCode) {
+      // Nie łączymy się do wskaźnika audio-command dopóki audio nie jest gotowe lub nie ma accessCode
+      return;
+    }
   console.log('🔌 Zakładam listener "audio-command" – audio jest gotowe');
 
   const handleAudioCommand = async (payload: {
-    command: 'PLAY' | 'STOP' | 'PAUSE' | 'RESUME' | 'PLAY_QUEUE',
-    soundName: string | SoundQueueItem[],
-    loop?: boolean
+    command: 'PLAY' | 'STOP' | 'PAUSE' | 'RESUME' | 'PLAY_QUEUE';
+    soundName: string | SoundQueueItem[];
+    loop?: boolean;
   }) => {
     console.log('▶️ Otrzymano komendę audio:', payload);
 
@@ -320,9 +323,29 @@ useEffect(() => {
       for (const item of payload.soundName) {
         try {
           if (item.delay && item.delay > 0) {
-            await new Promise(r => setTimeout(r, item.delay));
+            await new Promise((r) => setTimeout(r, item.delay));
           }
-          await handleSoundPlayback(item.soundName, false);
+
+          const soundModule = soundFiles[item.soundName];
+          if (!soundModule) {
+            console.error(`🔇 Nie znaleziono pliku dźwiękowego: ${item.soundName}`);
+            continue;
+          }
+
+          const { sound: qSound } = await Audio.Sound.createAsync(
+            soundModule,
+            { shouldPlay: true, isLooping: false }
+          );
+
+          await new Promise<void>((resolve) => {
+            qSound.setOnPlaybackStatusUpdate((status) => {
+              if (status.isLoaded && status.didJustFinish) {
+                qSound.unloadAsync().catch(() => {});
+                resolve();
+              }
+            });
+          });
+
         } catch (e) {
           console.error('Błąd w PLAY_QUEUE item:', e);
         }
@@ -351,12 +374,12 @@ useEffect(() => {
   };
 
   const unsubscribe = socketService.on('audio-command', handleAudioCommand);
-
   return () => {
     console.log('🧹 Odpinam listener "audio-command"');
     unsubscribe();
   };
 }, [audioReady, accessCode]);
+
 
 const handleSoundPlayback = async (soundName: string, loop: boolean): Promise<void> => {
   try {
@@ -377,10 +400,9 @@ const handleSoundPlayback = async (soundName: string, loop: boolean): Promise<vo
     }
 
     await sound.setIsLoopingAsync(loop);
-
     try {
       await sound.stopAsync();
-    } catch (_) { /* może być już zatrzymany */ }
+    } catch (_) { /* mogło już być zatrzymane */ }
     await sound.setPositionAsync(0);
 
     await sound.playAsync();
@@ -390,7 +412,6 @@ const handleSoundPlayback = async (soundName: string, loop: boolean): Promise<vo
   }
 };
 
-
 const handleSoundStop = async (soundName: string) => {
   const sound = soundInstances.current[soundName];
   if (!sound) return;
@@ -398,7 +419,6 @@ const handleSoundStop = async (soundName: string) => {
     await sound.stopAsync();
     await sound.unloadAsync();
     delete soundInstances.current[soundName];
-    console.log(`⏹️ Zatrzymano i usunięto: ${soundName}`);
   } catch (error) {
     console.error(`❌ Błąd przy STOP dla ${soundName}:`, error);
   }
@@ -409,7 +429,6 @@ const handleSoundPause = async (soundName: string) => {
   if (!sound) return;
   try {
     await sound.pauseAsync();
-    console.log(`⏸️ Pauza: ${soundName}`);
   } catch (error) {
     console.error(`❌ Błąd przy PAUSE dla ${soundName}:`, error);
   }
@@ -420,12 +439,10 @@ const handleSoundResume = async (soundName: string) => {
   if (!sound) return;
   try {
     await sound.playAsync();
-    console.log(`▶️ Wznowiono: ${soundName}`);
   } catch (error) {
     console.error(`❌ Błąd przy RESUME dla ${soundName}:`, error);
   }
 };
-
 
   useEffect(() => {
     return () => {

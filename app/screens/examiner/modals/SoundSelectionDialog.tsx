@@ -1,6 +1,16 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, ScrollView, Dimensions } from 'react-native';
-import { Dialog, Button, RadioButton, Text, List, TextInput, IconButton, Checkbox, useTheme } from 'react-native-paper';
+import {
+  Dialog,
+  Button,
+  RadioButton,
+  Text,
+  List,
+  TextInput,
+  IconButton,
+  Checkbox,
+  useTheme,
+} from 'react-native-paper';
 import { Session, SoundQueueItem } from '../types/types';
 
 interface SoundSelectionDialogProps {
@@ -17,8 +27,8 @@ interface SoundSelectionDialogProps {
 }
 
 const soundStructure = {
-  'Adult': {
-    'Female': [
+  Adult: {
+    Female: [
       'Breathing through contractions',
       'Coughing',
       'Distressed',
@@ -34,9 +44,9 @@ const soundStructure = {
       'Sob breathing (type 2)',
       'Sob breathing',
       'Vomiting',
-      'Yes'
+      'Yes',
     ],
-    'Male': [
+    Male: [
       'Coughing (long)',
       'Coughing',
       'Difficult breathing',
@@ -51,10 +61,10 @@ const soundStructure = {
       'Vomiting (type 2)',
       'Vomiting (type 3)',
       'Vomiting',
-      'Yes'
+      'Yes',
     ],
   },
-  'Child': [
+  Child: [
     'Coughing',
     'Hawk',
     'Moaning',
@@ -64,27 +74,13 @@ const soundStructure = {
     'Sob breathing',
     'Vomiting (type 2)',
     'Vomiting',
-    'Yes'
+    'Yes',
   ],
-  'Geriatric': {
-    'Female': [
-      'Coughing',
-      'Moaning',
-      'No',
-      'Screaming',
-      'Vomiting',
-      'Yes'
-    ],
-    'Male': [
-      'Coughing',
-      'Moaning',
-      'No',
-      'Screaming',
-      'Vomiting',
-      'Yes'
-    ]
+  Geriatric: {
+    Female: ['Coughing', 'Moaning', 'No', 'Screaming', 'Vomiting', 'Yes'],
+    Male: ['Coughing', 'Moaning', 'No', 'Screaming', 'Vomiting', 'Yes'],
   },
-  'Infant': [
+  Infant: [
     'Content',
     'Cough',
     'Grunt',
@@ -93,22 +89,22 @@ const soundStructure = {
     'Screaming',
     'Strongcry (type 2)',
     'Strongcry',
-    'Weakcry'
+    'Weakcry',
   ],
-  'Speech': [
+  Speech: [
     'Chest hurts',
     'Doc I feel I could die',
     'Go away',
-    'I don\'t feel dizzy',
-    'I don\'t feel well',
+    "I don't feel dizzy",
+    "I don't feel well",
     'I feel better now',
     'I feel really bad',
-    'I\'m feeling very dizzy',
-    'I\'m fine',
-    'I\'m quite nauseous',
-    'I\'m really hungry',
-    'I\'m really thirsty',
-    'I\'m so sick',
+    "I'm feeling very dizzy",
+    "I'm fine",
+    "I'm quite nauseous",
+    "I'm really hungry",
+    "I'm really thirsty",
+    "I'm so sick",
     'Never had pain like this before',
     'No allergies',
     'No diabetes',
@@ -118,8 +114,8 @@ const soundStructure = {
     'Something for this pain',
     'Thank you',
     'That helped',
-    'Yes'
-  ]
+    'Yes',
+  ],
 };
 
 const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
@@ -164,67 +160,64 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
     setCurrentPath(newStack[newStack.length - 1]);
   };
 
-  const renderScrollableContent = (items: JSX.Element[]) => (
-    <ScrollView style={styles.scrollContainer}>
-      {items}
-    </ScrollView>
-  );
-
   const renderNavigationItems = () => {
     const currentLevel = getCurrentLevel();
 
     if (Array.isArray(currentLevel)) {
-      const items = currentLevel.map((sound) => (
-        <List.Item
-          key={sound}
-          title={sound.replace(/\.[^/.]+$/, "")}
-          onPress={() => {
-            const fullPath = [...currentPath, sound].join('/') + '.wav';
-            setSelectedSound(fullPath);
-          }}
-          right={props => (
-            <RadioButton 
-              {...props} 
-              value={[...currentPath, sound].join('/') + '.wav'}
-              status={selectedSound === [...currentPath, sound].join('/') + '.wav' ? 'checked' : 'unchecked'}
-            />
-          )}
-        />
-      ));
-      
-      return renderScrollableContent(items);
+      return (
+        <ScrollView style={styles.soundListContainer}>
+          {currentLevel.map((sound) => {
+            const path = [...currentPath, sound].join('/') + '.wav';
+            return (
+              <List.Item
+                key={sound}
+                title={sound}
+                onPress={() => setSelectedSound(path)}
+                right={(props) => (
+                  <RadioButton
+                    {...props}
+                    value={path}
+                    status={selectedSound === path ? 'checked' : 'unchecked'}
+                  />
+                )}
+              />
+            );
+          })}
+        </ScrollView>
+      );
     }
 
-    const items = Object.keys(currentLevel).map((key) => (
-      <List.Item
-        key={key}
-        title={key}
-        onPress={() => handleNavigate(key)}
-        right={props => <List.Icon {...props} icon="chevron-right" />}
-      />
-    ));
-
-    return renderScrollableContent(items);
+    return (
+      <ScrollView style={styles.soundListContainer}>
+        {Object.keys(currentLevel).map((key) => (
+          <List.Item
+            key={key}
+            title={key}
+            onPress={() => handleNavigate(key)}
+            right={(props) => <List.Icon {...props} icon="chevron-right" />}
+          />
+        ))}
+      </ScrollView>
+    );
   };
 
   const addToQueue = () => {
     if (selectedSound) {
-      const newItem = {
+      const newItem: SoundQueueItem = {
         soundName: selectedSound,
         delay: parseInt(delay) || 0,
       };
-      setQueue([...queue, newItem]);
+      setQueue((prev) => [...prev, newItem]);
       setSelectedSound(null);
       setDelay('0');
     }
   };
 
   const removeFromQueue = (index: number) => {
-    const newQueue = queue.filter((_, i) => i !== index);
-    setQueue(newQueue);
+    setQueue((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSendQueue = () => {
+  const handleSendQueueInternal = () => {
     onSendQueue(queue);
     setQueue([]);
     setSelectedSound(null);
@@ -262,12 +255,8 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
       fontSize: 14,
       fontWeight: '500',
     },
-    content: {
+    contentContainer: {
       paddingHorizontal: 16,
-    },
-    scrollContainer: {
-      maxHeight: 300,
-      marginVertical: 8,
     },
     sectionHeader: {
       fontSize: 16,
@@ -282,6 +271,10 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
     },
     backLabel: {
       color: theme.colors.primary,
+    },
+    soundListContainer: {
+      maxHeight: 260, 
+      marginBottom: 8,
     },
     checkboxRow: {
       flexDirection: 'row',
@@ -319,7 +312,7 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
       borderColor: theme.colors.primary,
     },
     queueList: {
-      maxHeight: 150,
+      maxHeight: 100,
       marginTop: 8,
       backgroundColor: theme.colors.surface,
     },
@@ -327,7 +320,7 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      paddingVertical: 8,
+      paddingVertical: 6,
       paddingHorizontal: 12,
       borderBottomWidth: 1,
       borderBottomColor: theme.colors.outline,
@@ -359,14 +352,7 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
   });
 
   return (
-    <Dialog 
-      visible={visible} 
-      onDismiss={onDismiss} 
-      style={{
-        ...styles.dialog,
-        maxHeight: Dimensions.get('window').height * 0.8
-      }}
-    >
+    <Dialog visible={visible} onDismiss={onDismiss} style={styles.dialog}>
       <Dialog.Title style={styles.title}>Odtwórz dźwięk</Dialog.Title>
 
       <View style={styles.tabsContainer}>
@@ -388,12 +374,12 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
         </Button>
       </View>
 
-      <Dialog.Content style={styles.content}>
+      <Dialog.Content style={styles.contentContainer}>
         <Text style={styles.sectionHeader}>Wybierz dźwięk:</Text>
 
         {currentPath.length > 0 && (
-          <Button 
-            mode="text" 
+          <Button
+            mode="text"
             onPress={handleGoBack}
             icon="arrow-left"
             style={styles.backButton}
@@ -481,7 +467,7 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
                   text: theme.colors.onSurface,
                   placeholder: theme.colors.onSurfaceVariant,
                   primary: theme.colors.primary,
-                }
+                },
               }}
             />
 
@@ -518,15 +504,12 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
       </Dialog.Content>
 
       <Dialog.Actions style={styles.actions}>
-        <Button 
-          onPress={onDismiss}
-          labelStyle={styles.cancelLabel}
-        >
+        <Button onPress={onDismiss} labelStyle={styles.cancelLabel}>
           Anuluj
         </Button>
         {activeTab === 'queue' && (
           <Button
-            onPress={handleSendQueue}
+            onPress={handleSendQueueInternal}
             disabled={queue.length === 0}
             mode="contained"
             style={styles.sendButton}

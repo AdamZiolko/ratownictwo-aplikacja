@@ -47,7 +47,6 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
 
   if (!session) return null;
 
-  // Normalizacja danych studentów
   const normalizeStudent = (student: any) => ({
     id: student.id || student.userId,
     name: student.name || student.user?.name || 'Nieznany',
@@ -329,7 +328,7 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
 
 const styles = StyleSheet.create({
   dialog: {
-    maxWidth: 500,
+    maxWidth: 600,
     width: "90%",
     alignSelf: "center",
   },
