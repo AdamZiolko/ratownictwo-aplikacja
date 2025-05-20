@@ -388,7 +388,7 @@ class SocketService {
       }
       
       // Create new socket with polling transport only
-      this.socket = io(WS_URL, {
+      this.socket = io('http://192.168.1.111:8080', { // <- Zamiast ip było "WS_URL"
         path: '/socket.io',
         transports: ['polling'],
         withCredentials: false,
