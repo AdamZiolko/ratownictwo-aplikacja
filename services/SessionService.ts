@@ -166,13 +166,31 @@ export class SessionService {
     } catch (error) {
       console.error(`Error leaving session with code ${code}:`, error);
     }
-  }
-
-  
-  async deleteSession(id: string, authToken?: string): Promise<any> {
+  }    async deleteSession(id: string, authToken?: string): Promise<any> {
     try {
+      let sessionCode: string | undefined;
+      try {
+        const session = await this.getSessionById(Number(id), authToken);
+        sessionCode = session.sessionCode;
+      } catch (e) {
+        console.warn(`Could not retrieve session ${id} code before deletion:`, e);
+      }
+      
       const headers = this.createHeaders(authToken);
+      
       const response = await this.api.delete(`sessions/${id}`, headers);
+      
+      const codeToUse = sessionCode || (response && response.sessionCode);
+      
+      if (codeToUse) {
+        console.log(`Notifying clients about deletion of session with code ${codeToUse}`);
+        socketService.emitSessionDeleted(codeToUse);
+        
+        socketService.emitLocalSessionDeleted(codeToUse);
+      } else {
+        console.warn(`Could not notify about session ${id} deletion: session code not available`);
+      }
+      
       return response;
     } catch (error) {
       console.error(`Error deleting session with id ${id}:`, error);
@@ -188,6 +206,40 @@ export class SessionService {
       return response;
     } catch (error) {
       console.error('Error deleting all sessions:', error);
+      throw error;
+    }
+  }  /**
+   * Deletes a session and notifies all connected clients about the deletion
+   * Students in the session will be redirected back to the code entry screen
+   */
+  async deleteSessionAndNotify(id: string, authToken?: string): Promise<any> {
+    try {
+      // First, get the session code before deleting (we need a separate call here to ensure we have the code)
+      let sessionCode: string | undefined;
+      try {
+        const session = await this.getSessionById(Number(id), authToken);
+        sessionCode = session?.sessionCode;
+      } catch (fetchError) {
+        console.warn(`Could not fetch session details before deletion: ${fetchError}`);
+      }
+      
+      // Delete from API
+      const headers = this.createHeaders(authToken);
+      const response = await this.api.delete(`sessions/${id}`, headers);
+      
+      // Determine which session code to use for notifications
+      const codeToUse = sessionCode || (response && response.sessionCode);
+      
+      // Notify clients about session deletion if we have the code
+      if (codeToUse) {
+        console.log(`Notified clients about deletion of session ${codeToUse}`);
+      } else {
+        console.warn(`Could not notify about session ${id} deletion: session code not available`);
+      }
+      
+      return response;
+    } catch (error) {
+      console.error(`Error in deleteSessionAndNotify for session ${id}:`, error);
       throw error;
     }
   }

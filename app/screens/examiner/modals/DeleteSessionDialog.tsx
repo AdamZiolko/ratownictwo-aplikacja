@@ -33,6 +33,7 @@ const DeleteSessionDialog: React.FC<DeleteSessionDialogProps> = ({
       <Dialog.Content>
         <Text>Czy na pewno chcesz usunąć sesję o kodzie {session.sessionCode}?</Text>
         <Text style={[styles.warningText, { color: errorColor }]}>Tej operacji nie można cofnąć.</Text>
+        <Text style={styles.infoText}>Wszyscy studenci zostaną automatycznie rozłączeni i przekierowani do ekranu wprowadzania kodu.</Text>
       </Dialog.Content>
       <Dialog.Actions>
         <Button onPress={onDismiss}>Anuluj</Button>
@@ -45,6 +46,11 @@ const DeleteSessionDialog: React.FC<DeleteSessionDialogProps> = ({
 const styles = StyleSheet.create({
   warningText: {
     marginTop: 8,
+    fontWeight: '500',
+  },
+  infoText: {
+    marginTop: 12,
+    fontStyle: 'italic',
   },
 });
 

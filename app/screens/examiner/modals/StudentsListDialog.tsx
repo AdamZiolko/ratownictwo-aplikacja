@@ -1,6 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { StyleSheet, View, ScrollView, Dimensions } from "react-native";
-import { Dialog, Button, Text, List, Avatar, Chip, Divider, IconButton, Menu } from "react-native-paper";
+import { 
+  Dialog, 
+  Button, 
+  Text, 
+  List, 
+  Avatar, 
+  Chip, 
+  Divider, 
+  IconButton, 
+  Menu, 
+  Surface,
+  useTheme,
+  ActivityIndicator
+} from "react-native-paper";
 import { Session, StudentInSession } from "../types/types";
 import { socketService } from "@/services/SocketService";
 
@@ -33,41 +46,359 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
   session,
   students = []
 }) => {
+  const theme = useTheme();
   const [selectedSounds, setSelectedSounds] = useState<{[key: number]: string}>({});
   const [menuVisible, setMenuVisible] = useState<{[key: number]: {category: boolean, subcategory: boolean, sound: boolean}}>({});
   const [selectedCategories, setSelectedCategories] = useState<{[key: number]: string}>({});
   const [selectedSubcategories, setSelectedSubcategories] = useState<{[key: number]: string}>({});
-
+  const [loading, setLoading] = useState<{[key: number]: boolean}>({});
   useEffect(() => {
     if (visible) {
-      console.log('Students data:', students);
-      console.log('Session data:', session);
+      try {
+        console.log('Students data count:', students?.length || 0);
+        console.log('Session students count:', session?.students?.length || 0);
+        
+        // Log detailed information for debugging
+        if (students && students.length > 0) {
+          const studentSample = students[0];
+          console.log('Sample student structure:', {
+            id: studentSample.id,
+            userId: studentSample.userId,
+            name: studentSample.name,
+            user: studentSample.user,
+            student_sessions: studentSample.student_sessions
+          });
+        } else if (session?.students && session.students.length > 0) {
+          const studentSample = session.students[0];
+          console.log('Sample session student structure:', {
+            id: studentSample.id,
+            name: studentSample.name,
+            surname: studentSample.surname,
+            albumNumber: studentSample.albumNumber,
+            student_sessions: studentSample.student_sessions
+          });
+        } else {
+          console.log('No student data available in either students or session.students');
+        }
+      } catch (error) {
+        console.error('Error processing student data:', error);
+      }
     }
   }, [visible, students, session]);
 
-  if (!session) return null;
-
-  const normalizeStudent = (student: any) => ({
-    id: student.id || student.userId,
-    name: student.name || student.user?.name || 'Nieznany',
-    surname: student.surname || student.user?.surname || 'Student',
-    albumNumber: student.albumNumber || student.user?.albumNumber || 'brak numeru',
-    student_sessions: {
-      active: student.active || student.student_sessions?.active || false,
-      joinedAt: student.joinedAt || student.student_sessions?.joinedAt || new Date().toISOString()
+  if (!session) return null;  // Define a more specific interface for the student parameter
+  interface StudentData {
+    id?: number;
+    userId?: number;
+    studentId?: number;
+    name?: string;
+    surname?: string;
+    albumNumber?: string;
+    active?: boolean;
+    joinedAt?: string;
+    student_sessions?: {
+      active?: boolean;
+      joinedAt?: string;
+    };
+    user?: {
+      name?: string;
+      surname?: string;
+      albumNumber?: string;
+    };
+  }  /**
+   * Normalizes student data from various possible formats into a consistent StudentInSession structure
+   */
+  const normalizeStudent = (student: StudentData): StudentInSession & { id: number } => {
+    console.log('Normalizing student:', student);
+    
+    // Ensure we have a valid ID (required for TypeScript safety)
+    const id = student.id || student.userId || student.studentId || 0;
+    
+    // Get name and surname, with fallbacks
+    const name = student.name || (student.user && student.user.name) || 'Nieznany';
+    const surname = student.surname || (student.user && student.user.surname) || 'Student';
+    const albumNumber = student.albumNumber || (student.user && student.user.albumNumber) || 'brak numeru';
+    
+    // Ensure we have a valid student_sessions object
+    const student_sessions = {
+      active: student.active || (student.student_sessions && student.student_sessions.active) || false,
+      joinedAt: student.joinedAt || 
+                (student.student_sessions && student.student_sessions.joinedAt) || 
+                new Date().toISOString()
+    };
+    
+    return {
+      id,
+      name,
+      surname,
+      albumNumber,
+      student_sessions
+    };
+  };  // Make sure we're getting student data from either source
+  console.log('Processing student data sources');
+  
+  // First check if we have students passed directly
+  let sourceStudents: any[] = [];
+  if (students && students.length > 0) {
+    console.log('Using directly provided students array, count:', students.length);
+    sourceStudents = students;
+  } else if (session && session.students && session.students.length > 0) {
+    console.log('Using students from session, count:', session.students.length);
+    sourceStudents = session.students;
+  } else {
+    console.log('No students available in any source');
+    sourceStudents = [];
+  }
+  
+  // Map each student through the normalizer, with error handling
+  const studentsList = sourceStudents.map((student, index) => {
+    if (!student) {
+      console.error(`Invalid student at index ${index}`);
+      return {
+        id: index,
+        name: 'Błąd',
+        surname: 'Danych',
+        albumNumber: 'brak numeru',
+        student_sessions: {
+          active: false,
+          joinedAt: new Date().toISOString()
+        }
+      };
+    }
+    
+    try {
+      return normalizeStudent(student);
+    } catch (error) {
+      console.error(`Failed to normalize student at index ${index}:`, error);
+      return {
+        id: student.id || student.userId || index,
+        name: student.name || 'Error',
+        surname: student.surname || '',
+        albumNumber: student.albumNumber || 'brak numeru',
+        student_sessions: {
+          active: false,
+          joinedAt: new Date().toISOString()
+        }
+      };
     }
   });
-
-  const studentsList = (students.length > 0 ? students : session.students || []).map(normalizeStudent);
+  
+  console.log('Normalized students list, count:', studentsList.length);
+  
   const hasStudents = studentsList.length > 0;
+    // Student Row component to handle rendering each student with proper types
+  const StudentRow = ({ student, index }: { student: StudentInSession & { id: number }, index: number }) => {
+    const studentId = student.id;
+    const hasSubcategories = getAvailableSubcategories(studentId).length > 0;
+    const selectedCategory = selectedCategories[studentId] as SoundCategory | undefined;
+    const selectedSubcategory = selectedSubcategories[studentId];
+    const selectedSound = selectedSounds[studentId];
+    const menuVisibleState = menuVisible[studentId] || {
+      category: false,
+      subcategory: false,
+      sound: false
+    };
+    const isLoading = loading[studentId] || false;
+    
+    return (
+      <Surface 
+        key={`student-row-${studentId}`}
+        style={[
+          styles.studentCard,
+          { backgroundColor: theme.dark ? theme.colors.elevation.level1 : theme.colors.background }
+        ]}
+        elevation={1}
+      >
+        <View style={styles.studentHeader}>
+          <View style={styles.studentInfo}>
+            <Avatar.Icon 
+              size={40}
+              icon="account-circle"
+              style={[styles.avatar, { backgroundColor: student.student_sessions?.active ? theme.colors.primary : theme.colors.surfaceDisabled }]}
+            />
+            <View style={styles.nameContainer}>
+              <Text variant="titleMedium" style={{ fontWeight: '700' }}>
+                {`${student.name} ${student.surname}`}
+              </Text>
+              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                {`Album: ${student.albumNumber}`}
+              </Text>
+            </View>
+          </View>
+          <Chip 
+            icon={student.student_sessions?.active ? "checkbox-marked-circle" : "close-circle"}
+            style={[
+              styles.statusChip, 
+              { 
+                backgroundColor: student.student_sessions?.active 
+                  ? theme.colors.primaryContainer 
+                  : theme.colors.errorContainer 
+              }
+            ]}
+            textStyle={{ 
+              color: student.student_sessions?.active 
+                ? theme.colors.onPrimaryContainer 
+                : theme.colors.onErrorContainer 
+            }}
+          >
+            {student.student_sessions?.active ? "Aktywny" : "Nieaktywny"}
+          </Chip>
+        </View>
+        
+        <Text variant="bodySmall" style={styles.joinTime}>
+          Dołączył: {student.student_sessions?.joinedAt ? new Date(student.student_sessions.joinedAt).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }) : '-'}
+        </Text>
+        
+        <Divider style={styles.divider} />
+        
+        <View style={styles.soundControlsContainer}>
+          <View style={styles.selectionRow}>
+            <Menu
+              visible={menuVisibleState.category}
+              onDismiss={() => setMenuVisible(prev => ({
+                ...prev,
+                [studentId]: {...(prev[studentId] || {}), category: false}
+              }))}
+              anchor={
+                <Button 
+                  mode="outlined" 
+                  onPress={() => setMenuVisible(prev => ({
+                    ...prev,
+                    [studentId]: {...(prev[studentId] || {}), category: true}
+                  }))}
+                  style={styles.categoryButton}
+                  icon="folder"
+                  contentStyle={styles.buttonContent}
+                >
+                  {selectedCategory || 'Kategoria'}
+                </Button>
+              }
+            >
+              {Object.keys(soundStructure).map(category => (
+                <Menu.Item
+                  key={category}
+                  title={category}
+                  leadingIcon="folder"
+                  onPress={() => handleCategorySelect(studentId, category)}
+                />
+              ))}
+            </Menu>
 
-  const handleSendToStudent = (studentId: number, command: 'PLAY' | 'STOP') => {
-    const sound = selectedSounds[studentId];
-    if (command === 'PLAY' && sound) {
-      socketService.emitStudentAudioCommand(studentId, 'PLAY', sound);
-    } else {
-      socketService.emitStudentAudioCommand(studentId, 'STOP', '');
-    }
+            {hasSubcategories && (
+              <Menu
+                visible={menuVisibleState.subcategory}
+                onDismiss={() => setMenuVisible(prev => ({
+                  ...prev,
+                  [studentId]: {...(prev[studentId] || {}), subcategory: false}
+                }))}
+                anchor={
+                  <Button 
+                    mode="outlined" 
+                    onPress={() => setMenuVisible(prev => ({
+                      ...prev,
+                      [studentId]: {...(prev[studentId] || {}), subcategory: true}
+                    }))}
+                    style={styles.subcategoryButton}
+                    icon="folder-open"
+                    disabled={!selectedCategory}
+                    contentStyle={styles.buttonContent}
+                  >
+                    {selectedSubcategory || 'Podkategoria'}
+                  </Button>
+                }
+              >
+                {getAvailableSubcategories(studentId).map(subcategory => (
+                  <Menu.Item
+                    key={subcategory}
+                    title={subcategory}
+                    leadingIcon="folder-open"
+                    onPress={() => handleSubcategorySelect(studentId, subcategory)}
+                  />
+                ))}
+              </Menu>
+            )}
+
+            <Menu
+              visible={menuVisibleState.sound}
+              onDismiss={() => setMenuVisible(prev => ({
+                ...prev,
+                [studentId]: {...(prev[studentId] || {}), sound: false}
+              }))}
+              anchor={
+                <Button 
+                  mode="outlined" 
+                  onPress={() => setMenuVisible(prev => ({
+                    ...prev,
+                    [studentId]: {...(prev[studentId] || {}), sound: true}
+                  }))}
+                  style={styles.soundButton}
+                  icon="volume-high"
+                  disabled={!selectedCategory || (hasSubcategories && !selectedSubcategory)}
+                  contentStyle={styles.buttonContent}
+                >
+                  {selectedSound?.split('/').pop()?.replace('.wav', '') || 'Dźwięk'}
+                </Button>
+              }
+            >
+              {getAvailableSounds(studentId).map((sound: string) => (
+                <Menu.Item
+                  key={`${selectedCategory}-${selectedSubcategory}-${sound}`}
+                  title={sound}
+                  leadingIcon="music-note"
+                  onPress={() => handleSoundSelect(studentId, sound)}
+                />
+              ))}
+            </Menu>
+          </View>
+
+          <View style={styles.controlButtonsContainer}>
+            <Surface style={styles.controlButtons} elevation={0}>
+              <IconButton
+                icon="play"
+                size={28}
+                mode="contained"
+                disabled={!selectedSound || isLoading}
+                onPress={() => {
+                  setLoading(prev => ({...prev, [studentId]: true}));
+                  handleSendToStudent(studentId, 'PLAY');
+                  setTimeout(() => {
+                    setLoading(prev => ({...prev, [studentId]: false}));
+                  }, 800);
+                }}
+                style={{ backgroundColor: theme.colors.primary }}
+                iconColor={theme.colors.onPrimary}
+              />
+              {isLoading ? (
+                <ActivityIndicator size={28} color={theme.colors.primary} style={styles.loadingIndicator} />
+              ) : (
+                <IconButton
+                  icon="stop"
+                  size={28}
+                  mode="contained"
+                  onPress={() => handleSendToStudent(studentId, 'STOP')}
+                  style={{ backgroundColor: theme.colors.error }}
+                  iconColor={theme.colors.onError}
+                />
+              )}
+            </Surface>
+          </View>
+        </View>
+        
+        {selectedSound && (
+          <View style={styles.selectedSoundIndicator}>
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+              Wybrany dźwięk:
+            </Text>
+            <Chip 
+              icon="music-note" 
+              style={styles.soundChip}
+            >
+              {selectedSound.split('/').pop()?.replace('.wav', '')}
+            </Chip>
+          </View>
+        )}
+      </Surface>
+    );
   };
 
   const getAvailableSubcategories = (studentId: number) => {
@@ -89,6 +420,22 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
       return categoryData[subcategory] || [];
     }
     return Array.isArray(categoryData) ? categoryData : [];
+  };
+
+  const handleSendToStudent = (studentId: number, command: 'PLAY' | 'STOP') => {
+    if (!studentId) {
+      console.error('Attempted to send command to student with invalid ID');
+      return;
+    }
+    
+    const sound = selectedSounds[studentId];
+    if (command === 'PLAY' && sound) {
+      console.log(`Sending PLAY command to student ${studentId} with sound: ${sound}`);
+      socketService.emitStudentAudioCommand(studentId, 'PLAY', sound);
+    } else {
+      console.log(`Sending STOP command to student ${studentId}`);
+      socketService.emitStudentAudioCommand(studentId, 'STOP', '');
+    }
   };
 
   const handleCategorySelect = (studentId: number, category: string) => {
@@ -134,193 +481,94 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
       }
     }));
   };
-
   return (
     <Dialog 
       visible={visible} 
       onDismiss={onDismiss} 
       style={{
         ...styles.dialog,
-        maxHeight: Dimensions.get('window').height * 0.8
+        maxHeight: Dimensions.get('window').height * 0.9,
+        backgroundColor: theme.dark ? theme.colors.elevation.level2 : theme.colors.surface
       }}
     >
-      <Dialog.Title>Studenci w sesji</Dialog.Title>
-      <Dialog.Content>
-        <View style={styles.sessionHeader}>
-          <Text variant="titleMedium" style={styles.sessionHeaderText}>
-            {session.name || `Sesja ${session.sessionCode}`}
-          </Text>
+      <Dialog.Title style={styles.dialogTitle}>
+        Studenci w sesji
+      </Dialog.Title>
+      
+      <Dialog.Content style={styles.dialogContent}>
+        <Surface 
+          style={[
+            styles.sessionHeader, 
+            { backgroundColor: theme.dark ? theme.colors.elevation.level1 : theme.colors.surfaceVariant }
+          ]} 
+          elevation={0}
+        >
+          <View style={styles.sessionInfo}>
+            <Text variant="titleMedium" style={styles.sessionName}>
+              {session.name || `Sesja ${session.sessionCode}`}
+            </Text>
+            <Text variant="bodySmall" style={styles.sessionCode}>
+              Kod sesji: {session.sessionCode}
+            </Text>
+          </View>
+          
           <Chip 
             icon={session.isActive ? "check-circle" : "cancel"}
-            style={styles.sessionStatus}
+            style={[
+              styles.sessionStatus,
+              { 
+                backgroundColor: session.isActive 
+                  ? theme.colors.primaryContainer 
+                  : theme.colors.errorContainer 
+              }
+            ]}
           >
             {session.isActive ? "Aktywna" : "Nieaktywna"}
           </Chip>
-        </View>
+        </Surface>
 
         <Divider style={styles.divider} />
 
         {!hasStudents ? (
-          <View style={styles.emptyState}>
-            <Text variant="bodyLarge">Brak studentów</Text>
+          <Surface style={styles.emptyState} elevation={0}>
+            <Avatar.Icon 
+              size={64} 
+              icon="account-group" 
+              style={{ backgroundColor: theme.colors.surfaceDisabled }}
+              color={theme.colors.onSurfaceDisabled}
+            />
+            <Text variant="titleMedium" style={styles.emptyStateTitle}>
+              Brak studentów
+            </Text>
             <Text variant="bodyMedium" style={styles.emptyStateText}>
               Żaden student nie dołączył jeszcze do tej sesji
             </Text>
-          </View>
+            <Button 
+              mode="contained" 
+              onPress={onDismiss} 
+              style={styles.emptyStateButton}
+              icon="refresh"
+            >
+              Odśwież
+            </Button>
+          </Surface>
         ) : (
-          <ScrollView style={styles.studentsList}>
+          <ScrollView 
+            style={styles.studentsList}
+            contentContainerStyle={styles.studentsListContent}
+            showsVerticalScrollIndicator={false}
+          >
             {studentsList.map((student, index) => (
-              <View key={student.id || `student-${index}`}>
-                <List.Item
-                  title={`${student.name} ${student.surname}`}
-                  description={`Album: ${student.albumNumber}`}
-                  left={() => (
-                    <Avatar.Icon 
-                      size={40} 
-                      icon="account" 
-                      style={styles.avatar} 
-                    />
-                  )}
-                  right={() => (
-                    <View style={styles.controlsContainer}>
-                      <View style={styles.statusContainer}>
-                        <Chip 
-                          icon={student.student_sessions.active ? "checkbox-marked-circle" : "close-circle"}
-                          style={styles.statusChip}
-                        >
-                          {student.student_sessions.active ? "Aktywny" : "Nieaktywny"}
-                        </Chip>
-                        <Text style={styles.joinTime}>
-                          Dołączył: {new Date(student.student_sessions.joinedAt).toLocaleString('pl-PL')}
-                        </Text>
-                      </View>
-                      
-                      <View style={styles.soundControls}>
-                          <ScrollView 
-                          horizontal
-                          showsHorizontalScrollIndicator={false}
-                          contentContainerStyle={styles.selectionRow}
-                          ></ScrollView>
-                        <View style={styles.selectionRow}>
-                          <Menu
-                            visible={menuVisible[student.id]?.category || false}
-                            onDismiss={() => setMenuVisible(prev => ({
-                              ...prev,
-                              [student.id]: {...prev[student.id], category: false}
-                            }))}
-                            anchor={
-                              <Button 
-                                mode="outlined" 
-                                onPress={() => setMenuVisible(prev => ({
-                                  ...prev,
-                                  [student.id]: {...prev[student.id], category: true}
-                                }))}
-                                style={styles.categoryButton}
-                              >
-                                {selectedCategories[student.id] || 'Kategoria'}
-                              </Button>
-                            }
-                            style={styles.menuWrapper}
-                          >
-                            {Object.keys(soundStructure).map(category => (
-                              <Menu.Item
-                                key={category}
-                                title={category}
-                                onPress={() => handleCategorySelect(student.id, category)}
-                              />
-                            ))}
-                          </Menu>
-
-                          {getAvailableSubcategories(student.id).length > 0 && (
-                            <Menu
-                              visible={menuVisible[student.id]?.subcategory || false}
-                              onDismiss={() => setMenuVisible(prev => ({
-                                ...prev,
-                                [student.id]: {...prev[student.id], subcategory: false}
-                              }))}
-                              anchor={
-                                <Button 
-                                  mode="outlined" 
-                                  onPress={() => setMenuVisible(prev => ({
-                                    ...prev,
-                                    [student.id]: {...prev[student.id], subcategory: true}
-                                  }))}
-                                  style={styles.subcategoryButton}
-                                  disabled={!selectedCategories[student.id]}
-                                >
-                                  {selectedSubcategories[student.id] || 'Podkategoria'}
-                                </Button>
-                              }
-                              style={styles.menuWrapper}
-                            >
-                              {getAvailableSubcategories(student.id).map(subcategory => (
-                                <Menu.Item
-                                  key={subcategory}
-                                  title={subcategory}
-                                  onPress={() => handleSubcategorySelect(student.id, subcategory)}
-                                />
-                              ))}
-                            </Menu>
-                          )}
-
-                          <Menu
-                            visible={menuVisible[student.id]?.sound || false}
-                            onDismiss={() => setMenuVisible(prev => ({
-                              ...prev,
-                              [student.id]: {...prev[student.id], sound: false}
-                            }))}
-                            anchor={
-                              <Button 
-                                mode="outlined" 
-                                onPress={() => setMenuVisible(prev => ({
-                                  ...prev,
-                                  [student.id]: {...prev[student.id], sound: true}
-                                }))}
-                                style={styles.soundButton}
-                                disabled={!selectedCategories[student.id] || (getAvailableSubcategories(student.id).length > 0 && !selectedSubcategories[student.id])}
-                              >
-                                {selectedSounds[student.id]?.split('/').pop()?.replace('.wav', '') || 'Dźwięk'}
-                              </Button>
-                            }
-                            style={styles.menuWrapper}
-                          >
-                            {getAvailableSounds(student.id).map((sound: string) => (
-                              <Menu.Item
-                                key={`${selectedCategories[student.id]}-${selectedSubcategories[student.id]}-${sound}`}
-                                title={sound}
-                                onPress={() => handleSoundSelect(student.id, sound)}
-                              />
-                            ))}
-                          </Menu>
-                        </View>
-
-                        <View style={styles.controlButtons}>
-                          <IconButton
-                            icon="play"
-                            size={24}
-                            mode="contained"
-                            disabled={!selectedSounds[student.id]}
-                            onPress={() => handleSendToStudent(student.id, 'PLAY')}
-                          />
-                          <IconButton
-                            icon="stop"
-                            size={24}
-                            mode="contained"
-                            onPress={() => handleSendToStudent(student.id, 'STOP')}
-                          />
-                        </View>
-                      </View>
-                    </View>
-                  )}
-                />
-                {index < studentsList.length - 1 && <Divider style={styles.itemDivider} />}
-              </View>
+              <StudentRow key={student.id || `student-${index}`} student={student} index={index} />
             ))}
           </ScrollView>
         )}
       </Dialog.Content>
-      <Dialog.Actions>
-        <Button onPress={onDismiss}>Zamknij</Button>
+      
+      <Dialog.Actions style={styles.dialogActions}>
+        <Button onPress={onDismiss} mode="contained">
+          Zamknij
+        </Button>
       </Dialog.Actions>
     </Dialog>
   );
@@ -329,15 +577,42 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
 const styles = StyleSheet.create({
   dialog: {
     maxWidth: 600,
-    width: "90%",
+    width: "95%",
     alignSelf: "center",
+    borderRadius: 16,
+  },
+  dialogTitle: {
+    textAlign: "center",
+    fontWeight: "bold",
+    fontSize: 22,
+  },
+  dialogContent: {
+    paddingHorizontal: 0,
+    paddingTop: 0,
+  },
+  dialogActions: {
+    justifyContent: "center",
+    paddingBottom: 16,
+    paddingTop: 8,
   },
   sessionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
-    gap: 16,
+    marginHorizontal: 0,
+    marginVertical: 0,
+    padding: 16,
+    borderRadius: 8,
+  },
+  sessionInfo: {
+    flex: 1,
+  },
+  sessionName: {
+    fontWeight: "bold",
+    marginBottom: 4,
+  },
+  sessionCode: {
+    opacity: 0.7,
   },
   sessionStatus: {
     alignSelf: "flex-start",
@@ -347,13 +622,40 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   divider: {
-    marginVertical: 12,
+    marginVertical: 16,
+    height: 1,
   },
   studentsList: {
     maxHeight: Dimensions.get('window').height * 0.6,
   },
+  studentsListContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    gap: 16,
+  },
+  studentCard: {
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 0,
+  },
+  studentHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  studentInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  nameContainer: {
+    marginLeft: 12,
+    flex: 1,
+  },
   avatar: {
     backgroundColor: "#3498db",
+    borderRadius: 20,
   },
   controlsContainer: {
     flexDirection: 'column',
@@ -368,20 +670,27 @@ const styles = StyleSheet.create({
   },
   statusChip: {
     backgroundColor: "transparent",
+    height: 28,
   },
   joinTime: {
     fontSize: 12,
     marginTop: 4,
     opacity: 0.7,
+    marginLeft: 52,
   },
   itemDivider: {
     marginVertical: 8,
     backgroundColor: '#eee',
-  },
-  emptyState: {
-    padding: 20,
+  },  emptyState: {
     alignItems: "center",
     justifyContent: "center",
+    padding: 32,
+    marginHorizontal: 16,
+    borderRadius: 12,
+  },
+  emptyStateTitle: {
+    marginTop: 16,
+    fontWeight: "bold",
   },
   emptyStateText: {
     textAlign: "center",
@@ -389,40 +698,62 @@ const styles = StyleSheet.create({
     opacity: 0.7,
     color: '#666',
   },
-soundControls: {
+  emptyStateButton: {
+    marginTop: 24,
+  },
+  soundControls: {
     flexDirection: 'column',
     gap: 6,
     width: '100%',
   },
-   selectionRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    maxWidth: Dimensions.get('window').width * 0.7,
+  soundControlsContainer: {
+    marginTop: 12,
+  },
+  selectionRow: {
+    flexDirection: "row",
+    gap: 8,
+    flexWrap: "wrap",
+    marginBottom: 12,
   },
   categoryButton: {
-    minWidth: 100,
-    maxWidth: 140,
     flex: 1,
+    minWidth: 100,
   },
   subcategoryButton: {
-    minWidth: 120,
-    maxWidth: 140,
     flex: 1,
+    minWidth: 120,
   },
   soundButton: {
-    minWidth: 140,
-    maxWidth: 160,
     flex: 1,
+    minWidth: 140,
   },
-
+  buttonContent: {
+    height: 36,
+    flexDirection: "row-reverse",
+  },
+  controlButtonsContainer: {
+    alignItems: "flex-end",
+  },
   controlButtons: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
     gap: 4,
     marginTop: 4,
+    borderRadius: 28,
   },
-
+  loadingIndicator: {
+    margin: 6,
+  },
+  selectedSoundIndicator: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 12,
+    gap: 8,
+  },
+  soundChip: {
+    height: 24,
+    borderRadius: 12,
+  },
   menuWrapper: {
     maxWidth: 200,
     elevation: 3,

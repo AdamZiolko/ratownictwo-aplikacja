@@ -262,7 +262,39 @@ const StudentSessionScreen = () => {
         .then((fn) => {
           unsub = fn;
         })
-        .catch(console.error);
+        .catch(console.error);      // Add listener for session-deleted event
+      const sessionDeletedUnsubscribe = socketService.on('session-deleted', (data) => {
+        console.log('❌ Session has been deleted by the examiner', data);
+        
+        setError("Sesja została zakończona przez egzaminatora");
+        
+        if (accessCode) {
+          try {
+            sessionService.leaveSession(accessCode.toString());
+          } catch (e) {
+            console.warn("Error leaving session on deletion:", e);
+          }
+        }
+        
+        router.replace({
+          pathname: "/routes/student-access",
+          params: { 
+            firstName: firstName || "", 
+            lastName: lastName || "", 
+            albumNumber: albumNumber || "" 
+          }
+        });
+      });
+
+      return () => {
+        unsub?.();
+        sessionDeletedUnsubscribe();
+
+        if (accessCode) {
+          sessionService.leaveSession(accessCode.toString());
+          console.log(`Left session ${accessCode}`);
+        }
+      };
     }
 
     setupSessionSubscription();
@@ -274,7 +306,7 @@ const StudentSessionScreen = () => {
         console.log(`Left session ${accessCode}`);
       }
     };
-  }, [accessCode, firstName, lastName, albumNumber]);
+  }, [accessCode, firstName, lastName, albumNumber, router]);
 
 
 useEffect(() => {
@@ -748,12 +780,22 @@ const handleSoundResume = async (soundName: string) => {
               size={64}
               color={theme.colors.error}
             />
-            <Text style={{ color: theme.colors.error, marginVertical: 12 }}>
-              Błąd: {error}
+            <Text style={{ color: theme.colors.error, marginVertical: 12, textAlign: 'center' }}>
+              {error === "Sesja została zakończona przez egzaminatora" 
+                ? "Sesja została zakończona przez egzaminatora"
+                : `Błąd: ${error}`
+              }
             </Text>
-            <Button mode="contained" onPress={handleRetry} icon="refresh">
-              Spróbuj ponownie
-            </Button>
+            {error !== "Sesja została zakończona przez egzaminatora" && (
+              <Button mode="contained" onPress={handleRetry} icon="refresh">
+                Spróbuj ponownie
+              </Button>
+            )}
+            {error === "Sesja została zakończona przez egzaminatora" && (
+              <Text style={{ marginTop: 12, textAlign: 'center' }}>
+                Przekierowuję do ekranu wpisywania kodu...
+              </Text>
+            )}
           </Surface>
         ) : sessionData ? (
           isFullscreen && Platform.OS !== "web" ? (

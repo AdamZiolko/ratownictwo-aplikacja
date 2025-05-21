@@ -7,7 +7,6 @@ import {
   Animated,
   NativeSyntheticEvent,
   NativeScrollEvent,
-  Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -17,7 +16,6 @@ import {
   Button,
   FAB,
   Portal,
-  DataTable,
   IconButton,
   useTheme,
   ActivityIndicator,

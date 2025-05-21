@@ -250,7 +250,8 @@ export const useSessionManager = (user: any) => {
     if (!currentSession) return false;
 
     try {
-      await sessionService.deleteSession(currentSession.sessionId!);
+      // Use the new method that both deletes on API and notifies clients
+      await sessionService.deleteSessionAndNotify(currentSession.sessionId!);
       showSnackbar("Sesja została usunięta", "success");
       loadSessions();
       return true;
