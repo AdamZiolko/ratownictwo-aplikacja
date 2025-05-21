@@ -59,11 +59,13 @@ export interface FormErrors {
   rr: string;
 }
 
-export type Preset = {
+export interface Preset {
   id: string;
   name: string;
   data: FormData;
-};
+  isDefault?: boolean;
+  isUserPreset?: boolean;
+}
 
 export interface Storage {
   getItem: (key: string) => Promise<string | null>;
@@ -73,4 +75,8 @@ export interface Storage {
 export interface SoundQueueItem {
   soundName: string;
   delay: number;
+
+
+  
 }
+

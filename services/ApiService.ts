@@ -1,6 +1,7 @@
 import AuthService from './AuthService';
 
-const API_URL = 'http://192.168.1.111:8080/api/'; // <- Zamiast ip był "localhost"
+const API_URL = 'http://192.168.100.7:8080/api/';
+
 
 class ApiService {
   
