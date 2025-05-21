@@ -40,18 +40,18 @@ const RhythmSelectionGrid = ({
   const [filteredTypes, setFilteredTypes] = useState<EkgType[]>([]);
   const [containerWidth, setContainerWidth] = useState(SCREEN_WIDTH);
   
-  // Determine the number of columns based on screen width
+  
   const getNumberOfColumns = () => {
     return width < 480 ? 1 : 2;
   };
   
-  // Calculate tile width based on container width and columns
+  
   const getTileWidth = () => {
     const columns = getNumberOfColumns();
     return (containerWidth - (TILE_SPACING * (columns + 1))) / columns;
   };
   
-  // Handle container layout changes to recalculate dimensions
+  
   const handleLayout = (event: LayoutChangeEvent) => {
     const { width } = event.nativeEvent.layout;
     setContainerWidth(width);
@@ -103,14 +103,14 @@ const RhythmSelectionGrid = ({
   
   const [selectedCategory, setSelectedCategory] = useState<CategoryKey | null>(null);
   
-  // Get all rhythm types from categories
+  
   const allRhythmTypes = Object.values(rhythmCategories).flat();
 
   useEffect(() => {
-    // Initialize EkgDataAdapter on component mount
+    
     EkgDataAdapter.initialize();
     
-    // Set initial filtered types
+    
     if (selectedCategory) {
       setFilteredTypes([...rhythmCategories[selectedCategory]]);
     } else {
@@ -119,7 +119,7 @@ const RhythmSelectionGrid = ({
   }, [selectedCategory]);
 
   useEffect(() => {
-    // Filter types based on search query
+    
     if (searchQuery.trim() === '') {
       if (selectedCategory) {
         setFilteredTypes([...rhythmCategories[selectedCategory]]);
@@ -181,7 +181,7 @@ const RhythmSelectionGrid = ({
       <FlatList
         data={filteredTypes}
         numColumns={getNumberOfColumns()}
-        key={getNumberOfColumns().toString()} // Force re-render when column count changes
+        key={getNumberOfColumns().toString()} 
         keyExtractor={(item) => item.toString()}
         contentContainerStyle={styles.gridContainer}
         showsVerticalScrollIndicator={false}        renderItem={({ item: type }) => (
@@ -223,14 +223,14 @@ const RhythmTile: React.FC<RhythmTileProps> = ({
   useEffect(() => {
     const fixedBpm = 60;
     const baseline = svgHeight / 2;
-    const pointsCount = 120; // Fewer points for mini chart
+    const pointsCount = 120; 
     let path = "";
     
     for (let i = 0; i < pointsCount; i++) {
       const x = (i / pointsCount) * svgWidth;
       const ekgValue = EkgDataAdapter.getValueAtTime(type, x, fixedBpm, NoiseType.NONE);
       
-      let verticalScale = 0.4; // Smaller scale for mini charts
+      let verticalScale = 0.4; 
       
       if (type === EkgType.ASYSTOLE) {
         verticalScale = 0.1;
@@ -335,11 +335,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },  gridContainer: {
     paddingVertical: 8,
-    alignItems: 'center', // Center items for single column layout
+    alignItems: 'center', 
   },tileContainer: {
     marginHorizontal: TILE_SPACING / 2,
     marginBottom: TILE_SPACING,
-    alignSelf: 'center', // Center single column tiles on small screens
+    alignSelf: 'center', 
   },
   tile: {
     padding: 10,

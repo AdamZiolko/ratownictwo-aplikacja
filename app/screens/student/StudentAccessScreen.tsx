@@ -97,7 +97,7 @@ const StudentAccessScreen = () => {
         return;
       }
       
-      // Check if the session is active
+      
       if (session.isActive === false) {
         setError("Ta sesja jest obecnie nieaktywna");
         setIsLoading(false);
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Platform.OS === "web" ? 16 : 16,
     paddingVertical: 24,
     alignItems: "center",
-    justifyContent: "center", // Center vertically
+    justifyContent: "center", 
     minHeight: '100%',
   },
   landscapeScrollContainer: {

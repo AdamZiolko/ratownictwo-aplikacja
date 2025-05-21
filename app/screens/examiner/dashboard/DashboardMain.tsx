@@ -156,10 +156,6 @@ const ExaminerDashboardScreen = () => {
       </Appbar.Header>
 
       <View style={dashboardStyles.contentContainer}>
-        {}
-
-
-        {}
         {Platform.OS !== "android" && (
           <Card
             style={{

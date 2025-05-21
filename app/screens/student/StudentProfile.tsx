@@ -377,7 +377,7 @@ const StudentProfileScreen = () => {
         keyboardShouldPersistTaps="handled"
       >
         {isLandscape ? (
-          // Landscape layout (both web and mobile)
+          
           <>
             <View style={styles.landscapeLeftColumn}>
               <Text
@@ -426,7 +426,7 @@ const StudentProfileScreen = () => {
             </View>
           </>
         ) : (
-          // Portrait layout
+          
           <>
             <Text
               variant="titleLarge"
@@ -495,36 +495,36 @@ const styles = StyleSheet.create({
     maxWidth: "30%",
     justifyContent: "center",
     alignItems: "center",
-    alignSelf: "center", // Dodane dla lepszego centrowania na urządzeniach mobilnych
+    alignSelf: "center", 
     paddingHorizontal: 8,
-    height: "100%", // Zapewnia pełną wysokość dla centrowania
+    height: "100%", 
   },
   landscapeMiddleColumn: {
     flex: 2,
     justifyContent: "center",
     alignItems: "center",
-    alignSelf: "center", // Dodane dla lepszego centrowania na urządzeniach mobilnych
+    alignSelf: "center", 
     maxWidth: "40%",
-    height: "100%", // Zapewnia pełną wysokość dla centrowania
+    height: "100%", 
   },
   landscapeRightColumn: {
     flex: 1,
     maxWidth: "30%",
     justifyContent: "center",
     alignItems: "center",
-    alignSelf: "center", // Dodane dla lepszego centrowania na urządzeniach mobilnych
+    alignSelf: "center", 
     paddingHorizontal: 8,
-    height: "100%", // Zapewnia pełną wysokość dla centrowania
+    height: "100%", 
   },
   subtitle: {
     marginBottom: 20,
     textAlign: "center",
-    textAlignVertical: "center", // Dodane dla lepszego centrowania na Androidzie
+    textAlignVertical: "center", 
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
-    alignSelf: 'auto', // Reset alignSelf żeby szerokość była naturalna
-    // Dodajemy lekki cień dla lepszego kontrastu na białym tle
+    alignSelf: 'auto', 
+    
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -544,14 +544,14 @@ const styles = StyleSheet.create({
     marginBottom: 0,
     fontSize: 16,
     lineHeight: 20,
-    flex: 0, // Zmiana z flex: 1 na flex: 0, aby szerokość dopasowała się do zawartości
-    maxWidth: "90%", // Zwiększenie maxWidth
-    textAlignVertical: "center", // Dodane dla lepszego centrowania na Androidzie
-    alignSelf: "center", // Dodane dla lepszego centrowania
+    flex: 0, 
+    maxWidth: "90%", 
+    textAlignVertical: "center", 
+    alignSelf: "center", 
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
-    // Dodajemy lekki cień dla lepszego kontrastu na białym tle
+    
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -619,36 +619,36 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     marginVertical: 8,
     alignItems: "center",
-    minHeight: Platform.OS === "web" ? 24 : 30, // Zapewnia minimalną wysokość dla lepszego centrowania
-    backgroundColor: 'rgba(0, 0, 0, 0.02)', // Zostawiamy lekko szare tło dla wierszy
+    minHeight: Platform.OS === "web" ? 24 : 30, 
+    backgroundColor: 'rgba(0, 0, 0, 0.02)', 
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    width: '100%', // Zapewnienie pełnej szerokości
+    width: '100%', 
   },
   infoLabel: {
     width: 120,
     fontSize: 14,
-    textAlignVertical: "center", // Dodane dla Androida
-    includeFontPadding: false, // Usuwa dodatkowy padding tekstów na Androidzie
+    textAlignVertical: "center", 
+    includeFontPadding: false, 
   },
   landscapeInfoLabel: {
     width: 90,
     fontSize: 12,
-    textAlignVertical: "center", // Dodane dla Androida
-    includeFontPadding: false, // Usuwa dodatkowy padding tekstów na Androidzie
+    textAlignVertical: "center", 
+    includeFontPadding: false, 
   },
   infoValue: {
     flex: 1,
     fontWeight: "500",
     fontSize: 16,
-    textAlignVertical: "center", // Dodane dla Androida
-    includeFontPadding: false, // Usuwa dodatkowy padding tekstów na Androidzie
+    textAlignVertical: "center", 
+    includeFontPadding: false, 
   },
   landscapeInfoValue: {
     fontSize: 14,
-    textAlignVertical: "center", // Dodane dla Androida
-    includeFontPadding: false, // Usuwa dodatkowy padding tekstów na Androidzie
+    textAlignVertical: "center", 
+    includeFontPadding: false, 
   },
   continueButton: {
     marginLeft: "auto",
@@ -673,17 +673,17 @@ const styles = StyleSheet.create({
   },  
   landscapeFooterText: {
     textAlign: "center",
-    textAlignVertical: "center", // Dodane dla Androida
-    opacity: 0.8, // Zwiększamy nieprzezroczystość dla lepszej czytelności
+    textAlignVertical: "center", 
+    opacity: 0.8, 
     fontSize: 12,
-    flex: 0, // Zmiana z flex: 1 na flex: 0, aby szerokość dopasowała się do zawartości
-    maxWidth: "90%", // Zwiększenie maxWidth
+    flex: 0, 
+    maxWidth: "90%", 
     alignSelf: "center",
-    includeFontPadding: false, // Usuwa dodatkowy padding tekstów na Androidzie
+    includeFontPadding: false, 
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
-    // Dodajemy lekki cień dla lepszego kontrastu na białym tle
+    
     ...Platform.select({
       ios: {
         shadowColor: '#000',

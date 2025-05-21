@@ -252,7 +252,7 @@ const StudentSessionScreen = () => {
           (updated) => {
             setSessionData(updated);
             
-            // Handle session being set to inactive during the session
+            
             if (updated.isActive === false) {
               setError("Sesja została dezaktywowana przez egzaminatora");
               
@@ -264,7 +264,7 @@ const StudentSessionScreen = () => {
                 }
               }
               
-              // Navigate back to access screen after a short delay
+              
               setTimeout(() => {
                 router.replace({
                   pathname: "/routes/student-access",
@@ -286,7 +286,7 @@ const StudentSessionScreen = () => {
         .then((fn) => {
           unsub = fn;
         })
-        .catch(console.error);// Add listener for session-deleted event
+        .catch(console.error);
       const sessionDeletedUnsubscribe = socketService.on('session-deleted', (data) => {
         console.log('❌ Session has been deleted by the examiner', data);
         
@@ -363,7 +363,7 @@ useEffect(() => {
 
 useEffect(() => {
    if (!audioReady || !accessCode) {
-      // Nie łączymy się do wskaźnika audio-command dopóki audio nie jest gotowe lub nie ma accessCode
+      
       return;
     }
   console.log('🔌 Zakładam listener "audio-command" – audio jest gotowe');
@@ -458,7 +458,7 @@ const handleSoundPlayback = async (soundName: string, loop: boolean): Promise<vo
     await sound.setIsLoopingAsync(loop);
     try {
       await sound.stopAsync();
-    } catch (_) { /* mogło już być zatrzymane */ }
+    } catch (_) {  }
     await sound.setPositionAsync(0);
 
     await sound.playAsync();
@@ -633,17 +633,18 @@ const handleSoundResume = async (soundName: string) => {
           onPress={() => setIsFullscreen(false)}
           size={24}
         />
-      </View>
-      <View style={styles.fullscreenContent}>
-        <Surface style={styles.vitalItemCard} elevation={1}>
-          <EkgCardDisplay
-            ekgType={Number(sessionData?.rhythmType)}
-            bpm={Number(sessionData?.beatsPerMinute)}
-            noiseType={sessionData?.noiseLevel}
-            isRunning
-            title="Kardiomonitor"
-          />
-        </Surface>
+      </View>      <View style={styles.fullscreenContent}>
+        {!sessionData?.isEkdDisplayHidden && (
+          <Surface style={styles.vitalItemCard} elevation={1}>
+            <EkgCardDisplay
+              ekgType={Number(sessionData?.rhythmType)}
+              bpm={Number(sessionData?.beatsPerMinute)}
+              noiseType={sessionData?.noiseLevel}
+              isRunning
+              title="Kardiomonitor"
+            />
+          </Surface>
+        )}
 
         <Surface style={styles.vitalsCardFullscreen} elevation={3}>
           <View style={styles.cardHeaderRow}>
@@ -1005,18 +1006,20 @@ const handleSoundResume = async (soundName: string) => {
                           {new Date(sessionData.updatedAt).toLocaleString()}
                         </Text>
                       </View>
-                    )}
-                  </View>                </Surface>
+                    )}                  </View>
+                </Surface>
               )}
               {Platform.OS !== "web" ? (
                 <>
-                  <EkgCardDisplay
-                    ekgType={Number(sessionData.rhythmType)}
-                    bpm={Number(sessionData.beatsPerMinute)}
-                    noiseType={sessionData.noiseLevel}
-                    isRunning
-                    title="Kardiomonitor"
-                  />
+                  {!sessionData.isEkdDisplayHidden && (
+                    <EkgCardDisplay
+                      ekgType={Number(sessionData.rhythmType)}
+                      bpm={Number(sessionData.beatsPerMinute)}
+                      noiseType={sessionData.noiseLevel}
+                      isRunning
+                      title="Kardiomonitor"
+                    />
+                  )}
 
                   <Surface style={styles.vitalsCard} elevation={3}>
                     <View style={styles.cardHeaderRow}>
@@ -1127,15 +1130,18 @@ const handleSoundResume = async (soundName: string) => {
                         />
                         <Text style={styles.cardHeaderTitle}>Sensor RGB</Text>
                       </View>
-                      <ColorSensor />                    </Surface>
+                      <ColorSensor />
+                    </Surface>
                   )}
-                  <EkgCardDisplay
-                    ekgType={Number(sessionData.rhythmType)}
-                    bpm={Number(sessionData.beatsPerMinute)}
-                    noiseType={sessionData.noiseLevel}
-                    isRunning
-                    title="Kardiomonitor"
-                  />
+                  {!sessionData.isEkdDisplayHidden && (
+                    <EkgCardDisplay
+                      ekgType={Number(sessionData.rhythmType)}
+                      bpm={Number(sessionData.beatsPerMinute)}
+                      noiseType={sessionData.noiseLevel}
+                      isRunning
+                      title="Kardiomonitor"
+                    />
+                  )}
                   <Surface style={styles.vitalsCard} elevation={3}>
                     <View style={styles.cardHeaderRow}>
                       <MaterialCommunityIcons

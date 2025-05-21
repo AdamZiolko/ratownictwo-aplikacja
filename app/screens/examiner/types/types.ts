@@ -20,6 +20,7 @@ export interface Session {
   noiseLevel: number;
   sessionCode: string;
   isActive?: boolean;
+  isEkdDisplayHidden?: boolean;
   createdAt?: string;
   updatedAt?: string;
   
@@ -41,10 +42,12 @@ export interface FormData {
   noiseLevel: NoiseType;
   sessionCode: string;
   isActive: boolean;
+  isEkdDisplayHidden: boolean;
   bp: string;
   spo2: string;
   etco2: string;
   rr: string;
+  hr?: string;
 }
 
 export interface FormErrors {

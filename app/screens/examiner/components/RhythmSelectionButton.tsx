@@ -25,10 +25,10 @@ const RhythmSelectionButton = ({
   const svgHeight = 80;
 
   useEffect(() => {
-    // Initialize EkgDataAdapter on component mount
+    
     EkgDataAdapter.initialize();
     
-    // Generate SVG path for the selected rhythm preview
+    
     const fixedBpm = 60;
     const baseline = svgHeight / 2;
     const pointsCount = 200;

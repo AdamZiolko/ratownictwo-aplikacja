@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, View, ScrollView, Platform, Dimensions } from "react-native";
-import { Dialog, Button, Text, Divider, Chip } from "react-native-paper";
+import { Dialog, Button, Text, Divider, Chip, useTheme } from "react-native-paper";
 import { Session } from "../types/types";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -25,6 +25,18 @@ const ViewSessionDialog: React.FC<ViewSessionDialogProps> = ({
   getRhythmTypeName,
   getNoiseLevelName,
 }) => {
+  const theme = useTheme();
+  
+  
+  const themedStyles = {
+    hiddenChip: {
+      backgroundColor: theme.colors.error,
+    },
+    visibleChip: {
+      backgroundColor: theme.colors.secondary,
+    },
+  };
+  
   if (!session) return null;
 
   return (
@@ -40,15 +52,19 @@ const ViewSessionDialog: React.FC<ViewSessionDialogProps> = ({
             <Text variant="headlineSmall" style={styles.sessionCode} numberOfLines={1}>
               {session.name || `Sesja ${session.sessionCode}`}
             </Text>
-          </View>
-
-          <View style={styles.chipRow}>
+          </View>          <View style={styles.chipRow}>
             <Chip
               icon={session.isActive ? "check-circle" : "cancel"}
               style={styles.statusChip}
               textStyle={styles.chipText}
             >
               {session.isActive ? "Aktywna" : "Nieaktywna"}
+            </Chip>            <Chip
+              icon={session.isEkdDisplayHidden ? "eye-off" : "eye"}
+              style={[styles.statusChip, session.isEkdDisplayHidden ? themedStyles.hiddenChip : themedStyles.visibleChip]}
+              textStyle={styles.chipText}
+            >
+              {session.isEkdDisplayHidden ? "EKG ukryte" : "EKG widoczne"}
             </Chip>
           </View>
 
@@ -162,10 +178,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     marginBottom: 8,
-  },
-  statusChip: {
+  },  statusChip: {
     height: 28,
     justifyContent: 'center',
+    marginHorizontal: 4,
   },
   chipText: {
     fontSize: 12,

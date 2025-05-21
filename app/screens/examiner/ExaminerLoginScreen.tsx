@@ -25,7 +25,6 @@ import {
 } from "react-native-paper";
 import { StatusBar } from "expo-status-bar";
 import { router } from "expo-router";
-import LinearGradient from "react-native-linear-gradient";
 import BackgroundGradient from "@/components/BackgroundGradient";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -45,7 +44,7 @@ const ExaminerLoginScreen = () => {
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState("");
 
-  // Registration state
+  
   const [regUsername, setRegUsername] = useState("");
   const [regEmail, setRegEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
@@ -562,8 +561,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: Platform.select({
-      android: 8, // Reduced from 16 to 8
-      ios: 8, // Reduced from 16 to 8
+      android: 8, 
+      ios: 8, 
       default: 24,
     }),
     paddingTop: Platform.select({
@@ -571,13 +570,13 @@ const styles = StyleSheet.create({
       ios: 12,
       default: 40,
     }),
-    width: "100%", // Ensure full width
+    width: "100%", 
   },
   desktopContainer: {
     alignItems: "center",
     justifyContent: "center",
     paddingTop: 0,
-    width: "100%", // Ensure full width
+    width: "100%", 
   },
   formSurface: {
     padding: Platform.select({
@@ -589,7 +588,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   desktopFormSurface: {
-    maxWidth: 580, // Increased from 480 to 580
+    maxWidth: 580, 
     width: "100%",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
@@ -652,9 +651,9 @@ const styles = StyleSheet.create({
       default: 24,
     }),
     paddingVertical: 6,
-    borderRadius: 8, // Increased from 4 to 8
-    marginTop: 8, // Added margin top
-    elevation: 2, // Added elevation for Android shadow
+    borderRadius: 8, 
+    marginTop: 8, 
+    elevation: 2, 
   },
   termsContainer: {
     marginBottom: 24,
@@ -692,29 +691,29 @@ const styles = StyleSheet.create({
   desktopSnackbarWrapper: {
     width: "50%",
     alignSelf: "center",
-  }, // New mobile-friendly input styles
+  }, 
   inputCard: {
     marginBottom: 16,
     borderRadius: 12,
     overflow: "hidden",
-    width: "100%", // Ensure full width
+    width: "100%", 
   },
   inputCardContent: {
     paddingHorizontal: 0,
-    width: "100%", // Ensure full width
+    width: "100%", 
   },
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12, // Increased from 8 to 12
-    width: "100%", // Ensure full width
-    minHeight: 60, // Ensure minimum height for better touch targets
+    paddingHorizontal: 12, 
+    width: "100%", 
+    minHeight: 60, 
   },
   inputIcon: {
     backgroundColor: "transparent",
     margin: 0,
     paddingTop: 0,
-    marginRight: 12, // Increased from 8 to 12
+    marginRight: 12, 
   },
   flatInput: {
     flex: 1,
@@ -724,11 +723,11 @@ const styles = StyleSheet.create({
       ios: 16,
       default: 16,
     }),
-    width: "100%", // Ensure full width
+    width: "100%", 
   },
   inputContentStyle: {
-    paddingTop: 10, // Increased from 8 to 10
-    paddingBottom: 10, // Increased from 8 to 10
+    paddingTop: 10, 
+    paddingBottom: 10, 
   },
   errorText: {
     textAlign: "center",
@@ -736,7 +735,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   buttonContent: {
-    paddingVertical: 10, // Increased from 8 to 10
+    paddingVertical: 10, 
   },
   landscapeInputsRow: {
     flexDirection: "row",

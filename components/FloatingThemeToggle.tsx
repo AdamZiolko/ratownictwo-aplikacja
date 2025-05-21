@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
   container: {
     position: "absolute",
     zIndex: 1000,
-    width: 220, // Stała szerokość komponentu
+    width: 220, 
   },
   wrapper: {
     flexDirection: "row",

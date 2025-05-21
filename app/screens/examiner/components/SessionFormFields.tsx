@@ -284,9 +284,9 @@ const SessionFormFields = ({
 }: SessionFormFieldsProps) => {
   const theme = useTheme();
 
-  // Handle BPM input to accept only digits
+  
   const handleBpmChange = (text: string) => {
-    // Only allow digits
+    
     const numericValue = text.replace(/[^0-9]/g, "");
     setFormData({ ...formData, beatsPerMinute: numericValue });
   };
@@ -330,7 +330,7 @@ const SessionFormFields = ({
         style={styles.input}
         error={!!formErrors.beatsPerMinute}
         placeholder="Wprowadź wartość BPM"
-        maxLength={3} // Reasonable limit for human heart rate
+        maxLength={3} 
       />
       {formErrors.beatsPerMinute ? (
         <HelperText type="error">{formErrors.beatsPerMinute}</HelperText>
@@ -404,6 +404,24 @@ const SessionFormFields = ({
             value={formData.isActive}
             onValueChange={(value) =>
               setFormData({ ...formData, isActive: value })
+            }
+            color={theme.colors.primary}
+          />
+        </View>
+        <View style={styles.switchContainer}>
+          <Text
+            style={{
+              color: formData.isEkdDisplayHidden
+                ? theme.colors.error
+                : theme.colors.outline,
+            }}
+          >
+            {formData.isEkdDisplayHidden ? "EKG ukryte" : "EKG widoczne"}
+          </Text>
+          <Switch
+            value={formData.isEkdDisplayHidden}
+            onValueChange={(value) =>
+              setFormData({ ...formData, isEkdDisplayHidden: value })
             }
             color={theme.colors.primary}
           />
@@ -596,15 +614,8 @@ const styles = StyleSheet.create({
   webTickLabel: {
     fontSize: 10,
     textAlign: "center",
-  },
-  formContainer: {
+  },  formContainer: {
     padding: 5,
-  },
-  switchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginVertical: 10,
   },
 });
 

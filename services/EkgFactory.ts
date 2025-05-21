@@ -1,6 +1,6 @@
 export const DEFAULT_BASELINE = 150;
 const DEFAULT_PHASE_SHIFT = 5;
-// Default X-axis offset for EKG rendering (positive value shifts left)
+
 export var DEFAULT_X_OFFSET = 5;
 
 const DEFAULT_BPM = 72;
@@ -59,7 +59,7 @@ export interface EkgConfig {
   noiseAmplitude: number;
   baselineWanderAmplitude: number;
   muscleArtifactProbability: number;
-  xOffset?: number; // Offset for the x-axis (positive number shifts left)
+  xOffset?: number; 
 
   amplitude?: number;
   irregularity?: number;
@@ -148,7 +148,7 @@ export class EkgFactory {
       phaseShift: DEFAULT_PHASE_SHIFT,
       noiseType,
       ekgType,
-      xOffset: DEFAULT_X_OFFSET, // Adding the default x offset
+      xOffset: DEFAULT_X_OFFSET, 
       ...noiseConfig,
     };
     
@@ -238,7 +238,7 @@ export class EkgFactory {
     try {
         const { EkgDataAdapter } = require('./EkgDataAdapter');
       
-      // Pass the current x value with the offset to the data adapter
+      
       return EkgDataAdapter.getValueAtTime(ekgType, x, bpm, noiseType);
     } catch (e) {
       console.error('Error loading EKG data, falling back to default:', e);
@@ -255,10 +255,7 @@ export class EkgFactory {
     }
   }
 
-  /**
-   * Get EKG value with applied x-offset
-   * This is a convenience method that applies the x-offset automatically
-   */
+  
   static getEkgValueWithOffset(
     x: number,
     ekgType: EkgType = EkgType.NORMAL_SINUS_RHYTHM,
@@ -600,11 +597,7 @@ export class EkgFactory {
     }
   }
 
-  /**
-   * Set a custom x-offset for EKG rendering
-   * @param offset The offset value to set (positive shifts left)
-   * @returns The updated default offset value
-   */
+  
   static setDefaultXOffset(offset: number): number {
     return (DEFAULT_X_OFFSET = offset);
   }

@@ -95,9 +95,9 @@ export class EkgDataAdapter {
   }
     public getValueAtTime(ekgType: EkgType, time: number, bpm: number, noiseType: NoiseType): number {
     try {
-      // Special case for asystolia - return a flat line at baseline (150)
+      
       if (ekgType === EkgType.ASYSTOLE) {
-        // Still apply minimal noise if specified
+        
         return this.applyNoise(150, noiseType);
       }
 
@@ -106,10 +106,10 @@ export class EkgDataAdapter {
       const defaultBpm = 72;
       
       const bpmScale = Math.max(1, bpm) / defaultBpm;
-      // Apply the -5 points shift requested
-      // Adding 5 to the time means we're reading from 5 time units ahead
-      // which visually shifts the graph 5 points to the left (shows earlier data)
-      const offsetTime = time + 10; // Shift by +5 to render 5 points earlier
+      
+      
+      
+      const offsetTime = time + 10; 
       const adjustedTime = offsetTime * bpmScale;
       
       

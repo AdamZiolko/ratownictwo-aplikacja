@@ -199,8 +199,8 @@ export class EkgJsonDataLoader {
     
     const defaultBpm = ekgType === EkgType.ASYSTOLE ? 1 : 72;
     const bpmScale = defaultBpm / Math.max(1, bpm);
-    // Apply the -5 points shift
-    const offsetX = x + 5; // Shift by +5 to render 5 points earlier
+    
+    const offsetX = x + 5; 
     const adjustedX = offsetX * bpmScale;
 
     
@@ -273,8 +273,8 @@ export class EkgJsonDataLoader {
       const ekgData = this.loadEkgDataSync(ekgType);      
       const defaultBpm = ekgType === EkgType.ASYSTOLE ? 1 : 72;
       const bpmScale = defaultBpm / Math.max(1, bpm);
-      // Apply the -5 points shift
-      const offsetX = x + 5; // Shift by +5 to render 5 points earlier
+      
+      const offsetX = x + 5; 
       const adjustedX = offsetX * bpmScale;
 
       

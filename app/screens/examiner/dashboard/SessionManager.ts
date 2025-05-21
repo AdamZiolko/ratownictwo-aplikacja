@@ -34,8 +34,7 @@ export const useSessionManager = (user: any) => {
         await AsyncStorage.setItem(key, value);
       }
     },
-  };
-    const [formData, setFormData] = useState<FormData>({
+  };    const [formData, setFormData] = useState<FormData>({
     name: "",
     temperature: "36.6",
     rhythmType: 0, 
@@ -43,6 +42,7 @@ export const useSessionManager = (user: any) => {
     noiseLevel: 0, 
     sessionCode: "",
     isActive: true,
+    isEkdDisplayHidden: false,
     bp: "120/80",
     spo2: "98",
     etco2: "35",
@@ -186,8 +186,7 @@ export const useSessionManager = (user: any) => {
 
   
   const handleCreateSession = async (data: FormData) => {
-    try {
-      const newSession = {
+    try {      const newSession = {
         name: data.name || `Sesja ${data.sessionCode}`,
         temperature: parseFloat(data.temperature),
         rhythmType: data.rhythmType as number,
@@ -195,6 +194,7 @@ export const useSessionManager = (user: any) => {
         noiseLevel: data.noiseLevel as number,
         sessionCode: data.sessionCode,
         isActive: data.isActive,
+        isEkdDisplayHidden: data.isEkdDisplayHidden,
         bp: data.bp,
         spo2: parseInt(data.spo2) || undefined,
         etco2: parseInt(data.etco2) || undefined,
@@ -215,8 +215,7 @@ export const useSessionManager = (user: any) => {
   const handleUpdateSession = async (data: FormData) => {
     if (!currentSession) return false;
 
-    try {
-      const updatedSession = {
+    try {      const updatedSession = {
         name: data.name || `Sesja ${data.sessionCode}`,
         temperature: parseFloat(data.temperature),
         rhythmType: data.rhythmType as number,
@@ -224,6 +223,7 @@ export const useSessionManager = (user: any) => {
         noiseLevel: data.noiseLevel as number,
         sessionCode: data.sessionCode,
         isActive: data.isActive,
+        isEkdDisplayHidden: data.isEkdDisplayHidden,
         bp: data.bp,
         spo2: parseInt(data.spo2) || undefined,
         etco2: parseInt(data.etco2) || undefined,
@@ -250,7 +250,7 @@ export const useSessionManager = (user: any) => {
     if (!currentSession) return false;
 
     try {
-      // Use the new method that both deletes on API and notifies clients
+      
       await sessionService.deleteSessionAndNotify(currentSession.sessionId!);
       showSnackbar("Sesja została usunięta", "success");
       loadSessions();

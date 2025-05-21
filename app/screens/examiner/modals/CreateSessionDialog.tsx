@@ -1,14 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { 
-  View, 
-  ScrollView, 
-  StyleSheet,
-  Dimensions
-} from "react-native";
-import { 
-  Button, 
-  Dialog
-} from "react-native-paper";
+import { View, ScrollView, StyleSheet, Dimensions } from "react-native";
+import { Button, Dialog } from "react-native-paper";
 import { FormData, FormErrors } from "../types/types";
 import SessionFormFields from "../components/SessionFormFields";
 import { EkgType, NoiseType } from "@/services/EkgFactory";
@@ -31,40 +23,38 @@ const CreateSessionDialog = ({
   onOpenSavePresetDialog,
   onOpenLoadPresetDialog,
 }: CreateSessionDialogProps) => {
-  
-
   useEffect(() => {
     if (visible && initialData) {
       setFormData(initialData);
     }
   }, [visible, initialData]);
 
+  const [formData, setFormData] = useState<FormData>(
+    initialData || {
+      name: "",
+      temperature: "36.6",
+      rhythmType: EkgType.NORMAL_SINUS_RHYTHM,
+      beatsPerMinute: "72",
+      noiseLevel: NoiseType.NONE,
+      sessionCode: sessionService.generateSessionCode(),
+      isActive: true,
+      isEkdDisplayHidden: false,
+      bp: "120/80",
+      spo2: "98",
+      etco2: "35",
+      rr: "12",
+    },
+  );
 
-  const [formData, setFormData] = useState<FormData>(initialData || {
-    name: "", 
-    temperature: "36.6",
-    rhythmType: EkgType.NORMAL_SINUS_RHYTHM,
-    beatsPerMinute: "72",
-    noiseLevel: NoiseType.NONE,
-    sessionCode: sessionService.generateSessionCode(), 
-    isActive: true, 
-    bp: "120/80",     
-    spo2: "98",       
-    etco2: "35",      
-    rr: "12"          
-  });
-  
-  
   const [formErrors, setFormErrors] = useState<FormErrors>({
     temperature: "",
     beatsPerMinute: "",
     sessionCode: "",
     spo2: "",
     etco2: "",
-    rr: ""
+    rr: "",
   });
 
-  
   const validateForm = () => {
     const errors = {
       temperature: "",
@@ -72,12 +62,11 @@ const CreateSessionDialog = ({
       sessionCode: "",
       spo2: "",
       etco2: "",
-      rr: ""
+      rr: "",
     };
-    
+
     let isValid = true;
 
-    
     const temp = parseFloat(formData.temperature);
     if (!formData.temperature || isNaN(temp)) {
       errors.temperature = "Podaj prawidłową temperaturę";
@@ -85,7 +74,7 @@ const CreateSessionDialog = ({
     } else if (temp < 30 || temp > 43) {
       errors.temperature = "Temperatura musi być w zakresie 30-43°C";
       isValid = false;
-    }    
+    }
     const bpm = parseInt(formData.beatsPerMinute);
     if (!formData.beatsPerMinute || isNaN(bpm)) {
       errors.beatsPerMinute = "Podaj prawidłowe tętno";
@@ -97,8 +86,7 @@ const CreateSessionDialog = ({
       errors.beatsPerMinute = "Tętno musi być w zakresie 30-220";
       isValid = false;
     }
-    
-    
+
     if (!formData.sessionCode) {
       errors.sessionCode = "Kod sesji jest wymagany";
       isValid = false;
@@ -111,25 +99,23 @@ const CreateSessionDialog = ({
     return isValid;
   };
 
-  
   const handleCreateSession = () => {
     if (validateForm()) {
       onCreateSession(formData);
     }
   };
-  
-  
+
   const handleOpenSavePreset = () => {
     onOpenSavePresetDialog(formData);
   };
   return (
-    <Dialog 
-      visible={visible} 
+    <Dialog
+      visible={visible}
       onDismiss={onDismiss}
       style={{
-        maxHeight: Dimensions.get('window').height * 0.8,
-        width: '90%',
-        alignSelf: 'center'
+        maxHeight: Dimensions.get("window").height * 0.8,
+        width: "90%",
+        alignSelf: "center",
       }}
     >
       <Dialog.Title>Utwórz nową sesję</Dialog.Title>
@@ -137,22 +123,22 @@ const CreateSessionDialog = ({
         <ScrollView>
           <View style={styles.dialogContent}>
             <View style={styles.presetButtonsContainer}>
-              <Button 
-                mode="outlined" 
+              <Button
+                mode="outlined"
                 onPress={onOpenLoadPresetDialog}
                 style={styles.presetButton}
               >
                 Wczytaj preset
               </Button>
-              <Button 
-                mode="contained-tonal" 
+              <Button
+                mode="contained-tonal"
                 onPress={handleOpenSavePreset}
                 style={styles.presetButton}
               >
                 Zapisz jako preset
               </Button>
             </View>
-            
+
             <SessionFormFields
               formData={formData}
               setFormData={setFormData}
@@ -168,17 +154,18 @@ const CreateSessionDialog = ({
       </Dialog.Actions>
     </Dialog>
   );
-}
+};
 
 const styles = StyleSheet.create({
   dialogScrollArea: {
-    maxHeight: Dimensions.get('window').height * 0.7,
-  },  dialogContent: {
+    maxHeight: Dimensions.get("window").height * 0.7,
+  },
+  dialogContent: {
     paddingVertical: 8,
   },
   presetButtonsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginVertical: 16,
     gap: 8,
   },

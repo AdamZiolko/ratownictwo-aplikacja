@@ -21,11 +21,11 @@ interface EkgDisplayProps {
   isRunning?: boolean;
 }
 
-// Constants
+
 const DEFAULT_MIDPOINT = 44.98086978240213;
 const BASELINE = 50;
 const FLUCTUATION_RANGE = 2;
-const ANIMATION_FRAME_STEP = 3; // Increased from 2 to 3 for better performance
+const ANIMATION_FRAME_STEP = 3; 
 
 const EkgDisplay: React.FC<EkgDisplayProps> = ({
   ekgType,
@@ -40,7 +40,7 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
   
   const [renderKey, setRenderKey] = useState(0);
 
-  // Refs to avoid state updates
+  
   const xOffsetRef = useRef(0);
   const previousXRef = useRef(0);
   const previousYRef = useRef(BASELINE);
@@ -53,12 +53,12 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
   const lastRenderTimeRef = useRef<number>(0);
   const frameCountRef = useRef(0);
   
-  // Platform-specific constants
+  
   const SVG_HEIGHT = Platform.OS === 'web' ? 300 : 280;
   const VIEWBOX_HEIGHT = Platform.OS === 'web' ? 300 : 280;
   const BPM_FONT_SIZE = Platform.OS === 'web' ? 24 : 22;
   
-  // Measure container width only once on initial layout
+  
   useLayoutEffect(() => {
     containerRef.current?.measure((_, __, width) => {
       if (width > 0) setContainerWidth(width);
@@ -72,7 +72,7 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
     }
   }, [ekgType]);
   
-  // Optimized function to reset EKG state
+  
   const resetEkgState = useCallback(() => {
     cancelAnimationFrame(animationRef.current);
     xOffsetRef.current = 0;
@@ -83,14 +83,14 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
     frameCountRef.current = 0;
   }, []);
   
-  // Optimized draw frame function with throttling
+  
   const drawFrame = useCallback(() => {
     if (!isRunning || containerWidth === 0) return;
 
     const now = performance.now();
     const elapsed = now - lastRenderTimeRef.current;
     
-    // Throttle frame rate for better performance (target ~30fps)
+    
     if (elapsed < 33 && frameCountRef.current > 0) {
       animationRef.current = requestAnimationFrame(drawFrame);
       return;
@@ -127,7 +127,7 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
         previousXRef.current = x;
         previousYRef.current = centeredValue;
         
-        // Use batched updates or requestAnimationFrame for smoother rendering
+        
         if (frameCountRef.current % 2 === 0 || x >= containerWidth - ANIMATION_FRAME_STEP) {
           setPathData(pathDataRef.current);
         }
@@ -152,7 +152,7 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
     cancelAnimationFrame(animationRef.current);
   }, []);
 
-  // Main effect for handling EKG type changes  
+  
   useEffect(() => {
     if (ekgType !== undefined && ekgType !== currentEkgType.current) {
       stopAnimation();
@@ -171,14 +171,14 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
     }
   }, [ekgType, stopAnimation, startAnimation, isRunning, containerWidth, resetEkgState]);
   
-  // Clean up noise cache when noise type or BPM changes
+  
   useEffect(() => {
     if (isRunning) {
       EkgFactory.resetNoiseCache();
     }
   }, [bpm, noiseType, isRunning]);
 
-  // Animation start/stop effect
+  
   useEffect(() => {
     let animationTimeout: NodeJS.Timeout;
     
@@ -198,7 +198,7 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
     };
   }, [isRunning, containerWidth, startAnimation, stopAnimation]);
 
-  // Reset noise cache when noise type changes
+  
   useEffect(() => {
     EkgFactory.resetNoiseCache();
   }, [noiseType]);
@@ -232,7 +232,7 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
     return Math.round(value + fluctAmount);
   }, []);
 
-  // BPM fluctuation effect
+  
   useEffect(() => {
     setDisplayBpm(bpm);
     if (fluctuationTimerRef.current) clearInterval(fluctuationTimerRef.current);
@@ -254,7 +254,7 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
     });
   }, [containerWidth]);
   
-  // Memoize grid lines to prevent re-renders
+  
   const majorGridLines = useMemo(() => {
     if (containerWidth === 0) return null;
     
@@ -280,7 +280,7 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
     );
   }, [containerWidth, theme.dark]);
   
-  // Memoize minor grid lines to prevent re-renders
+  
   const minorGridLines = useMemo(() => {
     if (containerWidth === 0 || Platform.OS !== 'web') return null;
     
@@ -306,7 +306,7 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
     );
   }, [containerWidth, theme.dark]);
   
-  // Memoize filter definitions
+  
   const filterDefs = useMemo(() => {
     if (Platform.OS !== 'web') return null;
     
@@ -326,7 +326,7 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
     );
   }, [theme.dark]);
   
-  // Memoize EKG line paths
+  
   const ekgLines = useMemo(() => {
     if (!pathData) return null;
     
@@ -352,7 +352,7 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
     );
   }, [pathData, theme.dark]);
   
-  // Memoize BPM text for web
+  
   const bpmText = useMemo(() => {
     if (displayBpm == null || Platform.OS !== 'web') return null;
     

@@ -20,7 +20,8 @@ export interface Session {
   beatsPerMinute: number;
   noiseLevel: number;
   sessionCode: string; 
-  isActive?: boolean;  
+  isActive?: boolean;
+  isEkdDisplayHidden?: boolean;  
   createdAt?: string;
   updatedAt?: string;
   
@@ -150,7 +151,7 @@ export class SessionService {
     try {
       const response = await this.api.get(`sessions/validate/${code}`);
       
-      // Check if session is active
+      
       if (response && response.isActive === false) {
         throw new Error("Session is inactive");
       }
@@ -213,13 +214,10 @@ export class SessionService {
       console.error('Error deleting all sessions:', error);
       throw error;
     }
-  }  /**
-   * Deletes a session and notifies all connected clients about the deletion
-   * Students in the session will be redirected back to the code entry screen
-   */
+  }  
   async deleteSessionAndNotify(id: string, authToken?: string): Promise<any> {
     try {
-      // First, get the session code before deleting (we need a separate call here to ensure we have the code)
+      
       let sessionCode: string | undefined;
       try {
         const session = await this.getSessionById(Number(id), authToken);
@@ -228,14 +226,14 @@ export class SessionService {
         console.warn(`Could not fetch session details before deletion: ${fetchError}`);
       }
       
-      // Delete from API
+      
       const headers = this.createHeaders(authToken);
       const response = await this.api.delete(`sessions/${id}`, headers);
       
-      // Determine which session code to use for notifications
+      
       const codeToUse = sessionCode || (response && response.sessionCode);
       
-      // Notify clients about session deletion if we have the code
+      
       if (codeToUse) {
         console.log(`Notified clients about deletion of session ${codeToUse}`);
       } else {
