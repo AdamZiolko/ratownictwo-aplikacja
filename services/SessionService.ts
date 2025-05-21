@@ -146,10 +146,15 @@ export class SessionService {
     }
   }
 
-  
-  async validateSessionCode(code: string): Promise<Session> {
+    async validateSessionCode(code: string): Promise<Session> {
     try {
       const response = await this.api.get(`sessions/validate/${code}`);
+      
+      // Check if session is active
+      if (response && response.isActive === false) {
+        throw new Error("Session is inactive");
+      }
+      
       return response;
     }
     catch (error) {

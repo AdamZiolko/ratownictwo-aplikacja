@@ -236,7 +236,6 @@ const StudentSessionScreen = () => {
   useEffect(() => {
     fetchSession();
   }, [accessCode]);
-
   useEffect(() => {
     let unsub: (() => void) | undefined;
 
@@ -252,6 +251,31 @@ const StudentSessionScreen = () => {
           accessCode.toString(),
           (updated) => {
             setSessionData(updated);
+            
+            // Handle session being set to inactive during the session
+            if (updated.isActive === false) {
+              setError("Sesja została dezaktywowana przez egzaminatora");
+              
+              if (accessCode) {
+                try {
+                  sessionService.leaveSession(accessCode.toString());
+                } catch (e) {
+                  console.warn("Error leaving session on inactive:", e);
+                }
+              }
+              
+              // Navigate back to access screen after a short delay
+              setTimeout(() => {
+                router.replace({
+                  pathname: "/routes/student-access",
+                  params: { 
+                    firstName: firstName || "", 
+                    lastName: lastName || "", 
+                    albumNumber: albumNumber || "" 
+                  }
+                });
+              }, 3000);
+            }
           },
           {
             name,
@@ -262,7 +286,7 @@ const StudentSessionScreen = () => {
         .then((fn) => {
           unsub = fn;
         })
-        .catch(console.error);      // Add listener for session-deleted event
+        .catch(console.error);// Add listener for session-deleted event
       const sessionDeletedUnsubscribe = socketService.on('session-deleted', (data) => {
         console.log('❌ Session has been deleted by the examiner', data);
         
@@ -773,25 +797,24 @@ const handleSoundResume = async (soundName: string) => {
             <ActivityIndicator size="large" color={theme.colors.primary} />
             <Text>Ładowanie danych sesji...</Text>
           </View>
-        ) : error ? (
-          <Surface style={styles.center} elevation={2}>
+        ) : error ? (          <Surface style={styles.center} elevation={2}>
             <MaterialCommunityIcons
               name="alert-circle-outline"
               size={64}
               color={theme.colors.error}
             />
             <Text style={{ color: theme.colors.error, marginVertical: 12, textAlign: 'center' }}>
-              {error === "Sesja została zakończona przez egzaminatora" 
-                ? "Sesja została zakończona przez egzaminatora"
+              {error === "Sesja została zakończona przez egzaminatora" || error === "Sesja została dezaktywowana przez egzaminatora"
+                ? error
                 : `Błąd: ${error}`
               }
             </Text>
-            {error !== "Sesja została zakończona przez egzaminatora" && (
+            {(error !== "Sesja została zakończona przez egzaminatora" && error !== "Sesja została dezaktywowana przez egzaminatora") && (
               <Button mode="contained" onPress={handleRetry} icon="refresh">
                 Spróbuj ponownie
               </Button>
             )}
-            {error === "Sesja została zakończona przez egzaminatora" && (
+            {(error === "Sesja została zakończona przez egzaminatora" || error === "Sesja została dezaktywowana przez egzaminatora") && (
               <Text style={{ marginTop: 12, textAlign: 'center' }}>
                 Przekierowuję do ekranu wpisywania kodu...
               </Text>

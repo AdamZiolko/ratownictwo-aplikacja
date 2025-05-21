@@ -86,15 +86,20 @@ const StudentAccessScreen = () => {
       return;
     }
 
-    setIsLoading(true);
-
-    try {
-      const isSessionValid = await sessionService.getSessionByCode(
+    setIsLoading(true);    try {
+      const session = await sessionService.getSessionByCode(
         accessCode.trim()
       );
 
-      if (!isSessionValid) {
+      if (!session) {
         setError("Nieprawidłowy kod dostępu");
+        setIsLoading(false);
+        return;
+      }
+      
+      // Check if the session is active
+      if (session.isActive === false) {
+        setError("Ta sesja jest obecnie nieaktywna");
         setIsLoading(false);
         return;
       }

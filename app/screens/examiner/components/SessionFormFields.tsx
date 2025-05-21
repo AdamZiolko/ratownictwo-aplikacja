@@ -11,11 +11,11 @@ import {
   useTheme,
   Portal,
   Modal,
+  Switch,
 } from "react-native-paper";
 import { FormData, FormErrors } from "../types/types";
-import { EkgType, NoiseType } from "@/services/EkgFactory";
+import { NoiseType } from "@/services/EkgFactory";
 import { sessionService } from "@/services/SessionService";
-import RhythmSelectionGrid from "./RhythmSelectionGrid";
 import RhythmSelectionButton from "./RhythmSelectionButton";
 
 interface SessionFormFieldsProps {
@@ -79,7 +79,7 @@ const MedicalSliderInput = ({
   const handleValueChange = (v: number) => {
     const roundedValue = Math.round(v / step) * step;
     setDisplayValue(roundedValue);
-    
+
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
@@ -99,27 +99,37 @@ const MedicalSliderInput = ({
 
   const adjustValue = (direction: number) => {
     if (buttonCooldownRef.current) return;
-    
+
     buttonCooldownRef.current = true;
-    const newValue = tempValue + (direction * step);
+    const newValue = tempValue + direction * step;
     const clampedValue = Math.max(min, Math.min(max, newValue));
     const roundedValue = Number(clampedValue.toFixed(10));
     setTempValue(roundedValue);
     setDisplayValue(roundedValue);
-    
+
     setTimeout(() => {
       buttonCooldownRef.current = false;
     }, 300);
   };
-  const decimalPlaces = step % 1 !== 0 ? 1 : 0;  
+  const decimalPlaces = step % 1 !== 0 ? 1 : 0;
   if (isWeb) {
     return (
       <View style={styles.webSliderContainer}>
-        <Text style={{ color: theme.colors.onSurface, marginBottom: 4, paddingHorizontal: 5 }}>
-          {`${label}: ${displayValue.toFixed(decimalPlaces)}${suffix ? ' ' + suffix : ''}`}
+        <Text
+          style={{
+            color: theme.colors.onSurface,
+            marginBottom: 4,
+            paddingHorizontal: 5,
+          }}
+        >
+          {`${label}: ${displayValue.toFixed(decimalPlaces)}${
+            suffix ? " " + suffix : ""
+          }`}
         </Text>
         <View style={[styles.webSliderRow, { paddingHorizontal: 5 }]}>
-          <Text style={{ color: theme.colors.onSurface, width: 35 }}>{min}</Text>
+          <Text style={{ color: theme.colors.onSurface, width: 35 }}>
+            {min}
+          </Text>
           <Slider
             style={[styles.webSlider, { flex: 1 }]}
             minimumValue={min}
@@ -135,11 +145,22 @@ const MedicalSliderInput = ({
             maximumTrackTintColor={theme.colors.outline}
             thumbTintColor={theme.colors.primary}
           />
-          <Text style={{ color: theme.colors.onSurface, width: 35, textAlign: 'right' }}>{max}</Text>
+          <Text
+            style={{
+              color: theme.colors.onSurface,
+              width: 35,
+              textAlign: "right",
+            }}
+          >
+            {max}
+          </Text>
         </View>
         <View style={[styles.tickLabelContainer, { paddingHorizontal: 5 }]}>
           {ticks.map((t) => (
-            <Text key={t} style={[styles.webTickLabel, { color: theme.colors.onSurface }]}>
+            <Text
+              key={t}
+              style={[styles.webTickLabel, { color: theme.colors.onSurface }]}
+            >
               {t}
             </Text>
           ))}
@@ -148,25 +169,33 @@ const MedicalSliderInput = ({
     );
   }
 
-  
   return (
     <>
       <Button
         mode="outlined"
         onPress={() => setModalVisible(true)}
-        style={[styles.sliderButton, { backgroundColor: theme.colors.surface, paddingHorizontal: 5 }]}
+        style={[
+          styles.sliderButton,
+          { backgroundColor: theme.colors.surface, paddingHorizontal: 5 },
+        ]}
         labelStyle={{ color: theme.colors.onSurface }}
       >
-        {`${label}: ${value}${suffix ? ' ' + suffix : ''}`}
+        {`${label}: ${value}${suffix ? " " + suffix : ""}`}
       </Button>
 
       <Portal>
         <Modal
           visible={modalVisible}
           onDismiss={() => setModalVisible(false)}
-          contentContainerStyle={[styles.modalContent, { backgroundColor: theme.colors.background }]}
+          contentContainerStyle={[
+            styles.modalContent,
+            { backgroundColor: theme.colors.background },
+          ]}
         >
-          <Text variant="titleMedium" style={[styles.modalTitle, { color: theme.colors.onSurface }]}>
+          <Text
+            variant="titleMedium"
+            style={[styles.modalTitle, { color: theme.colors.onSurface }]}
+          >
             {label}
           </Text>
 
@@ -186,12 +215,21 @@ const MedicalSliderInput = ({
 
           <View style={styles.tickContainer}>
             {ticks.map((t) => (
-              <View key={t} style={[styles.tick, { backgroundColor: theme.colors.onSurface }]} />
+              <View
+                key={t}
+                style={[
+                  styles.tick,
+                  { backgroundColor: theme.colors.onSurface },
+                ]}
+              />
             ))}
           </View>
           <View style={styles.tickLabelContainer}>
             {ticks.map((t) => (
-              <Text key={t} style={[styles.tickLabel, { color: theme.colors.onSurface }]}>
+              <Text
+                key={t}
+                style={[styles.tickLabel, { color: theme.colors.onSurface }]}
+              >
                 {t}
               </Text>
             ))}
@@ -206,11 +244,14 @@ const MedicalSliderInput = ({
             >
               -
             </Button>
-            
-            <Text style={[styles.displayValue, { color: theme.colors.onSurface }]}>
-              {displayValue.toFixed(decimalPlaces)}{suffix ? ' ' + suffix : ''}
+
+            <Text
+              style={[styles.displayValue, { color: theme.colors.onSurface }]}
+            >
+              {displayValue.toFixed(decimalPlaces)}
+              {suffix ? " " + suffix : ""}
             </Text>
-            
+
             <Button
               mode="outlined"
               onPress={() => adjustValue(1)}
@@ -242,16 +283,15 @@ const SessionFormFields = ({
   showGenerateCodeButton = false,
 }: SessionFormFieldsProps) => {
   const theme = useTheme();
-  
+
   // Handle BPM input to accept only digits
   const handleBpmChange = (text: string) => {
     // Only allow digits
-    const numericValue = text.replace(/[^0-9]/g, '');
+    const numericValue = text.replace(/[^0-9]/g, "");
     setFormData({ ...formData, beatsPerMinute: numericValue });
   };
-  
   return (
-    <View style={styles.container}>
+    <View style={styles.formContainer}>
       <TextInput
         label="Nazwa sesji"
         value={formData.name}
@@ -260,7 +300,6 @@ const SessionFormFields = ({
         style={styles.input}
         placeholder="Wprowadź nazwę sesji"
       />
-
       <MedicalSliderInput
         label="Temperatura"
         value={formData.temperature}
@@ -273,13 +312,15 @@ const SessionFormFields = ({
         suffix="°C"
         ticks={Array.from({ length: 11 }, (_, i) => 30 + i)}
       />
-      {formErrors.temperature && <HelperText type="error">{formErrors.temperature}</HelperText>}
-
+      {formErrors.temperature && (
+        <HelperText type="error">{formErrors.temperature}</HelperText>
+      )}
       <RhythmSelectionButton
         selectedType={formData.rhythmType}
-        setSelectedType={(type) => setFormData({ ...formData, rhythmType: type })}
+        setSelectedType={(type) =>
+          setFormData({ ...formData, rhythmType: type })
+        }
       />
-
       <TextInput
         label="Tętno (BPM)"
         value={formData.beatsPerMinute}
@@ -296,11 +337,12 @@ const SessionFormFields = ({
       ) : (
         <HelperText type="info">Tylko cyfry (30-220)</HelperText>
       )}
-
       <Text variant="titleSmall">Poziom szumów</Text>
       <SegmentedButtons
         value={formData.noiseLevel.toString()}
-        onValueChange={(v) => setFormData({ ...formData, noiseLevel: parseInt(v, 10) })}
+        onValueChange={(v) =>
+          setFormData({ ...formData, noiseLevel: parseInt(v, 10) })
+        }
         buttons={[
           { value: NoiseType.NONE.toString(), label: "Brak" },
           { value: NoiseType.MILD.toString(), label: "Łagodne" },
@@ -309,7 +351,6 @@ const SessionFormFields = ({
         ]}
         style={styles.segmentedButtons}
       />
-
       <TextInput
         label="Kod sesji"
         value={formData.sessionCode}
@@ -323,27 +364,55 @@ const SessionFormFields = ({
       {formErrors.sessionCode ? (
         <HelperText type="error">{formErrors.sessionCode}</HelperText>
       ) : (
-        <HelperText type="info">6-cyfrowy kod do udostępnienia studentom</HelperText>
+        <HelperText type="info">
+          6-cyfrowy kod do udostępnienia studentom
+        </HelperText>
       )}
-
       {showGenerateCodeButton && (
         <Button
           mode="text"
           onPress={() =>
-            setFormData({ ...formData, sessionCode: sessionService.generateSessionCode().toString() })
+            setFormData({
+              ...formData,
+              sessionCode: sessionService.generateSessionCode().toString(),
+            })
           }
           style={styles.generateButton}
         >
           Generuj losowy kod
         </Button>
-      )}
-
+      )}{" "}
+      <View
+        style={{
+          flexDirection: "column",
+          marginVertical: 8,
+          paddingHorizontal: 5,
+        }}
+      >
+        <Text variant="titleSmall">Status sesji</Text>
+        <View style={styles.switchContainer}>
+          <Text
+            style={{
+              color: formData.isActive
+                ? theme.colors.primary
+                : theme.colors.outline,
+            }}
+          >
+            {formData.isActive ? "Aktywna" : "Nieaktywna"}
+          </Text>
+          <Switch
+            value={formData.isActive}
+            onValueChange={(value) =>
+              setFormData({ ...formData, isActive: value })
+            }
+            color={theme.colors.primary}
+          />
+        </View>
+      </View>
       <Divider style={styles.divider} />
-
       <Text variant="titleMedium" style={styles.sectionTitle}>
         Parametry medyczne
       </Text>
-
       <View style={styles.paramRow}>
         <TextInput
           label="Ciśnienie krwi (BP)"
@@ -354,7 +423,6 @@ const SessionFormFields = ({
           right={<TextInput.Affix text="mmHg" />}
         />
       </View>
-      
       <MedicalSliderInput
         label="SpO₂"
         value={formData.spo2}
@@ -367,8 +435,9 @@ const SessionFormFields = ({
         suffix="%"
         ticks={[70, 75, 80, 85, 90, 95, 100]}
       />
-      {formErrors.spo2 && <HelperText type="error">{formErrors.spo2}</HelperText>}
-
+      {formErrors.spo2 && (
+        <HelperText type="error">{formErrors.spo2}</HelperText>
+      )}
       <MedicalSliderInput
         label="EtCO₂"
         value={formData.etco2}
@@ -381,8 +450,9 @@ const SessionFormFields = ({
         suffix="mmHg"
         ticks={[20, 30, 40, 50, 60]}
       />
-      {formErrors.etco2 && <HelperText type="error">{formErrors.etco2}</HelperText>}
-
+      {formErrors.etco2 && (
+        <HelperText type="error">{formErrors.etco2}</HelperText>
+      )}{" "}
       <MedicalSliderInput
         label="Częstość oddechów (RR)"
         value={formData.rr}
@@ -413,6 +483,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     marginHorizontal: -4,
+  },
+  switchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginVertical: 8,
   },
   segmentedButtons: {
     marginBottom: 16,
@@ -501,7 +577,7 @@ const styles = StyleSheet.create({
   tickLabel: {
     fontSize: 12,
   },
-  
+
   webSliderContainer: {
     marginBottom: 16,
     width: "100%",
@@ -521,9 +597,15 @@ const styles = StyleSheet.create({
     fontSize: 10,
     textAlign: "center",
   },
-  container: {
-    paddingHorizontal: 5,
-  }
+  formContainer: {
+    padding: 5,
+  },
+  switchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginVertical: 10,
+  },
 });
 
 export default SessionFormFields;
