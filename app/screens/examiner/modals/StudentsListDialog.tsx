@@ -347,28 +347,6 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
               </Text>
             </View>
           </View>
-          <Chip
-            icon={
-              student.student_sessions?.active
-                ? "checkbox-marked-circle"
-                : "close-circle"
-            }
-            style={[
-              styles.statusChip,
-              {
-                backgroundColor: student.student_sessions?.active
-                  ? theme.colors.primaryContainer
-                  : theme.colors.errorContainer,
-              },
-            ]}
-            textStyle={{
-              color: student.student_sessions?.active
-                ? theme.colors.onPrimaryContainer
-                : theme.colors.onErrorContainer,
-            }}
-          >
-            {student.student_sessions?.active ? "Aktywny" : "Nieaktywny"}
-          </Chip>
         </View>
 
         <Text variant="bodySmall" style={styles.joinTime}>
