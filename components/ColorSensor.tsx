@@ -15,7 +15,7 @@ import {
   BleError,
 } from "react-native-ble-plx";
 import { decode as atob } from "base-64";
-import { Audio } from "expo-av";
+import { Audio, AVPlaybackStatus } from "expo-av";
 
 
 const SERVICE_UUID = "12345678-1234-1234-1234-1234567890ab";
@@ -54,6 +54,8 @@ export default function ColorSensor() {
   const [currentSound, setCurrentSound] = useState<string | null>(null);
   const [isReconnecting, setIsReconnecting] = useState<boolean>(false);
   const [autoReconnect, setAutoReconnect] = useState<boolean>(true);
+  const [lastColorUpdate, setLastColorUpdate] = useState<number>(0);
+  const colorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   
   const [audioReady, setAudioReady] = useState(false);
@@ -105,33 +107,64 @@ export default function ColorSensor() {
 
     async function loadSounds() {
       try {
-        for (const [color, soundFile] of Object.entries(SOUND_FILES)) {
-          try {
-            const sound = new Audio.Sound();
-            await sound.loadAsync(soundFile);
-            soundRefs.current[color] = sound;
-            console.log(`[AUDIO] Loaded sound for ${color} successfully`);
-          } catch (error) {
-            console.error(`[AUDIO] Error loading sound for ${color}:`, error);
-          }
-        }
-      } catch (error) {
-        console.error("[AUDIO] Error loading sounds:", error);
-      }
+        // Wyczyść poprzednie dźwięki
+        await Promise.all(
+          Object.entries(soundRefs.current).map(async ([color, sound]) => {
+            if (sound) {
+              try {
+                await sound.stopAsync().catch(() => {});
+                await sound.unloadAsync().catch(() => {});
+                soundRefs.current[color] = null;
+              } catch (error) {}
+            }
+          })
+        );
+        
+        // Załaduj wszystkie dźwięki równolegle
+        await Promise.all(
+          Object.entries(SOUND_FILES).map(async ([color, soundFile]) => {
+            try {
+              const sound = new Audio.Sound();
+              await sound.loadAsync(soundFile, {
+                shouldPlay: false,
+                positionMillis: 0
+              });
+              
+              await sound.setVolumeAsync(1.0);
+              sound.setOnPlaybackStatusUpdate((status) => {
+                if ('error' in status) {
+                  console.error(`[AUDIO] Playback error for ${color}`);
+                }
+              });
+              
+              soundRefs.current[color] = sound;
+            } catch (error) {
+              // Spróbuj ponownie załadować dźwięk po krótkim opóźnieniu
+              setTimeout(async () => {
+                try {
+                  const retrySound = new Audio.Sound();
+                  await retrySound.loadAsync(SOUND_FILES[color as keyof typeof SOUND_FILES]);
+                  soundRefs.current[color] = retrySound;
+                } catch (retryError) {}
+              }, 1000);
+            }
+          })
+        );
+      } catch (error) {}
     }
 
     loadSounds();
 
     return () => {
-      Object.entries(soundRefs.current).forEach(([color, sound]) => {
+      // Wyładuj wszystkie dźwięki przy odmontowaniu komponentu
+      Object.values(soundRefs.current).forEach(sound => {
         if (sound) {
-          sound
-            .unloadAsync()
-            .catch((err) =>
-              console.warn(`[AUDIO] Error unloading sound for ${color}:`, err),
-            );
+          sound.stopAsync().catch(() => {})
+            .finally(() => sound.unloadAsync().catch(() => {}));
         }
       });
+      
+      setCurrentSound(null);
     };
   }, [audioReady]);
 
@@ -176,78 +209,185 @@ export default function ColorSensor() {
   useEffect(() => {
     return () => {
       console.log("[BLE] Cleanup on unmount");
+      
+      // Wyczyść timer koloru
+      if (colorTimeoutRef.current) {
+        clearTimeout(colorTimeoutRef.current);
+        colorTimeoutRef.current = null;
+      }
+      
       cleanupBleConnection();
     };
   }, []);
 
   
+  // Funkcja do odtwarzania dźwięku na podstawie wykrytego koloru
   const playColorSound = async (color: { r: number; g: number; b: number }) => {
     if (!audioReady) return;
 
-    
-    let dominantColor = "none";
+    // Określ dominujący kolor na podstawie odczytów RGB
     const sumRGB = color.r + color.g + color.b;
+    
+    // Zabezpieczenie przed dzieleniem przez zero lub zbyt niską jasnością
+    if (sumRGB === 0 || sumRGB <= COLOR_RATIO_THRESHOLDS.MIN_BRIGHTNESS) {
+      console.log("[AUDIO] Insufficient brightness, stopping sound");
+      await stopCurrentSound();
+      return;
+    }
+    
+    // Oblicz proporcje kolorów
     const rRatio = color.r / sumRGB;
     const gRatio = color.g / sumRGB;
     const bRatio = color.b / sumRGB;
 
+    // Określ dominujący kolor
+    let dominantColor = "none";
+    if (rRatio > COLOR_RATIO_THRESHOLDS.RED && rRatio > gRatio && rRatio > bRatio) {
+      dominantColor = "red";
+    } else if (gRatio > COLOR_RATIO_THRESHOLDS.GREEN && gRatio > rRatio && gRatio > bRatio) {
+      dominantColor = "green";
+    } else if (bRatio > COLOR_RATIO_THRESHOLDS.BLUE && bRatio > rRatio && bRatio > gRatio) {
+      dominantColor = "blue";
+    }
+
+    // Jeśli nie wykryto żadnego dominującego koloru, zatrzymaj dźwięk
+    if (dominantColor === "none") {
+      await stopCurrentSound();
+      return;
+    }
     
-    if (sumRGB > COLOR_RATIO_THRESHOLDS.MIN_BRIGHTNESS) {
+    // Obsługa dźwięku w zależności od sytuacji
+    if (currentSound && currentSound !== dominantColor) {
+      // Zmiana koloru - zatrzymaj poprzedni dźwięk i odtwórz nowy
+      await stopCurrentSound();
+      await playSound(dominantColor);
+    } else if (!currentSound) {
+      // Brak aktualnie odtwarzanego dźwięku - odtwórz nowy
+      await playSound(dominantColor);
+    } else {
+      // Ten sam kolor - sprawdź, czy dźwięk nadal się odtwarza
+      const sound = soundRefs.current[dominantColor];
+      if (sound) {
+        try {
+          const status = await sound.getStatusAsync().catch(() => ({ } as AVPlaybackStatus));
+          if ('isLoaded' in status && status.isLoaded && !status.isPlaying) {
+            await playSound(dominantColor); // Dźwięk się zakończył - odtwórz ponownie
+          }
+        } catch (error) {
+          await playSound(dominantColor); // W razie błędu, spróbuj odtworzyć ponownie
+        }
+      }
+    }
+  };
+
+  // Pomocnicza funkcja do zatrzymywania aktualnie odtwarzanego dźwięku
+  const stopCurrentSound = async () => {
+    if (!currentSound || !soundRefs.current[currentSound]) return;
+    
+    try {
+      const sound = soundRefs.current[currentSound];
+      const status = await sound.getStatusAsync().catch(() => ({ } as AVPlaybackStatus));
       
-      if (
-        rRatio > COLOR_RATIO_THRESHOLDS.RED &&
-        rRatio > gRatio &&
-        rRatio > bRatio
-      ) {
-        dominantColor = "red";
-      } else if (
-        gRatio > COLOR_RATIO_THRESHOLDS.GREEN &&
-        gRatio > rRatio &&
-        gRatio > bRatio
-      ) {
-        dominantColor = "green";
-      } else if (
-        bRatio > COLOR_RATIO_THRESHOLDS.BLUE &&
-        bRatio > rRatio &&
-        bRatio > gRatio
-      ) {
-        dominantColor = "blue";
+      if ('isLoaded' in status && status.isLoaded) {
+        // Zatrzymaj odtwarzanie i zresetuj pozycję
+        await sound.setStatusAsync({ 
+          isLooping: false,
+          shouldPlay: false,
+          positionMillis: 0
+        }).catch(() => {});
+        
+        await sound.stopAsync().catch(() => {});
+      }
+    } catch (error) {
+      // W przypadku błędu, spróbuj utworzyć nowy obiekt dźwięku
+      try {
+        await soundRefs.current[currentSound].unloadAsync().catch(() => {});
+        const newSound = new Audio.Sound();
+        await newSound.loadAsync(SOUND_FILES[currentSound as keyof typeof SOUND_FILES]);
+        soundRefs.current[currentSound] = newSound;
+      } catch (unloadError) {}
+    } finally {
+      // Zawsze wyczyść referencję do aktualnie odtwarzanego dźwięku
+      setCurrentSound(null);
+    }
+  };
+
+  // Pomocnicza funkcja do odtwarzania dźwięku dla danego koloru
+  const playSound = async (colorName: string) => {
+    let sound = soundRefs.current[colorName];
+    
+    // Utwórz lub załaduj dźwięk, jeśli nie istnieje
+    if (!sound) {
+      try {
+        sound = new Audio.Sound();
+        await sound.loadAsync(SOUND_FILES[colorName as keyof typeof SOUND_FILES]);
+        soundRefs.current[colorName] = sound;
+      } catch (error) {
+        console.error(`[AUDIO] Failed to create sound for ${colorName}:`, error);
+        return;
       }
     }
 
-    
-    if (dominantColor !== "none" && dominantColor !== currentSound) {
+    try {
+      // Sprawdź aktualny stan dźwięku
+      const status = await sound.getStatusAsync().catch(() => ({ } as AVPlaybackStatus));
+      const isLoaded = 'isLoaded' in status && status.isLoaded;
+      const isPlaying = isLoaded && 'isPlaying' in status && status.isPlaying;
+      
+      // Jeśli dźwięk już się odtwarza, tylko zaktualizuj referencję
+      if (isPlaying) {
+        if (currentSound !== colorName) setCurrentSound(colorName);
+        return;
+      }
+      
+      // Załaduj dźwięk ponownie, jeśli nie jest załadowany
+      if (!isLoaded) {
+        try {
+          await sound.unloadAsync().catch(() => {});
+          await sound.loadAsync(SOUND_FILES[colorName as keyof typeof SOUND_FILES]);
+        } catch (error) {
+          // Utwórz nowy obiekt dźwięku w przypadku błędu
+          sound = new Audio.Sound();
+          await sound.loadAsync(SOUND_FILES[colorName as keyof typeof SOUND_FILES]);
+          soundRefs.current[colorName] = sound;
+        }
+      }
+      
+      // Ustaw parametry odtwarzania i nasłuchiwanie na zakończenie
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if ('didJustFinish' in status && status.didJustFinish && currentSound === colorName) {
+          setCurrentSound(null);
+        }
+      });
+      
+      // Ustaw parametry i rozpocznij odtwarzanie
+      await sound.setStatusAsync({ 
+        isLooping: false, 
+        shouldPlay: true,
+        positionMillis: 0,
+        volume: 1.0
+      });
+      
+      await sound.playAsync();
+      setCurrentSound(colorName);
+      
+    } catch (error) {
+      // W przypadku błędu, spróbuj utworzyć nowy obiekt dźwięku
       try {
-        
-        if (currentSound && soundRefs.current[currentSound]) {
-          await soundRefs.current[currentSound]?.stopAsync().catch(() => {});
-        }
-
-        
-        const sound = soundRefs.current[dominantColor];
         if (sound) {
-          try {
-            await sound.setPositionAsync(0); 
-            await sound.playAsync();
-            setCurrentSound(dominantColor);
-          } catch (playError) {
-            console.error(`[AUDIO] Error playing sound: ${playError}`);
-
-            
-            try {
-              await sound.unloadAsync();
-              await sound.loadAsync(
-                SOUND_FILES[dominantColor as keyof typeof SOUND_FILES],
-              );
-              await sound.playAsync();
-              setCurrentSound(dominantColor);
-            } catch (reloadError) {
-              console.error(`[AUDIO] Failed to reload sound: ${reloadError}`);
-            }
-          }
+          await sound.stopAsync().catch(() => {});
+          await sound.unloadAsync().catch(() => {});
         }
-      } catch (error) {
-        console.error(`[AUDIO] Error in playColorSound:`, error);
+        
+        const newSound = new Audio.Sound();
+        await newSound.loadAsync(SOUND_FILES[colorName as keyof typeof SOUND_FILES]);
+        await newSound.setStatusAsync({ isLooping: false, shouldPlay: true });
+        await newSound.playAsync();
+        
+        soundRefs.current[colorName] = newSound;
+        setCurrentSound(colorName);
+      } catch (retryError) {
+        console.error(`[AUDIO] Failed to reload sound for ${colorName}:`, retryError);
       }
     }
   };
@@ -275,6 +415,11 @@ export default function ColorSensor() {
     console.log("[BLE] Cleaning up BLE connection");
 
     try {
+      // Wyczyść timer koloru
+      if (colorTimeoutRef.current) {
+        clearTimeout(colorTimeoutRef.current);
+        colorTimeoutRef.current = null;
+      }
       
       try {
         manager.stopDeviceScan();
@@ -308,6 +453,7 @@ export default function ColorSensor() {
       if (currentSound && soundRefs.current[currentSound]) {
         try {
           await soundRefs.current[currentSound]?.stopAsync();
+          setCurrentSound(null);
         } catch (e) {}
       }
     } catch (error) {
@@ -483,7 +629,7 @@ export default function ColorSensor() {
               const subscription = d.monitorCharacteristicForService(
                 SERVICE_UUID,
                 CHARACTERISTIC_UUID,
-                (error, characteristic) => {
+                async (error, characteristic) => {
                   if (error) {
                     console.error("[BLE] Monitor error", error);
                     return;
@@ -514,7 +660,23 @@ export default function ColorSensor() {
                     console.log("[BLE] Raw RGB:", r16, g16, b16);
 
                     
-                    playColorSound(newColor);
+                    console.log("[BLE] Calling playColorSound with:", JSON.stringify(newColor));
+                    
+                    // Aktualizuj czas ostatniego odczytu koloru i ustaw timer
+                    setLastColorUpdate(Date.now());
+                    
+                    // Resetuj timer i ustaw nowy
+                    if (colorTimeoutRef.current) clearTimeout(colorTimeoutRef.current);
+                    
+                    colorTimeoutRef.current = setTimeout(async () => {
+                      if (Date.now() - lastColorUpdate > 1000) {
+                        await stopCurrentSound();
+                        setColor({ r: 0, g: 0, b: 0 });
+                      }
+                    }, 1000);
+                    
+                    // Odtwórz dźwięk dla wykrytego koloru
+                    await playColorSound(newColor);
                   } catch (error) {
                     console.error(
                       "[BLE] Error processing characteristic data:",
