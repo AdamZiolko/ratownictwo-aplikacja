@@ -264,5 +264,111 @@ export const createDashboardStyles = (theme: MD3Theme) => StyleSheet.create({
         backgroundColor: theme.colors.primary,
         padding: 16,
         borderRadius: 8,
-    }
+    },
+    sidebar: {
+    backgroundColor: theme.colors.background,
+    borderRightWidth: 1,
+    borderRightColor: theme.colors.outline,
+    height: '100%',
+    },
+    sidebarContent: {
+        padding: 16,
+    },
+    sidebarTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 16,
+        color: theme.colors.primary,
+    },
+    sidebarEmpty: {
+        color: theme.colors.onSurfaceVariant,
+        textAlign: 'center',
+        marginTop: 16,
+    },
+    sessionItem: {
+        marginBottom: 8,
+        borderRadius: 8,
+        overflow: 'hidden',
+        backgroundColor: theme.colors.surfaceVariant,
+    },
+    sessionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 12,
+    },
+    sessionCodeText: {
+        fontWeight: '600',
+        color: theme.colors.primary,
+    },
+    studentsList: {
+        backgroundColor: theme.colors.surface,
+        paddingHorizontal: 12,
+    },
+    studentItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 8,
+        borderTopWidth: 1,
+        borderTopColor: theme.colors.outline,
+    },
+    studentName: {
+        marginLeft: 8,
+        color: theme.colors.onSurface,
+    },
+    avatar: {
+        backgroundColor: theme.colors.primaryContainer,
+    },
+overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    zIndex: 1000,
+  },
+
+globalOverlay: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: "rgba(0,0,0,0.2)",
+      zIndex: 1000,
+    },
+
+    studentPopup: {
+      position: "absolute",
+      backgroundColor: theme.colors.surface,
+      borderRadius: 8,
+      elevation: 8, 
+      shadowColor: "#000", 
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.25,
+      shadowRadius: 4,
+      maxHeight: 400,
+      width: 280,
+      padding: 16,
+      zIndex: 1001,
+    },
+
+    popupHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 8,
+    },
+
+    checklistContent: {
+      maxHeight: 340,
+    },
+
+    checklistItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginVertical: 6,
+    },
+
 });
