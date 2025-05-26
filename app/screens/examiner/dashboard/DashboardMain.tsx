@@ -42,6 +42,7 @@ import { SavePresetDialog, LoadPresetDialog } from "../modals/PresetDialogs";
 import StudentsListDialog from "../modals/StudentsListDialog";
 import { Session } from "../types/types";
 import { createDashboardStyles } from "./DashboardStyles";
+import AudioTab from "./components/AudioTab";
 
 const ExaminerDashboardScreen = () => {
   const theme = useTheme();
@@ -96,6 +97,10 @@ const ExaminerDashboardScreen = () => {
     handleResumeAudioCommand,
     handleStopAudioCommand,
     handleSendQueue,
+    handleServerAudioCommand,
+    handleServerAudioPauseCommand,
+    handleServerAudioResumeCommand,
+    handleServerAudioStopCommand,
   } = useSessionManager(user);
 
   const toggleSidebar = () => {
@@ -438,6 +443,10 @@ const ExaminerDashboardScreen = () => {
             onPauseAudioCommand={handlePauseAudioCommand}
             onResumeAudioCommand={handleResumeAudioCommand}
             onStopAudioCommand={handleStopAudioCommand}
+            onServerAudioCommand={handleServerAudioCommand}
+            onServerAudioPauseCommand={handleServerAudioPauseCommand}
+            onServerAudioResumeCommand={handleServerAudioResumeCommand}
+            onServerAudioStopCommand={handleServerAudioStopCommand}
           />
 
           <ViewSessionDialog

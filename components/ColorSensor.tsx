@@ -41,6 +41,16 @@ const SOUND_FILES = {
 };
 
 export default function ColorSensor() {
+  // Don't render on web - BLE is not supported
+  if (Platform.OS === 'web') {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.infoText}>
+          Czujnik kolorów nie jest dostępny w wersji webowej
+        </Text>
+      </View>
+    );
+  }
   
   const [manager] = useState(() => new BleManager());
   const [bleState, setBleState] = useState<string>("Unknown");
@@ -76,24 +86,27 @@ export default function ColorSensor() {
               "[AUDIO] Brak uprawnień do odtwarzania audio – dźwięk może nie działać.",
             );
           }
-        }
-
-        try {
+        }        try {
           await Audio.setAudioModeAsync({
             allowsRecordingIOS: false,
             playsInSilentModeIOS: true,
-            staysActiveInBackground: false,
-            shouldDuckAndroid: true,
+            staysActiveInBackground: true, // Enable background audio for mobile
+            shouldDuckAndroid: false, // Don't duck audio on Android
             playThroughEarpieceAndroid: false,
           });
         } catch (audioModeError) {
           console.warn("[AUDIO] Error setting audio mode:", audioModeError);
         }
 
+        // Enable audio
+        await Audio.setIsEnabledAsync(true);
+
         setAudioReady(true);
         console.log("✅ Audio poprawnie zainicjalizowane");
       } catch (error) {
         console.error("❌ Błąd inicjalizacji audio:", error);
+        // Still set audio ready to allow graceful degradation
+        setAudioReady(true);
         setTimeout(initAudio, 2000);
       }
     }

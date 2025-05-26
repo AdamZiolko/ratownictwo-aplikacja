@@ -242,6 +242,26 @@ class SocketService {
     console.log(`Emitting audio-command: ${command}`, payload);
     this.safeEmit('audio-command', payload);
   }
+
+  // Nowa metoda do odtwarzania audio z serwera dla całej sesji
+  emitServerAudioCommand(
+    sessionCode: string, 
+    command: 'PLAY' | 'PAUSE' | 'RESUME' | 'STOP', 
+    audioId: string,
+    loop: boolean = false 
+  ): void {
+    if (this.socket && this.socket.connected) {
+      console.log(`🎵 Emitting server audio command:`, { sessionCode, command, audioId, loop });
+      this.socket.emit('server-audio-command', { 
+        code: sessionCode, 
+        command, 
+        audioId, 
+        loop 
+      });
+    } else {
+      console.warn('Socket not connected, cannot emit server audio command');
+    }
+  }
     leaveSession(code: string): void {
     if (!this.socket || !this.socket.connected) return;
     
@@ -388,7 +408,7 @@ class SocketService {
       }
       
       // Create new socket with polling transport only
-      this.socket = io('http://192.168.1.111:8080', { // <- Zamiast ip było "WS_URL"        path: '/socket.io',
+      this.socket = io(WS_URL, {
         transports: ['polling'],
         withCredentials: false,
         autoConnect: true,

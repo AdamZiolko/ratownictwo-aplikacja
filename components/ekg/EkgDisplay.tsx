@@ -370,7 +370,6 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
       </SvgText>
     );
   }, [displayBpm, containerWidth, theme.dark, theme.fonts.labelLarge.fontFamily, BPM_FONT_SIZE]);
-
   return (
     <View
       key={renderKey}
@@ -381,6 +380,23 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
       ref={containerRef}
       onLayout={onLayout}
     >
+      {displayBpm != null && Platform.OS !== 'web' && (
+        <View style={styles.bpmContainer}>
+          <Text 
+            variant="labelLarge"
+            style={[
+              styles.bpmText,
+              styles.mobileBpmText,
+              { 
+                color: theme.dark ? '#00ff00' : '#008800',
+                textShadowColor: theme.dark ? 'rgba(0, 255, 0, 0.8)' : 'rgba(0, 136, 0, 0.5)'
+              }
+            ]}
+          >
+            {displayBpm} BPM
+          </Text>
+        </View>
+      )}
       <Svg
         height={SVG_HEIGHT}
         width="100%"
@@ -398,22 +414,6 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
         {ekgLines}
         {bpmText}
       </Svg>
-      
-      {displayBpm != null && Platform.OS !== 'web' && (
-        <Text 
-          variant="labelLarge"
-          style={[
-            styles.bpmText,
-            styles.mobileBpmText,
-            { 
-              color: theme.dark ? '#00ff00' : '#008800',
-              textShadowColor: theme.dark ? 'rgba(0, 255, 0, 0.8)' : 'rgba(0, 136, 0, 0.5)'
-            }
-          ]}
-        >
-          {displayBpm} BPM
-        </Text>
-      )}
     </View>
   );
 };
@@ -430,20 +430,27 @@ const styles = StyleSheet.create({
   },
   mobileContainer: {
     height: 320,
-  },
-  svg: {
+  },  svg: {
     backgroundColor: 'transparent',
     borderRadius: 8,
     overflow: 'hidden',
   },
-  bpmText: {
-    position: 'absolute',
+  bpmContainer: {
+    width: '100%',
+    alignItems: 'flex-end',
+    paddingRight: 12,
+    paddingTop: 8,
+    zIndex: 1,
+  },bpmText: {
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 5,
-  },
-  mobileBpmText: {
-    top: 16,
-    right: 20,
+    alignSelf: 'flex-end',
+    marginTop: 8,
+    marginRight: 12,
+  },  mobileBpmText: {
+    alignSelf: 'flex-end',
+    marginTop: 8,
+    marginRight: 12,
   },
 });
 

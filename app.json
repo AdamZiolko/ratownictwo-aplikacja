@@ -9,7 +9,12 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "UIBackgroundModes": ["audio"],
+        "AVAudioSessionCategory": "AVAudioSessionCategoryPlayback",
+        "AVAudioSessionCategoryOptions": ["AVAudioSessionCategoryOptionMixWithOthers"]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -20,11 +25,10 @@
         "android.permission.BLUETOOTH",
         "android.permission.BLUETOOTH_ADMIN",
         "android.permission.BLUETOOTH_CONNECT",
-        "android.permission.BLUETOOTH",
-        "android.permission.BLUETOOTH_ADMIN",
-        "android.permission.BLUETOOTH_CONNECT",
         "android.permission.ACCESS_FINE_LOCATION", 
-        "android.permission.ACCESS_BACKGROUND_LOCATION" 
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
       "package": "com.anonymous.ratownictwo"
     },
@@ -35,6 +39,7 @@
     },
     "plugins": [
       "expo-router",
+      "expo-document-picker",
       [
         "expo-splash-screen",
         {
