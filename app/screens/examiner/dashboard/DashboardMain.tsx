@@ -40,6 +40,7 @@ import DeleteSessionDialog from "../modals/DeleteSessionDialog";
 import SoundSelectionDialog from "../modals/SoundSelectionDialog";
 import { SavePresetDialog, LoadPresetDialog } from "../modals/PresetDialogs";
 import StudentsListDialog from "../modals/StudentsListDialog";
+import ColorConfigDialog from "../modals/ColorConfigDialog";
 import { Session } from "../types/types";
 import { createDashboardStyles } from "./DashboardStyles";
 import AudioTab from "./components/AudioTab";
@@ -58,6 +59,7 @@ const ExaminerDashboardScreen = () => {
   const [studentsDialogVisible, setStudentsDialogVisible] = useState(false);
   const [savePresetDialogVisible, setSavePresetDialogVisible] = useState(false);
   const [loadPresetDialogVisible, setLoadPresetDialogVisible] = useState(false);
+  const [colorConfigDialogVisible, setColorConfigDialogVisible] = useState(false);
 
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [expandedSessions, setExpandedSessions] = useState<Record<string, boolean>>({});
@@ -133,6 +135,10 @@ const ExaminerDashboardScreen = () => {
   const openStudentsDialog = (s: Session) => {
     setCurrentSession(s);
     setStudentsDialogVisible(true);
+  };
+  const openColorConfigDialog = (s: Session) => {
+    setCurrentSession(s);
+    setColorConfigDialogVisible(true);
   };
 
   const handleLogout = () => {
@@ -366,6 +372,15 @@ const ExaminerDashboardScreen = () => {
                             }}
                             iconColor={theme.colors.secondary}
                           />
+                          <IconButton
+                            icon="palette"
+                            size={24}
+                            onPress={(e) => {
+                              e.stopPropagation();
+                              openColorConfigDialog(session);
+                            }}
+                            iconColor={theme.colors.primary}
+                          />
                           <View style={dashboardStyles.mobileIconContainer}>
                             <IconButton
                               icon="account-group"
@@ -492,6 +507,12 @@ const ExaminerDashboardScreen = () => {
                 ? sessionStudents[currentSession.sessionCode]
                 : []
             }
+          />
+
+          <ColorConfigDialog
+            visible={colorConfigDialogVisible}
+            onDismiss={() => setColorConfigDialogVisible(false)}
+            sessionId={currentSession?.sessionId ? Number(currentSession.sessionId) : 0}
           />
         </Portal>
 

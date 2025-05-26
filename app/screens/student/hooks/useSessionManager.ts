@@ -49,43 +49,50 @@ export const useSessionManager = ({
   useEffect(() => {
     fetchSession();
   }, [accessCode]);
-
   useEffect(() => {
-    let unsub: (() => void) | undefined;
+    let cleanup: (() => void) | undefined;
+    let sessionDeletedUnsubscribe: (() => void) | undefined;
+    let mounted = true;
 
     async function setupSessionSubscription() {
-      if (!accessCode) return;
+      if (!accessCode || !mounted) return;
 
-      let name = firstName || "";
-      let surname = lastName || "";
-      let albumNum = albumNumber || "";
+      try {
+        const name = firstName || "";
+        const surname = lastName || "";
+        const albumNum = albumNumber || "";
 
-      sessionService
-        .subscribeToSessionUpdates(
+        console.log(`Setting up session subscription for ${accessCode}`);
+
+        // Subscribe to session updates
+        const unsubscribeSession = await sessionService.subscribeToSessionUpdates(
           accessCode.toString(),
           (updated) => {
+            if (!mounted) return;
+            
+            console.log('Session data updated:', updated);
             setSessionData(updated);
             
             if (updated.isActive === false) {
               setError("Sesja została dezaktywowana przez egzaminatora");
               
-              if (accessCode) {
-                try {
-                  sessionService.leaveSession(accessCode.toString());
-                } catch (e) {
-                  console.warn("Error leaving session on inactive:", e);
-                }
-              }
-              
               setTimeout(() => {
-                router.replace({
-                  pathname: "/routes/student-access",
-                  params: { 
-                    firstName: firstName || "", 
-                    lastName: lastName || "", 
-                    albumNumber: albumNumber || "" 
+                if (mounted) {
+                  try {
+                    sessionService.leaveSession(accessCode.toString());
+                  } catch (e) {
+                    console.warn("Error leaving session on inactive:", e);
                   }
-                });
+                  
+                  router.replace({
+                    pathname: "/routes/student-access",
+                    params: { 
+                      firstName: firstName || "", 
+                      lastName: lastName || "", 
+                      albumNumber: albumNumber || "" 
+                    }
+                  });
+                }
               }, 3000);
             }
           },
@@ -94,56 +101,60 @@ export const useSessionManager = ({
             surname,
             albumNumber: albumNum,
           }
-        )
-        .then((fn) => {
-          unsub = fn;
-        })
-        .catch(console.error);
+        );
 
-      const sessionDeletedUnsubscribe = socketService.on('session-deleted', (data) => {
-        console.log('❌ Session has been deleted by the examiner', data);
-        
-        setError("Sesja została zakończona przez egzaminatora");
-        
-        if (accessCode) {
+        // Subscribe to session deletion events
+        sessionDeletedUnsubscribe = socketService.on('session-deleted', (data) => {
+          if (!mounted) return;
+          
+          console.log('❌ Session has been deleted by the examiner', data);
+          setError("Sesja została zakończona przez egzaminatora");
+          
           try {
             sessionService.leaveSession(accessCode.toString());
           } catch (e) {
             console.warn("Error leaving session on deletion:", e);
           }
-        }
-        
-        router.replace({
-          pathname: "/routes/student-access",
-          params: { 
-            firstName: firstName || "", 
-            lastName: lastName || "", 
-            albumNumber: albumNumber || "" 
-          }
+          
+          router.replace({
+            pathname: "/routes/student-access",
+            params: { 
+              firstName: firstName || "", 
+              lastName: lastName || "", 
+              albumNumber: albumNumber || "" 
+            }
+          });
         });
-      });
 
-      return () => {
-        unsub?.();
-        sessionDeletedUnsubscribe();
+        cleanup = () => {
+          console.log(`Cleaning up session subscription for ${accessCode}`);
+          unsubscribeSession?.();
+          sessionDeletedUnsubscribe?.();
+          
+          if (accessCode) {
+            try {
+              sessionService.leaveSession(accessCode.toString());
+            } catch (e) {
+              console.warn("Error leaving session during cleanup:", e);
+            }
+          }
+        };
 
-        if (accessCode) {
-          sessionService.leaveSession(accessCode.toString());
-          console.log(`Left session ${accessCode}`);
+      } catch (error) {
+        console.error('Error setting up session subscription:', error);
+        if (mounted) {
+          setError('Błąd połączenia z sesją');
         }
-      };
+      }
     }
 
     setupSessionSubscription();
-    return () => {
-      unsub?.();
 
-      if (accessCode) {
-        sessionService.leaveSession(accessCode.toString());
-        console.log(`Left session ${accessCode}`);
-      }
+    return () => {
+      mounted = false;
+      cleanup?.();
     };
-  }, [accessCode, firstName, lastName, albumNumber, router]);
+  }, [accessCode, firstName, lastName, albumNumber]);
 
   return {
     isLoading,

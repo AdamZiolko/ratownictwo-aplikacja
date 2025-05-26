@@ -8,25 +8,31 @@ export const useNetworkMonitoring = () => {
   useEffect(() => {
     if (Platform.OS !== 'android') return;
     
+    let mounted = true;
+    
     const setupNetworkMonitoring = async () => {
       try {
         console.log('Setting up network monitoring for Android...');
         
+        // Connect socket first
         await socketService.connect();
         
+        // Wait a bit for socket to stabilize, then enable monitoring
         setTimeout(async () => {
+          if (!mounted) return;
+          
           try {
             await wifiKeepAliveService.enableWebSocketKeepAlive();
             console.log('WebSocket keep-alive enabled');
           } catch (error) {
-            console.error('Error enabling WebSocket keep-alive:', error);
+            console.warn('Could not enable WebSocket keep-alive:', error);
           }
           
           try {
             networkMonitorService.startMonitoring();
             console.log('Network monitoring started');
           } catch (error) {
-            console.error('Error starting network monitoring:', error);
+            console.warn('Could not start network monitoring:', error);
           }
         }, 1000);
       } catch (error) {
@@ -37,25 +43,28 @@ export const useNetworkMonitoring = () => {
     setupNetworkMonitoring();
     
     return () => {
+      mounted = false;
+      
       if (Platform.OS !== 'android') return;
       
-      try {
-        Promise.all([
-          wifiKeepAliveService.disableWebSocketKeepAlive()
-            .then(() => console.log('WebSocket keep-alive disabled'))
-            .catch(e => console.error('Error disabling WebSocket keep-alive:', e)),
-          
-          new Promise<void>(resolve => {
-            networkMonitorService.stopMonitoring();
-            console.log('Network monitoring stopped');
-            resolve();
-          })
-        ]).catch(error => {
-          console.error('Error during cleanup:', error);
-        });
-      } catch (error) {
-        console.error('Error during cleanup:', error);
-      }
+      // Clean up network monitoring
+      const cleanup = async () => {
+        try {
+          await Promise.allSettled([
+            wifiKeepAliveService.disableWebSocketKeepAlive()
+              .then(() => console.log('WebSocket keep-alive disabled'))
+              .catch(e => console.warn('Error disabling WebSocket keep-alive:', e)),
+            
+            Promise.resolve().then(() => {
+              networkMonitorService.stopMonitoring();
+              console.log('Network monitoring stopped');
+            })
+          ]);
+        } catch (error) {
+          console.warn('Error during network monitoring cleanup:', error);
+        }
+      };
+        cleanup();
     };
   }, []);
 };

@@ -12,6 +12,13 @@ export interface StudentInSession {
   };
 }
 
+export interface ColorConfig {
+  id?: number;
+  colorType: 'red' | 'green' | 'blue';
+  soundFileName: string;
+  isEnabled?: boolean;
+}
+
 export interface Session {
   sessionId?: string;
   name?: string;     
@@ -33,6 +40,7 @@ export interface Session {
   rr?: number;      
   
   students?: StudentInSession[];
+  colorConfigs?: ColorConfig[];
 }
 
 export class SessionService {
@@ -188,15 +196,6 @@ export class SessionService {
       
       const codeToUse = sessionCode || (response && response.sessionCode);
       
-      if (codeToUse) {
-        console.log(`Notifying clients about deletion of session with code ${codeToUse}`);
-        socketService.emitSessionDeleted(codeToUse);
-        
-        socketService.emitLocalSessionDeleted(codeToUse);
-      } else {
-        console.warn(`Could not notify about session ${id} deletion: session code not available`);
-      }
-      
       return response;
     } catch (error) {
       console.error(`Error deleting session with id ${id}:`, error);
@@ -250,6 +249,40 @@ export class SessionService {
   generateSessionCode(): string {
     
     return Math.floor(100000 + Math.random() * 900000).toString();
+  }
+
+  // Color configuration methods
+  async getSessionColorConfigs(sessionId: string, authToken?: string): Promise<ColorConfig[]> {
+    try {
+      const headers = this.createHeaders(authToken);
+      const response = await this.api.get(`color-configs/session/${sessionId}`, headers);
+      return response;
+    } catch (error) {
+      console.error(`Error fetching color configs for session ${sessionId}:`, error);
+      throw error;
+    }
+  }
+
+  async setSessionColorConfigs(sessionId: string, colorConfigs: ColorConfig[], authToken?: string): Promise<ColorConfig[]> {
+    try {
+      const headers = this.createHeaders(authToken);
+      const response = await this.api.post(`color-configs/session/${sessionId}`, { colorConfigs }, headers);
+      return response;
+    } catch (error) {
+      console.error(`Error setting color configs for session ${sessionId}:`, error);
+      throw error;
+    }
+  }
+
+  async updateColorConfig(id: number, colorConfig: Partial<ColorConfig>, authToken?: string): Promise<any> {
+    try {
+      const headers = this.createHeaders(authToken);
+      const response = await this.api.put(`color-configs/${id}`, colorConfig, headers);
+      return response;
+    } catch (error) {
+      console.error(`Error updating color config ${id}:`, error);
+      throw error;
+    }
   }
 }
 

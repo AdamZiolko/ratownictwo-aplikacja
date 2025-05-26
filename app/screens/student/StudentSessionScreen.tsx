@@ -20,6 +20,7 @@ import BackgroundGradient from "@/components/BackgroundGradient";
 import { router, useLocalSearchParams } from "expo-router";
 import EkgCardDisplay from "@/components/ekg/EkgCardDisplay";
 import ColorSensor from "@/components/ColorSensor";
+import ColorConfigurationDisplay from "@/components/ColorConfigurationDisplay";
 import SocketConnectionStatus from "@/components/SocketConnectionStatus";
 
 // Import our new components and hooks
@@ -29,6 +30,7 @@ import { useSessionManager } from "./hooks/useSessionManager";
 import { useVitalSigns } from "./hooks/useVitalSigns";
 import { useAudioManager } from "./hooks/useAudioManager";
 import { useNetworkMonitoring } from "./hooks/useNetworkMonitoring";
+import { useWebSocketConnection } from "./hooks/useWebSocketConnection";
 
 const StudentSessionScreen = () => {
   const theme = useTheme();
@@ -39,10 +41,13 @@ const StudentSessionScreen = () => {
       albumNumber: string;
       accessCode: string;
     }>();
-
   const isWeb = Platform.OS === "web";
   const [isSessionPanelExpanded, setIsSessionPanelExpanded] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Initialize WebSocket connection monitoring
+  const webSocketConnection = useWebSocketConnection(accessCode?.toString());
+  
   // Use our new modular hooks
   const { 
     sessionData, 
@@ -212,25 +217,52 @@ const StudentSessionScreen = () => {
             respiratoryRate={respiratoryRate}
             formatBloodPressure={formatBloodPressure}
             isFullscreen={isFullscreen}
-          />          {/* EKG Card */}
-
+          />          {/* EKG Card */}          {/* Color Configuration Display */}
+          <ColorConfigurationDisplay 
+            sessionId={sessionData.sessionId} 
+            sessionCode={sessionData.sessionCode}
+          />
 
           {/* Color Sensor */}
           <Surface style={styles.cardContainer}>
-            <ColorSensor />
-          </Surface>
-
-          {/* Audio Status */}
+            <ColorSensor sessionData={sessionData} />
+          </Surface>          {/* Connection Status & Audio Status */}
           <Surface style={styles.cardContainer}>
-            <View style={styles.audioStatusContainer}>
-              <MaterialCommunityIcons 
-                name={audioReady ? "volume-high" : "volume-off"} 
-                size={24} 
-                color={audioReady ? theme.colors.primary : theme.colors.error} 
-              />
-              <Text style={[styles.audioStatusText, { color: theme.colors.onSurface }]}>
-                Audio: {audioReady ? "Gotowe" : "Niedostępne"}
-              </Text>
+            <View style={styles.statusContainer}>
+              <View style={styles.statusRow}>
+                <MaterialCommunityIcons 
+                  name={webSocketConnection.isConnected ? "wifi" : "wifi-off"} 
+                  size={24} 
+                  color={webSocketConnection.isConnected ? theme.colors.primary : theme.colors.error} 
+                />
+                <Text style={[styles.statusText, { color: theme.colors.onSurface }]}>
+                  Połączenie: {webSocketConnection.isConnected ? "Aktywne" : "Brak"}
+                </Text>
+                {!webSocketConnection.isConnected && webSocketConnection.canReconnect && (
+                  <IconButton
+                    icon="refresh"
+                    size={20}
+                    onPress={webSocketConnection.forceReconnect}
+                  />
+                )}
+              </View>
+              
+              <View style={styles.statusRow}>
+                <MaterialCommunityIcons 
+                  name={audioReady ? "volume-high" : "volume-off"} 
+                  size={24} 
+                  color={audioReady ? theme.colors.primary : theme.colors.error} 
+                />
+                <Text style={[styles.statusText, { color: theme.colors.onSurface }]}>
+                  Audio: {audioReady ? "Gotowe" : "Niedostępne"}
+                </Text>
+              </View>
+              
+              {webSocketConnection.error && (
+                <Text style={[styles.errorInfo, { color: theme.colors.error }]}>
+                  {webSocketConnection.error}
+                </Text>
+              )}
             </View>
           </Surface>
 
@@ -280,11 +312,28 @@ const styles = StyleSheet.create({
   },
   backButton: {
     marginTop: 10,
-  },
-  cardContainer: {
+  },  cardContainer: {
     marginBottom: 16,
     borderRadius: 12,
     elevation: 2,
+  },
+  statusContainer: {
+    padding: 16,
+  },
+  statusRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  statusText: {
+    marginLeft: 8,
+    fontSize: 16,
+    flex: 1,
+  },
+  errorInfo: {
+    fontSize: 12,
+    marginTop: 4,
+    fontStyle: "italic",
   },
   audioStatusContainer: {
     flexDirection: "row",

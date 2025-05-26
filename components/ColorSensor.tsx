@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   View,
   StyleSheet,
@@ -16,7 +16,12 @@ import {
 } from "react-native-ble-plx";
 import { decode as atob } from "base-64";
 import { Audio, AVPlaybackStatus } from "expo-av";
+import { Session } from "@/services/SessionService";
+import sounds from "@/soundList";
 
+interface ColorSensorProps {
+  sessionData?: Session;
+}
 
 const SERVICE_UUID = "12345678-1234-1234-1234-1234567890ab";
 const CHARACTERISTIC_UUID = "abcd1234-5678-90ab-cdef-1234567890ab";
@@ -33,14 +38,13 @@ const COLOR_RATIO_THRESHOLDS = {
   MIN_BRIGHTNESS: 1000, 
 };
 
-
-const SOUND_FILES = {
-  red: require("../assets/sounds/serce.mp3"),
-  green: require("../assets/sounds/drzwi.mp3"),
-  blue: require("../assets/sounds/kaszel.mp3"),
+// Helper function to get sound file by filename
+const getSoundFileByName = (fileName: string) => {
+  const sound = sounds.find(s => s.name.toLowerCase() === fileName.replace('.mp3', '').toLowerCase());
+  return sound?.file;
 };
 
-export default function ColorSensor() {
+export default function ColorSensor({ sessionData }: ColorSensorProps) {
   // Don't render on web - BLE is not supported
   if (Platform.OS === 'web') {
     return (
@@ -51,6 +55,31 @@ export default function ColorSensor() {
       </View>
     );
   }
+
+  // Create dynamic sound files mapping based on session data
+  const soundFiles = useMemo(() => {
+    const mapping: { [key: string]: any } = {};
+    
+    if (sessionData?.colorConfigs) {
+      sessionData.colorConfigs.forEach(config => {
+        if (config.isEnabled && config.soundFileName) {
+          const soundFile = getSoundFileByName(config.soundFileName);
+          if (soundFile) {
+            mapping[config.colorType] = soundFile;
+          }
+        }
+      });
+    }
+    
+    // Fallback to default mapping if no session data
+    if (Object.keys(mapping).length === 0) {
+      mapping.red = getSoundFileByName('serce.mp3');
+      mapping.green = getSoundFileByName('drzwi.mp3');
+      mapping.blue = getSoundFileByName('kaszel.mp3');
+    }
+    
+    return mapping;
+  }, [sessionData]);
   
   const [manager] = useState(() => new BleManager());
   const [bleState, setBleState] = useState<string>("Unknown");
@@ -65,15 +94,9 @@ export default function ColorSensor() {
   const [isReconnecting, setIsReconnecting] = useState<boolean>(false);
   const [autoReconnect, setAutoReconnect] = useState<boolean>(true);
   const [lastColorUpdate, setLastColorUpdate] = useState<number>(0);
-  const colorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  
+  const colorTimeoutRef = useRef<NodeJS.Timeout | null>(null);  
   const [audioReady, setAudioReady] = useState(false);
-  const soundRefs = useRef<{ [key: string]: Audio.Sound | null }>({
-    red: null,
-    green: null,
-    blue: null,
-  });
+  const soundRefs = useRef<{ [key: string]: Audio.Sound | null }>({});
 
   
   useEffect(() => {
@@ -112,11 +135,9 @@ export default function ColorSensor() {
     }
 
     initAudio();
-  }, []);
-
-  
+  }, []);  
   useEffect(() => {
-    if (!audioReady) return;
+    if (!audioReady || !soundFiles) return;
 
     async function loadSounds() {
       try {
@@ -135,7 +156,7 @@ export default function ColorSensor() {
         
         // Załaduj wszystkie dźwięki równolegle
         await Promise.all(
-          Object.entries(SOUND_FILES).map(async ([color, soundFile]) => {
+          Object.entries(soundFiles).map(async ([color, soundFile]) => {
             try {
               const sound = new Audio.Sound();
               await sound.loadAsync(soundFile, {
@@ -151,12 +172,11 @@ export default function ColorSensor() {
               });
               
               soundRefs.current[color] = sound;
-            } catch (error) {
-              // Spróbuj ponownie załadować dźwięk po krótkim opóźnieniu
+            } catch (error) {              // Spróbuj ponownie załadować dźwięk po krótkim opóźnieniu
               setTimeout(async () => {
                 try {
                   const retrySound = new Audio.Sound();
-                  await retrySound.loadAsync(SOUND_FILES[color as keyof typeof SOUND_FILES]);
+                  await retrySound.loadAsync(soundFile);
                   soundRefs.current[color] = retrySound;
                 } catch (retryError) {}
               }, 1000);
@@ -179,7 +199,7 @@ export default function ColorSensor() {
       
       setCurrentSound(null);
     };
-  }, [audioReady]);
+  }, [audioReady, soundFiles]);
 
   
   useEffect(() => {
@@ -310,14 +330,16 @@ export default function ColorSensor() {
         }).catch(() => {});
         
         await sound.stopAsync().catch(() => {});
-      }
-    } catch (error) {
+      }    } catch (error) {
       // W przypadku błędu, spróbuj utworzyć nowy obiekt dźwięku
       try {
         await soundRefs.current[currentSound].unloadAsync().catch(() => {});
         const newSound = new Audio.Sound();
-        await newSound.loadAsync(SOUND_FILES[currentSound as keyof typeof SOUND_FILES]);
-        soundRefs.current[currentSound] = newSound;
+        const soundFile = soundFiles[currentSound];
+        if (soundFile) {
+          await newSound.loadAsync(soundFile);
+          soundRefs.current[currentSound] = newSound;
+        }
       } catch (unloadError) {}
     } finally {
       // Zawsze wyczyść referencję do aktualnie odtwarzanego dźwięku
@@ -332,8 +354,13 @@ export default function ColorSensor() {
     // Utwórz lub załaduj dźwięk, jeśli nie istnieje
     if (!sound) {
       try {
+        const soundFile = soundFiles[colorName];
+        if (!soundFile) {
+          console.error(`[AUDIO] No sound file found for color ${colorName}`);
+          return;
+        }
         sound = new Audio.Sound();
-        await sound.loadAsync(SOUND_FILES[colorName as keyof typeof SOUND_FILES]);
+        await sound.loadAsync(soundFile);
         soundRefs.current[colorName] = sound;
       } catch (error) {
         console.error(`[AUDIO] Failed to create sound for ${colorName}:`, error);
@@ -352,17 +379,28 @@ export default function ColorSensor() {
         if (currentSound !== colorName) setCurrentSound(colorName);
         return;
       }
-      
-      // Załaduj dźwięk ponownie, jeśli nie jest załadowany
+        // Załaduj dźwięk ponownie, jeśli nie jest załadowany
       if (!isLoaded) {
         try {
           await sound.unloadAsync().catch(() => {});
-          await sound.loadAsync(SOUND_FILES[colorName as keyof typeof SOUND_FILES]);
+          const soundFile = soundFiles[colorName];
+          if (soundFile) {
+            await sound.loadAsync(soundFile);
+          } else {
+            console.error(`[AUDIO] No sound file found for color ${colorName}`);
+            return;
+          }
         } catch (error) {
           // Utwórz nowy obiekt dźwięku w przypadku błędu
-          sound = new Audio.Sound();
-          await sound.loadAsync(SOUND_FILES[colorName as keyof typeof SOUND_FILES]);
-          soundRefs.current[colorName] = sound;
+          const soundFile = soundFiles[colorName];
+          if (soundFile) {
+            sound = new Audio.Sound();
+            await sound.loadAsync(soundFile);
+            soundRefs.current[colorName] = sound;
+          } else {
+            console.error(`[AUDIO] No sound file found for color ${colorName}`);
+            return;
+          }
         }
       }
       
@@ -392,13 +430,18 @@ export default function ColorSensor() {
           await sound.unloadAsync().catch(() => {});
         }
         
-        const newSound = new Audio.Sound();
-        await newSound.loadAsync(SOUND_FILES[colorName as keyof typeof SOUND_FILES]);
-        await newSound.setStatusAsync({ isLooping: false, shouldPlay: true });
-        await newSound.playAsync();
-        
-        soundRefs.current[colorName] = newSound;
-        setCurrentSound(colorName);
+        const soundFile = soundFiles[colorName];
+        if (soundFile) {
+          const newSound = new Audio.Sound();
+          await newSound.loadAsync(soundFile);
+          await newSound.setStatusAsync({ isLooping: false, shouldPlay: true });
+          await newSound.playAsync();
+          
+          soundRefs.current[colorName] = newSound;
+          setCurrentSound(colorName);
+        } else {
+          console.error(`[AUDIO] No sound file found for color ${colorName}`);
+        }
       } catch (retryError) {
         console.error(`[AUDIO] Failed to reload sound for ${colorName}:`, retryError);
       }

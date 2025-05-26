@@ -282,86 +282,101 @@ export const useAudioManager = (accessCode: string | undefined) => {
       console.error(`❌ Error resuming server audio ${audioId}:`, error);
     }
   };
-
-  // Audio command listeners
+  // Audio command listeners with better error handling and cleanup
   useEffect(() => {
     if (!audioReady || !accessCode) {
       return;
     }
-    console.log('🔌 Zakładam listener "audio-command" – audio jest gotowe');
+
+    console.log('🔌 Setting up audio command listener - audio is ready');
+    let mounted = true;
     
     // Preload critical sounds for better performance on mobile
     preloadCriticalSounds();
 
     const handleAudioCommand = async (payload: AudioCommand) => {
-      console.log('▶️ Otrzymano komendę audio:', payload);
+      if (!mounted) return;
+      
+      console.log('▶️ Received audio command:', payload);
 
-      if (payload.command === 'PLAY_QUEUE' && Array.isArray(payload.soundName)) {
-        for (const item of payload.soundName) {
-          try {
-            if (item.delay && item.delay > 0) {
-              await new Promise((r) => setTimeout(r, item.delay));
-            }
+      try {
+        if (payload.command === 'PLAY_QUEUE' && Array.isArray(payload.soundName)) {
+          for (const item of payload.soundName) {
+            if (!mounted) break;
+            
+            try {
+              if (item.delay && item.delay > 0) {
+                await new Promise((r) => setTimeout(r, item.delay));
+              }
 
-            const soundModule = soundFiles[item.soundName];
-            if (!soundModule) {
-              console.error(`🔇 Nie znaleziono pliku dźwiękowego: ${item.soundName}`);
-              continue;
-            }
+              const soundModule = soundFiles[item.soundName];
+              if (!soundModule) {
+                console.error(`🔇 Sound file not found: ${item.soundName}`);
+                continue;
+              }
 
-            const { sound: qSound } = await Audio.Sound.createAsync(
-              soundModule,
-              { shouldPlay: true, isLooping: false }
-            );
+              const { sound: qSound } = await Audio.Sound.createAsync(
+                soundModule,
+                { shouldPlay: true, isLooping: false }
+              );
 
-            await new Promise<void>((resolve) => {
-              qSound.setOnPlaybackStatusUpdate((status) => {
-                if (status.isLoaded && status.didJustFinish) {
-                  qSound.unloadAsync().catch(() => {});
-                  resolve();
-                }
+              await new Promise<void>((resolve) => {
+                qSound.setOnPlaybackStatusUpdate((status) => {
+                  if (status.isLoaded && status.didJustFinish) {
+                    qSound.unloadAsync().catch(() => {});
+                    resolve();
+                  }
+                });
               });
-            });
 
-          } catch (e) {
-            console.error('Błąd w PLAY_QUEUE item:', e);
+            } catch (e) {
+              console.error('Error in PLAY_QUEUE item:', e);
+            }
+          }
+          return;
+        }
+
+        if (typeof payload.soundName === 'string') {
+          switch (payload.command) {
+            case 'PLAY':
+              await handleSoundPlayback(payload.soundName, payload.loop || false);
+              break;
+            case 'STOP':
+              await handleSoundStop(payload.soundName);
+              break;
+            case 'PAUSE':
+              await handleSoundPause(payload.soundName);
+              break;
+            case 'RESUME':
+              await handleSoundResume(payload.soundName);
+              break;
+            default:
+              console.warn('Unknown audio command:', payload.command);
+              break;
           }
         }
-        return;
-      }
-
-      if (typeof payload.soundName === 'string') {
-        switch (payload.command) {
-          case 'PLAY':
-            await handleSoundPlayback(payload.soundName, payload.loop || false);
-            break;
-          case 'STOP':
-            await handleSoundStop(payload.soundName);
-            break;
-          case 'PAUSE':
-            await handleSoundPause(payload.soundName);
-            break;
-          case 'RESUME':
-            await handleSoundResume(payload.soundName);
-            break;
-          default:
-            break;
-        }
+      } catch (error) {
+        console.error('Error handling audio command:', error);
       }
     };
 
     const unsubscribe = socketService.on('audio-command', handleAudioCommand);
+    
     return () => {
-      console.log('🧹 Odpinam listener "audio-command"');
+      mounted = false;
+      console.log('🧹 Cleaning up audio command listener');
       unsubscribe();
     };
   }, [audioReady, accessCode]);
-
-  // Server audio command listener
+  // Server audio command listener with improved error handling
   useEffect(() => {
     if (!audioReady || !accessCode) return;
 
+    let mounted = true;
+
     const handleServerAudioCommand = async (payload: ServerAudioCommand) => {
+      if (!mounted) return;
+      
       console.log('🔊 Received server audio command:', payload);
       
       if (!payload || !payload.command || !payload.audioId) {
@@ -369,35 +384,41 @@ export const useAudioManager = (accessCode: string | undefined) => {
         return;
       }
 
-      const { command, audioId, loop } = payload;
-      console.log(`🎵 Processing server audio command: ${command} for audio ID: ${audioId} (loop: ${loop})`);
+      try {
+        const { command, audioId, loop } = payload;
+        console.log(`🎵 Processing server audio command: ${command} for audio ID: ${audioId} (loop: ${loop})`);
 
-      switch (command) {
-        case 'PLAY':
-          console.log(`▶️ Executing PLAY command for server audio: ${audioId}`);
-          await handleServerAudioPlayback(audioId, loop || false);
-          break;
-        case 'STOP':
-          console.log(`⏹️ Executing STOP command for server audio: ${audioId}`);
-          await handleServerAudioStop(audioId);
-          break;
-        case 'PAUSE':
-          console.log(`⏸️ Executing PAUSE command for server audio: ${audioId}`);
-          await handleServerAudioPause(audioId);
-          break;
-        case 'RESUME':
-          console.log(`▶️ Executing RESUME command for server audio: ${audioId}`);
-          await handleServerAudioResume(audioId);
-          break;
-        default:
-          console.warn('⚠️ Unknown server audio command:', command);
-          break;
+        switch (command) {
+          case 'PLAY':
+            console.log(`▶️ Executing PLAY command for server audio: ${audioId}`);
+            await handleServerAudioPlayback(audioId, loop || false);
+            break;
+          case 'STOP':
+            console.log(`⏹️ Executing STOP command for server audio: ${audioId}`);
+            await handleServerAudioStop(audioId);
+            break;
+          case 'PAUSE':
+            console.log(`⏸️ Executing PAUSE command for server audio: ${audioId}`);
+            await handleServerAudioPause(audioId);
+            break;
+          case 'RESUME':
+            console.log(`▶️ Executing RESUME command for server audio: ${audioId}`);
+            await handleServerAudioResume(audioId);
+            break;
+          default:
+            console.warn('⚠️ Unknown server audio command:', command);
+            break;
+        }
+      } catch (error) {
+        console.error('Error handling server audio command:', error);
       }
     };
 
     const unsubscribeServerAudio = socketService.on('server-audio-command', handleServerAudioCommand);
+    
     return () => {
-      console.log('🧹 Unsubscribing from "server-audio-command"');
+      mounted = false;
+      console.log('🧹 Cleaning up server audio command listener');
       unsubscribeServerAudio();
     };
   }, [audioReady, accessCode]);
