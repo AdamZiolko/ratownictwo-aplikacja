@@ -101,8 +101,7 @@ export const createDashboardStyles = (theme: MD3Theme) => StyleSheet.create({
     },    loadingText: {
         marginTop: 16,
         color: theme.colors.onBackground,
-    },
-    emptyState: {
+    },    emptyState: {
         padding: 24,
         alignItems: "center",
         justifyContent: "center",
@@ -112,6 +111,50 @@ export const createDashboardStyles = (theme: MD3Theme) => StyleSheet.create({
         marginVertical: 16,
         opacity: 0.7,
         color: theme.colors.onBackground,
+    },
+    emptyText: {
+        textAlign: "center",
+        fontSize: 16,
+        fontWeight: "bold",
+        marginBottom: 8,
+        color: theme.colors.onBackground,
+    },
+    emptySubtext: {
+        textAlign: "center",
+        fontSize: 14,
+        opacity: 0.7,
+        color: theme.colors.onBackground,
+    },
+    audioCard: {
+        marginBottom: 12,
+        backgroundColor: theme.colors.surface,
+        elevation: 2,
+        borderRadius: 8,
+    },
+    audioHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    audioInfo: {
+        flex: 1,
+        marginRight: 16,
+    },
+    audioTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginBottom: 4,
+        color: theme.colors.onSurface,
+    },
+    audioDetails: {
+        fontSize: 12,
+        opacity: 0.7,
+        marginBottom: 2,
+        color: theme.colors.onSurface,
+    },
+    audioActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     emptyStateButton: {
         marginTop: 16,

@@ -20,6 +20,7 @@ import {
   useTheme,
   ActivityIndicator,
   Snackbar,
+  BottomNavigation,
 } from "react-native-paper";
 import { router } from "expo-router";
 import { useAuth } from "@/contexts/AuthContext";
@@ -42,12 +43,18 @@ import { SavePresetDialog, LoadPresetDialog } from "../modals/PresetDialogs";
 import StudentsListDialog from "../modals/StudentsListDialog";
 import { Session } from "../types/types";
 import { createDashboardStyles } from "./DashboardStyles";
+import AudioTab from "./components/AudioTab";
 
 const ExaminerDashboardScreen = () => {
   const theme = useTheme();
   const { user, logout } = useAuth();
   const scrollY = useRef(new Animated.Value(0)).current;
   const [headerVisible, setHeaderVisible] = useState(true);
+  const [index, setIndex] = useState(0);
+  const [routes] = useState([
+    { key: 'sessions', title: 'Sesje', icon: 'account-group' },
+    { key: 'audio', title: 'Audio', icon: 'music' },
+  ]);
 
   
   const [createDialogVisible, setCreateDialogVisible] = useState(false);
@@ -90,6 +97,10 @@ const ExaminerDashboardScreen = () => {
     handleResumeAudioCommand,
     handleStopAudioCommand,
     handleSendQueue,
+    handleServerAudioCommand,
+    handleServerAudioPauseCommand,
+    handleServerAudioResumeCommand,
+    handleServerAudioStopCommand,
   } = useSessionManager(user);
 
   
@@ -141,20 +152,8 @@ const ExaminerDashboardScreen = () => {
     }
   );
 
-  return (
-    <SafeAreaView style={dashboardStyles.container}>
-      <Appbar.Header>
-        <Appbar.Content
-          title="Panel Egzaminatora"
-          subtitle={user ? `Zalogowany jako: ${user.username}` : ""}
-        />
-      {}
-      <Appbar.Action
-        icon="logout"
-        onPress={handleLogout}
-      />
-      </Appbar.Header>
-
+  const renderScene = BottomNavigation.SceneMap({
+    sessions: () => (
       <View style={dashboardStyles.contentContainer}>
         {Platform.OS !== "android" && (
           <Card
@@ -294,6 +293,30 @@ const ExaminerDashboardScreen = () => {
           </ScrollView>
         )}
       </View>
+    ),
+    audio: AudioTab,
+  });
+
+  return (
+    <SafeAreaView style={dashboardStyles.container}>
+      <Appbar.Header>
+        <Appbar.Content
+          title="Panel Egzaminatora"
+          subtitle={user ? `Zalogowany jako: ${user.username}` : ""}
+        />
+      {}
+      <Appbar.Action
+        icon="logout"
+        onPress={handleLogout}
+      />
+      </Appbar.Header>
+
+      <BottomNavigation
+        navigationState={{ index, routes }}
+        onIndexChange={setIndex}
+        renderScene={renderScene}
+        barStyle={{ backgroundColor: theme.colors.surface }}
+      />
       <Portal>
         {}
         <CreateSessionDialog
@@ -349,6 +372,10 @@ const ExaminerDashboardScreen = () => {
           onPauseAudioCommand={handlePauseAudioCommand}
           onResumeAudioCommand={handleResumeAudioCommand}
           onStopAudioCommand={handleStopAudioCommand}
+          onServerAudioCommand={handleServerAudioCommand}
+          onServerAudioPauseCommand={handleServerAudioPauseCommand}
+          onServerAudioResumeCommand={handleServerAudioResumeCommand}
+          onServerAudioStopCommand={handleServerAudioStopCommand}
         />
 
         <ViewSessionDialog

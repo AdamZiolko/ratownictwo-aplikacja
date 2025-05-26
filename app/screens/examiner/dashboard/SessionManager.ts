@@ -314,6 +314,55 @@ export const useSessionManager = (user: any) => {
     return true;
   };
 
+  const handleServerAudioCommand = (audioId: string, loop?: boolean) => {
+    if (!currentSession) return false;
+
+    socketService.emitServerAudioCommand(
+      currentSession.sessionCode,
+      "PLAY",
+      audioId,
+      loop
+    );
+    showSnackbar("Polecenie odtworzenia dźwięku serwerowego wysłane", "success");
+    return true;
+  };
+
+  const handleServerAudioPauseCommand = (audioId: string) => {
+    if (!currentSession) return false;
+
+    socketService.emitServerAudioCommand(
+      currentSession.sessionCode,
+      "PAUSE",
+      audioId
+    );
+    showSnackbar("Polecenie wstrzymania dźwięku serwerowego wysłane", "success");
+    return true;
+  };
+
+  const handleServerAudioResumeCommand = (audioId: string) => {
+    if (!currentSession) return false;
+
+    socketService.emitServerAudioCommand(
+      currentSession.sessionCode,
+      "RESUME",
+      audioId
+    );
+    showSnackbar("Polecenie wznowienia dźwięku serwerowego wysłane", "success");
+    return true;
+  };
+
+  const handleServerAudioStopCommand = (audioId: string) => {
+    if (!currentSession) return false;
+
+    socketService.emitServerAudioCommand(
+      currentSession.sessionCode,
+      "STOP",
+      audioId
+    );
+    showSnackbar("Polecenie zatrzymania dźwięku serwerowego wysłane", "success");
+    return true;
+  };
+
   const handlePauseAudioCommand = () => {
     if (!currentSession || !selectedSound) return false;
     socketService.emitAudioCommand(
@@ -396,6 +445,10 @@ export const useSessionManager = (user: any) => {
     handleSavePreset,
     handleDeletePreset,
     handleSendAudioCommand,
+    handleServerAudioCommand,
+    handleServerAudioPauseCommand,
+    handleServerAudioResumeCommand,
+    handleServerAudioStopCommand,
     handlePauseAudioCommand,
     handleResumeAudioCommand,
     handleStopAudioCommand,

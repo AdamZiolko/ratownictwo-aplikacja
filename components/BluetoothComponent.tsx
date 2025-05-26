@@ -147,27 +147,59 @@ export const BluetoothComponent = forwardRef<BluetoothComponentRef>(
       } catch (error) {
         console.warn("Błąd podczas czyszczenia zasobów:", error);
       }
-    };
-
-    const prepareSounds = async () => {
+    };    const prepareSounds = async () => {
       if (Platform && Platform.OS === "web") {
         console.log("Odtwarzanie dźwięku na Web może nie być wspierane");
         return;
       }
 
       try {
+        // Configure audio for mobile before loading sounds
+        await Audio.setIsEnabledAsync(true);
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,
+          playsInSilentModeIOS: true,
+          staysActiveInBackground: true,
+          shouldDuckAndroid: false,
+          playThroughEarpieceAndroid: false,
+        });
+
         const loadedSounds: { [key: string]: Audio.Sound } = {};
+        let successCount = 0;
+        let failureCount = 0;
 
         for (const soundItem of sounds) {
-          const { sound } = await Audio.Sound.createAsync(soundItem.file);
-          loadedSounds[soundItem.name] = sound;
+          try {
+            const { sound } = await Audio.Sound.createAsync(
+              soundItem.file,
+              {
+                shouldPlay: false,
+                // Mobile-specific optimizations
+                ...(Platform.OS !== 'web' && {
+                  androidImplementation: 'MediaPlayer',
+                  progressUpdateIntervalMillis: 1000,
+                })
+              }
+            );
+            loadedSounds[soundItem.name] = sound;
+            successCount++;
+            console.log(`✅ Loaded sound: ${soundItem.name}`);
+          } catch (soundError) {
+            failureCount++;
+            console.warn(`❌ Failed to load sound ${soundItem.name}:`, soundError);
+          }
         }
 
         setSoundObjects(loadedSounds);
-        console.log("Wszystkie dźwięki przygotowane");
+        console.log(`🎵 Audio preparation complete: ${successCount} loaded, ${failureCount} failed`);
+        
+        if (failureCount > 0) {
+          setError(`Załadowano ${successCount}/${sounds.length} dźwięków. ${failureCount} nie udało się załadować.`);
+          setShowConnectionStatus(true);
+        }
       } catch (err) {
-        console.log("Błąd przygotowania dźwięków:", err);
-        setError("Nie można załadować plików dźwiękowych");
+        console.error("❌ Critical error in audio preparation:", err);
+        setError("Nie można załadować plików dźwiękowych. Sprawdź połączenie sieciowe.");
         setShowConnectionStatus(true);
       }
     };

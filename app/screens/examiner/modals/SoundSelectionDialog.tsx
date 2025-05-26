@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { StyleSheet, View, ScrollView, Dimensions } from "react-native";
 import {
   Dialog,
@@ -10,8 +10,11 @@ import {
   IconButton,
   Checkbox,
   useTheme,
+  ActivityIndicator,
+  Divider,
 } from "react-native-paper";
 import { Session, SoundQueueItem } from "../types/types";
+import { audioApiService } from "@/services/AudioApiService";
 
 interface SoundSelectionDialogProps {
   visible: boolean;
@@ -24,6 +27,19 @@ interface SoundSelectionDialogProps {
   onPauseAudioCommand: () => void;
   onResumeAudioCommand: () => void;
   onStopAudioCommand: () => void;
+  onServerAudioCommand?: (audioId: string, loop?: boolean) => void;
+  onServerAudioPauseCommand?: (audioId: string) => void;
+  onServerAudioResumeCommand?: (audioId: string) => void;
+  onServerAudioStopCommand?: (audioId: string) => void;
+}
+
+// Type definition for server audio files
+interface ServerAudioFile {
+  id: string;
+  name: string;
+  length: string;
+  createdAt: string;
+  createdBy: string;
 }
 
 const soundStructure = {
@@ -129,15 +145,42 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
   onPauseAudioCommand,
   onResumeAudioCommand,
   onStopAudioCommand,
+  onServerAudioCommand,
+  onServerAudioPauseCommand,
+  onServerAudioResumeCommand,
+  onServerAudioStopCommand,
 }) => {
   const theme = useTheme();
-  const [delay, setDelay] = useState("0");
-  const [queue, setQueue] = useState<SoundQueueItem[]>([]);
-  const [activeTab, setActiveTab] = useState<"single" | "queue">("single");
+  const [activeTab, setActiveTab] = useState<"single" | "queue" | "server">("single");
+  const [currentPath, setCurrentPath] = useState<string[]>([]);
   const [isLooping, setIsLooping] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentPath, setCurrentPath] = useState<string[]>([]);
-  const [navigationStack, setNavigationStack] = useState<string[][]>([[]]);
+  const [delay, setDelay] = useState("0");
+  const [queue, setQueue] = useState<SoundQueueItem[]>([]);
+  const [serverAudioFiles, setServerAudioFiles] = useState<ServerAudioFile[]>([]);
+  const [loadingServerAudio, setLoadingServerAudio] = useState(false);
+  const [selectedServerAudioId, setSelectedServerAudioId] = useState<string | null>(null);
+  const [serverIsLooping, setServerIsLooping] = useState(false);
+  const [serverIsPlaying, setServerIsPlaying] = useState(false);
+
+  // Load server audio files when the server tab is selected
+  useEffect(() => {
+    if (activeTab === "server" && visible) {
+      loadServerAudioFiles();
+    }
+  }, [activeTab, visible]);
+
+  const loadServerAudioFiles = async () => {
+    try {
+      setLoadingServerAudio(true);
+      const response = await audioApiService.getAudioList();
+      setServerAudioFiles(response);
+    } catch (error) {
+      console.error("Error loading server audio files:", error);
+    } finally {
+      setLoadingServerAudio(false);
+    }
+  };
 
   const getCurrentLevel = () => {
     let currentLevel: any = soundStructure;
@@ -150,14 +193,11 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
   const handleNavigate = (item: string) => {
     const newPath = [...currentPath, item];
     setCurrentPath(newPath);
-    setNavigationStack([...navigationStack, newPath]);
   };
 
   const handleGoBack = () => {
     if (currentPath.length === 0) return;
-    const newStack = navigationStack.slice(0, -1);
-    setNavigationStack(newStack);
-    setCurrentPath(newStack[newStack.length - 1]);
+    setCurrentPath(currentPath.slice(0, -1));
   };
 
   const renderNavigationItems = () => {
@@ -165,39 +205,88 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
 
     if (Array.isArray(currentLevel)) {
       return (
-        <ScrollView style={styles.soundListContainer}>
-          {currentLevel.map((sound) => {
-            const path = [...currentPath, sound].join("/") + ".wav";
-            return (
-              <List.Item
-                key={sound}
-                title={sound}
-                onPress={() => setSelectedSound(path)}
-                right={(props) => (
-                  <RadioButton
-                    {...props}
-                    value={path}
-                    status={selectedSound === path ? "checked" : "unchecked"}
-                  />
-                )}
-              />
-            );
-          })}
-        </ScrollView>
+        <View style={styles.soundListContainer}>
+          {currentLevel.map((item) => (
+            <List.Item
+              key={item}
+              title={item}
+              style={{ paddingVertical: 2 }}
+              titleStyle={{ fontSize: 14 }}
+              left={() => (
+                <RadioButton
+                  value={`${currentPath.join("/")}/${item}`}
+                  status={
+                    selectedSound === `${currentPath.join("/")}/${item}`
+                      ? "checked"
+                      : "unchecked"
+                  }
+                />
+              )}
+              onPress={() => setSelectedSound(`${currentPath.join("/")}/${item}`)}
+            />
+          ))}
+        </View>
+      );
+    } else {
+      return (
+        <View style={styles.soundListContainer}>
+          {Object.keys(currentLevel).map((key) => (
+            <List.Item
+              key={key}
+              title={key}
+              left={() => <IconButton icon="folder" size={24} />}
+              style={{ paddingVertical: 2 }}
+              titleStyle={{ fontSize: 14 }}
+              onPress={() => handleNavigate(key)}
+            />
+          ))}
+        </View>
+      );
+    }
+  };
+
+  const renderServerAudioList = () => {
+    if (loadingServerAudio) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" />
+          <Text style={styles.loadingText}>Ładowanie plików audio z serwera...</Text>
+        </View>
+      );
+    }
+
+    if (serverAudioFiles.length === 0) {
+      return (
+        <View style={styles.emptyContainer}>
+          <Text>Brak plików audio na serwerze</Text>
+        </View>
       );
     }
 
     return (
-      <ScrollView style={styles.soundListContainer}>
-        {Object.keys(currentLevel).map((key) => (
-          <List.Item
-            key={key}
-            title={key}
-            onPress={() => handleNavigate(key)}
-            right={(props) => <List.Icon {...props} icon="chevron-right" />}
-          />
-        ))}
-      </ScrollView>
+      <View style={styles.soundListContainer}>
+        <RadioButton.Group
+          onValueChange={(value) => setSelectedServerAudioId(value)}
+          value={selectedServerAudioId || ""}
+        >
+          {serverAudioFiles.map((file) => (
+            <List.Item
+              key={file.id}
+              title={file.name}
+              description={`Utworzony przez: ${file.createdBy}`}
+              style={{ paddingVertical: 2 }}
+              titleStyle={{ fontSize: 14 }}
+              left={() => (
+                <RadioButton
+                  value={file.id}
+                  status={selectedServerAudioId === file.id ? "checked" : "unchecked"}
+                />
+              )}
+              onPress={() => setSelectedServerAudioId(file.id)}
+            />
+          ))}
+        </RadioButton.Group>
+      </View>
     );
   };
 
@@ -221,6 +310,35 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
     onSendQueue(queue);
     setQueue([]);
     setSelectedSound(null);
+  };
+
+  const handleServerAudioPlayback = () => {
+    if (onServerAudioCommand && selectedServerAudioId) {
+      onServerAudioCommand(selectedServerAudioId, serverIsLooping);
+      setServerIsPlaying(true);
+    }
+  };
+
+  const handleServerAudioPause = () => {
+    if (onServerAudioPauseCommand && selectedServerAudioId) {
+      onServerAudioPauseCommand(selectedServerAudioId);
+      setServerIsPlaying(false);
+    }
+  };
+
+  const handleServerAudioResume = () => {
+    if (onServerAudioResumeCommand && selectedServerAudioId) {
+      onServerAudioResumeCommand(selectedServerAudioId);
+      setServerIsPlaying(true);
+    }
+  };
+
+  const handleServerAudioStop = () => {
+    if (onServerAudioStopCommand && selectedServerAudioId) {
+      onServerAudioStopCommand(selectedServerAudioId);
+      setServerIsPlaying(false);
+      setServerIsLooping(false);
+    }
   };
 
   if (!session) return null;
@@ -250,31 +368,60 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
         >
           Kolejka
         </Button>
+        <Button
+          mode={activeTab === "server" ? "contained" : "outlined"}
+          onPress={() => setActiveTab("server")}
+          style={styles.tabButton}
+          labelStyle={styles.tabLabel}
+        >
+          Serwer
+        </Button>
       </View>
 
       <Dialog.ScrollArea style={styles.dialogScrollArea}>
         <ScrollView>
           <View style={styles.contentContainer}>
-            <Text style={styles.sectionHeader}>Wybierz dźwięk:</Text>
+            {(activeTab === "single" || activeTab === "queue") && (
+              <>
+                <Text style={styles.sectionHeader}>Wybierz dźwięk:</Text>
 
-            {currentPath.length > 0 && (
-              <Button
-                mode="text"
-                onPress={handleGoBack}
-                icon="arrow-left"
-                style={styles.backButton}
-                labelStyle={styles.backLabel}
-              >
-                Powrót
-              </Button>
+                {currentPath.length > 0 && (
+                  <Button
+                    mode="text"
+                    onPress={handleGoBack}
+                    icon="arrow-left"
+                    style={styles.backButton}
+                    labelStyle={styles.backLabel}
+                  >
+                    Powrót
+                  </Button>
+                )}
+
+                <RadioButton.Group
+                  onValueChange={setSelectedSound}
+                  value={selectedSound || ""}
+                >
+                  {renderNavigationItems()}
+                </RadioButton.Group>
+              </>
             )}
 
-            <RadioButton.Group
-              onValueChange={setSelectedSound}
-              value={selectedSound || ""}
-            >
-              {renderNavigationItems()}
-            </RadioButton.Group>
+            {activeTab === "server" && (
+              <>
+                <View style={styles.serverControlsHeader}>
+                  <Text style={styles.sectionHeader}>Pliki audio serwera:</Text>
+                  <Button 
+                    mode="text" 
+                    icon="refresh" 
+                    onPress={loadServerAudioFiles}
+                    disabled={loadingServerAudio}
+                  >
+                    Odśwież
+                  </Button>
+                </View>
+                {renderServerAudioList()}
+              </>
+            )}
 
             {activeTab === "single" && (
               <>
@@ -294,7 +441,8 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
                     setIsPlaying(true);
                   }}
                   disabled={!selectedSound}
-                  mode="contained"                  style={styles.playButton}
+                  mode="contained"
+                  style={styles.playButton}
                 >
                   Odtwórz
                 </Button>
@@ -331,6 +479,56 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
               </>
             )}
 
+            {activeTab === "server" && (
+              <>
+                <Text style={styles.sectionHeader}>Opcje odtwarzania:</Text>
+                <View style={styles.checkboxRow}>
+                  <Checkbox
+                    status={serverIsLooping ? "checked" : "unchecked"}
+                    onPress={() => setServerIsLooping(!serverIsLooping)}
+                    color={theme.colors.primary}
+                  />
+                  <Text style={styles.checkboxLabel}>Odtwarzaj w pętli</Text>
+                </View>
+
+                <Button
+                  onPress={handleServerAudioPlayback}
+                  disabled={!selectedServerAudioId || !onServerAudioCommand}
+                  mode="contained"
+                  style={styles.playButton}
+                >
+                  Odtwórz dla całej sesji
+                </Button>
+
+                {serverIsLooping && (
+                  <View style={styles.controlIcons}>
+                    <IconButton
+                      icon={serverIsPlaying ? "pause-circle" : "play-circle"}
+                      size={32}
+                      onPress={() => {
+                        if (serverIsPlaying) {
+                          handleServerAudioPause();
+                        } else {
+                          handleServerAudioResume();
+                        }
+                      }}
+                      style={styles.controlIcon}
+                      iconColor={theme.colors.primary}
+                      disabled={!onServerAudioPauseCommand || !onServerAudioResumeCommand}
+                    />
+                    <IconButton
+                      icon="stop-circle"
+                      size={32}
+                      onPress={handleServerAudioStop}
+                      style={styles.controlIcon}
+                      iconColor={theme.colors.primary}
+                      disabled={!onServerAudioStopCommand}
+                    />
+                  </View>
+                )}
+              </>
+            )}
+
             {activeTab === "queue" && (
               <>
                 <Text style={styles.sectionHeader}>Opóźnienie (ms):</Text>
@@ -356,7 +554,8 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
                 <Text style={styles.sectionHeader}>Kolejka dźwięków:</Text>
                 <ScrollView style={styles.queueList}>
                   {queue.map((item, index) => (
-                    <View key={index} style={styles.queueItem}>              <Text style={styles.queueText}>
+                    <View key={index} style={styles.queueItem}>
+                      <Text style={styles.queueText}>
                         {item.soundName.split('/').pop()?.replace(/\.wav$/, "") || item.soundName.replace(/\.wav$/, "")} (+{item.delay}ms)
                       </Text>
                       <IconButton
@@ -510,6 +709,25 @@ const styles = StyleSheet.create({
     padding: 16,
     flexDirection: "row",
     justifyContent: "flex-end",
+    alignItems: "center",
+  },
+  loadingContainer: {
+    padding: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingText: {
+    marginTop: 12,
+    textAlign: "center",
+  },
+  emptyContainer: {
+    padding: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  serverControlsHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
   },
 });
