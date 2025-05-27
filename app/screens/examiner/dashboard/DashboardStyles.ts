@@ -413,5 +413,9 @@ globalOverlay: {
       alignItems: "center",
       marginVertical: 6,
     },
+historyButton: {
+      marginHorizontal: 8,
+      borderRadius: 8,
+}
 
 });
