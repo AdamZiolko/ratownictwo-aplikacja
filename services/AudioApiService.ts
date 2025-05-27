@@ -42,17 +42,11 @@ class AudioApiService {
     }  }  // Streaming pliku audio
   async streamAudio(id: string): Promise<Response> {
     try {
-      const user = await AuthService.getCurrentUser();
-      if (!user?.accessToken) {
-        throw new Error('No authentication token available');
-      }
-
       console.log(`🌐 Streaming audio from server: ${id}`);
       
       const response = await fetch(`${API_URL}/api/audio/${id}/stream`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${user.accessToken}`,
           'Accept': 'audio/*,*/*',
         },
       });
@@ -68,19 +62,11 @@ class AudioApiService {
       console.error('❌ Error streaming audio:', error);
       throw error;
     }
-  }
-  // Pobieranie pliku audio do download
+  }  // Pobieranie pliku audio do download
   async downloadAudio(id: string): Promise<Response> {
     try {
-      const user = await AuthService.getCurrentUser();
-      if (!user?.accessToken) {
-        throw new Error('No authentication token available');
-      }
-        const response = await fetch(`${API_URL}/api/audio/${id}/download`, {
+      const response = await fetch(`${API_URL}/api/audio/${id}/download`, {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${user.accessToken}`,
-        },
       });
       
       if (!response.ok) {
