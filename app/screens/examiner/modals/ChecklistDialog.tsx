@@ -33,6 +33,12 @@ interface ChecklistDialogProps {
   left?: number;
   onDismiss: () => void;
 sessionId?: string;
+student?: {
+  id: number;
+    name: string;
+    surname: string;
+   albumNumber?: string;
+  };
 }
 interface Comment {
   id: number;
@@ -71,9 +77,9 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
   left = 0,
   onDismiss,
   sessionId,
+  student,
 }) => {
   const theme = useTheme();
-    const { user } = useAuth(); 
   const [testStarted, setTestStarted] = useState(false);
   const [loadedTestName, setLoadedTestName] = useState<string | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -159,45 +165,52 @@ const response = await apiService.post("checklist/templates", {
   }
 };
 
-const handleSaveResults = async () => {
+ const handleSaveResults = async () => {
     try {
-      if (!user) {
-        Alert.alert("Błąd", "Nie znaleziono danych użytkownika");
+      if (!student || !sessionId) {
+        Alert.alert("Błąd", "Brak wymaganych danych: student lub sesja");
         return;
       }
 
+      console.log("Zapis wyników dla sesji:", sessionId);
+      console.log("Dane studenta:", {
+        name: student.name,
+        surname: student.surname,
+        albumNumber: student.albumNumber,
+      });
+
       const response = await apiService.post("checklist/test-results", {
         student: {
-          name: user.name,
-          surname: user.surname,
-          albumNumber: user.albumNumber
+          name: student.name,
+          surname: student.surname,
+          albumNumber: student.albumNumber || "",
         },
-        tasks: tasks.map(t => ({
+        tasks: tasks.map((t) => ({
           text: t.text,
-          completed: t.completed
+          completed: t.completed,
         })),
-        comments: comments.map(c => ({
+        comments: comments.map((c) => ({
           text: c.text,
-          timestamp: c.timestamp.toISOString()
+          timestamp: c.timestamp.toISOString(),
         })),
-        sessionId: sessionId // Użyj ID sesji z propsów
+        sessionId: sessionId, 
       });
 
       if (response.status === 201) {
+        console.log("Odpowiedź serwera:", response.data);
         Alert.alert("Sukces", "Wyniki testu zostały zapisane");
         setTasks([]);
         setComments([]);
       }
     } catch (error) {
-      console.error("Błąd zapisu wyników:", error);
+      console.error("Pełny błąd zapisu:", error);
       let errorMessage = "Nie udało się zapisać wyników testu";
       if (error instanceof Error) {
-        errorMessage = error.message;
+        errorMessage = `${error.message} (${error.stack})`;
       }
       Alert.alert("Błąd", errorMessage);
     }
   };
-
 
 
 const loadTemplate = (template: Template) => {

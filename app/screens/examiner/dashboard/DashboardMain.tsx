@@ -68,8 +68,12 @@ const ExaminerDashboardScreen = () => {
   const studentRefs = useRef<{ [id: number]: any }>({});
 
   const [popupTop, setPopupTop] = useState<number>(0);
-  const [selectedStudent, setSelectedStudent] = useState<number | null>(null);
-
+const [selectedStudent, setSelectedStudent] = useState<{
+  id: number;
+  name: string;
+  surname: string;
+  albumNumber?: string;
+} | null>(null)
   const dashboardStyles = createDashboardStyles(theme);
 
   const {
@@ -152,14 +156,19 @@ const ExaminerDashboardScreen = () => {
     }
   );
 
-  const handleStudentPress = (studentId: number) => {
-    const ref = studentRefs.current[studentId];
+ const handleStudentPress = (student: {
+  id: number;
+  name: string;
+  surname: string;
+  albumNumber?: string;
+}) => {
+ const ref = studentRefs.current[student.id];
     if (!ref) return;
-    ref.measureInWindow((x: number, y: number, w: number, h: number) => {
-      setPopupTop(y);
-      setSelectedStudent(studentId);
-    });
-  };
+   ref.measureInWindow((x: number, y: number, w: number, h: number) => {
+     setPopupTop(y);
+     setSelectedStudent(student);
+   });
+ };
 
   const windowHeight = Dimensions.get("window").height;
   const calculatePopupPosition = (y: number, screenHeight: number) => {
@@ -171,12 +180,13 @@ const ExaminerDashboardScreen = () => {
 return (
   <View style={{ flexDirection: "row", flex: 1 }}>
 <Portal>
-    <ChecklistDialog
+<ChecklistDialog
   visible={selectedStudent !== null}
   top={popupTop}
   left={sidebarVisible ? sidebarWidthValue + 16 : 16}
   onDismiss={() => setSelectedStudent(null)}
   sessionId={currentSession?.sessionId} 
+  student={selectedStudent!}   
 />
 </Portal>
     <Animated.View
@@ -223,19 +233,27 @@ return (
                         studentRefs.current[student.id] = el;
                       }}
                     >
-                      <TouchableOpacity
-                        onPress={() => handleStudentPress(student.id)}
-                        style={{ flexDirection: "row", alignItems: "center" }}
-                      >
-                        <Avatar.Icon
-                          size={30}
-                          icon="account"
-                          style={dashboardStyles.avatar}
-                        />
-                        <Text style={dashboardStyles.studentName}>
-                          {student.name} {student.surname}
-                        </Text>
-                      </TouchableOpacity>
+                   <TouchableOpacity
+     onPress={() => {
+      handleStudentPress({
+        id: student.id,
+        name: student.name,
+        surname: student.surname,
+                 albumNumber: student.albumNumber, // jeśli masz to w obiekcie
+       });
+       setCurrentSession(session);
+     }}
+     style={{ flexDirection: "row", alignItems: "center" }}
+   >
+     <Avatar.Icon
+       size={30}
+      icon="account"
+       style={dashboardStyles.avatar}
+    />
+    <Text style={dashboardStyles.studentName}>  
+           {student.name} {student.surname}
+     </Text>
+  </TouchableOpacity>
                     </View>
                   ))}
                 </View>
