@@ -6,8 +6,9 @@ import { loadAudioWithRetry, loadAudioFromServer, debugMobileAudio } from "../ut
 import { soundFiles } from "../constants/soundFiles";
 import type { SoundQueueItem, AudioCommand, ServerAudioCommand } from "../types";
 
-export const useAudioManager = (accessCode: string | undefined) => {
+export const useAudioManager = (accessCode: string | undefined, sessionJoined: boolean) => {
   const [audioReady, setAudioReady] = useState(false);
+  const [isPlayingServerAudio, setIsPlayingServerAudio] = useState(false);
   const soundInstances = useRef<Record<string, Audio.Sound>>({});
 
   // Initialize audio system
@@ -83,17 +84,17 @@ export const useAudioManager = (accessCode: string | undefined) => {
       }
     }
   };
-
   // Enhanced server audio playback function
   const handleServerAudioPlayback = async (audioId: string, loop: boolean): Promise<void> => {
     try {
       console.log(`🔊 Starting server audio playback: ${audioId} (loop: ${loop})`);
+      setIsPlayingServerAudio(true);
       
       // Try to load audio from server using the audioId
       const sound = await loadAudioFromServer(audioId);
-      
-      if (!sound) {
+        if (!sound) {
         console.error(`🔇 Failed to load server audio: ${audioId}`);
+        setIsPlayingServerAudio(false);
         return;
       }
       
@@ -103,16 +104,21 @@ export const useAudioManager = (accessCode: string | undefined) => {
       const serverSoundKey = `server:${audioId}`;
       soundInstances.current[serverSoundKey] = sound;
 
-      // Set up playback status updates
+      // Set up playback status updates with enhanced error handling
       sound.setOnPlaybackStatusUpdate((status) => {
-        if (status.isLoaded) {
-          if (status.didJustFinish && !status.isLooping) {
+        if (status.isLoaded) {          if (status.didJustFinish && !status.isLooping) {
             console.log(`✅ Finished playing server audio: ${audioId}`);
-            sound.unloadAsync().catch(() => {});
+            setIsPlayingServerAudio(false);
+            sound.unloadAsync().catch((err) => {
+              console.warn(`⚠️ Error unloading server audio ${audioId}:`, err);
+            });
             delete soundInstances.current[serverSoundKey];
           }
-        } else {
+          if (status.isPlaying) {
+            console.log(`🎵 Server audio playing: ${audioId} (position: ${status.positionMillis}ms)`);
+          }        } else {
           console.error(`❌ Server audio loading error for ${audioId}:`, status.error || 'Unknown error');
+          setIsPlayingServerAudio(false);
         }
       });
 
@@ -123,9 +129,15 @@ export const useAudioManager = (accessCode: string | undefined) => {
       console.log(`🎵 Starting playback of server audio: ${audioId}`);
       await sound.playAsync();
       
-      console.log(`▶️ Started playing server audio: ${audioId} (loop=${loop})`);
-    } catch (error) {
+      console.log(`▶️ Successfully started playing server audio: ${audioId} (loop=${loop})`);    } catch (error) {
       console.error(`❌ Error playing server audio ${audioId}:`, error);
+      setIsPlayingServerAudio(false);
+      
+      // Additional error details
+      if (error instanceof Error) {
+        console.error(`❌ Error details: ${error.message}`);
+        console.error(`❌ Error stack: ${error.stack}`);
+      }
     }
   };
 
@@ -240,7 +252,6 @@ export const useAudioManager = (accessCode: string | undefined) => {
       console.error(`❌ Błąd przy RESUME dla ${soundName}:`, error);
     }
   };
-
   // Server audio control functions
   const handleServerAudioStop = async (audioId: string): Promise<void> => {
     const serverSoundKey = `server:${audioId}`;
@@ -251,6 +262,7 @@ export const useAudioManager = (accessCode: string | undefined) => {
       await sound.stopAsync();
       await sound.unloadAsync();
       delete soundInstances.current[serverSoundKey];
+      setIsPlayingServerAudio(false);
       console.log(`⏹️ Stopped server audio: ${audioId}`);
     } catch (error) {
       console.error(`❌ Error stopping server audio ${audioId}:`, error);
@@ -355,52 +367,126 @@ export const useAudioManager = (accessCode: string | undefined) => {
       console.log('🧹 Odpinam listener "audio-command"');
       unsubscribe();
     };
-  }, [audioReady, accessCode]);
-
-  // Server audio command listener
+  }, [audioReady, accessCode]);  // Server audio command listener - Only set up after the student has joined the session
   useEffect(() => {
-    if (!audioReady || !accessCode) return;
+    if (!audioReady || !accessCode || !sessionJoined) {
+      console.log(`🔌 Waiting for prerequisites: audioReady=${audioReady}, accessCode=${!!accessCode}, sessionJoined=${sessionJoined}`);
+      return;
+    }
 
-    const handleServerAudioCommand = async (payload: ServerAudioCommand) => {
-      console.log('🔊 Received server audio command:', payload);
-      
-      if (!payload || !payload.command || !payload.audioId) {
-        console.warn('⚠️ Invalid server audio command payload:', payload);
-        return;
-      }
+    let listenerSetup = false;
+    
+    const setupServerAudioListener = async () => {
+      try {
+        // Ensure socket is connected using the public method
+        const connectionStatus = socketService.getConnectionStatus();
+        if (!connectionStatus.connected) {
+          console.log('🔌 Connecting socket before setting up server audio listener...');
+          await socketService.connect();
+        }
 
-      const { command, audioId, loop } = payload;
-      console.log(`🎵 Processing server audio command: ${command} for audio ID: ${audioId} (loop: ${loop})`);
+        // Wait for socket to be fully connected and ensure session room is joined
+        let retryCount = 0;
+        const maxRetries = 10;
+        
+        while (retryCount < maxRetries) {
+          const status = socketService.getConnectionStatus();
+          if (status.connected && status.id) {
+            console.log(`✅ Socket connected with ID: ${status.id}`);
+            break;
+          }
+          
+          retryCount++;
+          console.log(`⏳ Waiting for socket connection... (attempt ${retryCount}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }        // Additional delay to ensure the session room join is fully processed
+        // This is crucial for the server-audio-command events to be received
+        console.log('⏳ Allowing time for session room join to be fully processed...');
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
-      switch (command) {
-        case 'PLAY':
-          console.log(`▶️ Executing PLAY command for server audio: ${audioId}`);
-          await handleServerAudioPlayback(audioId, loop || false);
-          break;
-        case 'STOP':
-          console.log(`⏹️ Executing STOP command for server audio: ${audioId}`);
-          await handleServerAudioStop(audioId);
-          break;
-        case 'PAUSE':
-          console.log(`⏸️ Executing PAUSE command for server audio: ${audioId}`);
-          await handleServerAudioPause(audioId);
-          break;
-        case 'RESUME':
-          console.log(`▶️ Executing RESUME command for server audio: ${audioId}`);
-          await handleServerAudioResume(audioId);
-          break;
-        default:
-          console.warn('⚠️ Unknown server audio command:', command);
-          break;
+        if (listenerSetup) return; // Prevent duplicate listeners
+        
+        const handleServerAudioCommand = async (payload: ServerAudioCommand) => {
+          console.log('🔊 Received server audio command:', payload);
+          
+          // Enhanced payload validation
+          if (!payload) {
+            console.warn('⚠️ Invalid server audio command: payload is null/undefined');
+            return;
+          }
+          
+          if (!payload.command) {
+            console.warn('⚠️ Invalid server audio command: missing command field', payload);
+            return;
+          }
+          
+          if (!payload.audioId) {
+            console.warn('⚠️ Invalid server audio command: missing audioId field', payload);
+            return;
+          }
+
+          const { command, audioId, loop } = payload;
+          console.log(`🎵 Processing server audio command: ${command} for audio ID: ${audioId} (loop: ${loop})`);
+
+          try {
+            switch (command) {
+              case 'PLAY':
+                console.log(`▶️ Executing PLAY command for server audio: ${audioId}`);
+                await handleServerAudioPlayback(audioId, loop || false);
+                break;
+              case 'STOP':
+                console.log(`⏹️ Executing STOP command for server audio: ${audioId}`);
+                await handleServerAudioStop(audioId);
+                break;
+              case 'PAUSE':
+                console.log(`⏸️ Executing PAUSE command for server audio: ${audioId}`);
+                await handleServerAudioPause(audioId);
+                break;
+              case 'RESUME':
+                console.log(`▶️ Executing RESUME command for server audio: ${audioId}`);
+                await handleServerAudioResume(audioId);
+                break;
+              default:
+                console.warn('⚠️ Unknown server audio command:', command);
+                break;
+            }
+            console.log(`✅ Successfully processed server audio command: ${command} for ${audioId}`);
+          } catch (error) {
+            console.error(`❌ Error processing server audio command ${command} for ${audioId}:`, error);
+            
+            // Additional error details
+            if (error instanceof Error) {
+              console.error(`❌ Command error details: ${error.message}`);
+              console.error(`❌ Command error stack: ${error.stack}`);
+            }
+          }
+        };
+
+        console.log('🔌 Setting up server-audio-command listener (with delay)');
+        const unsubscribeServerAudio = socketService.on('server-audio-command', handleServerAudioCommand);
+        listenerSetup = true;
+        
+        return () => {
+          console.log('🧹 Unsubscribing from "server-audio-command"');
+          listenerSetup = false;
+          unsubscribeServerAudio();
+        };
+      } catch (error) {
+        console.error('❌ Error setting up server audio listener:', error);
       }
     };
 
-    const unsubscribeServerAudio = socketService.on('server-audio-command', handleServerAudioCommand);
-    return () => {
-      console.log('🧹 Unsubscribing from "server-audio-command"');
-      unsubscribeServerAudio();
+    // Setup the listener with proper async handling
+    let cleanupFn: (() => void) | undefined;
+    setupServerAudioListener().then(cleanup => {
+      cleanupFn = cleanup;
+    });    return () => {
+      console.log('🧹 Cleaning up server audio listener setup');
+      if (cleanupFn) {
+        cleanupFn();
+      }
     };
-  }, [audioReady, accessCode]);
+  }, [audioReady, accessCode, sessionJoined]);
 
   // Cleanup audio instances on unmount
   useEffect(() => {
@@ -416,9 +502,9 @@ export const useAudioManager = (accessCode: string | undefined) => {
       soundInstances.current = {};
     };
   }, []);
-
   return {
     audioReady,
+    isPlayingServerAudio,
     soundInstances
   };
 };

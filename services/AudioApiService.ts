@@ -29,12 +29,9 @@ interface UpdateAudioData {
 
 class AudioApiService {
   private api: typeof ApiService;
-
   constructor() {
     this.api = ApiService;
-  }
-
-  // Pobieranie listy plików audio
+  }  // Pobieranie listy plików audio
   async getAudioList(): Promise<AudioFile[]> {
     try {
       const response = await this.api.get('audio/list');
@@ -42,83 +39,84 @@ class AudioApiService {
     } catch (error) {
       console.error('Error fetching audio list:', error);
       throw error;
-    }
-  }
-
-  // Streaming pliku audio
+    }  }  // Streaming pliku audio
   async streamAudio(id: string): Promise<Response> {
     try {
       const user = await AuthService.getCurrentUser();
-      const headers = new Headers();
-      
-      if (user && user.accessToken) {
-        headers.append('authorization', `Bearer ${user.accessToken}`);
+      if (!user?.accessToken) {
+        throw new Error('No authentication token available');
       }
 
+      console.log(`🌐 Streaming audio from server: ${id}`);
+      
       const response = await fetch(`${API_URL}/api/audio/${id}/stream`, {
         method: 'GET',
-        headers
+        headers: {
+          'Authorization': `Bearer ${user.accessToken}`,
+          'Accept': 'audio/*,*/*',
+        },
       });
-
+      
+      if (!response.ok) {
+        console.error(`❌ Audio stream failed: ${response.status} ${response.statusText}`);
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      console.log(`✅ Audio stream response received: ${id} (${response.headers.get('content-type')})`);
       return response;
     } catch (error) {
-      console.error('Error streaming audio:', error);
+      console.error('❌ Error streaming audio:', error);
       throw error;
     }
   }
-
   // Pobieranie pliku audio do download
   async downloadAudio(id: string): Promise<Response> {
     try {
       const user = await AuthService.getCurrentUser();
-      const headers = new Headers();
-      
-      if (user && user.accessToken) {
-        headers.append('authorization', `Bearer ${user.accessToken}`);
+      if (!user?.accessToken) {
+        throw new Error('No authentication token available');
       }
-
-      const response = await fetch(`${API_URL}/api/audio/${id}/download`, {
+        const response = await fetch(`${API_URL}/api/audio/${id}/download`, {
         method: 'GET',
-        headers
+        headers: {
+          'Authorization': `Bearer ${user.accessToken}`,
+        },
       });
-
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       return response;
     } catch (error) {
       console.error('Error downloading audio:', error);
       throw error;
-    }
-  }
-
-  // Przesyłanie nowego pliku audio (base64)
+    }  }  // Przesyłanie nowego pliku audio (base64)
   async uploadAudio(data: UploadAudioData): Promise<AudioFile> {
     try {
       const response = await this.api.post('audio/upload', data);
-      return response;
+      return response.audio;
     } catch (error) {
       console.error('Error uploading audio:', error);
       throw error;
-    }
-  }
-
-  // Aktualizacja pliku audio (base64)
+    }  }  // Aktualizacja pliku audio (base64)
   async updateAudio(id: string, data: UpdateAudioData): Promise<AudioFile> {
     try {
       const response = await this.api.put(`audio/${id}/update`, data);
-      return response;
+      return response.audio;
     } catch (error) {
       console.error('Error updating audio:', error);
       throw error;
-    }
-  }
-  // Usuwanie pliku audio
+    }  }
+    // Usuwanie pliku audio
   async deleteAudio(id: string): Promise<void> {
     try {
       await this.api.delete(`audio/${id}/delete`);
     } catch (error) {
       console.error('Error deleting audio:', error);
       throw error;
-    }
-  }
+    }  }
+
   // Konwersja pliku na base64
   async fileToBase64(uri: string): Promise<string> {
     try {
@@ -165,10 +163,10 @@ class AudioApiService {
               reject(new Error('Failed to read file as base64'));
             };
             reader.readAsDataURL(blob);
-          })
-          .catch(error => {
+          })          .catch(error => {
             reject(new Error(`Failed to fetch file: ${error.message}`));
-          });      } catch (error) {
+          });
+      } catch (error) {
         reject(new Error(`Error in web file conversion: ${error instanceof Error ? error.message : 'Unknown error'}`));
       }
     });

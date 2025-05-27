@@ -9,8 +9,8 @@ const SERVER_PORT = '8080';
 // For physical devices, use your actual IP address (e.g., 192.168.100.7)
 const getServerIP = () => {
   if (Platform.OS === 'android') {
-    // Use the special 10.0.2.2 IP for Android emulators
-    return '192.168.100.7'; // Replace with your actual IP address
+    // Use the actual IP address for Android devices
+    return '192.168.100.6'; // Updated to correct IP address
   } else if (Platform.OS === 'ios') {
     // For iOS simulators, localhost works
     return 'localhost';

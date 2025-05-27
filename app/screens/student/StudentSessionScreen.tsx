@@ -21,8 +21,6 @@ import { router, useLocalSearchParams } from "expo-router";
 import EkgCardDisplay from "@/components/ekg/EkgCardDisplay";
 import ColorSensor from "@/components/ColorSensor";
 import SocketConnectionStatus from "@/components/SocketConnectionStatus";
-
-// Import our new components and hooks
 import SessionInfo from "./components/SessionInfo";
 import VitalSignsDisplay from "./components/VitalSignsDisplay";
 import { useSessionManager } from "./hooks/useSessionManager";
@@ -42,42 +40,39 @@ const StudentSessionScreen = () => {
 
   const isWeb = Platform.OS === "web";
   const [isSessionPanelExpanded, setIsSessionPanelExpanded] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  // Use our new modular hooks
-  const { 
-    sessionData, 
-    isLoading, 
-    error, 
-    handleRetry 
-  } = useSessionManager({
-    accessCode: accessCode?.toString(),
-    firstName: firstName || "",
-    lastName: lastName || "",
-    albumNumber: albumNumber || ""
-  });
+  const [isFullscreen, setIsFullscreen] = useState(false); // Use our new modular hooks
+  const { sessionData, isLoading, error, sessionJoined, handleRetry } =
+    useSessionManager({
+      accessCode: accessCode?.toString(),
+      firstName: firstName || "",
+      lastName: lastName || "",
+      albumNumber: albumNumber || "",
+    });
 
-  const { 
-    temperature, 
-    bloodPressure, 
-    spo2, 
-    etco2, 
-    respiratoryRate, 
-    formatBloodPressure 
+  const {
+    temperature,
+    bloodPressure,
+    spo2,
+    etco2,
+    respiratoryRate,
+    formatBloodPressure,
   } = useVitalSigns(sessionData);
-  
-  const { audioReady } = useAudioManager(accessCode?.toString());
-  
-  // Initialize network monitoring on Android
+
+  const { audioReady, isPlayingServerAudio } = useAudioManager(
+    accessCode?.toString(),
+    sessionJoined
+  );
+
   useNetworkMonitoring();
 
   const handleGoBack = () => {
     router.replace({
       pathname: "/routes/student-access",
-      params: { 
-        firstName: firstName || "", 
-        lastName: lastName || "", 
-        albumNumber: albumNumber || "" 
-      }
+      params: {
+        firstName: firstName || "",
+        lastName: lastName || "",
+        albumNumber: albumNumber || "",
+      },
     });
   };
 
@@ -85,18 +80,15 @@ const StudentSessionScreen = () => {
     setIsSessionPanelExpanded(!isSessionPanelExpanded);
   };
 
-  const toggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
-  };
-
-  // Loading state
   if (isLoading) {
     return (
       <BackgroundGradient>
         <SafeAreaView style={styles.container}>
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={theme.colors.primary} />
-            <Text style={[styles.loadingText, { color: theme.colors.onSurface }]}>
+            <Text
+              style={[styles.loadingText, { color: theme.colors.onSurface }]}
+            >
               Ładowanie sesji...
             </Text>
           </View>
@@ -111,23 +103,23 @@ const StudentSessionScreen = () => {
       <BackgroundGradient>
         <SafeAreaView style={styles.container}>
           <View style={styles.errorContainer}>
-            <MaterialCommunityIcons 
-              name="alert-circle" 
-              size={64} 
-              color={theme.colors.error} 
+            <MaterialCommunityIcons
+              name="alert-circle"
+              size={64}
+              color={theme.colors.error}
             />
             <Text style={[styles.errorText, { color: theme.colors.error }]}>
               {error}
             </Text>
-            <Button 
-              mode="contained" 
+            <Button
+              mode="contained"
               onPress={handleRetry}
               style={styles.retryButton}
             >
               Spróbuj ponownie
             </Button>
-            <Button 
-              mode="outlined" 
+            <Button
+              mode="outlined"
               onPress={handleGoBack}
               style={styles.backButton}
             >
@@ -145,16 +137,16 @@ const StudentSessionScreen = () => {
       <BackgroundGradient>
         <SafeAreaView style={styles.container}>
           <View style={styles.errorContainer}>
-            <MaterialCommunityIcons 
-              name="file-document-outline" 
-              size={64} 
-              color={theme.colors.onSurface} 
+            <MaterialCommunityIcons
+              name="file-document-outline"
+              size={64}
+              color={theme.colors.onSurface}
             />
             <Text style={[styles.errorText, { color: theme.colors.onSurface }]}>
               Brak danych sesji
             </Text>
-            <Button 
-              mode="outlined" 
+            <Button
+              mode="outlined"
               onPress={handleGoBack}
               style={styles.backButton}
             >
@@ -169,7 +161,6 @@ const StudentSessionScreen = () => {
   return (
     <BackgroundGradient>
       <SafeAreaView style={styles.container}>
-        {/* Header */}
         <Appbar.Header style={styles.header}>
           <Appbar.BackAction onPress={handleGoBack} />
           <Appbar.Content title="Sesja Studenta" />
@@ -179,9 +170,7 @@ const StudentSessionScreen = () => {
           />
         </Appbar.Header>
 
-        {/* Main Content - All content now inside ScrollView */}
         <ScrollView style={styles.scrollContainer}>
-          {/* Session Info Panel */}
           <SessionInfo
             accessCode={accessCode?.toString() || ""}
             firstName={firstName || ""}
@@ -195,7 +184,7 @@ const StudentSessionScreen = () => {
 
           {sessionData.rhythmType !== undefined && (
             <Surface style={styles.cardContainer}>
-              <EkgCardDisplay 
+              <EkgCardDisplay
                 ekgType={sessionData.rhythmType}
                 bpm={sessionData.beatsPerMinute}
                 isRunning={true}
@@ -203,7 +192,6 @@ const StudentSessionScreen = () => {
             </Surface>
           )}
 
-          {/* Connection Status */}
           <VitalSignsDisplay
             temperature={temperature}
             bloodPressure={bloodPressure}
@@ -212,30 +200,53 @@ const StudentSessionScreen = () => {
             respiratoryRate={respiratoryRate}
             formatBloodPressure={formatBloodPressure}
             isFullscreen={isFullscreen}
-          />          {/* EKG Card */}
+          />
 
-
-          {/* Color Sensor */}
           <Surface style={styles.cardContainer}>
             <ColorSensor />
           </Surface>
-
-          {/* Audio Status */}
           <Surface style={styles.cardContainer}>
             <View style={styles.audioStatusContainer}>
-              <MaterialCommunityIcons 
-                name={audioReady ? "volume-high" : "volume-off"} 
-                size={24} 
-                color={audioReady ? theme.colors.primary : theme.colors.error} 
+              <MaterialCommunityIcons
+                name={
+                  isPlayingServerAudio
+                    ? "volume-high"
+                    : audioReady
+                    ? "volume-medium"
+                    : "volume-off"
+                }
+                size={24}
+                color={
+                  isPlayingServerAudio
+                    ? theme.colors.secondary
+                    : audioReady
+                    ? theme.colors.primary
+                    : theme.colors.error
+                }
               />
-              <Text style={[styles.audioStatusText, { color: theme.colors.onSurface }]}>
-                Audio: {audioReady ? "Gotowe" : "Niedostępne"}
+              <Text
+                style={[
+                  styles.audioStatusText,
+                  { color: theme.colors.onSurface },
+                ]}
+              >
+                Audio:
+                {isPlayingServerAudio
+                  ? "Odtwarzanie..."
+                  : audioReady
+                  ? "Gotowe"
+                  : "Niedostępne"}
               </Text>
+              {isPlayingServerAudio && (
+                <ActivityIndicator
+                  size="small"
+                  color={theme.colors.secondary}
+                  style={{ marginLeft: 8 }}
+                />
+              )}
             </View>
           </Surface>
-
-          <SocketConnectionStatus />{/* Vital Signs Display */}
-
+          <SocketConnectionStatus />
         </ScrollView>
       </SafeAreaView>
     </BackgroundGradient>
@@ -294,6 +305,14 @@ const styles = StyleSheet.create({
   audioStatusText: {
     marginLeft: 8,
     fontSize: 16,
+  },
+  debugContainer: {
+    marginTop: 12,
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
+  debugButton: {
+    marginVertical: 4,
   },
 });
 
