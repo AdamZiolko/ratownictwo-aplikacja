@@ -116,9 +116,9 @@ class NetworkDiagnosticsService {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
       
-      // Test with a sample audio ID
-      const response = await fetch(`${API_URL}/api/audio/adult-male-moaning/stream`, {
-        method: 'HEAD',
+      // Test with health endpoint instead of audio (which has been removed)
+      const response = await fetch(`${API_URL}/api/health`, {
+        method: 'GET',
         signal: controller.signal,
         headers: { 'Cache-Control': 'no-cache' }
       });
@@ -126,7 +126,7 @@ class NetworkDiagnosticsService {
       clearTimeout(timeoutId);
       
       if (response.ok) {
-        console.log('✅ Audio streaming endpoint accessible');
+        console.log('✅ API health endpoint accessible');
         return true;
       } else {
         console.warn(`⚠️ Audio streaming failed: ${response.status}`);

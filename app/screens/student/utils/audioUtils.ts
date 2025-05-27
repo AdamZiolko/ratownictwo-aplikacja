@@ -168,9 +168,20 @@ export const loadAudioFromServer = async (audioIdOrName: string): Promise<Audio.
 // Fallback to local audio files
 export const loadAudioFromLocal = async (soundName: string): Promise<Audio.Sound | null> => {
   try {
-    const soundModule = soundFiles[soundName];
+    // Sprawdź, czy nazwa dźwięku zawiera rozszerzenie .wav
+    const soundNameWithExt = soundName.endsWith('.wav') ? soundName : `${soundName}.wav`;
+    
+    // Spróbuj załadować dźwięk z rozszerzeniem
+    let soundModule = soundFiles[soundNameWithExt];
+    
+    // Jeśli nie znaleziono, spróbuj bez rozszerzenia
+    if (!soundModule && soundName.endsWith('.wav')) {
+      const soundNameWithoutExt = soundName.replace('.wav', '');
+      soundModule = soundFiles[soundNameWithoutExt];
+    }
+    
     if (!soundModule) {
-      console.error(`🔇 Local audio file not found: ${soundName}`);
+      console.error(`🔇 Local audio file not found: ${soundName} (tried with and without .wav extension)`);
       return null;
     }
     
@@ -200,19 +211,19 @@ export const loadAudioWithRetry = async (soundName: string, maxRetries: number =
     try {
       console.log(`🔄 Audio loading attempt ${attempt}/${maxRetries} for: ${soundName}`);
       
-      // Try server first, then local fallback
-      const sound = await loadAudioFromServer(soundName);
+      // Używaj tylko lokalnych plików dźwiękowych, ponieważ serwer nie obsługuje już funkcji audio
+      const sound = await loadAudioFromLocal(soundName);
       if (sound) {
         return sound;
       }
       
-      // If still no sound and this is our last attempt, fail
+      // Jeśli nie znaleziono dźwięku i to ostatnia próba, zwróć błąd
       if (attempt === maxRetries) {
         console.error(`❌ All attempts failed for: ${soundName}`);
         return null;
       }
       
-      // Wait before retry (exponential backoff)
+      // Poczekaj przed ponowną próbą (wykładnicze opóźnienie)
       const delay = Math.pow(2, attempt - 1) * 1000;
       console.log(`⏳ Waiting ${delay}ms before retry...`);
       await new Promise(resolve => setTimeout(resolve, delay));
@@ -268,21 +279,8 @@ export const debugMobileAudio = async () => {
       }
     }
     
-    // Test server audio loading if network is available
-    if (networkOk) {
-      console.log('🌐 Testing server audio loading...');
-      try {
-        const serverSound = await loadAudioFromServer('Adult/Male/Moaning.wav');
-        if (serverSound) {
-          console.log('✅ Server audio test successful');
-          await serverSound.unloadAsync();
-        } else {
-          console.warn('⚠️ Server audio test returned null');
-        }
-      } catch (serverError) {
-        console.error('❌ Server audio test failed:', serverError);
-      }
-    }
+    // Serwer nie obsługuje już funkcji audio, więc pomijamy test
+    console.log('🌐 Server audio testing skipped - using local audio files only');
     
     // Platform-specific checks
     if (Platform.OS === 'android') {
