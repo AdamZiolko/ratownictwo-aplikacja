@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { StyleSheet, View, Platform, Dimensions } from "react-native";
 import {
   Text,
@@ -12,10 +12,34 @@ import { router } from "expo-router";
 import FloatingThemeToggle from "@/components/FloatingThemeToggle";
 import BackgroundGradient from "@/components/BackgroundGradient";
 import { useOrientation } from "@/hooks/useOrientation";
+import { DebugModeDialog } from "@/components/DebugModeDialog";
+import { FirstLaunchService } from "@/services/FirstLaunchService";
 
 const RoleSelectionScreen = () => {
-  const theme = useTheme();  const { orientation } = useOrientation();
+  const theme = useTheme();
+  const { orientation } = useOrientation();
   const isLandscape = orientation === 'landscape';
+  
+  // Stan dla dialogu pierwszego uruchomienia
+  const [showFirstLaunchDialog, setShowFirstLaunchDialog] = useState(false);
+  
+  // Sprawdź czy to pierwszy raz i pokaż dialog
+  useEffect(() => {
+    const checkFirstLaunch = async () => {
+      const isFirst = await FirstLaunchService.isFirstLaunch();
+      if (isFirst) {
+        setShowFirstLaunchDialog(true);
+      }
+    };
+    
+    checkFirstLaunch();
+  }, []);
+  
+  // Funkcja zamykania dialogu pierwszego uruchomienia
+  const handleFirstLaunchDialogClose = async () => {
+    setShowFirstLaunchDialog(false);
+    await FirstLaunchService.markAsLaunched();
+  };
 
   const handleRoleSelect = (role: "examiner" | "student") => {
     if (role === "examiner") {
@@ -147,14 +171,19 @@ const RoleSelectionScreen = () => {
         <Text 
           variant={isLandscape ? "bodySmall" : "titleSmall"} 
           style={[styles.subtitle, styles.footer, isLandscape && styles.landscapeFooter]}
-        >
-          Aplikacja służąca do nauki i ćwiczeń z zakresu ratownictwa medycznego.
+        >          Aplikacja służąca do nauki i ćwiczeń z zakresu ratownictwa medycznego.
         </Text>
       </View>
       <Text style={[styles.debugText, isLandscape && styles.landscapeDebugText]}>
         {platformLabel}
       </Text>
       <FloatingThemeToggle position="topRight" size={isLandscape ? 20 : 24} />
+      
+      {/* Dialog pierwszego uruchomienia */}
+      <DebugModeDialog
+        visible={showFirstLaunchDialog}
+        onDismiss={handleFirstLaunchDialogClose}
+      />
     </BackgroundGradient>
   );
 };
