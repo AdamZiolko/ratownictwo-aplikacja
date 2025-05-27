@@ -20,6 +20,7 @@ export const useSessionManager = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sessionData, setSessionData] = useState<Session | null>(null);
+  const [sessionJoined, setSessionJoined] = useState(false);
 
   const handleRetry = () => {
     fetchSession();
@@ -93,10 +94,12 @@ export const useSessionManager = ({
             name,
             surname,
             albumNumber: albumNum,
-          }
-        )
+          }        )
         .then((fn) => {
           unsub = fn;
+          // Mark session as joined after successful subscription
+          console.log('✅ Session subscription successful, setting sessionJoined = true');
+          setSessionJoined(true);
         })
         .catch(console.error);
 
@@ -144,11 +147,11 @@ export const useSessionManager = ({
       }
     };
   }, [accessCode, firstName, lastName, albumNumber, router]);
-
   return {
     isLoading,
     error,
     sessionData,
+    sessionJoined,
     handleRetry,
   };
 };

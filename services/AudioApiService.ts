@@ -29,73 +29,94 @@ interface UpdateAudioData {
 
 class AudioApiService {
   private api: typeof ApiService;
-
   constructor() {
     this.api = ApiService;
-  }
-
-  // Pobieranie listy plików audio
+  }  // Pobieranie listy plików audio
   async getAudioList(): Promise<AudioFile[]> {
-    console.warn('Audio API endpoints have been removed from the server. Use local audio files instead.');
-    // Zwracamy pustą tablicę, ponieważ serwer nie obsługuje już funkcji audio
-    return [];
-  }
-
-  // Streaming pliku audio
+    try {
+      const response = await this.api.get('audio/list');
+      return response;
+    } catch (error) {
+      console.error('Error fetching audio list:', error);
+      throw error;
+    }  }  // Streaming pliku audio
   async streamAudio(id: string): Promise<Response> {
-    // Zwracamy błąd, ponieważ serwer nie obsługuje już funkcji audio
-    console.warn('Audio streaming is no longer supported by the server. Use local audio files instead.');
-    
-    // Tworzymy sztuczną odpowiedź z błędem
-    const errorResponse = new Response(JSON.stringify({ 
-      error: 'Audio API endpoints have been removed from the server' 
-    }), {
-      status: 404,
-      statusText: 'Not Found',
-      headers: {
-        'Content-Type': 'application/json'
+    try {
+      const user = await AuthService.getCurrentUser();
+      if (!user?.accessToken) {
+        throw new Error('No authentication token available');
       }
-    });
-    
-    return errorResponse;
-  }
 
+      console.log(`🌐 Streaming audio from server: ${id}`);
+      
+      const response = await fetch(`${API_URL}/api/audio/${id}/stream`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${user.accessToken}`,
+          'Accept': 'audio/*,*/*',
+        },
+      });
+      
+      if (!response.ok) {
+        console.error(`❌ Audio stream failed: ${response.status} ${response.statusText}`);
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      console.log(`✅ Audio stream response received: ${id} (${response.headers.get('content-type')})`);
+      return response;
+    } catch (error) {
+      console.error('❌ Error streaming audio:', error);
+      throw error;
+    }
+  }
   // Pobieranie pliku audio do download
   async downloadAudio(id: string): Promise<Response> {
-    // Zwracamy błąd, ponieważ serwer nie obsługuje już funkcji audio
-    console.warn('Audio download is no longer supported by the server. Use local audio files instead.');
-    
-    // Tworzymy sztuczną odpowiedź z błędem
-    const errorResponse = new Response(JSON.stringify({ 
-      error: 'Audio API endpoints have been removed from the server' 
-    }), {
-      status: 404,
-      statusText: 'Not Found',
-      headers: {
-        'Content-Type': 'application/json'
+    try {
+      const user = await AuthService.getCurrentUser();
+      if (!user?.accessToken) {
+        throw new Error('No authentication token available');
       }
-    });
-    
-    return errorResponse;
-  }
-
-  // Przesyłanie nowego pliku audio (base64)
+        const response = await fetch(`${API_URL}/api/audio/${id}/download`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${user.accessToken}`,
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('Error downloading audio:', error);
+      throw error;
+    }  }  // Przesyłanie nowego pliku audio (base64)
   async uploadAudio(data: UploadAudioData): Promise<AudioFile> {
-    console.warn('Audio upload is no longer supported by the server. Use local audio files instead.');
-    throw new Error('Audio API endpoints have been removed from the server');
-  }
-
-  // Aktualizacja pliku audio (base64)
+    try {
+      const response = await this.api.post('audio/upload', data);
+      return response.audio;
+    } catch (error) {
+      console.error('Error uploading audio:', error);
+      throw error;
+    }  }  // Aktualizacja pliku audio (base64)
   async updateAudio(id: string, data: UpdateAudioData): Promise<AudioFile> {
-    console.warn('Audio update is no longer supported by the server. Use local audio files instead.');
-    throw new Error('Audio API endpoints have been removed from the server');
-  }
-  
-  // Usuwanie pliku audio
+    try {
+      const response = await this.api.put(`audio/${id}/update`, data);
+      return response.audio;
+    } catch (error) {
+      console.error('Error updating audio:', error);
+      throw error;
+    }  }
+    // Usuwanie pliku audio
   async deleteAudio(id: string): Promise<void> {
-    console.warn('Audio deletion is no longer supported by the server. Use local audio files instead.');
-    throw new Error('Audio API endpoints have been removed from the server');
-  }
+    try {
+      await this.api.delete(`audio/${id}/delete`);
+    } catch (error) {
+      console.error('Error deleting audio:', error);
+      throw error;
+    }  }
+
   // Konwersja pliku na base64
   async fileToBase64(uri: string): Promise<string> {
     try {
@@ -142,10 +163,10 @@ class AudioApiService {
               reject(new Error('Failed to read file as base64'));
             };
             reader.readAsDataURL(blob);
-          })
-          .catch(error => {
+          })          .catch(error => {
             reject(new Error(`Failed to fetch file: ${error.message}`));
-          });      } catch (error) {
+          });
+      } catch (error) {
         reject(new Error(`Error in web file conversion: ${error instanceof Error ? error.message : 'Unknown error'}`));
       }
     });

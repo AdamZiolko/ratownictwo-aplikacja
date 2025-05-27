@@ -3,7 +3,6 @@ import {
   View,
   ScrollView,
   TouchableOpacity,
-  Pressable,
   Dimensions,
   LayoutAnimation,
   Animated,
@@ -11,7 +10,6 @@ import {
   NativeScrollEvent,
   RefreshControl,
   Platform,
-  Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -26,7 +24,7 @@ import {
   ActivityIndicator,
   Snackbar,
   Avatar,
-  Checkbox,
+  SegmentedButtons,
 } from "react-native-paper";
 import { router } from "expo-router";
 import { useAuth } from "@/contexts/AuthContext";
@@ -51,6 +49,7 @@ const ExaminerDashboardScreen = () => {
   const { user, logout } = useAuth();
   const scrollY = useRef(new Animated.Value(0)).current;
   const [headerVisible, setHeaderVisible] = useState(true);
+  const [activeTab, setActiveTab] = useState('sessions');
 
   const [createDialogVisible, setCreateDialogVisible] = useState(false);
   const [editDialogVisible, setEditDialogVisible] = useState(false);
@@ -259,149 +258,173 @@ return (
         <Appbar.Action icon="logout" onPress={handleLogout} />
       </Appbar.Header>
 
-      <View style={dashboardStyles.contentContainer}>
-        {Platform.OS !== "android" && (
-          <Card
-            style={{ backgroundColor: theme.colors.surface, borderRadius: 4 }}
-          >
-            <Card.Content>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  padding: 10,
-                }}
-              >
-                <StatItem value={sessions?.length} label="Wszystkie sesje" />
-              </View>
-            </Card.Content>
-          </Card>
-        )}
+      <SegmentedButtons
+        value={activeTab}
+        onValueChange={setActiveTab}
+        buttons={[
+          {
+            value: 'sessions',
+            label: 'Sesje',
+            icon: 'account-group',
+          },
+          {
+            value: 'audio',
+            label: 'Audio',
+            icon: 'music',
+          },
+        ]}
+        style={{ margin: 16 }}
+      />
 
-        {loading && !refreshing ? (
-          <View style={dashboardStyles.loadingContainer}>
-            <ActivityIndicator size="large" />
-            <Text style={dashboardStyles.loadingText}>
-              Ładowanie sesji...
-            </Text>
-          </View>
-        ) : (
-          <ScrollView
-            style={dashboardStyles.tableContainer}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-            }
-            onScroll={Platform.OS === "android" ? handleScroll : undefined}
-            scrollEventThrottle={16}
-          >
-            {sessions?.length === 0 ? (
-              <View style={dashboardStyles.emptyState}>
-                <Text variant="bodyLarge">Brak aktywnych sesji</Text>
-                <Text
-                  variant="bodyMedium"
-                  style={dashboardStyles.emptyStateText}
-                >
-                  Kliknij przycisk "+" aby utworzyć nową sesję
+      <View style={dashboardStyles.contentContainer}>
+        {activeTab === 'sessions' ? (
+          <>
+            {Platform.OS !== "android" && (
+              <Card
+                style={{ backgroundColor: theme.colors.surface, borderRadius: 4 }}
+              >
+                <Card.Content>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      padding: 10,
+                    }}
+                  >
+                    <StatItem value={sessions?.length} label="Wszystkie sesje" />
+                  </View>
+                </Card.Content>
+              </Card>
+            )}
+
+            {loading && !refreshing ? (
+              <View style={dashboardStyles.loadingContainer}>
+                <ActivityIndicator size="large" />
+                <Text style={dashboardStyles.loadingText}>
+                  Ładowanie sesji...
                 </Text>
-                <Button
-                  mode="contained"
-                  onPress={openCreateDialog}
-                  style={dashboardStyles.emptyStateButton}
-                >
-                  Utwórz pierwszą sesję
-                </Button>
               </View>
             ) : (
-              <View>
-                {sessions.map((session) => (
-                  <Card
-                    key={session.sessionId}
-                    style={dashboardStyles.mobileCard}
-                    onPress={() => openViewDialog(session)}
-                  >
-                    <Card.Title
-                      title={`Kod: ${session.sessionCode}`}
-                      titleStyle={dashboardStyles.mobileCardTitle}
-                      subtitle={
-                        `${getRhythmTypeName(session.rhythmType).slice(
-                          0,
-                          30
-                        )}` +
-                        `${
-                          getRhythmTypeName(session.rhythmType).length > 30
-                            ? "..."
-                            : ""
-                        }`
-                      }
-                      subtitleStyle={dashboardStyles.mobileCardSubtitle}
-                    />
-                    <Card.Content style={dashboardStyles.mobileCardContent}>
-                      <View style={dashboardStyles.mobileCardRow}>
-                        <Text style={dashboardStyles.mobileCardText}>
-                          Temperatura: {session.temperature}°C
-                        </Text>
-                        <Text style={dashboardStyles.mobileCardText}>
-                          BPM: {session.beatsPerMinute}
-                        </Text>
-                      </View>
-                      <View style={dashboardStyles.mobileCardActions}>
-                        <IconButton
-                          icon="pencil"
-                          size={24}
-                          onPress={(e) => {
-                            e.stopPropagation();
-                            openEditDialog(session);
-                          }}
-                          iconColor={theme.colors.primary}
+              <ScrollView
+                style={dashboardStyles.tableContainer}
+                refreshControl={
+                  <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                }
+                onScroll={Platform.OS === "android" ? handleScroll : undefined}
+                scrollEventThrottle={16}
+              >
+                {sessions?.length === 0 ? (
+                  <View style={dashboardStyles.emptyState}>
+                    <Text variant="bodyLarge">Brak aktywnych sesji</Text>
+                    <Text
+                      variant="bodyMedium"
+                      style={dashboardStyles.emptyStateText}
+                    >
+                      Kliknij przycisk "+" aby utworzyć nową sesję
+                    </Text>
+                    <Button
+                      mode="contained"
+                      onPress={openCreateDialog}
+                      style={dashboardStyles.emptyStateButton}
+                    >
+                      Utwórz pierwszą sesję
+                    </Button>
+                  </View>
+                ) : (
+                  <View>
+                    {sessions.map((session) => (
+                      <Card
+                        key={session.sessionId}
+                        style={dashboardStyles.mobileCard}
+                        onPress={() => openViewDialog(session)}
+                      >
+                        <Card.Title
+                          title={`Kod: ${session.sessionCode}`}
+                          titleStyle={dashboardStyles.mobileCardTitle}
+                          subtitle={
+                            `${getRhythmTypeName(session.rhythmType).slice(
+                              0,
+                              30
+                            )}` +
+                            `${
+                              getRhythmTypeName(session.rhythmType).length > 30
+                                ? "..."
+                                : ""
+                            }`
+                          }
+                          subtitleStyle={dashboardStyles.mobileCardSubtitle}
                         />
-                        <IconButton
-                          icon="delete"
-                          size={24}
-                          onPress={(e) => {
-                            e.stopPropagation();
-                            openDeleteDialog(session);
-                          }}
-                          iconColor={theme.colors.error}
-                        />
-                        <IconButton
-                          icon="volume-high"
-                          size={24}
-                          onPress={(e) => {
-                            e.stopPropagation();
-                            openSoundDialog(session);
-                          }}
-                          iconColor={theme.colors.secondary}
-                        />
-                        <View style={dashboardStyles.mobileIconContainer}>
-                          <IconButton
-                            icon="account-group"
-                            size={24}
-                            onPress={(e) => {
-                              e.stopPropagation();
-                              openStudentsDialog(session);
-                            }}
-                            iconColor={theme.colors.tertiary || "#9c27b0"}
-                          />
-                          {sessionStudents[session.sessionCode] &&
-                            sessionStudents[session.sessionCode].length > 0 && (
-                              <View style={dashboardStyles.studentCountBadge}>
-                                <Text style={dashboardStyles.studentCountText}>
-                                  {
-                                    sessionStudents[session.sessionCode]
-                                      .length
-                                  }
-                                </Text>
-                              </View>
-                            )}
-                        </View>
-                      </View>
-                    </Card.Content>
-                  </Card>
-                ))}
-              </View>
+                        <Card.Content style={dashboardStyles.mobileCardContent}>
+                          <View style={dashboardStyles.mobileCardRow}>
+                            <Text style={dashboardStyles.mobileCardText}>
+                              Temperatura: {session.temperature}°C
+                            </Text>
+                            <Text style={dashboardStyles.mobileCardText}>
+                              BPM: {session.beatsPerMinute}
+                            </Text>
+                          </View>
+                          <View style={dashboardStyles.mobileCardActions}>
+                            <IconButton
+                              icon="pencil"
+                              size={24}
+                              onPress={(e) => {
+                                e.stopPropagation();
+                                openEditDialog(session);
+                              }}
+                              iconColor={theme.colors.primary}
+                            />
+                            <IconButton
+                              icon="delete"
+                              size={24}
+                              onPress={(e) => {
+                                e.stopPropagation();
+                                openDeleteDialog(session);
+                              }}
+                              iconColor={theme.colors.error}
+                            />
+                            <IconButton
+                              icon="volume-high"
+                              size={24}
+                              onPress={(e) => {
+                                e.stopPropagation();
+                                openSoundDialog(session);
+                              }}
+                              iconColor={theme.colors.secondary}
+                            />
+                            <View style={dashboardStyles.mobileIconContainer}>
+                              <IconButton
+                                icon="account-group"
+                                size={24}
+                                onPress={(e) => {
+                                  e.stopPropagation();
+                                  openStudentsDialog(session);
+                                }}
+                                iconColor={theme.colors.tertiary || "#9c27b0"}
+                              />
+                              {sessionStudents[session.sessionCode] &&
+                                sessionStudents[session.sessionCode].length > 0 && (
+                                  <View style={dashboardStyles.studentCountBadge}>
+                                    <Text style={dashboardStyles.studentCountText}>
+                                      {
+                                        sessionStudents[session.sessionCode]
+                                          .length
+                                      }
+                                    </Text>
+                                  </View>
+                                )}
+                            </View>
+                          </View>
+                        </Card.Content>
+                      </Card>
+                    ))}
+                  </View>
+                )}
+              </ScrollView>
             )}
-          </ScrollView>
+          </>
+        ) : (
+          <AudioTab />
         )}
       </View>
 
@@ -505,13 +528,15 @@ return (
         />
       </Portal>
 
-      <FAB
-        icon="plus"
-        style={[dashboardStyles.fab, { backgroundColor: theme.colors.primary }]}
-        onPress={openCreateDialog}
-        color="#fff"
-        label="Utwórz sesję"
-      />
+      {activeTab === 'sessions' && (
+        <FAB
+          icon="plus"
+          style={[dashboardStyles.fab, { backgroundColor: theme.colors.primary }]}
+          onPress={openCreateDialog}
+          color="#fff"
+          label="Utwórz sesję"
+        />
+      )}
 
       <Snackbar
         visible={snackbarVisible}

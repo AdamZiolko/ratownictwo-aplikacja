@@ -103,9 +103,7 @@ export const loadAudioFromServer = async (audioIdOrName: string): Promise<Audio.
             }
           );
           return sound;
-        }
-
-        // Download and cache
+        }        // Download and cache
         console.log(`⬇️ Downloading audio ${serverAudioId} for playback...`);
         const downloadResponse = await audioApiService.streamAudio(serverAudioId);
         
@@ -113,7 +111,10 @@ export const loadAudioFromServer = async (audioIdOrName: string): Promise<Audio.
           throw new Error(`Failed to download audio: ${downloadResponse.status} ${downloadResponse.statusText}`);
         }
         
+        // More robust array buffer handling
         const arrayBuffer = await downloadResponse.arrayBuffer();
+        console.log(`📦 Downloaded ${arrayBuffer.byteLength} bytes for audio: ${serverAudioId}`);
+        
         const uint8Array = new Uint8Array(arrayBuffer);
         let binaryString = '';
         for (let i = 0; i < uint8Array.length; i++) {
@@ -124,6 +125,8 @@ export const loadAudioFromServer = async (audioIdOrName: string): Promise<Audio.
         await FileSystem.writeAsStringAsync(localPath, base64String, {
           encoding: FileSystem.EncodingType.Base64,
         });
+        
+        console.log(`💾 Audio cached to: ${localPath}`);
         
         const { sound } = await Audio.Sound.createAsync(
           { uri: localPath },

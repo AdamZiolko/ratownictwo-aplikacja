@@ -106,7 +106,6 @@ export const useAudioFileOperations = (onFileChange: () => void) => {
       setDialogState(prev => ({ ...prev, uploading: false }));
     }
   };
-
   const handleDeleteAudio = async () => {
     if (!dialogState.currentAudio) return;
     const audioIdToDelete = dialogState.currentAudio.id;
@@ -118,14 +117,6 @@ export const useAudioFileOperations = (onFileChange: () => void) => {
         deleteDialogVisible: false,
         currentAudio: null,
       }));
-      
-      // Remove from local cache if it exists
-      const localPath = getLocalAudioPath(audioIdToDelete);
-      const fileInfo = await FileSystem.getInfoAsync(localPath);
-      if (fileInfo.exists) {
-        await FileSystem.deleteAsync(localPath);
-        console.log('Deleted local cache for:', audioIdToDelete);
-      }
       onFileChange();
     } catch (error) {
       console.error('Błąd podczas usuwania:', error);
