@@ -21,7 +21,7 @@ export const soundFiles: Record<string, any> = {
   "Adult/Male/Difficult breathing.wav": require("../../../../assets/sounds/Adult/Male/Difficultbreathing.wav"),
   "Adult/Male/Hawk.wav": require("../../../../assets/sounds/Adult/Male/Hawk.wav"),
   "Adult/Male/Moaning (long).wav": require("../../../../assets/sounds/Adult/Male/Moaning(long).wav"),
-  "Adult/Male/oaning.wav": require("../../../../assets/sounds/Adult/Male/Moaning.wav"),
+  "Adult/Male/Moaning.wav": require("../../../../assets/sounds/Adult/Male/Moaning.wav"),
   "Adult/Male/No.wav": require("../../../../assets/sounds/Adult/Male/No.wav"),
   "Adult/Male/Ok.wav": require("../../../../assets/sounds/Adult/Male/Ok.wav"),
   "Adult/Male/Screaming (type 2).wav": require("../../../../assets/sounds/Adult/Male/Screaming(type2).wav"),
