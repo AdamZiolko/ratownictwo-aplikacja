@@ -42,6 +42,7 @@ import StudentsListDialog from "../modals/StudentsListDialog";
 import { Session } from "../types/types";
 import { createDashboardStyles } from "./DashboardStyles";
 import AudioTab from "./components/AudioTab";
+import ColorConfigTab from "./components/ColorConfigTab";
 import ChecklistDialog from "../modals/ChecklistDialog";
 
 const ExaminerDashboardScreen = () => {
@@ -272,6 +273,11 @@ return (
             label: 'Audio',
             icon: 'music',
           },
+          {
+            value: 'color-config',
+            label: 'Kolory',
+            icon: 'palette',
+          },
         ]}
         style={{ margin: 16 }}
       />
@@ -423,9 +429,14 @@ return (
               </ScrollView>
             )}
           </>
-        ) : (
+        ) : activeTab === 'audio' ? (
           <AudioTab />
-        )}
+        ) : activeTab === 'color-config' ? (
+          <ColorConfigTab 
+            sessionId={currentSession?.sessionId || null}
+            sessionCode={currentSession?.sessionCode || null}
+          />
+        ) : null}
       </View>
 
       <Portal>

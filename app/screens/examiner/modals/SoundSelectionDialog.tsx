@@ -31,6 +31,9 @@ interface SoundSelectionDialogProps {
   onServerAudioPauseCommand?: (audioId: string) => void;
   onServerAudioResumeCommand?: (audioId: string) => void;
   onServerAudioStopCommand?: (audioId: string) => void;
+  // New props for color assignment mode
+  isColorAssignmentMode?: boolean;
+  onSoundAssign?: (soundName: string | null, serverAudioId: string | null, isLooping: boolean) => void;
 }
 
 // Type definition for server audio files
@@ -149,6 +152,8 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
   onServerAudioPauseCommand,
   onServerAudioResumeCommand,
   onServerAudioStopCommand,
+  isColorAssignmentMode = false,
+  onSoundAssign,
 }) => {
   const theme = useTheme();
   const [activeTab, setActiveTab] = useState<"single" | "queue" | "server">("single");
@@ -332,7 +337,6 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
       setServerIsPlaying(true);
     }
   };
-
   const handleServerAudioStop = () => {
     if (onServerAudioStopCommand && selectedServerAudioId) {
       onServerAudioStopCommand(selectedServerAudioId);
@@ -341,15 +345,29 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
     }
   };
 
+  // New handlers for color assignment mode
+  const handleAssignSound = () => {
+    if (onSoundAssign && selectedSound) {
+      onSoundAssign(selectedSound, null, isLooping);
+    }
+  };
+
+  const handleAssignServerAudio = () => {
+    if (onSoundAssign && selectedServerAudioId) {
+      onSoundAssign(null, selectedServerAudioId, serverIsLooping);
+    }
+  };
+
   if (!session) return null;
 
-  return (
-    <Dialog
+  return (    <Dialog
       visible={visible}
       onDismiss={onDismiss}
       style={styles.dialog}
     >
-      <Dialog.Title style={styles.title}>Odtwórz dźwięk</Dialog.Title>
+      <Dialog.Title style={styles.title}>
+        {isColorAssignmentMode ? "Wybierz dźwięk dla koloru" : "Odtwórz dźwięk"}
+      </Dialog.Title>
 
       <View style={styles.tabsContainer}>
         <Button
@@ -453,6 +471,18 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
                   Odtwórz {selectedSound ? `(${selectedSound.split('/').pop()})` : '(wybierz dźwięk)'}
                 </Button>
 
+                {isColorAssignmentMode && (
+                  <Button
+                    onPress={handleAssignSound}
+                    disabled={!selectedSound}
+                    mode="contained"
+                    style={[styles.playButton, { backgroundColor: '#4CAF50' }]}
+                    icon="check"
+                  >
+                    Przypisz dźwięk {selectedSound ? `(${selectedSound.split('/').pop()})` : '(wybierz dźwięk)'}
+                  </Button>
+                )}
+
                 {isLooping && (
                   <View style={styles.controlIcons}>
                     <IconButton
@@ -503,6 +533,18 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
                 >
                   Odtwórz dla całej sesji {selectedServerAudioId ? `(${serverAudioFiles.find(f => f.id === selectedServerAudioId)?.name})` : '(wybierz plik)'}
                 </Button>
+
+                {isColorAssignmentMode && (
+                  <Button
+                    onPress={handleAssignServerAudio}
+                    disabled={!selectedServerAudioId}
+                    mode="contained"
+                    style={[styles.playButton, { backgroundColor: '#4CAF50' }]}
+                    icon="check"
+                  >
+                    Przypisz plik {selectedServerAudioId ? `(${serverAudioFiles.find(f => f.id === selectedServerAudioId)?.name})` : '(wybierz plik)'}
+                  </Button>
+                )}
 
                 {serverIsLooping && (
                   <View style={styles.controlIcons}>

@@ -27,6 +27,8 @@ import { useSessionManager } from "./hooks/useSessionManager";
 import { useVitalSigns } from "./hooks/useVitalSigns";
 import { useAudioManager } from "./hooks/useAudioManager";
 import { useNetworkMonitoring } from "./hooks/useNetworkMonitoring";
+import { useColorConfigs } from "./hooks/useColorConfigs";
+import ColorConfigDisplay from "./components/ColorConfigDisplay";
 
 const StudentSessionScreen = () => {
   const theme = useTheme();
@@ -57,11 +59,15 @@ const StudentSessionScreen = () => {
     respiratoryRate,
     formatBloodPressure,
   } = useVitalSigns(sessionData);
-
   const { audioReady, isPlayingServerAudio } = useAudioManager(
     accessCode?.toString(),
     sessionJoined
   );
+
+  const { colorConfigs, isLoading: colorConfigsLoading, error: colorConfigsError } = useColorConfigs({
+    sessionId: accessCode?.toString(),
+    sessionJoined,
+  });
 
   useNetworkMonitoring();
 
@@ -181,7 +187,6 @@ const StudentSessionScreen = () => {
             setIsSessionPanelExpanded={setIsSessionPanelExpanded}
             isMobile={!isWeb}
           />
-
           {sessionData.rhythmType !== undefined && (
             <Surface style={styles.cardContainer}>
               <EkgCardDisplay
@@ -190,9 +195,7 @@ const StudentSessionScreen = () => {
                 isRunning={true}
               />
             </Surface>
-          )}
-
-          <VitalSignsDisplay
+          )}          <VitalSignsDisplay
             temperature={temperature}
             bloodPressure={bloodPressure}
             spo2={spo2}
@@ -202,9 +205,12 @@ const StudentSessionScreen = () => {
             isFullscreen={isFullscreen}
           />
 
-          <Surface style={styles.cardContainer}>
-            <ColorSensor />
-          </Surface>
+          <ColorConfigDisplay
+            colorConfigs={colorConfigs}
+            isLoading={colorConfigsLoading}
+            error={colorConfigsError}
+          />
+
           <Surface style={styles.cardContainer}>
             <View style={styles.audioStatusContainer}>
               <MaterialCommunityIcons

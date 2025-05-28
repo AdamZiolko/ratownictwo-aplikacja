@@ -19,6 +19,9 @@ import {
 } from "react-native-ble-plx";
 import { decode as atob } from "base-64";
 import { Audio, AVPlaybackStatus } from "expo-av";
+import colorConfigService, { ColorConfig } from "@/services/ColorConfigService";
+import { socketService } from "@/services/SocketService";
+import audioApiService from "@/services/AudioApiService";
 
 // Stałe dla BLE
 const SERVICE_UUID = "12345678-1234-1234-1234-1234567890ab";
@@ -274,17 +277,23 @@ const detectComplexColor = (color: { r: number; g: number; b: number }): string 
   // Jeśli wszystko zawiedzie, wybierz losowo
   const colors = ["red", "green", "blue"];
   const randomIndex = Math.floor(Math.random() * colors.length);
-  console.log("[COLOR] Final random fallback:", colors[randomIndex]);
-  return colors[randomIndex];
+  console.log("[COLOR] Final random fallback:", colors[randomIndex]);  return colors[randomIndex];
 };
 
-export default function ColorSensor() {
+interface ColorSensorProps {
+  sessionId?: string | null;
+}
+
+export default function ColorSensor({ sessionId }: ColorSensorProps = {}) {
   // Stan BLE
   const [manager] = useState(() => new BleManager());
   const [bleState, setBleState] = useState<string>("Unknown");
   const [device, setDevice] = useState<Device | null>(null);
   const [sub, setSub] = useState<Subscription | null>(null);
   const [color, setColor] = useState({ r: 0, g: 0, b: 0 });
+  
+  // Stan konfiguracji kolorów
+  const [colorConfigs, setColorConfigs] = useState<ColorConfig[]>([]);
   const [status, setStatus] = useState<
     "idle" | "scanning" | "connected" | "monitoring" | "error"
   >("idle");
@@ -353,6 +362,32 @@ export default function ColorSensor() {
 
     initAudio();
   }, []);
+  // Ładowanie konfiguracji kolorów z serwera
+  useEffect(() => {
+    if (!sessionId) return;
+
+    async function loadColorConfigs() {
+      try {
+        const configs = await colorConfigService.getColorConfigs(sessionId!);
+        setColorConfigs(configs);
+        console.log("✅ Color configurations loaded:", configs);
+      } catch (error) {
+        console.error("❌ Error loading color configurations:", error);
+      }
+    }
+
+    loadColorConfigs();    // Nasłuchiwanie na zmiany konfiguracji kolorów przez WebSocket
+    const handleColorConfigListUpdate = (data: { sessionId: string; colorConfigs: ColorConfig[] }) => {
+      console.log("� Color config list updated:", data);
+      setColorConfigs(data.colorConfigs);
+    };
+
+    // Zarejestruj nasłuchiwanie WebSocket i zapisz funkcje cleanup
+    const cleanupListUpdate = socketService.on('color-config-list-update', handleColorConfigListUpdate);    // Cleanup przy odmontowaniu
+    return () => {
+      cleanupListUpdate();
+    };
+  }, [sessionId]);
 
   // Ładowanie dźwięków
   useEffect(() => {
@@ -517,22 +552,60 @@ export default function ColorSensor() {
     // Przekształć odległość na podobieństwo (im mniejsza odległość, tym większe podobieństwo)
     return 1 / (1 + distance);
   };
-  
-  // Pomocnicza funkcja do odtwarzania dźwięku dla danego koloru
+    // Pomocnicza funkcja do odtwarzania dźwięku dla danego koloru
   const playSound = async (colorName: string) => {
     if (!audioReady) return;
     
     console.log(`[AUDIO] Attempting to play sound for ${colorName}`);
+    
+    // Znajdź konfigurację dla tego koloru
+    const colorConfig = colorConfigs.find(config => 
+      config.color.toLowerCase() === colorName.toLowerCase() && config.isEnabled
+    );
+    
+    if (!colorConfig) {
+      console.log(`[AUDIO] No configuration found for color ${colorName}, using default sound`);
+      // Fallback do domyślnego dźwięku
+      const defaultSoundFile = DEFAULT_SOUND_FILES[colorName as keyof typeof DEFAULT_SOUND_FILES];
+      if (!defaultSoundFile) {
+        console.log(`[AUDIO] No default sound available for color ${colorName}`);
+        return;
+      }
+      await playLocalSound(colorName, defaultSoundFile, 1.0, loopSound);
+      return;
+    }
+    
+    console.log(`[AUDIO] Found configuration for ${colorName}:`, colorConfig);
     
     // Zatrzymaj aktualnie odtwarzany dźwięk, jeśli jest inny niż ten, który chcemy odtworzyć
     if (currentSound && currentSound !== colorName) {
       await stopCurrentSound();
     }
     
+    try {      if (colorConfig.serverAudioId) {
+        // Odtwarzaj dźwięk ze serwera
+        console.log(`[AUDIO] Playing server audio for ${colorName}, serverAudioId: ${colorConfig.serverAudioId}`);
+        await playServerSound(colorName, colorConfig.serverAudioId, colorConfig.volume, colorConfig.isLooping);
+      } else if (colorConfig.soundName) {
+        // Odtwarzaj lokalny dźwięk
+        console.log(`[AUDIO] Playing local sound for ${colorName}, soundName: ${colorConfig.soundName}`);
+        const localSoundFile = getLocalSoundFile(colorConfig.soundName);
+        if (localSoundFile) {
+          await playLocalSound(colorName, localSoundFile, colorConfig.volume, colorConfig.isLooping);
+        } else {
+          console.error(`[AUDIO] Local sound file not found for soundName: ${colorConfig.soundName}`);
+        }
+      } else {
+        console.error(`[AUDIO] Invalid configuration for ${colorName}: no soundName or serverAudioId`);
+      }
+    } catch (error) {
+      console.error(`[AUDIO] Error playing configured sound for ${colorName}:`, error);
+    }
+  };
+
+  // Funkcja do odtwarzania lokalnego dźwięku
+  const playLocalSound = async (colorName: string, soundFile: any, volume: number, loop: boolean) => {
     let sound = soundRefs.current[colorName];
-    
-    // Pobierz odpowiedni dźwięk dla koloru z mapowania
-    const soundFile = soundMappings[colorName as keyof typeof soundMappings];
     
     try {
       // Sprawdź, czy dźwięk jest już załadowany i odtwarzany
@@ -545,17 +618,18 @@ export default function ColorSensor() {
           
           // Jeśli dźwięk jest już odtwarzany, nie rób nic
           if (isPlaying) {
-            console.log(`[AUDIO] Sound for ${colorName} is already playing`);
+            console.log(`[AUDIO] Local sound for ${colorName} is already playing`);
             if (currentSound !== colorName) setCurrentSound(colorName);
             return;
           }
           
           // Jeśli dźwięk jest załadowany, ale nie jest odtwarzany, odtwórz go
-          console.log(`[AUDIO] Sound for ${colorName} is loaded but not playing, starting playback`);
+          console.log(`[AUDIO] Local sound for ${colorName} is loaded but not playing, starting playback`);
           await sound.setStatusAsync({ 
-            isLooping: loopSound,
+            isLooping: loop,
             shouldPlay: true,
-            positionMillis: 0
+            positionMillis: 0,
+            volume: volume
           });
           await sound.playAsync();
           setCurrentSound(colorName);
@@ -564,22 +638,22 @@ export default function ColorSensor() {
       }
       
       // Jeśli dźwięk nie istnieje lub nie jest załadowany, utwórz nowy
-      console.log(`[AUDIO] Creating new sound for ${colorName}`);
+      console.log(`[AUDIO] Creating new local sound for ${colorName}`);
       sound = new Audio.Sound();
       await sound.loadAsync(soundFile);
       
       // Ustaw parametry odtwarzania
       await sound.setStatusAsync({ 
-        isLooping: loopSound,
+        isLooping: loop,
         shouldPlay: true,
         positionMillis: 0,
-        volume: 1.0
+        volume: volume
       });
       
       // Dodaj nasłuchiwanie na zakończenie odtwarzania
       sound.setOnPlaybackStatusUpdate((status) => {
-        if ('didJustFinish' in status && status.didJustFinish && !loopSound) {
-          console.log(`[AUDIO] Sound for ${colorName} finished playing`);
+        if ('didJustFinish' in status && status.didJustFinish && !loop) {
+          console.log(`[AUDIO] Local sound for ${colorName} finished playing`);
           setCurrentSound(null);
         }
       });
@@ -590,7 +664,7 @@ export default function ColorSensor() {
       setCurrentSound(colorName);
       
     } catch (error) {
-      console.error(`[AUDIO] Error playing sound for ${colorName}:`, error);
+      console.error(`[AUDIO] Error playing local sound for ${colorName}:`, error);
       
       // W przypadku błędu, spróbuj utworzyć nowy obiekt dźwięku
       try {
@@ -600,16 +674,83 @@ export default function ColorSensor() {
         }
         
         const newSound = new Audio.Sound();
-        await newSound.loadAsync(soundMappings[colorName as keyof typeof soundMappings]);
-        await newSound.setStatusAsync({ isLooping: loopSound, shouldPlay: true });
+        await newSound.loadAsync(soundFile);
+        await newSound.setStatusAsync({ isLooping: loop, shouldPlay: true, volume: volume });
         await newSound.playAsync();
         
         soundRefs.current[colorName] = newSound;
         setCurrentSound(colorName);
       } catch (retryError) {
-        console.error(`[AUDIO] Failed to reload sound for ${colorName}:`, retryError);
+        console.error(`[AUDIO] Failed to reload local sound for ${colorName}:`, retryError);
       }
     }
+  };
+  // Funkcja do odtwarzania dźwięku ze serwera
+  const playServerSound = async (colorName: string, serverAudioId: string, volume: number, loop: boolean) => {
+    try {
+      console.log(`[AUDIO] Starting server audio playback for ${colorName}, serverAudioId: ${serverAudioId}`);
+      
+      // Jeśli już odtwarzamy ten sam dźwięk serwera, nie uruchamiaj ponownie
+      if (currentSound === colorName) {
+        console.log(`[AUDIO] Server sound for ${colorName} is already playing`);
+        return;
+      }
+      
+      // Pobierz strumień audio ze serwera
+      const response = await audioApiService.streamAudio(serverAudioId);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to stream audio: ${response.status} ${response.statusText}`);
+      }
+      
+      // Konwertuj response na blob
+      const audioBlob = await response.blob();
+      
+      // Utwórz URL do blob'a
+      const audioUrl = URL.createObjectURL(audioBlob);
+      
+      // Utwórz nowy obiekt Audio.Sound
+      const sound = new Audio.Sound();
+      
+      // Załaduj dźwięk z URL
+      await sound.loadAsync({ uri: audioUrl });
+      
+      // Ustaw parametry odtwarzania
+      await sound.setStatusAsync({ 
+        isLooping: loop,
+        shouldPlay: true,
+        positionMillis: 0,
+        volume: volume
+      });
+      
+      // Dodaj nasłuchiwanie na zakończenie odtwarzania
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if ('didJustFinish' in status && status.didJustFinish && !loop) {
+          console.log(`[AUDIO] Server sound for ${colorName} finished playing`);
+          setCurrentSound(null);
+          // Zwolnij URL blob'a
+          URL.revokeObjectURL(audioUrl);
+        }
+      });
+      
+      // Odtwórz dźwięk
+      await sound.playAsync();
+      
+      // Zapisz referencję do dźwięku
+      soundRefs.current[colorName] = sound;
+      setCurrentSound(colorName);
+      
+      console.log(`✅ Server audio started for ${colorName}`);
+      
+    } catch (error) {
+      console.error(`[AUDIO] Error playing server sound for ${colorName}:`, error);
+    }
+  };
+
+  // Funkcja pomocnicza do znajdowania lokalnego pliku dźwiękowego na podstawie nazwy
+  const getLocalSoundFile = (soundName: string) => {
+    const sound = AVAILABLE_SOUNDS.find(s => s.id === soundName || s.name === soundName);
+    return sound ? sound.file : null;
   };
 
   // Funkcja do odtwarzania dźwięku na podstawie wykrytego koloru
@@ -678,7 +819,7 @@ export default function ColorSensor() {
     await playSound(dominantColor);
   };
 
-  // Pomocnicza funkcja do zatrzymywania aktualnie odtwarzanego dźwięku
+  // Pomocnicza funkcja do zatrzymywania aktualnie odtwarzanego dźwięku  const stopCurrentSound = async () => {  // Funkcja do zatrzymywania aktualnie odtwarzanego dźwięku
   const stopCurrentSound = async () => {
     if (!currentSound || !soundRefs.current[currentSound]) return;
     
@@ -712,14 +853,6 @@ export default function ColorSensor() {
       
     } catch (error) {
       console.error(`[AUDIO] Error stopping sound for ${currentSound}:`, error);
-      
-      // W przypadku błędu, spróbuj utworzyć nowy obiekt dźwięku
-      try {
-        await soundRefs.current[currentSound].unloadAsync().catch(() => {});
-        const newSound = new Audio.Sound();
-        await newSound.loadAsync(soundMappings[currentSound as keyof typeof soundMappings]);
-        soundRefs.current[currentSound] = newSound;
-      } catch (unloadError) {}
       
       // Wyczyść referencję do aktualnie odtwarzanego dźwięku
       setCurrentSound(null);
