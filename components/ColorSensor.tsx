@@ -19,36 +19,23 @@ import {
 } from "react-native-ble-plx";
 import { decode as atob } from "base-64";
 import { Audio, AVPlaybackStatus } from "expo-av";
-import colorConfigService, { ColorConfig } from "@/services/ColorConfigService";
-import { socketService } from "@/services/SocketService";
-import audioApiService from "@/services/AudioApiService";
 
 // Stałe dla BLE
 const SERVICE_UUID = "12345678-1234-1234-1234-1234567890ab";
 const CHARACTERISTIC_UUID = "abcd1234-5678-90ab-cdef-1234567890ab";
-const DEVICE_NAME = "ESP32C3_RGB";
+const DEVICE_NAME = "ESP32_RGB_DIST"; // Zaktualizowana nazwa urządzenia zgodnie z kodem Arduino
 
 // Flaga globalna dla automatycznego ponownego połączenia
 let GLOBAL_AUTO_RECONNECT_ENABLED = true;
 
-// Progi dla wykrywania kolorów
-const COLOR_RATIO_THRESHOLDS = {
-  RED: 0.4,    // Próg dla czerwonego
-  GREEN: 0.4,  // Próg dla zielonego
-  BLUE: 0.4,   // Próg dla niebieskiego
-  MIN_BRIGHTNESS: 5, // Minimalny próg jasności
-};
+// Minimalny próg jasności dla wykrywania kolorów
+const MIN_BRIGHTNESS = 10;
 
-// Kalibracja kolorów - dostosowana do równych wartości RGB
-const COLOR_CALIBRATION = {
-  RED_BOOST: 1.0,    // Bez wzmocnienia dla czerwonego
-  GREEN_BOOST: 1.0,  // Zielony bez zmian
-  BLUE_BOOST: 1.0,   // Niebieski bez zmian
-  
-  // Typowe wartości dla poszczególnych kolorów
-  TYPICAL_RED: { r: 20, g: 5, b: 5 },
-  TYPICAL_GREEN: { r: 5, g: 20, b: 5 },
-  TYPICAL_BLUE: { r: 5, g: 5, b: 20 },
+// Prototypy kolorów (R,G,B) - zgodne z kodem Arduino
+const COLOR_PROTOTYPES = {
+  RED: { r: 62, g: 48, b: 69 },    // czerwony
+  GREEN: { r: 34, g: 73, b: 75 },  // zielony
+  BLUE: { r: 42, g: 112, b: 205 }, // niebieski
 };
 
 // Domyślne dźwięki dla kolorów
@@ -56,9 +43,6 @@ const DEFAULT_SOUND_FILES = {
   red: require("../assets/sounds/Adult/Male/Screaming.wav"),
   green: require("../assets/sounds/Adult/Female/Screaming.wav"),
   blue: require("../assets/sounds/Child/Screaming.wav"),
-  yellow: require("../assets/sounds/Infant/Screaming.wav"),
-  orange: require("../assets/sounds/Speech/Chesthurts.wav"),
-  purple: require("../assets/sounds/Speech/Imfeelingverydizzy.wav"),
 };
 
 // Lista dostępnych dźwięków do wyboru
@@ -168,71 +152,163 @@ const isSameSound = (file1: any, file2: any) => {
   return JSON.stringify(file1) === JSON.stringify(file2);
 };
 
-// Funkcja do wykrywania kolorów złożonych
+// Funkcja do wykrywania kolorów na podstawie odległości od prototypów
 const detectComplexColor = (color: { r: number; g: number; b: number }): string => {
   const { r, g, b } = color;
   const sum = r + g + b;
   
-  // Zabezpieczenie przed dzieleniem przez zero
-  if (sum === 0) return "none";
-  
-  // Oblicz proporcje kolorów
-  const rRatio = r / sum;
-  const gRatio = g / sum;
-  const bRatio = b / sum;
-  
-  console.log("[COLOR] Analyzing color ratios - R:", rRatio.toFixed(2), "G:", gRatio.toFixed(2), "B:", bRatio.toFixed(2));
-  console.log("[COLOR] Raw values - R:", r, "G:", g, "B:", b);
-  
-  // Dla równych wartości RGB (biały/szary), zwróć "none"
-  const isAllEqual = Math.abs(rRatio - gRatio) < 0.05 && Math.abs(rRatio - bRatio) < 0.05 && Math.abs(gRatio - bRatio) < 0.05;
-  if (isAllEqual) {
-    console.log("[COLOR] All colors are equal, likely white/gray");
-    
-    // Losowo wybierz kolor, aby nie zawsze był ten sam
-    const colors = ["red", "green", "blue"];
-    const randomIndex = Math.floor(Math.random() * colors.length);
-    console.log("[COLOR] Randomly selected:", colors[randomIndex]);
-    return colors[randomIndex];
+  // Zabezpieczenie przed dzieleniem przez zero lub zbyt niską jasnością
+  if (sum === 0 || sum <= MIN_BRIGHTNESS) {
+    console.log("[COLOR] Insufficient brightness or zero values");
+    return "none";
   }
   
-  // Progi dla kolorów podstawowych
-  const RED_THRESHOLD = 0.36;
-  const GREEN_THRESHOLD = 0.36;
-  const BLUE_THRESHOLD = 0.36;
+  console.log("[COLOR] Raw values - R:", r, "G:", g, "B:", b);
   
-  // Wykrywanie kolorów podstawowych z mniejszym progiem różnicy
-  if (rRatio > RED_THRESHOLD && rRatio > gRatio * 1.1 && rRatio > bRatio * 1.1) {
-    console.log("[COLOR] Detected RED based on ratio");
+  // Oblicz odległości do prototypów kolorów
+  const distances = {
+    red: calculateDistance(color, COLOR_PROTOTYPES.RED),
+    green: calculateDistance(color, COLOR_PROTOTYPES.GREEN),
+    blue: calculateDistance(color, COLOR_PROTOTYPES.BLUE)
+  };
+  
+  console.log("[COLOR] Distances - Red:", distances.red.toFixed(2), "Green:", distances.green.toFixed(2), "Blue:", distances.blue.toFixed(2));
+  
+  // Znajdź kolor z najmniejszą odległością
+  let minDistance = Number.MAX_VALUE;
+  let detectedColor = "none";
+  
+  for (const [color, distance] of Object.entries(distances)) {
+    if (distance < minDistance) {
+      minDistance = distance;
+      detectedColor = color;
+    }
+  }
+  
+  console.log(`[COLOR] Detected ${detectedColor.toUpperCase()} with distance ${minDistance.toFixed(2)}`);
+  return detectedColor;
+};
+
+// Funkcja pomocnicza do obliczania odległości euklidesowej między kolorami
+const calculateDistance = (color1: { r: number; g: number; b: number }, color2: { r: number; g: number; b: number }): number => {
+  return Math.sqrt(
+    Math.pow(color1.r - color2.r, 2) +
+    Math.pow(color1.g - color2.g, 2) +
+    Math.pow(color1.b - color2.b, 2)
+  );
+};
+  
+  // Dla równych wartości RGB (biały/szary)
+  const isWhite = Math.abs(rRatio - gRatio) < COLOR_RATIO_THRESHOLDS.WHITE_THRESHOLD && 
+                 Math.abs(rRatio - bRatio) < COLOR_RATIO_THRESHOLDS.WHITE_THRESHOLD && 
+                 Math.abs(gRatio - bRatio) < COLOR_RATIO_THRESHOLDS.WHITE_THRESHOLD;
+                 
+  // Sprawdź, czy wartości są prawie identyczne (jak w przypadku 501, 501, 501)
+  const isAllSimilar = Math.abs(r - g) < 10 && Math.abs(r - b) < 10 && Math.abs(g - b) < 10;
+  
+  // Jeśli wszystkie wartości są prawie identyczne, zwróć "none"
+  if (isAllSimilar && r > 400 && r < 600) {
+    console.log("[COLOR] All RGB values are similar and in mid-range, likely sensor error");
+    return "none";
+  }
+  
+  if (isWhite) {
+    console.log("[COLOR] Detected white/gray (equal RGB values)");
+    
+    // Dla białego/szarego, sprawdź czy któryś kolor ma minimalną przewagę
+    if (rRatio > gRatio && rRatio > bRatio) {
+      console.log("[COLOR] White with slight red tint");
+      return "red";
+    } else if (gRatio > rRatio && gRatio > bRatio) {
+      console.log("[COLOR] White with slight green tint");
+      return "green";
+    } else if (bRatio > rRatio && bRatio > gRatio) {
+      console.log("[COLOR] White with slight blue tint");
+      return "blue";
+    } else {
+      // Jeśli wszystkie są dokładnie równe, wybierz losowo
+      const colors = ["red", "green", "blue"];
+      const randomIndex = Math.floor(Math.random() * colors.length);
+      console.log("[COLOR] Pure white, randomly selected:", colors[randomIndex]);
+      return colors[randomIndex];
+    }
+  }
+  
+  // Oblicz podobieństwo do typowych kolorów
+  const similarities = {
+    red: calculateSimilarity(color, COLOR_CALIBRATION.TYPICAL_RED),
+    green: calculateSimilarity(color, COLOR_CALIBRATION.TYPICAL_GREEN),
+    blue: calculateSimilarity(color, COLOR_CALIBRATION.TYPICAL_BLUE),
+    yellow: calculateSimilarity(color, COLOR_CALIBRATION.TYPICAL_YELLOW),
+    orange: calculateSimilarity(color, COLOR_CALIBRATION.TYPICAL_ORANGE),
+    purple: calculateSimilarity(color, COLOR_CALIBRATION.TYPICAL_PURPLE)
+  };
+  
+  console.log("[COLOR] Similarities:", 
+    "R:", similarities.red.toFixed(2), 
+    "G:", similarities.green.toFixed(2), 
+    "B:", similarities.blue.toFixed(2),
+    "Y:", similarities.yellow.toFixed(2),
+    "O:", similarities.orange.toFixed(2),
+    "P:", similarities.purple.toFixed(2)
+  );
+  
+  // Znajdź kolor z największym podobieństwem
+  let maxSimilarity = 0;
+  let dominantColor = "none";
+  
+  for (const [color, similarity] of Object.entries(similarities)) {
+    if (similarity > maxSimilarity) {
+      maxSimilarity = similarity;
+      dominantColor = color;
+    }
+  }
+  
+  // Sprawdź, czy podobieństwo jest wystarczająco duże
+  // Podwyższony próg dla bardziej precyzyjnego wykrywania kolorów
+  if (maxSimilarity > 0.45) {
+    console.log(`[COLOR] Detected ${dominantColor.toUpperCase()} based on similarity (${maxSimilarity.toFixed(2)})`);
+    return dominantColor;
+  }
+  
+  // Jeśli podobieństwo jest zbyt małe, zwróć "none"
+  console.log(`[COLOR] No dominant color detected, max similarity (${maxSimilarity.toFixed(2)}) is below threshold`);
+  return "none";
+  
+  // Jeśli podobieństwo jest zbyt małe, użyj tradycyjnej metody opartej na progach
+  
+  // Wykrywanie kolorów podstawowych
+  if (rRatio > COLOR_RATIO_THRESHOLDS.RED && rRatio > gRatio * 1.1 && rRatio > bRatio * 1.1) {
+    console.log("[COLOR] Detected RED based on ratio threshold");
     return "red";
   }
   
-  if (gRatio > GREEN_THRESHOLD && gRatio > rRatio * 1.1 && gRatio > bRatio * 1.1) {
-    console.log("[COLOR] Detected GREEN based on ratio");
+  if (gRatio > COLOR_RATIO_THRESHOLDS.GREEN && gRatio > rRatio * 1.1 && gRatio > bRatio * 1.1) {
+    console.log("[COLOR] Detected GREEN based on ratio threshold");
     return "green";
   }
   
-  if (bRatio > BLUE_THRESHOLD && bRatio > rRatio * 1.1 && bRatio > gRatio * 1.1) {
-    console.log("[COLOR] Detected BLUE based on ratio");
+  if (bRatio > COLOR_RATIO_THRESHOLDS.BLUE && bRatio > rRatio * 1.1 && bRatio > gRatio * 1.1) {
+    console.log("[COLOR] Detected BLUE based on ratio threshold");
     return "blue";
   }
   
   // Wykrywanie kolorów złożonych
   
   // Żółty (czerwony + zielony)
-  if (rRatio > 0.3 && gRatio > 0.3 && bRatio < 0.3 && Math.abs(rRatio - gRatio) < 0.15) {
+  if (rRatio > 0.3 && gRatio > 0.3 && bRatio < 0.25 && Math.abs(rRatio - gRatio) < 0.15) {
     console.log("[COLOR] Detected YELLOW based on R+G combination");
     return "yellow";
   }
   
   // Pomarańczowy (dużo czerwonego, trochę zielonego)
-  if (rRatio > 0.4 && gRatio > 0.2 && gRatio < 0.4 && bRatio < 0.3 && rRatio > gRatio * 1.1) {
+  if (rRatio > 0.4 && gRatio > 0.2 && gRatio < 0.4 && bRatio < 0.25 && rRatio > gRatio * 1.1) {
     console.log("[COLOR] Detected ORANGE based on R>G combination");
     return "orange";
   }
   
   // Fioletowy (czerwony + niebieski)
-  if (rRatio > 0.3 && bRatio > 0.3 && gRatio < 0.3 && Math.abs(rRatio - bRatio) < 0.15) {
+  if (rRatio > 0.3 && bRatio > 0.3 && gRatio < 0.25 && Math.abs(rRatio - bRatio) < 0.15) {
     console.log("[COLOR] Detected PURPLE based on R+B combination");
     return "purple";
   }
@@ -245,7 +321,7 @@ const detectComplexColor = (color: { r: number; g: number; b: number }): string 
   const maxDiff = Math.max(rDiff, gDiff, bDiff);
   
   // Jeśli jest wyraźna różnica, wybierz kolor z największą różnicą
-  if (maxDiff > 0.05) {
+  if (maxDiff > COLOR_RATIO_THRESHOLDS.COLOR_DIFF_THRESHOLD) {
     if (maxDiff === rDiff) {
       console.log("[COLOR] Selected RED based on maximum difference");
       return "red";
@@ -277,23 +353,17 @@ const detectComplexColor = (color: { r: number; g: number; b: number }): string 
   // Jeśli wszystko zawiedzie, wybierz losowo
   const colors = ["red", "green", "blue"];
   const randomIndex = Math.floor(Math.random() * colors.length);
-  console.log("[COLOR] Final random fallback:", colors[randomIndex]);  return colors[randomIndex];
+  console.log("[COLOR] Final random fallback:", colors[randomIndex]);
+  return colors[randomIndex];
 };
 
-interface ColorSensorProps {
-  sessionId?: string | null;
-}
-
-export default function ColorSensor({ sessionId }: ColorSensorProps = {}) {
+export default function ColorSensor() {
   // Stan BLE
   const [manager] = useState(() => new BleManager());
   const [bleState, setBleState] = useState<string>("Unknown");
   const [device, setDevice] = useState<Device | null>(null);
   const [sub, setSub] = useState<Subscription | null>(null);
   const [color, setColor] = useState({ r: 0, g: 0, b: 0 });
-  
-  // Stan konfiguracji kolorów
-  const [colorConfigs, setColorConfigs] = useState<ColorConfig[]>([]);
   const [status, setStatus] = useState<
     "idle" | "scanning" | "connected" | "monitoring" | "error"
   >("idle");
@@ -306,15 +376,11 @@ export default function ColorSensor({ sessionId }: ColorSensorProps = {}) {
   // Stan audio
   const [audioReady, setAudioReady] = useState(false);
   const [currentSound, setCurrentSound] = useState<string | null>(null);
-  const [showSoundMenu, setShowSoundMenu] = useState<boolean>(false);
   const [loopSound, setLoopSound] = useState<boolean>(true);
   const soundRefs = useRef<{ [key: string]: Audio.Sound | null }>({
     red: null,
     green: null,
     blue: null,
-    yellow: null,
-    orange: null,
-    purple: null,
   });
 
   // Stan dla mapowania kolorów na dźwięki
@@ -322,9 +388,6 @@ export default function ColorSensor({ sessionId }: ColorSensorProps = {}) {
     red: DEFAULT_SOUND_FILES.red,
     green: DEFAULT_SOUND_FILES.green,
     blue: DEFAULT_SOUND_FILES.blue,
-    yellow: DEFAULT_SOUND_FILES.yellow,
-    orange: DEFAULT_SOUND_FILES.orange,
-    purple: DEFAULT_SOUND_FILES.purple,
   });
 
   // Inicjalizacja audio
@@ -362,32 +425,6 @@ export default function ColorSensor({ sessionId }: ColorSensorProps = {}) {
 
     initAudio();
   }, []);
-  // Ładowanie konfiguracji kolorów z serwera
-  useEffect(() => {
-    if (!sessionId) return;
-
-    async function loadColorConfigs() {
-      try {
-        const configs = await colorConfigService.getColorConfigs(sessionId!);
-        setColorConfigs(configs);
-        console.log("✅ Color configurations loaded:", configs);
-      } catch (error) {
-        console.error("❌ Error loading color configurations:", error);
-      }
-    }
-
-    loadColorConfigs();    // Nasłuchiwanie na zmiany konfiguracji kolorów przez WebSocket
-    const handleColorConfigListUpdate = (data: { sessionId: string; colorConfigs: ColorConfig[] }) => {
-      console.log("� Color config list updated:", data);
-      setColorConfigs(data.colorConfigs);
-    };
-
-    // Zarejestruj nasłuchiwanie WebSocket i zapisz funkcje cleanup
-    const cleanupListUpdate = socketService.on('color-config-list-update', handleColorConfigListUpdate);    // Cleanup przy odmontowaniu
-    return () => {
-      cleanupListUpdate();
-    };
-  }, [sessionId]);
 
   // Ładowanie dźwięków
   useEffect(() => {
@@ -552,60 +589,22 @@ export default function ColorSensor({ sessionId }: ColorSensorProps = {}) {
     // Przekształć odległość na podobieństwo (im mniejsza odległość, tym większe podobieństwo)
     return 1 / (1 + distance);
   };
-    // Pomocnicza funkcja do odtwarzania dźwięku dla danego koloru
+  
+  // Pomocnicza funkcja do odtwarzania dźwięku dla danego koloru
   const playSound = async (colorName: string) => {
     if (!audioReady) return;
     
     console.log(`[AUDIO] Attempting to play sound for ${colorName}`);
-    
-    // Znajdź konfigurację dla tego koloru
-    const colorConfig = colorConfigs.find(config => 
-      config.color.toLowerCase() === colorName.toLowerCase() && config.isEnabled
-    );
-    
-    if (!colorConfig) {
-      console.log(`[AUDIO] No configuration found for color ${colorName}, using default sound`);
-      // Fallback do domyślnego dźwięku
-      const defaultSoundFile = DEFAULT_SOUND_FILES[colorName as keyof typeof DEFAULT_SOUND_FILES];
-      if (!defaultSoundFile) {
-        console.log(`[AUDIO] No default sound available for color ${colorName}`);
-        return;
-      }
-      await playLocalSound(colorName, defaultSoundFile, 1.0, loopSound);
-      return;
-    }
-    
-    console.log(`[AUDIO] Found configuration for ${colorName}:`, colorConfig);
     
     // Zatrzymaj aktualnie odtwarzany dźwięk, jeśli jest inny niż ten, który chcemy odtworzyć
     if (currentSound && currentSound !== colorName) {
       await stopCurrentSound();
     }
     
-    try {      if (colorConfig.serverAudioId) {
-        // Odtwarzaj dźwięk ze serwera
-        console.log(`[AUDIO] Playing server audio for ${colorName}, serverAudioId: ${colorConfig.serverAudioId}`);
-        await playServerSound(colorName, colorConfig.serverAudioId, colorConfig.volume, colorConfig.isLooping);
-      } else if (colorConfig.soundName) {
-        // Odtwarzaj lokalny dźwięk
-        console.log(`[AUDIO] Playing local sound for ${colorName}, soundName: ${colorConfig.soundName}`);
-        const localSoundFile = getLocalSoundFile(colorConfig.soundName);
-        if (localSoundFile) {
-          await playLocalSound(colorName, localSoundFile, colorConfig.volume, colorConfig.isLooping);
-        } else {
-          console.error(`[AUDIO] Local sound file not found for soundName: ${colorConfig.soundName}`);
-        }
-      } else {
-        console.error(`[AUDIO] Invalid configuration for ${colorName}: no soundName or serverAudioId`);
-      }
-    } catch (error) {
-      console.error(`[AUDIO] Error playing configured sound for ${colorName}:`, error);
-    }
-  };
-
-  // Funkcja do odtwarzania lokalnego dźwięku
-  const playLocalSound = async (colorName: string, soundFile: any, volume: number, loop: boolean) => {
     let sound = soundRefs.current[colorName];
+    
+    // Pobierz odpowiedni dźwięk dla koloru z mapowania
+    const soundFile = soundMappings[colorName as keyof typeof soundMappings];
     
     try {
       // Sprawdź, czy dźwięk jest już załadowany i odtwarzany
@@ -618,18 +617,17 @@ export default function ColorSensor({ sessionId }: ColorSensorProps = {}) {
           
           // Jeśli dźwięk jest już odtwarzany, nie rób nic
           if (isPlaying) {
-            console.log(`[AUDIO] Local sound for ${colorName} is already playing`);
+            console.log(`[AUDIO] Sound for ${colorName} is already playing`);
             if (currentSound !== colorName) setCurrentSound(colorName);
             return;
           }
           
           // Jeśli dźwięk jest załadowany, ale nie jest odtwarzany, odtwórz go
-          console.log(`[AUDIO] Local sound for ${colorName} is loaded but not playing, starting playback`);
+          console.log(`[AUDIO] Sound for ${colorName} is loaded but not playing, starting playback`);
           await sound.setStatusAsync({ 
-            isLooping: loop,
+            isLooping: loopSound,
             shouldPlay: true,
-            positionMillis: 0,
-            volume: volume
+            positionMillis: 0
           });
           await sound.playAsync();
           setCurrentSound(colorName);
@@ -638,22 +636,22 @@ export default function ColorSensor({ sessionId }: ColorSensorProps = {}) {
       }
       
       // Jeśli dźwięk nie istnieje lub nie jest załadowany, utwórz nowy
-      console.log(`[AUDIO] Creating new local sound for ${colorName}`);
+      console.log(`[AUDIO] Creating new sound for ${colorName}`);
       sound = new Audio.Sound();
       await sound.loadAsync(soundFile);
       
       // Ustaw parametry odtwarzania
       await sound.setStatusAsync({ 
-        isLooping: loop,
+        isLooping: loopSound,
         shouldPlay: true,
         positionMillis: 0,
-        volume: volume
+        volume: 1.0
       });
       
       // Dodaj nasłuchiwanie na zakończenie odtwarzania
       sound.setOnPlaybackStatusUpdate((status) => {
-        if ('didJustFinish' in status && status.didJustFinish && !loop) {
-          console.log(`[AUDIO] Local sound for ${colorName} finished playing`);
+        if ('didJustFinish' in status && status.didJustFinish && !loopSound) {
+          console.log(`[AUDIO] Sound for ${colorName} finished playing`);
           setCurrentSound(null);
         }
       });
@@ -664,7 +662,7 @@ export default function ColorSensor({ sessionId }: ColorSensorProps = {}) {
       setCurrentSound(colorName);
       
     } catch (error) {
-      console.error(`[AUDIO] Error playing local sound for ${colorName}:`, error);
+      console.error(`[AUDIO] Error playing sound for ${colorName}:`, error);
       
       // W przypadku błędu, spróbuj utworzyć nowy obiekt dźwięku
       try {
@@ -674,83 +672,16 @@ export default function ColorSensor({ sessionId }: ColorSensorProps = {}) {
         }
         
         const newSound = new Audio.Sound();
-        await newSound.loadAsync(soundFile);
-        await newSound.setStatusAsync({ isLooping: loop, shouldPlay: true, volume: volume });
+        await newSound.loadAsync(soundMappings[colorName as keyof typeof soundMappings]);
+        await newSound.setStatusAsync({ isLooping: loopSound, shouldPlay: true });
         await newSound.playAsync();
         
         soundRefs.current[colorName] = newSound;
         setCurrentSound(colorName);
       } catch (retryError) {
-        console.error(`[AUDIO] Failed to reload local sound for ${colorName}:`, retryError);
+        console.error(`[AUDIO] Failed to reload sound for ${colorName}:`, retryError);
       }
     }
-  };
-  // Funkcja do odtwarzania dźwięku ze serwera
-  const playServerSound = async (colorName: string, serverAudioId: string, volume: number, loop: boolean) => {
-    try {
-      console.log(`[AUDIO] Starting server audio playback for ${colorName}, serverAudioId: ${serverAudioId}`);
-      
-      // Jeśli już odtwarzamy ten sam dźwięk serwera, nie uruchamiaj ponownie
-      if (currentSound === colorName) {
-        console.log(`[AUDIO] Server sound for ${colorName} is already playing`);
-        return;
-      }
-      
-      // Pobierz strumień audio ze serwera
-      const response = await audioApiService.streamAudio(serverAudioId);
-      
-      if (!response.ok) {
-        throw new Error(`Failed to stream audio: ${response.status} ${response.statusText}`);
-      }
-      
-      // Konwertuj response na blob
-      const audioBlob = await response.blob();
-      
-      // Utwórz URL do blob'a
-      const audioUrl = URL.createObjectURL(audioBlob);
-      
-      // Utwórz nowy obiekt Audio.Sound
-      const sound = new Audio.Sound();
-      
-      // Załaduj dźwięk z URL
-      await sound.loadAsync({ uri: audioUrl });
-      
-      // Ustaw parametry odtwarzania
-      await sound.setStatusAsync({ 
-        isLooping: loop,
-        shouldPlay: true,
-        positionMillis: 0,
-        volume: volume
-      });
-      
-      // Dodaj nasłuchiwanie na zakończenie odtwarzania
-      sound.setOnPlaybackStatusUpdate((status) => {
-        if ('didJustFinish' in status && status.didJustFinish && !loop) {
-          console.log(`[AUDIO] Server sound for ${colorName} finished playing`);
-          setCurrentSound(null);
-          // Zwolnij URL blob'a
-          URL.revokeObjectURL(audioUrl);
-        }
-      });
-      
-      // Odtwórz dźwięk
-      await sound.playAsync();
-      
-      // Zapisz referencję do dźwięku
-      soundRefs.current[colorName] = sound;
-      setCurrentSound(colorName);
-      
-      console.log(`✅ Server audio started for ${colorName}`);
-      
-    } catch (error) {
-      console.error(`[AUDIO] Error playing server sound for ${colorName}:`, error);
-    }
-  };
-
-  // Funkcja pomocnicza do znajdowania lokalnego pliku dźwiękowego na podstawie nazwy
-  const getLocalSoundFile = (soundName: string) => {
-    const sound = AVAILABLE_SOUNDS.find(s => s.id === soundName || s.name === soundName);
-    return sound ? sound.file : null;
   };
 
   // Funkcja do odtwarzania dźwięku na podstawie wykrytego koloru
@@ -761,7 +692,7 @@ export default function ColorSensor({ sessionId }: ColorSensorProps = {}) {
     const sumRGB = color.r + color.g + color.b;
     
     // Zabezpieczenie przed dzieleniem przez zero lub zbyt niską jasnością
-    if (sumRGB === 0 || sumRGB <= COLOR_RATIO_THRESHOLDS.MIN_BRIGHTNESS) {
+    if (sumRGB === 0 || sumRGB <= MIN_BRIGHTNESS) {
       console.log("[AUDIO] Insufficient brightness, stopping sound");
       await stopCurrentSound();
       return;
@@ -770,39 +701,30 @@ export default function ColorSensor({ sessionId }: ColorSensorProps = {}) {
     // Wyświetl informacje diagnostyczne
     console.log("[AUDIO] RGB values for sound:", color.r, color.g, color.b, "Sum:", sumRGB);
     
-    // Sprawdź, czy wszystkie wartości są równe (biały/szary)
-    const isAllEqual = Math.abs(color.r - color.g) < 10 && Math.abs(color.r - color.b) < 10 && Math.abs(color.g - color.b) < 10;
+    // Sprawdź, czy wszystkie wartości są prawie identyczne (potencjalny błąd czujnika)
+    const isAllSimilar = Math.abs(color.r - color.g) < 10 && 
+                         Math.abs(color.r - color.b) < 10 && 
+                         Math.abs(color.g - color.b) < 10;
     
-    if (isAllEqual && color.r > 900 && color.g > 900 && color.b > 900) {
-      console.log("[AUDIO] Detected white/gray color with high values, using random color selection");
+    // Sprawdź, czy to przypadek, gdy wszystkie wartości są dokładnie równe 1000
+    const isAllExactlyEqual = color.r === 1000 && color.g === 1000 && color.b === 1000;
+    
+    // Jeśli wszystkie wartości są dokładnie 1000 lub są prawie identyczne,
+    // to prawdopodobnie jest to błąd czujnika
+    if (isAllExactlyEqual || (isAllSimilar && color.r > 400 && color.r < 600)) {
+      console.log("[AUDIO] Detected potential sensor error - values are too similar or exactly 1000");
       
-      // Jeśli już odtwarzamy dźwięk, nie zmieniaj go
+      // Jeśli już odtwarzamy dźwięk, zatrzymaj go
       if (currentSound) {
-        console.log(`[AUDIO] Already playing sound for ${currentSound}, continuing`);
-        return;
+        console.log(`[AUDIO] Stopping sound due to potential sensor error`);
+        await stopCurrentSound();
       }
       
-      // Losowo wybierz kolor, aby nie zawsze był ten sam
-      const colors = ["red", "green", "blue", "yellow", "orange", "purple"];
-      const randomIndex = Math.floor(Math.random() * colors.length);
-      const randomColor = colors[randomIndex];
-      
-      console.log(`[AUDIO] Randomly selected color: ${randomColor}`);
-      await playSound(randomColor);
       return;
     }
     
-    // Zastosuj kalibrację kolorów, aby poprawić rozpoznawanie
-    const calibratedColor = {
-      r: Math.round(color.r * COLOR_CALIBRATION.RED_BOOST),
-      g: Math.round(color.g * COLOR_CALIBRATION.GREEN_BOOST),
-      b: Math.round(color.b * COLOR_CALIBRATION.BLUE_BOOST)
-    };
-    
-    console.log("[AUDIO] Calibrated RGB values:", calibratedColor.r, calibratedColor.g, calibratedColor.b);
-    
-    // Określ dominujący kolor z ulepszoną logiką rozpoznawania
-    let dominantColor = detectComplexColor(calibratedColor);
+    // Użyj funkcji wykrywania kolorów na podstawie odległości od prototypów
+    let dominantColor = detectComplexColor(color);
     console.log(`[AUDIO] Detected color: ${dominantColor}`);
     
     // Aktualizuj czas ostatniego odczytu koloru
@@ -815,11 +737,43 @@ export default function ColorSensor({ sessionId }: ColorSensorProps = {}) {
       return;
     }
     
+    // Stabilizacja wykrywania kolorów - jeśli już odtwarzamy dźwięk dla koloru,
+    // a nowy kolor jest podobny, kontynuuj odtwarzanie obecnego dźwięku
+    if (currentSound) {
+      // Sprawdź, czy nowy kolor jest podobny do aktualnie odtwarzanego
+      const isSimilarColor = (
+        // Ten sam kolor - zawsze kontynuuj
+        (currentSound === dominantColor) ||
+        
+        // Podobne kolory: czerwony i pomarańczowy
+        (currentSound === "red" && dominantColor === "orange") ||
+        (currentSound === "orange" && dominantColor === "red") ||
+        
+        // Podobne kolory: zielony i żółty
+        (currentSound === "green" && dominantColor === "yellow") ||
+        (currentSound === "yellow" && dominantColor === "green") ||
+        
+        // Podobne kolory: niebieski i fioletowy
+        (currentSound === "blue" && dominantColor === "purple") ||
+        (currentSound === "purple" && dominantColor === "blue")
+      );
+      
+      // Dodatkowa stabilizacja - jeśli wykryty kolor zmienia się zbyt często,
+      // kontynuuj odtwarzanie obecnego dźwięku przez pewien czas
+      const timeSinceLastChange = Date.now() - lastColorUpdate;
+      const isRecentChange = timeSinceLastChange < 500; // 500ms stabilizacji
+      
+      if (isSimilarColor || isRecentChange) {
+        console.log(`[AUDIO] Continuing current sound ${currentSound} (new: ${dominantColor}, similar: ${isSimilarColor}, recent change: ${isRecentChange})`);
+        return;
+      }
+    }
+    
     // Odtwórz dźwięk dla wykrytego koloru
     await playSound(dominantColor);
   };
 
-  // Pomocnicza funkcja do zatrzymywania aktualnie odtwarzanego dźwięku  const stopCurrentSound = async () => {  // Funkcja do zatrzymywania aktualnie odtwarzanego dźwięku
+  // Pomocnicza funkcja do zatrzymywania aktualnie odtwarzanego dźwięku
   const stopCurrentSound = async () => {
     if (!currentSound || !soundRefs.current[currentSound]) return;
     
@@ -853,6 +807,14 @@ export default function ColorSensor({ sessionId }: ColorSensorProps = {}) {
       
     } catch (error) {
       console.error(`[AUDIO] Error stopping sound for ${currentSound}:`, error);
+      
+      // W przypadku błędu, spróbuj utworzyć nowy obiekt dźwięku
+      try {
+        await soundRefs.current[currentSound].unloadAsync().catch(() => {});
+        const newSound = new Audio.Sound();
+        await newSound.loadAsync(soundMappings[currentSound as keyof typeof soundMappings]);
+        soundRefs.current[currentSound] = newSound;
+      } catch (unloadError) {}
       
       // Wyczyść referencję do aktualnie odtwarzanego dźwięku
       setCurrentSound(null);
@@ -1159,8 +1121,43 @@ export default function ColorSensor({ sessionId }: ColorSensorProps = {}) {
                       const g = (rawData.charCodeAt(2) << 8) + rawData.charCodeAt(3);
                       const b = (rawData.charCodeAt(4) << 8) + rawData.charCodeAt(5);
                       
-                      const newColor = { r, g, b };
+                      // Sprawdź, czy wszystkie wartości są dokładnie równe 1000
+                      // To może wskazywać na problem z czujnikiem
+                      if (r === 1000 && g === 1000 && b === 1000) {
+                        console.log("[BLE] Warning: All RGB values are exactly 1000 - possible sensor issue");
+                        // Ignorujemy te dane
+                        return;
+                      }
+                      
+                      // Sprawdź, czy wszystkie wartości są prawie identyczne (jak w przypadku 501, 501, 501)
+                      const isAllSimilar = Math.abs(r - g) < 10 && Math.abs(r - b) < 10 && Math.abs(g - b) < 10;
+                      if (isAllSimilar && r > 400 && r < 600) {
+                        console.log("[BLE] Warning: All RGB values are similar and in mid-range - possible sensor issue");
+                        // Ignorujemy te dane
+                        return;
+                      }
+                      
+                      // Filtrowanie szumów - ignoruj bardzo małe wartości
+                      const filteredR = r < 2 ? 0 : r;
+                      const filteredG = g < 2 ? 0 : g;
+                      const filteredB = b < 2 ? 0 : b;
+                      
+                      const newColor = { r: filteredR, g: filteredG, b: filteredB };
                       console.log("[BLE] Parsed RGB:", newColor);
+                      
+                      // Sprawdź, czy wartości są sensowne (nie są zbyt wysokie)
+                      const maxValidValue = 65535; // Maksymalna wartość dla 16-bitowego unsigned int
+                      if (filteredR > maxValidValue || filteredG > maxValidValue || filteredB > maxValidValue) {
+                        console.log("[BLE] Invalid color values detected, ignoring");
+                        return;
+                      }
+                      
+                      // Sprawdź, czy suma RGB jest wystarczająco duża, aby uznać odczyt za ważny
+                      const sumRGB = filteredR + filteredG + filteredB;
+                      if (sumRGB < COLOR_RATIO_THRESHOLDS.MIN_BRIGHTNESS) {
+                        console.log("[BLE] Color brightness too low, ignoring");
+                        return;
+                      }
                       
                       // Aktualizuj stan koloru
                       setColor(newColor);
@@ -1173,6 +1170,7 @@ export default function ColorSensor({ sessionId }: ColorSensorProps = {}) {
                       
                       colorTimeoutRef.current = setTimeout(async () => {
                         if (Date.now() - lastColorUpdate > 1000) {
+                          console.log("[BLE] No color updates for 1 second, resetting");
                           await stopCurrentSound();
                           setColor({ r: 0, g: 0, b: 0 });
                         }
@@ -1304,173 +1302,8 @@ export default function ColorSensor({ sessionId }: ColorSensorProps = {}) {
     }
   };
 
-  // Funkcja do renderowania menu konfiguracji dźwięków
-  const renderSoundConfigMenu = () => {
-    if (!showSoundMenu) return null;
-    
-    const colorNames = {
-      red: "Czerwony",
-      green: "Zielony",
-      blue: "Niebieski",
-      yellow: "Żółty",
-      orange: "Pomarańczowy",
-      purple: "Fioletowy"
-    };
-    
-    // Grupowanie dźwięków według kategorii
-    const soundCategories = {
-      "Dorosły (M)": AVAILABLE_SOUNDS.filter(s => s.id.startsWith("male_")),
-      "Dorosły (K)": AVAILABLE_SOUNDS.filter(s => s.id.startsWith("female_")),
-      "Starszy (M)": AVAILABLE_SOUNDS.filter(s => s.id.startsWith("geriatric_male_")),
-      "Starsza (K)": AVAILABLE_SOUNDS.filter(s => s.id.startsWith("geriatric_female_")),
-      "Dziecko": AVAILABLE_SOUNDS.filter(s => s.id.startsWith("child_")),
-      "Niemowlę": AVAILABLE_SOUNDS.filter(s => s.id.startsWith("infant_")),
-      "Mowa": AVAILABLE_SOUNDS.filter(s => s.id.startsWith("speech_"))
-    };
-    
-    // Funkcja do odtwarzania podglądu dźwięku
-    const previewSound = async (soundFile: any) => {
-      try {
-        // Zatrzymaj aktualnie odtwarzany dźwięk
-        if (currentSound && soundRefs.current[currentSound]) {
-          await soundRefs.current[currentSound]?.stopAsync().catch(() => {});
-        }
-        
-        const sound = new Audio.Sound();
-        await sound.loadAsync(soundFile);
-        await sound.playAsync();
-        
-        // Automatycznie wyładuj dźwięk po zakończeniu odtwarzania
-        sound.setOnPlaybackStatusUpdate((status) => {
-          if ('didJustFinish' in status && status.didJustFinish) {
-            sound.unloadAsync().catch(() => {});
-          }
-        });
-      } catch (error) {
-        console.error("[AUDIO] Error previewing sound:", error);
-      }
-    };
-    
-    // Funkcja do przypisania dźwięku do koloru
-    const assignSoundToColor = (color: string, soundFile: any) => {
-      console.log(`[AUDIO] Assigning sound to color ${color}`);
-      
-      // Zatrzymaj aktualnie odtwarzany dźwięk dla tego koloru, jeśli istnieje
-      const sound = soundRefs.current[color];
-      if (sound) {
-        sound.stopAsync().catch(() => {})
-          .finally(() => sound.unloadAsync().catch(() => {}));
-        soundRefs.current[color] = null;
-      }
-      
-      // Aktualizuj mapowanie dźwięków
-      setSoundMappings(prev => {
-        const newMappings = {
-          ...prev,
-          [color]: soundFile
-        };
-        console.log(`[AUDIO] Updated sound mappings for ${color}`);
-        return newMappings;
-      });
-      
-      // Jeśli aktualnie odtwarzany dźwięk jest dla tego koloru, zatrzymaj go
-      if (currentSound === color) {
-        setCurrentSound(null);
-      }
-    };
-    
-    // Znajdź nazwę dźwięku na podstawie pliku
-    const getSoundNameByFile = (file: any) => {
-      const sound = AVAILABLE_SOUNDS.find(s => isSameSound(s.file, file));
-      return sound ? sound.name : "Nieznany";
-    };
-    
-    // Używamy globalnej funkcji isSameSound zdefiniowanej na początku pliku
-    
-    return (
-      <ScrollView 
-        style={styles.soundConfigMenu}
-        contentContainerStyle={{ paddingBottom: 20 }} // Dodajemy padding na dole
-        showsVerticalScrollIndicator={true} // Pokazujemy wskaźnik przewijania pionowego
-      >
-        <Text style={styles.soundConfigTitle}>Konfiguracja dźwięków</Text>
-        
-        <View style={styles.loopSoundContainer}>
-          <Text>Odtwarzaj dźwięk w pętli:</Text>
-          <Switch
-            value={loopSound}
-            onValueChange={setLoopSound}
-            trackColor={{ false: "#767577", true: "#81b0ff" }}
-            thumbColor={loopSound ? "#007AFF" : "#f4f3f4"}
-          />
-        </View>
-        
-        {Object.entries(colorNames).map(([colorKey, colorName]) => (
-          <View key={colorKey} style={styles.soundConfigItem}>
-            <View style={styles.colorHeader}>
-              <View style={[styles.colorSample, { backgroundColor: colorKey }]} />
-              <Text style={styles.soundConfigColorName}>{colorName}</Text>
-              <Text style={styles.currentSoundName}>
-                Aktualny: {getSoundNameByFile(soundMappings[colorKey as keyof typeof soundMappings])}
-              </Text>
-              <TouchableOpacity
-                style={styles.previewButton}
-                onPress={() => previewSound(soundMappings[colorKey as keyof typeof soundMappings])}
-              >
-                <Text style={styles.previewButtonText}>▶</Text>
-              </TouchableOpacity>
-            </View>
-            
-            <View style={styles.soundCategoriesContainer}>
-              {Object.entries(soundCategories).map(([category, sounds]) => (
-                <View key={category} style={styles.soundCategory}>
-                  <Text style={styles.categoryTitle}>{category}</Text>
-                  <ScrollView 
-                    horizontal 
-                    showsHorizontalScrollIndicator={true} 
-                    contentContainerStyle={{ paddingBottom: 15 }} // Dodajemy padding na dole kontenera
-                  >
-                    <View style={styles.soundOptionsRow}>
-                      {sounds.map(sound => (
-                        <TouchableOpacity
-                          key={sound.id}
-                          style={[
-                            styles.soundOption,
-                            isSameSound(soundMappings[colorKey as keyof typeof soundMappings], sound.file) && 
-                            styles.selectedSoundOption
-                          ]}
-                          onPress={() => assignSoundToColor(colorKey, sound.file)}
-                        >
-                          <Text 
-                            style={[
-                              styles.soundOptionText,
-                              isSameSound(soundMappings[colorKey as keyof typeof soundMappings], sound.file) && 
-                              styles.selectedSoundOptionText
-                            ]}
-                            numberOfLines={2} // Ograniczamy do 2 linii
-                            ellipsizeMode="tail" // Dodajemy wielokropek na końcu
-                          >
-                            {sound.name}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  </ScrollView>
-                </View>
-              ))}
-            </View>
-          </View>
-        ))}
-        
-        <TouchableOpacity
-          style={styles.closeButton}
-          onPress={() => setShowSoundMenu(false)}
-        >
-          <Text style={styles.closeButtonText}>Zamknij</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    );
-  };
+  // Funkcja do renderowania menu konfiguracji dźwięków została usunięta
+  // Konfiguracja dźwięków jest dostępna tylko po stronie egzaminatora
 
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
@@ -1478,17 +1311,7 @@ export default function ColorSensor({ sessionId }: ColorSensorProps = {}) {
         <Text>Status BLE: {bleState}</Text>
         <Text>Status: {status}</Text>
 
-        {/* Przycisk konfiguracji dźwięków - dostępny zawsze */}
-        <View style={styles.configButtonContainer}>
-          <Button
-            title={showSoundMenu ? "Ukryj konfigurację dźwięków" : "Konfiguruj dźwięki"}
-            onPress={() => setShowSoundMenu(!showSoundMenu)}
-            color="#007AFF"
-          />
-        </View>
-
-        {/* Menu konfiguracji dźwięków */}
-        {renderSoundConfigMenu()}
+        {/* Konfiguracja dźwięków jest dostępna tylko po stronie egzaminatora */}
 
       {status === "idle" && (
         <View style={styles.connectButtonContainer}>
@@ -1536,13 +1359,7 @@ export default function ColorSensor({ sessionId }: ColorSensorProps = {}) {
                   ? "Zielony"
                   : currentSound === "blue"
                     ? "Niebieski"
-                    : currentSound === "yellow"
-                      ? "Żółty"
-                      : currentSound === "orange"
-                        ? "Pomarańczowy"
-                        : currentSound === "purple"
-                          ? "Fioletowy"
-                          : "Nieznany"}
+                    : "Nieznany"}
             </Text>
           )}
 
@@ -1603,50 +1420,16 @@ const styles = StyleSheet.create({
     marginTop: 8, 
     marginBottom: 8 
   },
-  configButtonContainer: {
-    marginVertical: 10,
-    width: '100%',
-  },
+  // configButtonContainer został usunięty
   connectButtonContainer: {
     marginTop: 10,
     width: '100%',
   },
-  loopSoundContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
-  },
+  // loopSoundContainer został usunięty
   
-  // Style dla menu konfiguracji dźwięków
-  soundConfigMenu: {
-    marginTop: 10,
-    marginBottom: 20,
-    padding: 15, // Zwiększamy padding
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
-    width: '100%',
-    // Usuwamy maxHeight, aby umożliwić pełne przewijanie
-    borderWidth: 1, // Dodajemy obramowanie
-    borderColor: '#ddd',
-    flexGrow: 1, // Pozwala na rozciągnięcie zawartości
-  },
-  soundConfigTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 15,
-    textAlign: 'center',
-  },
-  soundConfigItem: {
-    flexDirection: 'column',
-    marginBottom: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
-    paddingBottom: 10,
-  },
+  // Style dla menu konfiguracji dźwięków zostały usunięte
+  // soundConfigTitle został usunięty
+  // soundConfigItem został usunięty
   colorHeader: {
     flexDirection: 'row',
     alignItems: 'center',
