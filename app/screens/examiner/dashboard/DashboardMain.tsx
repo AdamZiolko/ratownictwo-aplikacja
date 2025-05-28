@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   ScrollView,
@@ -10,6 +10,7 @@ import {
   NativeScrollEvent,
   RefreshControl,
   Platform,
+  Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -25,9 +26,12 @@ import {
   Snackbar,
   Avatar,
   SegmentedButtons,
+  TextInput,
+  Checkbox,
 } from "react-native-paper";
 import { router } from "expo-router";
 import { useAuth } from "@/contexts/AuthContext";
+import { StyleSheet } from "react-native";
 
 import { StatItem, getRhythmTypeName, getNoiseLevelName } from "./components/DashboardComponents";
 import { useSessionManager } from "./SessionManager";
@@ -44,13 +48,29 @@ import { createDashboardStyles } from "./DashboardStyles";
 import AudioTab from "./components/AudioTab";
 import ColorConfigTab from "./components/ColorConfigTab";
 import ChecklistDialog from "../modals/ChecklistDialog";
+import apiService from "@/services/ApiService";
+
+interface TestResult {
+  id: number;
+  student: { name: string; surname: string; albumNumber?: string };
+  tasks: Array<{ text: string; completed: boolean }>;
+  comments: Array<{ text: string; timestamp: string }>;
+  createdAt: string;
+}
+
+interface StudentTestState {
+  testStarted: boolean;
+  loadedTestName: string | null;
+  tasks: Array<{ id: number; text: string; completed: boolean }>;
+  comments: Array<{ id: number; text: string; timestamp: Date }>;
+}
 
 const ExaminerDashboardScreen = () => {
   const theme = useTheme();
   const { user, logout } = useAuth();
   const scrollY = useRef(new Animated.Value(0)).current;
   const [headerVisible, setHeaderVisible] = useState(true);
-  const [activeTab, setActiveTab] = useState('sessions');
+  const [activeTab, setActiveTab] = useState<"sessions" | "audio" | "color-config">("sessions");
 
   const [createDialogVisible, setCreateDialogVisible] = useState(false);
   const [editDialogVisible, setEditDialogVisible] = useState(false);
@@ -68,7 +88,22 @@ const ExaminerDashboardScreen = () => {
   const studentRefs = useRef<{ [id: number]: any }>({});
 
   const [popupTop, setPopupTop] = useState<number>(0);
-  const [selectedStudent, setSelectedStudent] = useState<number | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<{
+    id: number;
+    name: string;
+    surname: string;
+    albumNumber?: string;
+  } | null>(null);
+
+  const [studentTestStates, setStudentTestStates] = useState<Record<number, StudentTestState>>({});
+
+  const [historyVisible, setHistoryVisible] = useState(false);
+  const [testResults, setTestResults] = useState<TestResult[]>([]);
+  const [loadingResults, setLoadingResults] = useState(false);
+  const [resultsError, setResultsError] = useState<string | null>(null);
+
+  const [filterName, setFilterName] = useState("");
+  const [filterDate, setFilterDate] = useState("");
 
   const dashboardStyles = createDashboardStyles(theme);
 
@@ -110,7 +145,7 @@ const ExaminerDashboardScreen = () => {
     setSidebarVisible(!sidebarVisible);
   };
   const toggleSession = (sessionCode: string) =>
-    setExpandedSessions(prev => ({ ...prev, [sessionCode]: !prev[sessionCode] }));
+    setExpandedSessions((prev) => ({ ...prev, [sessionCode]: !prev[sessionCode] }));
 
   const activeSessions = sessions.filter((s) => s.isActive);
 
@@ -152,116 +187,221 @@ const ExaminerDashboardScreen = () => {
     }
   );
 
-  const handleStudentPress = (studentId: number) => {
-    const ref = studentRefs.current[studentId];
+ 
+  const handleStudentPress = (student: {
+    id: number;
+    name: string;
+    surname: string;
+    albumNumber?: string;
+  }) => {
+    const ref = studentRefs.current[student.id];
     if (!ref) return;
     ref.measureInWindow((x: number, y: number, w: number, h: number) => {
       setPopupTop(y);
-      setSelectedStudent(studentId);
+      setSelectedStudent(student);
+
+      setStudentTestStates((prev) => {
+        if (prev[student.id]) return prev;
+        return {
+          ...prev,
+          [student.id]: {
+            testStarted: false,
+            loadedTestName: null,
+            tasks: [],
+            comments: [],
+          },
+        };
+      });
     });
   };
 
   const windowHeight = Dimensions.get("window").height;
-  const calculatePopupPosition = (y: number, screenHeight: number) => {
-    const popupHeight = 400;
-    const margin = 16;
-    return y + popupHeight + margin < screenHeight ? y + margin : y - popupHeight - margin;
+
+  useEffect(() => {
+    if (historyVisible) {
+      loadTestResults();
+    }
+  }, [historyVisible]);
+
+  const loadTestResults = async () => {
+    setLoadingResults(true);
+    setResultsError(null);
+    try {
+      const response: TestResult[] = await apiService.get("checklist/test-results");
+      setTestResults(response);
+    } catch (err) {
+      console.error("Błąd ładowania wyników:", err);
+      setResultsError("Nie udało się pobrać historii testów");
+    } finally {
+      setLoadingResults(false);
+    }
   };
 
-return (
-  <View style={{ flexDirection: "row", flex: 1 }}>
-<Portal>
-    <ChecklistDialog
-  visible={selectedStudent !== null}
-  top={popupTop}
-  left={sidebarVisible ? sidebarWidthValue + 16 : 16}
-  onDismiss={() => setSelectedStudent(null)}
-  sessionId={currentSession?.sessionId} 
-/>
-</Portal>
-    <Animated.View
-      style={[
-        dashboardStyles.sidebar,
-        {
-          width: sidebarVisible ? sidebarWidthValue : 0,
-          transform: [{ translateX: sidebarVisible ? 0 : -sidebarWidthValue }],
-        },
-      ]}
-    >
-      <ScrollView contentContainerStyle={dashboardStyles.sidebarContent}>
-        <Text style={dashboardStyles.sidebarTitle}>Aktywne Sesje</Text>
+  const filteredResults = testResults.filter((r) => {
+    const fullName = `${r.student.name} ${r.student.surname}`.toLowerCase();
+    const localDateStr = new Date(r.createdAt).toLocaleDateString("pl-PL"); 
 
-        {activeSessions.length === 0 ? (
-          <Text style={dashboardStyles.sidebarEmpty}>Brak aktywnych sesji</Text>
-        ) : (
-          activeSessions.map((session) => (
-            <View key={session.sessionCode} style={dashboardStyles.sessionItem}>
-              <TouchableOpacity
-                onPress={() => toggleSession(session.sessionCode)}
-                style={dashboardStyles.sessionHeader}
-              >
-                <Text style={dashboardStyles.sessionCodeText}>
-                  {session.sessionCode}
-                </Text>
-                <IconButton
-                  icon={
-                    expandedSessions[session.sessionCode]
-                      ? "chevron-up"
-                      : "chevron-down"
-                  }
-                  size={20}
-                />
-              </TouchableOpacity>
+    const matchesName = filterName.trim()
+      ? fullName.includes(filterName.trim().toLowerCase())
+      : true;
+    const matchesDate = filterDate.trim()
+      ? localDateStr.includes(filterDate.trim())
+      : true;
 
-              {expandedSessions[session.sessionCode] && (
-                <View style={dashboardStyles.studentsList}>
-                  {sessionStudents[session.sessionCode]?.map((student) => (
-                    <View
-                      key={student.id}
-                      style={dashboardStyles.studentItem}
-                      ref={(el) => {
-                        studentRefs.current[student.id] = el;
-                      }}
-                    >
-                      <TouchableOpacity
-                        onPress={() => handleStudentPress(student.id)}
-                        style={{ flexDirection: "row", alignItems: "center" }}
-                      >
-                        <Avatar.Icon
-                          size={30}
-                          icon="account"
-                          style={dashboardStyles.avatar}
-                        />
-                        <Text style={dashboardStyles.studentName}>
-                          {student.name} {student.surname}
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  ))}
-                </View>
-              )}
-            </View>
-          ))
+    return matchesName && matchesDate;
+  });
+
+  return (
+    <View style={{ flexDirection: "row", flex: 1 }}>
+      <Portal>
+        {selectedStudent !== null && (
+          <ChecklistDialog
+            visible={selectedStudent !== null}
+            top={popupTop}
+            left={sidebarVisible ? sidebarWidthValue + 16 : 16}
+            onDismiss={() => setSelectedStudent(null)}
+            sessionId={currentSession?.sessionId}
+            student={selectedStudent}
+            testState={studentTestStates[selectedStudent!.id]!}
+            onStartTest={() =>
+              setStudentTestStates((prev) => ({
+                ...prev,
+                [selectedStudent!.id]: {
+                  ...prev[selectedStudent!.id],
+                  testStarted: true,
+                },
+              }))
+            }
+            onLoadTemplate={(name, tasks) =>
+              setStudentTestStates((prev) => ({
+                ...prev,
+                [selectedStudent!.id]: {
+                  ...prev[selectedStudent!.id],
+                  loadedTestName: name,
+                  tasks: [...tasks],
+                },
+              }))
+            }
+            onChangeTasks={(newTasks) =>
+              setStudentTestStates((prev) => ({
+                ...prev,
+                [selectedStudent!.id]: {
+                  ...prev[selectedStudent!.id],
+                  tasks: [...newTasks],
+                },
+              }))
+            }
+            onChangeComments={(newComments) =>
+              setStudentTestStates((prev) => ({
+                ...prev,
+                [selectedStudent!.id]: {
+                  ...prev[selectedStudent!.id],
+                  comments: [...newComments],
+                },
+              }))
+            }
+          />
         )}
-      </ScrollView>
-    </Animated.View>
+      </Portal>
 
-    <SafeAreaView style={[dashboardStyles.container, { flex: 1 }]}>
-      <Appbar.Header>
-        <Appbar.Action
-          icon={sidebarVisible ? "menu-open" : "menu"}
-          onPress={toggleSidebar}
-        />
-        <Appbar.Content
-          title="Panel Egzaminatora"
-          subtitle={user ? `Zalogowany jako: ${user.username}` : ""}
-        />
-        <Appbar.Action icon="logout" onPress={handleLogout} />
-      </Appbar.Header>
+      <Animated.View
+        style={[
+          dashboardStyles.sidebar,
+          {
+            width: sidebarVisible ? sidebarWidthValue : 0,
+            transform: [{ translateX: sidebarVisible ? 0 : -sidebarWidthValue }],
+          },
+        ]}
+      >
+        <ScrollView contentContainerStyle={dashboardStyles.sidebarContent}>
+          <Text style={dashboardStyles.sidebarTitle}>Aktywne Sesje</Text>
+
+          {activeSessions.length === 0 ? (
+            <Text style={dashboardStyles.sidebarEmpty}>Brak aktywnych sesji</Text>
+          ) : (
+            activeSessions.map((session) => (
+              <View key={session.sessionCode} style={dashboardStyles.sessionItem}>
+                <TouchableOpacity
+                  onPress={() => toggleSession(session.sessionCode)}
+                  style={dashboardStyles.sessionHeader}
+                >
+                  <Text style={dashboardStyles.sessionCodeText}>
+                    {session.sessionCode}
+                  </Text>
+                  <IconButton
+                    icon={expandedSessions[session.sessionCode] ? "chevron-up" : "chevron-down"}
+                    size={20}
+                  />
+                </TouchableOpacity>
+
+                {expandedSessions[session.sessionCode] && (
+                  <View style={dashboardStyles.studentsList}>
+                    {sessionStudents[session.sessionCode]?.map((student) => (
+                      <View
+                        key={student.id}
+                        style={dashboardStyles.studentItem}
+                        ref={(el) => {
+                          studentRefs.current[student.id] = el;
+                        }}
+                      >
+                        <TouchableOpacity
+                          onPress={() => {
+                            handleStudentPress({
+                              id: student.id,
+                              name: student.name,
+                              surname: student.surname,
+                              albumNumber: student.albumNumber,
+                            });
+                            setCurrentSession(session);
+                          }}
+                          style={{ flexDirection: "row", alignItems: "center" }}
+                        >
+                          <Avatar.Icon
+                            size={30}
+                            icon="account"
+                            style={dashboardStyles.avatar}
+                          />
+                          <Text style={dashboardStyles.studentName}>
+                            {student.name} {student.surname}
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
+            ))
+          )}
+
+          {/* Przycisk “Historia testów”— toggle */}
+          <Button
+            mode="outlined"
+            onPress={() => setHistoryVisible((v) => !v)}
+            style={[dashboardStyles.historyButton, { marginTop: 16 }]}
+            contentStyle={{ backgroundColor: theme.colors.surface }}
+            icon="history"
+          >
+            Historia testów
+          </Button>
+        </ScrollView>
+      </Animated.View>
+
+      <SafeAreaView style={[dashboardStyles.container, { flex: 1 }]}>
+        <Appbar.Header>
+          <Appbar.Action
+            icon={sidebarVisible ? "menu-open" : "menu"}
+            onPress={toggleSidebar}
+          />
+          <Appbar.Content
+            title="Panel Egzaminatora"
+            subtitle={user ? `Zalogowany jako: ${user.username}` : ""}
+          />
+          <Appbar.Action icon="logout" onPress={handleLogout} />
+        </Appbar.Header>
 
       <SegmentedButtons
         value={activeTab}
-        onValueChange={setActiveTab}
+        onValueChange={(value) => setActiveTab(value as "sessions" | "audio" | "color-config")}
         buttons={[
           {
             value: 'sessions',
@@ -282,27 +422,27 @@ return (
         style={{ margin: 16 }}
       />
 
-      <View style={dashboardStyles.contentContainer}>
-        {activeTab === 'sessions' ? (
-          <>
-            {Platform.OS !== "android" && (
-              <Card
-                style={{ backgroundColor: theme.colors.surface, borderRadius: 4 }}
-              >
-                <Card.Content>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      padding: 10,
-                    }}
-                  >
-                    <StatItem value={sessions?.length} label="Wszystkie sesje" />
-                  </View>
-                </Card.Content>
-              </Card>
-            )}
+        <View style={dashboardStyles.contentContainer}>
+          {activeTab === "sessions" && (
+            <>
+              {Platform.OS !== "android" && (
+                <Card
+                  style={{ backgroundColor: theme.colors.surface, borderRadius: 4 }}
+                >
+                  <Card.Content>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        padding: 10,
+                      }}
+                    >
+                      <StatItem value={sessions?.length} label="Wszystkie sesje" />
+                    </View>
+                  </Card.Content>
+                </Card>
+              )}
 
             {loading && !refreshing ? (
               <View style={dashboardStyles.loadingContainer}>
@@ -429,145 +569,304 @@ return (
               </ScrollView>
             )}
           </>
-        ) : activeTab === 'audio' ? (
-          <AudioTab />
-        ) : activeTab === 'color-config' ? (
-          <ColorConfigTab 
+        )}
+
+        {activeTab === "audio" && <AudioTab />}
+        
+        {activeTab === "color-config" && (
+          <ColorConfigTab
             sessionId={currentSession?.sessionId || null}
             sessionCode={currentSession?.sessionCode || null}
           />
-        ) : null}
+        )}
       </View>
 
-      <Portal>
-        <CreateSessionDialog
-          visible={createDialogVisible}
-          onDismiss={() => setCreateDialogVisible(false)}
-          initialData={formData}
-          onCreateSession={async (data) => {
-            const success = await handleCreateSession(data);
-            if (success) setCreateDialogVisible(false);
-          }}
-          onOpenSavePresetDialog={(d) => {
-            setFormData(d);
-            setSavePresetDialogVisible(true);
-          }}
-          onOpenLoadPresetDialog={() => setLoadPresetDialogVisible(true)}
-        />
+          <Modal visible={historyVisible} transparent animationType="slide">
+            <View style={styles.historyOverlay}>
+              <View
+                style={[styles.historyContainer, { backgroundColor: theme.colors.surface }]}
+              >
+                <View style={styles.historyHeader}>
+                  <Text variant="titleMedium">Historia testów</Text>
+                  <IconButton
+                    icon="close"
+                    size={24}
+                    onPress={() => setHistoryVisible(false)}
+                    iconColor={theme.colors.onSurface}
+                  />
+                </View>
 
-        <EditSessionDialog
-          visible={editDialogVisible}
-          onDismiss={() => setEditDialogVisible(false)}
-          session={currentSession}
-          onUpdateSession={async (d) => {
-            const success = await handleUpdateSession(d);
-            if (success) setEditDialogVisible(false);
-          }}
-        />
+                {/* Filtry */}
+                <View style={styles.filtersRow}>
+                  <TextInput
+                    label="Filtruj po nazwisku"
+                    value={filterName}
+                    onChangeText={setFilterName}
+                    mode="outlined"
+                    style={styles.filterInput}
+                    theme={{ colors: { primary: theme.colors.primary } }}
+                  />
+                  <TextInput
+                    label="Filtruj po dacie (DD.MM.YYYY)"
+                    value={filterDate}
+                    onChangeText={setFilterDate}
+                    mode="outlined"
+                    style={styles.filterInput}
+                    theme={{ colors: { primary: theme.colors.primary } }}
+                  />
+                </View>
 
-        <DeleteSessionDialog
-          visible={deleteDialogVisible}
-          onDismiss={() => setDeleteDialogVisible(false)}
-          session={currentSession}
-          onDeleteSession={async () => {
-            const success = await handleDeleteSession();
-            if (success) setDeleteDialogVisible(false);
-          }}
-          errorColor={theme.colors.error}
-        />
+                {/* Zawartość */}
+                <View style={styles.historyContent}>
+                  {loadingResults ? (
+                    <View style={dashboardStyles.loadingContainer}>
+                      <ActivityIndicator size="large" />
+                      <Text style={dashboardStyles.loadingText}>
+                        Ładowanie historii...
+                      </Text>
+                    </View>
+                  ) : resultsError ? (
+                    <View style={dashboardStyles.emptyState}>
+                      <Text variant="bodyLarge">{resultsError}</Text>
+                    </View>
+                  ) : filteredResults.length === 0 ? (
+                    <View style={dashboardStyles.emptyState}>
+                      <Text variant="bodyLarge">Brak wyników spełniających kryteria</Text>
+                    </View>
+                  ) : (
+                    <ScrollView style={styles.historyScroll}>
+                      {filteredResults.map((result) => (
+                        <Card
+                          key={result.id}
+                          style={[dashboardStyles.mobileCard, { marginBottom: 12 }]}
+                        >
+                          <Card.Title
+                            title={`${result.student.name} ${result.student.surname}`}
+                            titleStyle={dashboardStyles.mobileCardTitle}
+                            subtitle={`Data: ${new Date(result.createdAt).toLocaleString()}`}
+                            subtitleStyle={dashboardStyles.mobileCardSubtitle}
+                          />
+                          <Card.Content>
+                            <Text style={{ marginBottom: 4, fontWeight: "bold" }}>
+                              Zadania:
+                            </Text>
+                            {result.tasks.map((t, idx) => (
+                              <View
+                                key={idx}
+                                style={{
+                                  flexDirection: "row",
+                                  alignItems: "center",
+                                  marginBottom: 2,
+                                }}
+                              >
+                                <Checkbox
+                                  status={t.completed ? "checked" : "unchecked"}
+                                  disabled
+                                />
+                                <Text style={{ marginLeft: 8 }}>{t.text}</Text>
+                              </View>
+                            ))}
 
-        <SoundSelectionDialog
-          visible={soundDialogVisible}
-          onDismiss={() => setSoundDialogVisible(false)}
-          session={currentSession}
-          selectedSound={selectedSound}
-          setSelectedSound={setSelectedSound}
-          onSendAudioCommand={handleSendAudioCommand}
-          onSendQueue={handleSendQueue}
-          onPauseAudioCommand={handlePauseAudioCommand}
-          onResumeAudioCommand={handleResumeAudioCommand}
-          onStopAudioCommand={handleStopAudioCommand}
-          onServerAudioCommand={handleServerAudioCommand}
-          onServerAudioPauseCommand={handleServerAudioPauseCommand}
-          onServerAudioResumeCommand={handleServerAudioResumeCommand}
-          onServerAudioStopCommand={handleServerAudioStopCommand}
-        />
+                            {result.comments.length > 0 && (
+                              <>
+                                <Text style={{ marginTop: 8, fontWeight: "bold" }}>
+                                  Komentarze:
+                                </Text>
+                                {result.comments.map((c, idx) => (
+                                  <View
+                                    key={idx}
+                                    style={{ marginVertical: 2, paddingLeft: 8 }}
+                                  >
+                                    <Text>- {c.text}</Text>
+                                    <Text
+                                      style={{
+                                        fontSize: 12,
+                                        color: theme.colors.onSurfaceVariant,
+                                      }}
+                                    >
+                                      {new Date(c.timestamp).toLocaleString()}
+                                    </Text>
+                                  </View>
+                                ))}
+                              </>
+                            )}
+                          </Card.Content>
+                        </Card>
+                      ))}
+                    </ScrollView>
+                  )}
+                </View>
+              </View>
+            </View>
+          </Modal>
 
-        <ViewSessionDialog
-          visible={viewDialogVisible}
-          onDismiss={() => setViewDialogVisible(false)}
-          session={currentSession}
-          onEditSession={() => {
-            setViewDialogVisible(false);
-            if (currentSession) openEditDialog(currentSession);
-          }}
-          onShowStudents={() => {
-            setViewDialogVisible(false);
-            if (currentSession) openStudentsDialog(currentSession);
-          }}
-          getRhythmTypeName={getRhythmTypeName}
-          getNoiseLevelName={getNoiseLevelName}
-        />
 
-        <SavePresetDialog
-          visible={savePresetDialogVisible}
-          onDismiss={() => setSavePresetDialogVisible(false)}
-          onSavePreset={handleSavePreset}
-          formData={formData}
-        />
+        <Portal>
+          <CreateSessionDialog
+            visible={createDialogVisible}
+            onDismiss={() => setCreateDialogVisible(false)}
+            initialData={formData}
+            onCreateSession={async (data) => {
+              const success = await handleCreateSession(data);
+              if (success) setCreateDialogVisible(false);
+            }}
+            onOpenSavePresetDialog={(d) => {
+              setFormData(d);
+              setSavePresetDialogVisible(true);
+            }}
+            onOpenLoadPresetDialog={() => setLoadPresetDialogVisible(true)}
+          />
 
-        <LoadPresetDialog
-          visible={loadPresetDialogVisible}
-          onDismiss={() => setLoadPresetDialogVisible(false)}
-          presets={presets}
-          onLoadPreset={(p) => {
-            setFormData(p.data);
-            setLoadPresetDialogVisible(false);
-          }}
-          onDeletePreset={handleDeletePreset}
-        />
+          <EditSessionDialog
+            visible={editDialogVisible}
+            onDismiss={() => setEditDialogVisible(false)}
+            session={currentSession}
+            onUpdateSession={async (d) => {
+              const success = await handleUpdateSession(d);
+              if (success) setEditDialogVisible(false);
+            }}
+          />
 
-        <StudentsListDialog
-          visible={studentsDialogVisible}
-          onDismiss={() => setStudentsDialogVisible(false)}
-          session={currentSession}
-          students={
-            currentSession?.sessionCode
-              ? sessionStudents[currentSession.sessionCode]
-              : []
-          }
-        />
-      </Portal>
+          <DeleteSessionDialog
+            visible={deleteDialogVisible}
+            onDismiss={() => setDeleteDialogVisible(false)}
+            session={currentSession}
+            onDeleteSession={async () => {
+              const success = await handleDeleteSession();
+              if (success) setDeleteDialogVisible(false);
+            }}
+            errorColor={theme.colors.error}
+          />
 
-      {activeTab === 'sessions' && (
-        <FAB
-          icon="plus"
-          style={[dashboardStyles.fab, { backgroundColor: theme.colors.primary }]}
-          onPress={openCreateDialog}
-          color="#fff"
-          label="Utwórz sesję"
-        />
-      )}
+          <SoundSelectionDialog
+            visible={soundDialogVisible}
+            onDismiss={() => setSoundDialogVisible(false)}
+            session={currentSession}
+            selectedSound={selectedSound}
+            setSelectedSound={setSelectedSound}
+            onSendAudioCommand={handleSendAudioCommand}
+            onSendQueue={handleSendQueue}
+            onPauseAudioCommand={handlePauseAudioCommand}
+            onResumeAudioCommand={handleResumeAudioCommand}
+            onStopAudioCommand={handleStopAudioCommand}
+            onServerAudioCommand={handleServerAudioCommand}
+            onServerAudioPauseCommand={handleServerAudioPauseCommand}
+            onServerAudioResumeCommand={handleServerAudioResumeCommand}
+            onServerAudioStopCommand={handleServerAudioStopCommand}
+          />
 
-      <Snackbar
-        visible={snackbarVisible}
-        onDismiss={() => setSnackbarVisible(false)}
-        duration={3000}
-        style={[
-          dashboardStyles.snackbar,
-          snackbarType === "success"
-            ? dashboardStyles.successSnackbar
-            : dashboardStyles.errorSnackbar,
-        ]}
-      >
-        {snackbarMessage}
-      </Snackbar>
-    </SafeAreaView>
-  </View>
-);
+          <ViewSessionDialog
+            visible={viewDialogVisible}
+            onDismiss={() => setViewDialogVisible(false)}
+            session={currentSession}
+            onEditSession={() => {
+              setViewDialogVisible(false);
+              if (currentSession) openEditDialog(currentSession);
+            }}
+            onShowStudents={() => {
+              setViewDialogVisible(false);
+              if (currentSession) openStudentsDialog(currentSession);
+            }}
+            getRhythmTypeName={getRhythmTypeName}
+            getNoiseLevelName={getNoiseLevelName}
+          />
 
+          <SavePresetDialog
+            visible={savePresetDialogVisible}
+            onDismiss={() => setSavePresetDialogVisible(false)}
+            onSavePreset={handleSavePreset}
+            formData={formData}
+          />
+
+          <LoadPresetDialog
+            visible={loadPresetDialogVisible}
+            onDismiss={() => setLoadPresetDialogVisible(false)}
+            presets={presets}
+            onLoadPreset={(p) => {
+              setFormData(p.data);
+              setLoadPresetDialogVisible(false);
+            }}
+            onDeletePreset={handleDeletePreset}
+          />
+
+          <StudentsListDialog
+            visible={studentsDialogVisible}
+            onDismiss={() => setStudentsDialogVisible(false)}
+            session={currentSession}
+            students={
+              currentSession?.sessionCode
+                ? sessionStudents[currentSession.sessionCode]
+                : []
+            }
+          />
+        </Portal>
+
+        {activeTab === "sessions" && (
+          <FAB
+            icon="plus"
+            style={[dashboardStyles.fab, { backgroundColor: theme.colors.primary }]}
+            onPress={openCreateDialog}
+            color="#fff"
+            label="Utwórz sesję"
+          />
+        )}
+
+        <Snackbar
+          visible={snackbarVisible}
+          onDismiss={() => setSnackbarVisible(false)}
+          duration={3000}
+          style={[
+            dashboardStyles.snackbar,
+            snackbarType === "success"
+              ? dashboardStyles.successSnackbar
+              : dashboardStyles.errorSnackbar,
+          ]}
+        >
+          {snackbarMessage}
+        </Snackbar>
+      </SafeAreaView>
+    </View>
+  );
 };
 
 export default ExaminerDashboardScreen;
 
-
+const styles = StyleSheet.create({
+  historyOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  historyContainer: {
+    width: "90%",
+    height: "85%",
+    borderRadius: 8,
+    overflow: "hidden",
+  },
+  historyHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ccc",
+  },
+  filtersRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    marginTop: 8,
+  },
+  filterInput: {
+    flex: 1,
+    marginHorizontal: 4,
+  },
+  historyContent: {
+    flex: 1,
+    padding: 16,
+  },
+  historyScroll: {
+    flex: 1,
+  },
+});

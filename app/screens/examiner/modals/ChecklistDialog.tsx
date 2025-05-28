@@ -1,5 +1,5 @@
 import apiService from "@/services/ApiService";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   View,
   Pressable,
@@ -19,241 +19,331 @@ import {
   List,
   TextInput,
   useTheme,
+  Menu,
+  Card,
 } from "react-native-paper";
-import { useAuth } from "@/contexts/AuthContext";
+
 interface Task {
   id: number;
   text: string;
   completed: boolean;
 }
 
-interface ChecklistDialogProps {
-  visible: boolean;
-  top?: number;
-  left?: number;
-  onDismiss: () => void;
-sessionId?: string;
-}
 interface Comment {
   id: number;
   text: string;
   timestamp: Date;
 }
-interface Task {
-  id: number;
-  text: string;
-  completed: boolean;
-}
-interface ApiResponse {
-  status: number;
-  data?: any;
-  message?: string;
-}
-
-interface TemplateData {
-  name: string;
-  tasks: Array<{ text: string }>;
-}
-
-interface TestResultData {
-  student: {
-    name: string;
-    surname: string;
-    albumNumber: string;
-  };
-  tasks: Array<{ text: string; completed: boolean }>;
-  comments: Array<{ text: string; timestamp: string }>;
-  sessionId: string;
-}
-const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
-  visible,
-  top = 0,
-  left = 0,
-  onDismiss,
-  sessionId,
-}) => {
-  const theme = useTheme();
-    const { user } = useAuth(); 
-  const [testStarted, setTestStarted] = useState(false);
-  const [loadedTestName, setLoadedTestName] = useState<string | null>(null);
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [newTaskText, setNewTaskText] = useState("");
-
-  const handleStartTest = () => setTestStarted(true);
-  const handleLoadTest = () => setLoadedTestName("Przykładowy Test 1");
-const [comments, setComments] = useState<Comment[]>([]);
-const [newComment, setNewComment] = useState(""); 
-const [commentsExpanded, setCommentsExpanded] = useState(false);
-const [templateName, setTemplateName] = useState("");
-const [showTemplateNameDialog, setShowTemplateNameDialog] = useState(false);
-const [templateNameInput, setTemplateNameInput] = useState("")
 
 interface Template {
   id: number;
   name: string;
   tasks: Array<{ text: string }>;
 }
-const [templates, setTemplates] = useState<Template[]>([]);
+
+interface StudentTestState {
+  testStarted: boolean;
+  loadedTestName: string | null;
+  tasks: Task[];
+  comments: Comment[];
+}
+
+/**
+ * Props przekazywane z rodzica (ExaminerDashboardScreen), 
+ * w tym stan testu konkretnego studenta oraz callbacki do aktualizacji.
+ */
+interface ChecklistDialogProps {
+  visible: boolean;
+  top?: number;
+  left?: number;
+  onDismiss: () => void;
+  sessionId?: string;
+  student: {
+    id: number;
+    name: string;
+    surname: string;
+    albumNumber?: string;
+  };
+  testState: StudentTestState;
+  onStartTest: () => void;
+  onLoadTemplate: (name: string, tasks: Task[]) => void;
+  onChangeTasks: (newTasks: Task[]) => void;
+  onChangeComments: (newComments: Comment[]) => void;
+}
+
+const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
+  visible,
+  top = 0,
+  left = 0,
+  onDismiss,
+  sessionId,
+  student,
+  testState,
+  onStartTest,
+  onLoadTemplate,
+  onChangeTasks,
+  onChangeComments,
+}) => {
+  const theme = useTheme();
+
+
+
+  const [newTaskText, setNewTaskText] = React.useState("");
+  const [newComment, setNewComment] = React.useState("");
+  const [commentsExpanded, setCommentsExpanded] = React.useState(false);
+  const [showTemplateNameDialog, setShowTemplateNameDialog] = React.useState(false);
+  const [templateNameInput, setTemplateNameInput] = React.useState("");
+
+  const [templates, setTemplates] = React.useState<Template[]>([]);
+  const [selectMenuVisible, setSelectMenuVisible] = React.useState(false);
+  const [deleteMenuVisible, setDeleteMenuVisible] = React.useState(false);
 
   const handleAddTask = () => {
     if (newTaskText.trim() === "") return;
-    setTasks((prev) => [
-      ...prev,
-      { id: Date.now(), text: newTaskText.trim(), completed: false },
-    ]);
+    const newTask: Task = {
+      id: Date.now(),
+      text: newTaskText.trim(),
+      completed: false,
+    };
+    onChangeTasks([...testState.tasks, newTask]);
     setNewTaskText("");
   };
 
-const loadTemplates = async () => {
-  try {
-    const response = await apiService.get("checklist/templates");
-    if (response.status === 200) {
-      setTemplates(response.data);
+  const loadTemplates = async () => {
+    try {
+      const response = await apiService.get("checklist/templates");
+      console.log("Odpowiedź z /checklist/templates:", response);
+      setTemplates(response);
+    } catch (error) {
+      console.error("Błąd ładowania szablonów:", error);
     }
-  } catch (error) {
-    console.error("Błąd ładowania szablonów:", error);
-  }
-};
+  };
 
-  useEffect(() => {
-  if (visible) {
-    loadTemplates();
-  }
-}, [visible]);
-const handleSaveComment = () => {
-  if (newComment.trim() === "") return;
-  setComments(prev => [
-    ...prev,
-    {
+  React.useEffect(() => {
+    if (visible) {
+      loadTemplates();
+    } else {
+      setSelectMenuVisible(false);
+      setDeleteMenuVisible(false);
+      setTemplateNameInput("");
+    }
+  }, [visible]);
+
+  const handleSaveComment = () => {
+    if (newComment.trim() === "") return;
+    const newC: Comment = {
       id: Date.now(),
       text: newComment.trim(),
-      timestamp: new Date()
-    }
-  ]);
-  setNewComment("");
-};
+      timestamp: new Date(),
+    };
+    onChangeComments([...testState.comments, newC]);
+    setNewComment("");
+  };
 
-
-const handleSaveTemplate = async (name: string) => {
-  try {
-    if (!name.trim()) {
-      Alert.alert("Błąd", "Nazwa szablonu nie może być pusta");
-      return;
-    }
-
-const response = await apiService.post("checklist/templates", {
-  name: name.trim(),
-  tasks: tasks.map(t => ({ text: t.text }))
-});
-
-    if (response.status === 201) {
-      Alert.alert("Sukces", "Szablon został zapisany");
-      setTasks([]);
+  const handleSaveTemplate = async (name: string) => {
+    try {
+      if (!name.trim()) {
+        Alert.alert("Błąd", "Nazwa szablonu nie może być pusta");
+        return;
+      }
+      const response = await apiService.post("checklist/templates", {
+        name: name.trim(),
+        tasks: testState.tasks.map((t) => ({ text: t.text })),
+      });
+      console.log("Odpowiedź createOrUpdateTemplate:", response);
+      Alert.alert("Sukces", "Szablon został zapisany lub nadpisany");
       setTemplateNameInput("");
       setShowTemplateNameDialog(false);
       loadTemplates();
+    } catch (error) {
+      console.error("Błąd zapisu szablonu:", error);
+      Alert.alert("Błąd", "Nie udało się zapisać szablonu");
     }
-  } catch (error) {
-    console.error("Błąd zapisu szablonu:", error);
-    Alert.alert("Błąd", "Nie udało się zapisać szablonu");
-  }
-};
+  };
 
-const handleSaveResults = async () => {
+  const handleSaveResults = async () => {
     try {
-      if (!user) {
-        Alert.alert("Błąd", "Nie znaleziono danych użytkownika");
+      if (!student || !sessionId) {
+        Alert.alert("Błąd", "Brak wymaganych danych: student lub sesja");
         return;
       }
-
       const response = await apiService.post("checklist/test-results", {
         student: {
-          name: user.name,
-          surname: user.surname,
-          albumNumber: user.albumNumber
+          name: student.name,
+          surname: student.surname,
+          albumNumber: student.albumNumber || "",
         },
-        tasks: tasks.map(t => ({
+        tasks: testState.tasks.map((t) => ({
           text: t.text,
-          completed: t.completed
+          completed: t.completed,
         })),
-        comments: comments.map(c => ({
+        comments: testState.comments.map((c) => ({
           text: c.text,
-          timestamp: c.timestamp.toISOString()
+          timestamp: c.timestamp.toISOString(),
         })),
-        sessionId: sessionId // Użyj ID sesji z propsów
+        sessionId: sessionId,
       });
-
-      if (response.status === 201) {
-        Alert.alert("Sukces", "Wyniki testu zostały zapisane");
-        setTasks([]);
-        setComments([]);
-      }
+      console.log("Odpowiedź z test-results:", response);
+      Alert.alert("Sukces", "Wyniki testu zostały zapisane");
     } catch (error) {
-      console.error("Błąd zapisu wyników:", error);
+      console.error("Pełny błąd zapisu:", error);
       let errorMessage = "Nie udało się zapisać wyników testu";
       if (error instanceof Error) {
-        errorMessage = error.message;
+        errorMessage = `${error.message} (${error.stack})`;
       }
       Alert.alert("Błąd", errorMessage);
     }
   };
 
+  const loadTemplate = (template: Template) => {
+    const newTasks: Task[] = template.tasks.map((task, idx) => ({
+      id: Date.now() + idx,
+      text: task.text,
+      completed: false,
+    }));
+    onLoadTemplate(template.name, newTasks);
+    setSelectMenuVisible(false);
+  };
 
-
-const loadTemplate = (template: Template) => {
-  setTasks(template.tasks.map(task => ({
-    id: Date.now(), // Nowe ID dla każdego zadania
-    text: task.text,
-    completed: false // Resetujemy status wykonania
-  })));
-  setLoadedTestName(template.name);
-};
-
-  const toggleTaskCompleted = (taskId: number) =>
-    setTasks((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, completed: !t.completed } : t))
+  const toggleTaskCompleted = (taskId: number) => {
+    const updated = testState.tasks.map((t) =>
+      t.id === taskId ? { ...t, completed: !t.completed } : t
     );
+    onChangeTasks(updated);
+  };
 
-  const handleDeleteTask = (taskId: number) =>
-    setTasks((prev) => prev.filter((t) => t.id !== taskId));
+  const handleDeleteTask = (taskId: number) => {
+    const updated = testState.tasks.filter((t) => t.id !== taskId);
+    onChangeTasks(updated);
+  };
+
+  const openSaveTemplateModal = () => {
+    setTemplateNameInput(testState.loadedTestName || "");
+    setShowTemplateNameDialog(true);
+  };
+
+  const handleDeleteTemplate = async (templateId: number) => {
+    try {
+      await apiService.delete(`checklist/templates/${templateId}`);
+      Alert.alert("Usunięto", "Szablon został usunięty");
+      loadTemplates();
+      const wasLoaded = templates.find((t) => t.id === templateId);
+      if (wasLoaded && wasLoaded.name === testState.loadedTestName) {
+        onLoadTemplate("", []); 
+      }
+      setDeleteMenuVisible(false);
+    } catch (error) {
+      console.error("Błąd usuwania szablonu:", error);
+      Alert.alert("Błąd", "Nie udało się usunąć szablonu");
+    }
+  };
+
+  const moveTaskUp = (index: number) => {
+    if (index === 0) return;
+    const newTasks = [...testState.tasks];
+    [newTasks[index - 1], newTasks[index]] = [newTasks[index], newTasks[index - 1]];
+    onChangeTasks(newTasks);
+  };
+
+  const moveTaskDown = (index: number) => {
+    if (index === testState.tasks.length - 1) return;
+    const newTasks = [...testState.tasks];
+    [newTasks[index + 1], newTasks[index]] = [newTasks[index], newTasks[index + 1]];
+    onChangeTasks(newTasks);
+  };
+
+  const handleClearForm = () => {
+    onChangeTasks([]);
+    onChangeComments([]);
+  };
 
   const renderContent = () => (
     <>
       <View style={styles.popupHeader}>
-        <Text variant="titleMedium">Checklista</Text>
+        <Text variant="titleMedium">
+          Checklista dla {student.name} {student.surname}
+        </Text>
         <IconButton icon="close" size={20} onPress={onDismiss} />
       </View>
 
-      {!testStarted ? (
+      {!testState.testStarted ? (
         <View style={styles.centeredStart}>
-          <Button mode="contained" onPress={handleStartTest}>
+          <Button mode="contained" onPress={onStartTest}>
             Zacznij test
           </Button>
         </View>
       ) : (
         <View style={styles.innerContent}>
-        <List.Section style={styles.section}>
-  <List.Subheader>1. Wczytaj gotowy test</List.Subheader>
-  
-  {templates.map(template => (
-    <Pressable
-      key={template.id}
-      onPress={() => loadTemplate(template)}
-      style={styles.templateItem}
-    >
-      <Text>{template.name}</Text>
-    </Pressable>
-  ))}
+          <List.Section style={styles.section}>
+            <List.Subheader>1. Wczytaj gotowy test</List.Subheader>
+            <View style={styles.templateRow}>
+              {/* Menu wyboru szablonu */}
+              <Menu
+                visible={selectMenuVisible}
+                onDismiss={() => setSelectMenuVisible(false)}
+                anchor={
+                  <Button
+                    mode="outlined"
+                    onPress={() => setSelectMenuVisible(true)}
+                    style={styles.templateButton}
+                    contentStyle={{ backgroundColor: theme.colors.surface }}
+                    labelStyle={{ color: theme.colors.onSurface }}
+                  >
+                    {testState.loadedTestName || "Wybierz szablon"}
+                  </Button>
+                }
+              >
+                {templates.length === 0 ? (
+                  <Menu.Item title="Brak szablonów" disabled />
+                ) : (
+                  templates.map((template) => (
+                    <Menu.Item
+                      key={template.id}
+                      onPress={() => loadTemplate(template)}
+                      title={template.name}
+                    />
+                  ))
+                )}
+              </Menu>
 
-  <Button
-    mode="outlined"
-    onPress={loadTemplates}
-    style={styles.actionButton}
-    icon="refresh"
-  >
-    Odśwież listę szablonów
-  </Button>
-</List.Section>
+              {/* Przycisk odświeżenia */}
+              <IconButton
+                icon="refresh"
+                size={24}
+                onPress={loadTemplates}
+                style={styles.refreshButton}
+                iconColor={theme.colors.primary}
+              />
+
+              {/* Menu usuwania szablonu */}
+              <Menu
+                visible={deleteMenuVisible}
+                onDismiss={() => setDeleteMenuVisible(false)}
+                anchor={
+                  <IconButton
+                    icon="delete-outline"
+                    size={24}
+                    onPress={() => setDeleteMenuVisible(true)}
+                    iconColor={theme.colors.error}
+                  />
+                }
+              >
+                {templates.length === 0 ? (
+                  <Menu.Item title="Brak szablonów do usunięcia" disabled />
+                ) : (
+                  templates.map((template) => (
+                    <Menu.Item
+                      key={template.id}
+                      onPress={() => handleDeleteTemplate(template.id)}
+                      title={`Usuń: ${template.name}`}
+                      leadingIcon="delete"
+                      titleStyle={{ color: theme.colors.error }}
+                    />
+                  ))
+                )}
+              </Menu>
+            </View>
+          </List.Section>
 
           <List.Section style={styles.section}>
             <List.Subheader>2. Stwórz nowy test</List.Subheader>
@@ -265,31 +355,55 @@ const loadTemplate = (template: Template) => {
                 mode="outlined"
                 style={styles.newTaskInput}
                 onSubmitEditing={handleAddTask}
+                theme={{ colors: { primary: theme.colors.primary } }}
               />
               <IconButton
                 icon="plus"
                 size={24}
                 onPress={handleAddTask}
                 disabled={newTaskText.trim() === ""}
+                iconColor={theme.colors.primary}
               />
             </View>
 
-            {tasks.length === 0 ? (
+            {testState.tasks.length === 0 ? (
               <Text style={styles.noTasksText}>
                 Brak zadań. Dodaj pierwsze zadanie.
               </Text>
             ) : (
-              tasks.map((task) => (
+              testState.tasks.map((task, idx) => (
                 <View key={task.id} style={styles.taskRow}>
                   <Checkbox
                     status={task.completed ? "checked" : "unchecked"}
                     onPress={() => toggleTaskCompleted(task.id)}
+                    color={theme.colors.primary}
                   />
                   <Text style={styles.taskText}>{task.text}</Text>
+                  <View style={styles.reorderButtons}>
+                    <IconButton
+                      icon="arrow-up"
+                      size={20}
+                      onPress={() => moveTaskUp(idx)}
+                      disabled={idx === 0}
+                      iconColor={idx === 0 ? "#BDBDBD" : theme.colors.primary}
+                    />
+                    <IconButton
+                      icon="arrow-down"
+                      size={20}
+                      onPress={() => moveTaskDown(idx)}
+                      disabled={idx === testState.tasks.length - 1}
+                      iconColor={
+                        idx === testState.tasks.length - 1
+                          ? "#BDBDBD"
+                          : theme.colors.primary
+                      }
+                    />
+                  </View>
                   <IconButton
                     icon="delete"
                     size={20}
                     onPress={() => handleDeleteTask(task.id)}
+                    iconColor={theme.colors.error}
                   />
                 </View>
               ))
@@ -297,92 +411,118 @@ const loadTemplate = (template: Template) => {
           </List.Section>
 
           <List.Section style={styles.section}>
-  <List.Subheader>
-    3. Komentarze ({comments.length})
-    <IconButton
-      icon={commentsExpanded ? "chevron-up" : "chevron-down"}
-      size={20}
-      onPress={() => setCommentsExpanded(!commentsExpanded)}
-      style={styles.commentToggle}
-    />
-  </List.Subheader>
-  
-  <RNTextInput
-    style={[
-      styles.commentsInput,
-      { backgroundColor: theme.colors.surface },
-    ]}
-    placeholder="Wpisz komentarz..."
-    value={newComment}
-    onChangeText={setNewComment}
-    multiline
-    textAlignVertical="top"
-  />
-  
-  <Button
-    mode="outlined"
-    onPress={handleSaveComment}
-    disabled={newComment.trim() === ""}
-    style={styles.actionButton}
-  >
-    Zapisz komentarz
-  </Button>
+            <List.Subheader>
+              3. Komentarze ({testState.comments.length})
+              <IconButton
+                icon={commentsExpanded ? "chevron-up" : "chevron-down"}
+                size={20}
+                onPress={() => setCommentsExpanded(!commentsExpanded)}
+                style={styles.commentToggle}
+                iconColor={theme.colors.primary}
+              />
+            </List.Subheader>
+            <RNTextInput
+              style={[
+                styles.commentsInput,
+                { backgroundColor: theme.colors.surface },
+              ]}
+              placeholder="Wpisz komentarz..."
+              placeholderTextColor="#888"
+              value={newComment}
+              onChangeText={setNewComment}
+              multiline
+              textAlignVertical="top"
+            />
+            <Button
+              mode="outlined"
+              onPress={handleSaveComment}
+              disabled={newComment.trim() === ""}
+              style={styles.actionButton}
+              contentStyle={{ backgroundColor: theme.colors.surface }}
+            >
+              Zapisz komentarz
+            </Button>
 
-  {commentsExpanded && comments.map(comment => (
-    <View key={comment.id} style={styles.commentItem}>
-      <Text style={styles.commentText}>{comment.text}</Text>
-      <Text style={styles.commentTime}>
-        {comment.timestamp.toLocaleString()}
-      </Text>
-    </View>
-  ))}
-</List.Section>
+            {commentsExpanded &&
+              testState.comments.map((comment) => (
+                <View key={comment.id} style={styles.commentItem}>
+                  <Text style={styles.commentText}>{comment.text}</Text>
+                  <Text style={styles.commentTime}>
+                    {comment.timestamp.toLocaleString()}
+                  </Text>
+                </View>
+              ))}
+          </List.Section>
 
           <List.Section style={styles.section}>
             <List.Subheader>4. Zapis testu</List.Subheader>
-                    <Button
-            mode="contained"
-            onPress={() => {
-                if (tasks.length === 0) return;
-                setShowTemplateNameDialog(true);
-            }}
-            disabled={tasks.length === 0}
-            style={styles.actionButton}
-            >
-            Zapisz jako szablon
-            </Button>
-<Modal visible={showTemplateNameDialog} transparent>
-  <View style={styles.modalContainer}>
-    <View style={styles.modalContent}>
-      <Text variant="titleMedium">Podaj nazwę szablonu</Text>
-      <TextInput
-        value={templateNameInput}
-        onChangeText={setTemplateNameInput}
-        mode="outlined"
-        style={styles.modalInput}
-      />
-      <View style={styles.modalButtons}>
-        <Button onPress={() => setShowTemplateNameDialog(false)}>
-          Anuluj
-        </Button>
-        <Button 
-          mode="contained" 
-          onPress={() => handleSaveTemplate(templateNameInput)}
-          disabled={!templateNameInput.trim()}
-        >
-          Zapisz
-        </Button>
-      </View>
-    </View>
-  </View>
-</Modal>
             <Button
-            mode="outlined"
-            onPress={handleSaveResults}
-            disabled={tasks.length === 0}
-            style={styles.actionButton}
+              mode="contained"
+              onPress={openSaveTemplateModal}
+              disabled={testState.tasks.length === 0}
+              style={styles.actionButton}
+              contentStyle={{ backgroundColor: theme.colors.primary }}
             >
-            Zapisz wyniki
+              Zapisz jako szablon
+            </Button>
+
+            <Modal visible={showTemplateNameDialog} transparent>
+              <View
+                style={[
+                  styles.modalContainer,
+                  { backgroundColor: "rgba(0,0,0,0.4)" },
+                ]}
+              >
+                <Card style={{ width: "80%", backgroundColor: theme.colors.surface }}>
+                  <Card.Content>
+                    <Text variant="titleMedium" style={{ marginBottom: 8 }}>
+                      Podaj nazwę szablonu
+                    </Text>
+                    <TextInput
+                      value={templateNameInput}
+                      onChangeText={setTemplateNameInput}
+                      mode="outlined"
+                      style={{ backgroundColor: theme.colors.surface }}
+                      placeholder="Nazwa szablonu"
+                      placeholderTextColor="#888"
+                      theme={{ colors: { primary: theme.colors.primary } }}
+                    />
+                    <View style={styles.modalButtons}>
+                      <Button onPress={() => setShowTemplateNameDialog(false)}>
+                        Anuluj
+                      </Button>
+                      <Button
+                        mode="contained"
+                        onPress={() => handleSaveTemplate(templateNameInput)}
+                        disabled={!templateNameInput.trim()}
+                        contentStyle={{ backgroundColor: theme.colors.primary }}
+                      >
+                        Zapisz
+                      </Button>
+                    </View>
+                  </Card.Content>
+                </Card>
+              </View>
+            </Modal>
+
+            <Button
+              mode="outlined"
+              onPress={handleSaveResults}
+              disabled={testState.tasks.length === 0}
+              style={styles.actionButton}
+              contentStyle={{ backgroundColor: theme.colors.surface }}
+            >
+              Zapisz wyniki
+            </Button>
+
+            {/* Przycisk Wyczyść formularz */}
+            <Button
+              mode="outlined"
+              onPress={handleClearForm}
+              style={[styles.actionButton, { marginTop: 12 }]}
+              contentStyle={{ backgroundColor: theme.colors.surface }}
+            >
+              Wyczyść formularz
             </Button>
           </List.Section>
         </View>
@@ -390,9 +530,9 @@ const loadTemplate = (template: Template) => {
     </>
   );
 
-  if (Platform.OS === "web") {
-    if (!visible) return null;
+  if (!visible) return null;
 
+  if (Platform.OS === "web") {
     const windowHeight = Dimensions.get("window").height;
     const popupHeight = 600;
     const margin = 16;
@@ -420,10 +560,7 @@ const loadTemplate = (template: Template) => {
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
           >
-            <Pressable 
-              onPress={() => {}}
-              style={styles.webTouchArea}
-            >
+            <Pressable onPress={() => {}} style={styles.webTouchArea}>
               {renderContent()}
             </Pressable>
           </ScrollView>
@@ -433,12 +570,7 @@ const loadTemplate = (template: Template) => {
   }
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onDismiss}
-    >
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
       <Pressable style={styles.mobileOverlay} onPress={onDismiss}>
         <View style={[styles.mobilePopup, { backgroundColor: theme.colors.surface }]}>
           <ScrollView
@@ -449,10 +581,7 @@ const loadTemplate = (template: Template) => {
             overScrollMode="always"
             bounces={true}
           >
-            <Pressable 
-              onPress={() => {}}
-              style={styles.touchArea}
-            >
+            <Pressable onPress={() => {}} style={styles.touchArea}>
               {renderContent()}
             </Pressable>
           </ScrollView>
@@ -499,7 +628,6 @@ const styles = StyleSheet.create({
     height: "80%",
     borderRadius: 8,
     overflow: "hidden",
-    // backgroundColor will be set inline to use theme
   },
   popupHeader: {
     flexDirection: "row",
@@ -538,11 +666,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginHorizontal: 8,
   },
-  loadedNameText: {
-    marginTop: 8,
-    fontStyle: "italic",
-    marginLeft: 8,
-  },
   newTaskRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -568,6 +691,9 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 8,
   },
+  reorderButtons: {
+    flexDirection: "column",
+  },
   commentsInput: {
     borderWidth: 1,
     borderColor: "#888",
@@ -579,57 +705,52 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
     fontSize: 16,
   },
+  templateRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: 8,
+  },
+  templateButton: {
+    flex: 1,
+  },
+  refreshButton: {
+    marginLeft: 8,
+  },
   webTouchArea: {
     flex: 1,
-    minHeight: '100%',
-  },
-  templateItem: {
-    padding: 12,
-    marginVertical: 4,
-    marginHorizontal: 8,
-    backgroundColor: 'rgba(0,0,0,0.04)',
-    borderRadius: 6,
+    minHeight: "100%",
   },
   commentToggle: {
-  position: 'absolute',
-  right: 0,
-  top: -8,
-},
-commentItem: {
-  marginTop: 8,
-  padding: 8,
-  backgroundColor: 'rgba(0,0,0,0.05)',
-  borderRadius: 4,
-},
-commentText: {
-  fontSize: 14,
-},
-commentTime: {
-  fontSize: 12,
-  color: '#666',
-  marginTop: 4,
-},
-modalContainer: {
-  flex: 1,
-  justifyContent: 'center',
-  alignItems: 'center',
-  backgroundColor: 'rgba(0,0,0,0.5)',
-},
-modalContent: {
-  backgroundColor: 'white',
-  padding: 20,
-  borderRadius: 8,
-  width: '80%',
-},
-modalInput: {
-  marginVertical: 10,
-},
-modalButtons: {
-  flexDirection: 'row',
-  justifyContent: 'flex-end',
-  marginTop: 10,
-  gap: 10,
-},
+    position: "absolute",
+    right: 0,
+    top: -8,
+  },
+  commentItem: {
+    marginTop: 8,
+    padding: 8,
+    backgroundColor: "rgba(0,0,0,0.05)",
+    borderRadius: 4,
+  },
+  commentText: {
+    fontSize: 14,
+  },
+  commentTime: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 4,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  modalButtons: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginTop: 10,
+    gap: 10,
+  },
 });
 
 export default ChecklistDialog;

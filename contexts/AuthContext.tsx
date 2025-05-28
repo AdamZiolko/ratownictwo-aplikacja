@@ -2,6 +2,9 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import AuthService from '../services/AuthService';
 
 interface User {
+  name: any;
+  surname: any;
+  albumNumber: any;
   id: number;
   username: string;
   email: string;
