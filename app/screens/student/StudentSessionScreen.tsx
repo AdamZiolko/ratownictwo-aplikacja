@@ -17,9 +17,9 @@ import {
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BackgroundGradient from "@/components/BackgroundGradient";
+import ColorSensor from "@/components/ColorSensor";
 import { router, useLocalSearchParams } from "expo-router";
 import EkgCardDisplay from "@/components/ekg/EkgCardDisplay";
-import ColorSensor from "@/components/ColorSensor";
 import SocketConnectionStatus from "@/components/SocketConnectionStatus";
 import SessionInfo from "./components/SessionInfo";
 import VitalSignsDisplay from "./components/VitalSignsDisplay";
@@ -28,6 +28,7 @@ import { useVitalSigns } from "./hooks/useVitalSigns";
 import { useAudioManager } from "./hooks/useAudioManager";
 import { useNetworkMonitoring } from "./hooks/useNetworkMonitoring";
 import { useColorConfigs } from "./hooks/useColorConfigs";
+import { useColorSounds } from "./hooks/useColorSounds";
 import ColorConfigDisplay from "./components/ColorConfigDisplay";
 
 const StudentSessionScreen = () => {
@@ -63,13 +64,29 @@ const StudentSessionScreen = () => {
     accessCode?.toString(),
     sessionJoined
   );
-
-  const { colorConfigs, isLoading: colorConfigsLoading, error: colorConfigsError } = useColorConfigs({
+  const {
+    colorConfigs,
+    isLoading: colorConfigsLoading,
+    error: colorConfigsError,
+  } = useColorConfigs({
     sessionId: accessCode?.toString(),
     sessionJoined,
   });
+  const { playColorSound, stopColorSound, isLoadingAudio: isLoadingColorAudio } =
+    useColorSounds();
 
   useNetworkMonitoring();
+  const handleColorDetected = async (detectedColor: string, config: any) => {
+    console.log(`Color detected: ${detectedColor}`);
+    // Play the sound associated with the detected color
+    await playColorSound(config);
+  };
+
+  const handleColorLost = async (lostColor: string) => {
+    console.log(`Color lost: ${lostColor}`);
+    // Stop the looped sound for the lost color
+    await stopColorSound(lostColor);
+  };
 
   const handleGoBack = () => {
     router.replace({
@@ -195,7 +212,8 @@ const StudentSessionScreen = () => {
                 isRunning={true}
               />
             </Surface>
-          )}          <VitalSignsDisplay
+          )}
+          <VitalSignsDisplay
             temperature={temperature}
             bloodPressure={bloodPressure}
             spo2={spo2}
@@ -204,13 +222,17 @@ const StudentSessionScreen = () => {
             formatBloodPressure={formatBloodPressure}
             isFullscreen={isFullscreen}
           />
-
           <ColorConfigDisplay
             colorConfigs={colorConfigs}
             isLoading={colorConfigsLoading}
             error={colorConfigsError}
-          />
-
+          />          {!isWeb && (
+            <ColorSensor
+              colorConfigs={colorConfigs}
+              onColorDetected={handleColorDetected}
+              onColorLost={handleColorLost}
+            />
+          )}
           <Surface style={styles.cardContainer}>
             <View style={styles.audioStatusContainer}>
               <MaterialCommunityIcons

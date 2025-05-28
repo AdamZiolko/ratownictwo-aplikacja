@@ -353,11 +353,10 @@ const ColorConfigDisplay: React.FC<ColorConfigDisplayProps> = ({
                     styles.playButton,
                     isLoadingAudio && { opacity: 0.5 }
                   ]}
-                />
-                {isLoadingAudio && loadingAudioKey === (config.serverAudioId
+                />                {isLoadingAudio && loadingAudioKey === (config.serverAudioId
                   ? `server_${config.serverAudioId}`
                   : config.soundName) && (
-                  <View style={styles.loadingOverlay}>
+                  <View style={[styles.loadingOverlay, { backgroundColor: `${theme.colors.surface}CC` }]}>
                     <ActivityIndicator 
                       size="small" 
                       color={theme.colors.primary}
@@ -451,8 +450,7 @@ const styles = StyleSheet.create({
   },
   playButton: {
     margin: 0,
-  },
-  loadingOverlay: {
+  },  loadingOverlay: {
     position: "absolute",
     top: 0,
     left: 0,
@@ -460,7 +458,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    // backgroundColor will be set dynamically with theme (80% opacity)
     borderRadius: 24,
   },
 });
