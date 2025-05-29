@@ -1,64 +1,32 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  StyleSheet,
-  FlatList,
-  Platform,
-  ActivityIndicator,
-} from "react-native";
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, FlatList, Platform } from 'react-native';
 import {
   Text,
   Card,
   Button,
-  List,
-  IconButton,
-  ProgressBar,
   Snackbar,
-  useTheme,
-  Dialog,
+  ProgressBar,
   Portal,
-  TextInput,
-  RadioButton,
-  Switch,
-  FAB,
-  Surface,
-} from "react-native-paper";
-import { Audio } from "expo-av";
-import colorConfigService, {
-  ColorConfig,
-  ColorConfigRequest,
-} from "@/services/ColorConfigService";
-import { socketService } from "@/services/SocketService";
-import audioApiService from "@/services/AudioApiService";
-import SoundSelectionComponent from "@/components/SoundSelectionComponent";
-import { soundFiles } from "@/app/screens/student/constants/soundFiles";
+  useTheme,
+} from 'react-native-paper';
+import { ColorConfig, ColorConfigRequest, colorConfigService } from '@/services/ColorConfigService';
+import { socketService } from '@/services/SocketService';
+import ExaminerColorSensor from '@/components/ExaminerColorSensor';
 import {
-  loadAudioFromLocal,
-  loadAudioFromServer,
-} from "@/app/screens/student/utils/audioUtils";
-
-// Available colors for selection
-const AVAILABLE_COLORS = [
-  { key: "red", name: "Czerwony", color: "#F44336" },
-  { key: "green", name: "Zielony", color: "#4CAF50" },
-  { key: "blue", name: "Niebieski", color: "#2196F3" },
-  { key: "yellow", name: "Żółty", color: "#FFEB3B" },
-  { key: "orange", name: "Pomarańczowy", color: "#FF9800" },
-  { key: "purple", name: "Fioletowy", color: "#9C27B0" },
-];
+  ColorConfigItem,
+  ColorConfigModal,
+  DeleteConfirmationModal,
+  SoundSelectionModal,
+  ColorConfigModalData,
+} from '@/components/colorConfig';
+import { useAudioPlayer } from '@/hooks/useAudioPlayer';
+import { getPlayingSoundKey } from '@/components/colorConfig/constants';
+import { useBleManager } from '@/components/bleColorSensor';
+import { ColorValue } from '@/components/bleColorSensor';
 
 interface ColorConfigTabProps {
   sessionId: string | null;
   sessionCode: string | null;
-}
-
-interface ColorConfigModalData {
-  id?: number;
-  name: string;
-  color: string;
-  soundName: string;
-  serverAudioId?: string;
-  isLooping: boolean;
 }
 
 const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
@@ -66,6 +34,13 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
   sessionCode,
 }) => {
   const theme = useTheme();
+  const {
+    playingSound,
+    isLoadingAudio,
+    loadingAudioKey,
+    playSound,
+    stopSound,
+  } = useAudioPlayer();
 
   // State management
   const [colorConfigs, setColorConfigs] = useState<ColorConfig[]>([]);
@@ -77,42 +52,37 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [soundSelectionVisible, setSoundSelectionVisible] = useState(false);
   const [modalLoading, setModalLoading] = useState(false);
-
   // Modal form data
   const [modalData, setModalData] = useState<ColorConfigModalData>({
     name: "",
     color: "red",
     soundName: "",
+    displayName: "",
     isLooping: false,
+    customColorRgb: { r: 255, g: 0, b: 0 },
+    colorTolerance: 0.15,
   });
 
   const [selectedConfigId, setSelectedConfigId] = useState<number | null>(null);
-  // Sound selection and preview states
-  const [soundSelectionVisible, setSoundSelectionVisible] = useState(false);
-  const [currentSound, setCurrentSound] = useState<Audio.Sound | null>(null);
-  const [playingSound, setPlayingSound] = useState<string | null>(null);
-  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
-  const [loadingAudioKey, setLoadingAudioKey] = useState<string | null>(null);
-  // Initialize audio system
-  useEffect(() => {
-    async function initAudio() {
-      try {
-        if (Platform.OS !== "web") {
-          await Audio.setAudioModeAsync({
-            allowsRecordingIOS: false,
-            playsInSilentModeIOS: true,
-            shouldDuckAndroid: true,
-            playThroughEarpieceAndroid: false,
-          });
-        }
-        console.log("🎵 Audio system initialized for examiner dashboard");
-      } catch (err) {
-        console.error("Failed to configure audio:", err);
-      }
-    }
-    initAudio();
-  }, []);
+
+  // Color sensor integration
+  const [sensorColor, setSensorColor] = useState<ColorValue>({ r: 0, g: 0, b: 0 });
+  
+  // Handle color updates from BLE manager
+  const handleSensorColorUpdate = async (color: ColorValue) => {
+    setSensorColor(color);
+  };
+
+  // Use BLE manager hook for sensor integration
+  const {
+    status: sensorStatus,
+    error: sensorError,
+    isReconnecting: sensorReconnecting,
+    startConnection: connectSensor,
+    disconnectDevice: disconnectSensor,
+  } = useBleManager(handleSensorColorUpdate);
 
   // Load color configurations on mount and sessionId change
   useEffect(() => {
@@ -120,15 +90,10 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
       loadColorConfigs();
     }
   }, [sessionId]);
+
   // WebSocket events handling
   useEffect(() => {
     if (!sessionId) return;
-
-    const handleColorConfigUpdate = (data: any) => {
-      if (data.sessionId === sessionId) {
-        loadColorConfigs();
-      }
-    };
 
     const handleColorConfigListUpdate = (data: {
       sessionId: string;
@@ -149,18 +114,9 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
     );
 
     return () => {
-      // Clean up event listeners using unsubscribe functions
       unsubscribeListUpdate();
     };
   }, [sessionId]);
-  // Cleanup audio on unmount
-  useEffect(() => {
-    return () => {
-      if (currentSound) {
-        currentSound.unloadAsync();
-      }
-    };
-  }, []);
 
   const loadColorConfigs = async () => {
     if (!sessionId) return;
@@ -186,9 +142,23 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
       name: "",
       color: "red",
       soundName: "",
+      displayName: "",
       serverAudioId: undefined,
       isLooping: false,
+      customColorRgb: { r: 255, g: 0, b: 0 },
+      colorTolerance: 0.15,
     });
+  };
+
+  const handleColorCalibrated = (color: string, rgbValues: any, tolerance: number) => {
+    setModalData(prev => ({
+      ...prev,
+      color: 'custom',
+      customColorRgb: rgbValues,
+      colorTolerance: tolerance,
+    }));
+    setAddModalVisible(true);
+    showSnackbar(`Kalibracja koloru zakończona: RGB(${rgbValues.r}, ${rgbValues.g}, ${rgbValues.b})`);
   };
 
   const openAddModal = () => {
@@ -198,11 +168,14 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
   const openEditModal = (config: ColorConfig) => {
     setModalData({
       id: config.id,
-      name: config.soundName || "",
+      name: config.displayName || config.soundName || "",
       color: config.color,
       soundName: config.soundName || "",
+      displayName: config.displayName,
       serverAudioId: config.serverAudioId,
       isLooping: config.isLooping,
+      customColorRgb: config.customColorRgb || { r: 255, g: 0, b: 0 },
+      colorTolerance: config.colorTolerance || 0.15,
     });
     setSelectedConfigId(config.id);
     setEditModalVisible(true);
@@ -212,13 +185,23 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
     setSelectedConfigId(configId);
     setDeleteModalVisible(true);
   };
-  const handleSaveConfig = async () => {
-    if (!sessionId) return;
 
-    // Validation
+  const handleSaveConfig = async () => {
+    if (!sessionId) return;    // Validation
     if (!modalData.name.trim()) {
       showSnackbar("Nazwa dźwięku jest wymagana");
       return;
+    }
+
+    // Additional validation for custom color on web platform
+    if (modalData.color === 'custom' && Platform.OS === 'web') {
+      if (!modalData.customColorRgb || 
+          modalData.customColorRgb.r < 0 || modalData.customColorRgb.r > 255 ||
+          modalData.customColorRgb.g < 0 || modalData.customColorRgb.g > 255 ||
+          modalData.customColorRgb.b < 0 || modalData.customColorRgb.b > 255) {
+        showSnackbar("Dla koloru niestandardowego wymagane są prawidłowe wartości RGB (0-255)");
+        return;
+      }
     }
 
     // Check if color already exists (only for add mode, not edit mode)
@@ -246,15 +229,18 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
         }
       }
     }
+
     setModalLoading(true);
-    try {
-      const configRequest: ColorConfigRequest = {
+    try {      const configRequest: ColorConfigRequest = {
         color: modalData.color as any,
         soundName: modalData.soundName,
+        displayName: modalData.displayName || modalData.name,
         serverAudioId: modalData.serverAudioId,
         isEnabled: true,
         volume: 1.0,
         isLooping: modalData.isLooping,
+        customColorRgb: modalData.customColorRgb,
+        colorTolerance: modalData.colorTolerance,
         ...(modalData.id && { id: modalData.id }),
       };
 
@@ -293,117 +279,106 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
       await loadColorConfigs();
     } catch (error) {
       console.error("Error deleting config:", error);
-      showSnackbar("Błąd podczas usuwania konfiguracji");
-    } finally {
+      showSnackbar("Błąd podczas usuwania konfiguracji");    } finally {
       setModalLoading(false);
     }
   };
 
-  const getColorInfo = (colorKey: string) => {
-    return (
-      AVAILABLE_COLORS.find((c) => c.key === colorKey) || AVAILABLE_COLORS[0]
-    );
-  };
-
-  const getPlayingSoundKey = (config: ColorConfig) => {
-    if (config.serverAudioId) {
-      return `server_${config.serverAudioId}`;
-    }
-    return config.soundName || "";
-  };
   const handlePlaySound = async (config: ColorConfig) => {
-    // Prevent multiple simultaneous operations
-    if (isLoadingAudio) {
-      return;
-    }
+    if (isLoadingAudio) return;
 
     const soundKey = getPlayingSoundKey(config);
 
     if (playingSound === soundKey) {
-      // Stop current sound
       await stopSound();
     } else {
-      // Play sound
-      if (config.serverAudioId) {
-        await playSound(config.soundName || "", true, config.serverAudioId);
-      } else if (config.soundName) {
-        await playSound(config.soundName);
+      try {
+        if (config.serverAudioId) {
+          await playSound(config.soundName || "", true, config.serverAudioId);
+        } else if (config.soundName) {
+          await playSound(config.soundName);
+        }
+      } catch (error) {
+        showSnackbar("Błąd podczas odtwarzania dźwięku");
       }
     }
   };
-
-  const renderColorConfigItem = ({ item }: { item: ColorConfig }) => {
-    const colorInfo = getColorInfo(item.color);
-
-    return (
-      <Card
-        style={[styles.listItem, { backgroundColor: theme.colors.surface }]}
-      >
-        <List.Item
-          title={item.soundName || "Bez nazwy"}
-          description={`Kolor: ${colorInfo.name} • ${
-            item.isLooping ? "Zapętlony" : "Pojedynczy"
-          }`}
-          left={(props) => (
-            <View style={styles.colorIndicatorContainer}>
-              <Surface
-                style={[
-                  styles.colorIndicator,
-                  { backgroundColor: colorInfo.color },
-                ]}
-              >
-                <View />
-              </Surface>
-            </View>
-          )}
-          right={(props) => (
-            <View style={styles.itemActions}>
-              {" "}
-              <View style={styles.playButtonContainer}>
-                <IconButton
-                  icon={
-                    playingSound === getPlayingSoundKey(item) ? "stop" : "play"
-                  }
-                  size={20}
-                  disabled={isLoadingAudio}
-                  onPress={
-                    isLoadingAudio ? undefined : () => handlePlaySound(item)
-                  }
-                  style={[
-                    styles.playButton,
-                    isLoadingAudio && { opacity: 0.5 },
-                  ]}
-                />
-                {isLoadingAudio &&
-                  loadingAudioKey === getPlayingSoundKey(item) && (
-                    <View style={styles.loadingOverlay}>
-                      <ActivityIndicator
-                        size="small"
-                        color={theme.colors.primary}
-                      />
-                    </View>
-                  )}
-              </View>
-              <IconButton
-                icon="pencil"
-                size={20}
-                disabled={isLoadingAudio}
-                onPress={isLoadingAudio ? undefined : () => openEditModal(item)}
-              />
-              <IconButton
-                icon="delete"
-                size={20}
-                disabled={isLoadingAudio}
-                onPress={
-                  isLoadingAudio ? undefined : () => openDeleteModal(item.id)
-                }
-              />
-            </View>
-          )}
-        />
-      </Card>
-    );
+  const handleSoundSelection = (
+    soundName: string | null,
+    serverAudioId: string | null
+  ) => {
+    if (serverAudioId) {
+      setModalData((prev) => ({
+        ...prev,
+        soundName: "",
+        displayName: "",
+        serverAudioId: serverAudioId,
+      }));
+    } else if (soundName) {
+      // Extract display name from file path
+      const pathParts = soundName.split('/');
+      const fileName = pathParts[pathParts.length - 1];
+      const displayName = fileName.replace(/\.[^/.]+$/, ""); // Remove file extension
+      
+      setModalData((prev) => ({
+        ...prev,
+        name: displayName,
+        soundName: soundName,
+        displayName: displayName,
+        serverAudioId: undefined,
+      }));
+    }
+    setSoundSelectionVisible(false);
   };
+  const handleSoundPreview = async (
+    soundName: string | null,
+    serverAudioId: string | null
+  ) => {
+    try {
+      if (serverAudioId) {
+        await playSound("", true, serverAudioId);
+      } else if (soundName) {
+        await playSound(soundName);
+      }
+    } catch (error) {
+      showSnackbar("Błąd podczas odtwarzania podglądu dźwięku");
+    }
+  };
+
+  // Handle accepting color from sensor
+  const handleAcceptSensorColor = () => {
+    if (sensorStatus !== "monitoring") {
+      showSnackbar("Czujnik nie jest połączony");
+      return;
+    }
+
+    const { r, g, b } = sensorColor;
+    const totalBrightness = r + g + b;
+
+    if (totalBrightness < 100) {
+      showSnackbar("Zbyt niska jasność koloru. Przyłóż czujnik do obiektu o wyraźnym kolorze.");
+      return;
+    }
+
+    setModalData(prev => ({
+      ...prev,
+      customColorRgb: { r, g, b },
+    }));
+
+    showSnackbar(`Kolor zaakceptowany: RGB(${r}, ${g}, ${b})`);
+  };
+
+  const renderColorConfigItem = ({ item }: { item: ColorConfig }) => (
+    <ColorConfigItem
+      item={item}
+      onPlay={handlePlaySound}
+      onEdit={openEditModal}
+      onDelete={openDeleteModal}
+      isLoadingAudio={isLoadingAudio}
+      playingSound={playingSound}
+      loadingAudioKey={loadingAudioKey}
+    />
+  );
 
   const renderEmptyList = () => (
     <View style={styles.emptyContainer}>
@@ -417,108 +392,6 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
       </Text>
     </View>
   );
-
-  const openSoundSelection = () => {
-    setSoundSelectionVisible(true);
-  };
-  const handleSoundSelection = (
-    soundName: string | null,
-    serverAudioId: string | null
-  ) => {
-    if (serverAudioId) {
-      // Server audio selected
-      setModalData((prev) => ({
-        ...prev,
-        soundName: "",
-        serverAudioId: serverAudioId,
-      }));
-    } else if (soundName) {
-      // Local sound selected
-      setModalData((prev) => ({
-        ...prev,
-        soundName: soundName,
-        serverAudioId: undefined,
-      }));
-    }
-    setSoundSelectionVisible(false);
-  };
-
-  const stopAllAudio = async () => {
-    try {
-      if (currentSound) {
-        await currentSound.stopAsync();
-        await currentSound.unloadAsync();
-        setCurrentSound(null);
-        setPlayingSound(null);
-      }
-    } catch (error) {
-      console.error("Error stopping audio:", error);
-    }
-  };
-  const playSound = async (
-    soundName: string,
-    isServerAudio = false,
-    audioId?: string
-  ) => {
-    try {
-      const soundKey =
-        isServerAudio && audioId ? `server_${audioId}` : soundName;
-      setIsLoadingAudio(true);
-      setLoadingAudioKey(soundKey);
-
-      // Stop any currently playing audio first
-      await stopAllAudio();
-
-      let sound: Audio.Sound | null = null;
-
-      if (isServerAudio && audioId) {
-        console.log(`🔊 Playing server audio: ${audioId}`);
-        sound = await loadAudioFromServer(audioId);
-      } else {
-        console.log(`🔊 Playing local sound: ${soundName}`);
-        sound = await loadAudioFromLocal(soundName);
-      }
-
-      if (sound) {
-        setCurrentSound(sound);
-        setPlayingSound(soundKey);
-
-        // Set up playback status listener
-        sound.setOnPlaybackStatusUpdate((status: any) => {
-          if (status.isLoaded && status.didJustFinish) {
-            setPlayingSound(null);
-            setCurrentSound(null);
-          }
-        });
-
-        await sound.playAsync();
-        console.log(`✅ Audio playing: ${soundKey}`);
-      } else {
-        console.warn(`Failed to load audio: ${soundKey}`);
-        showSnackbar("Nie udało się załadować pliku audio");
-      }
-    } catch (error) {
-      console.error("Error playing sound:", error);
-      showSnackbar("Błąd podczas odtwarzania dźwięku");
-      setPlayingSound(null);
-      setCurrentSound(null);
-    } finally {
-      setIsLoadingAudio(false);
-      setLoadingAudioKey(null);
-    }
-  };
-
-  const stopSound = async () => {
-    try {
-      setIsLoadingAudio(true);
-      await stopAllAudio();
-    } catch (error) {
-      console.error("Error stopping sound:", error);
-    } finally {
-      setIsLoadingAudio(false);
-      setLoadingAudioKey(null);
-    }
-  };
 
   if (!sessionId) {
     return (
@@ -534,19 +407,12 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
     <View
       style={[styles.container, { backgroundColor: theme.colors.background }]}
     >
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.colors.onSurface }]}>
-          Konfiguracje Kolorów
-        </Text>
-        <Text
-          style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}
-        >
-          Sesja: {sessionCode}
-        </Text>
-      </View>
       {/* Loading indicator */}
       {loading && <ProgressBar indeterminate style={styles.progressBar} />}
+
+      {/* Color Sensor for Calibration - Only on native platforms */}
+
+      
       {/* List */}
       <FlatList
         data={colorConfigs}
@@ -555,213 +421,74 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
         ListEmptyComponent={renderEmptyList}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
-      />
-      {/* FAB for adding new config */}{" "}
-      <FAB
-        icon="plus"
-        label="Dodaj konfigurację"
-        onPress={isLoadingAudio ? undefined : openAddModal}
-        disabled={isLoadingAudio}
-        style={[
-          styles.fab,
-          { backgroundColor: theme.colors.primary },
-          isLoadingAudio && { opacity: 0.5 },
-        ]}
-      />
-      {/* Add/Edit Modal */}
-      <Portal>
-        <Dialog
+      />      {/* Add button */}
+      <View style={styles.addButtonContainer}>
+        <Button
+          mode="outlined"
+          icon="plus"
+          onPress={isLoadingAudio ? undefined : openAddModal}
+          disabled={isLoadingAudio}
+          style={[
+            styles.addButton,
+            isLoadingAudio && { opacity: 0.5 },
+          ]}
+          contentStyle={styles.addButtonContent}
+        >
+          Dodaj konfigurację
+        </Button>
+      </View>
+
+      {/* Modals */}
+      <Portal>        <ColorConfigModal
           visible={addModalVisible || editModalVisible}
+          isEditMode={editModalVisible}
+          modalData={modalData}
+          modalLoading={modalLoading}
+          isLoadingAudio={isLoadingAudio}
           onDismiss={() => {
             setAddModalVisible(false);
             setEditModalVisible(false);
             resetModalData();
           }}
-        >
-          <Dialog.Title>
-            {editModalVisible ? "Edytuj konfigurację" : "Dodaj konfigurację"}
-          </Dialog.Title>{" "}
-          <Dialog.Content>
-            <TextInput
-              label="Nazwa dźwięku"
-              value={modalData.name}
-              onChangeText={(text) =>
-                setModalData((prev) => ({
-                  ...prev,
-                  name: text,
-                  soundName: text,
-                }))
-              }
-              style={styles.input}
-              disabled={modalLoading}
-              right={
-                <TextInput.Icon
-                  icon="music"
-                  onPress={
-                    modalLoading || isLoadingAudio
-                      ? undefined
-                      : openSoundSelection
-                  }
-                  disabled={modalLoading || isLoadingAudio}
-                />
-              }
-            />{" "}
-            <Button
-              mode="outlined"
-              onPress={
-                modalLoading || isLoadingAudio ? undefined : openSoundSelection
-              }
-              style={styles.soundSelectionButton}
-              icon="folder-music"
-              disabled={modalLoading || isLoadingAudio}
-            >
-              Wybierz dźwięk z biblioteki
-            </Button>
-            <Text
-              style={[styles.sectionLabel, { color: theme.colors.onSurface }]}
-            >
-              Wybierz kolor:
-            </Text>
-            <RadioButton.Group
-              onValueChange={(value) =>
-                setModalData((prev) => ({ ...prev, color: value }))
-              }
-              value={modalData.color}
-            >
-              {AVAILABLE_COLORS.map((color) => (
-                <View key={color.key} style={styles.colorOption}>
-                  <View style={styles.colorPreview}>
-                    <Surface
-                      style={[
-                        styles.colorDot,
-                        { backgroundColor: color.color },
-                      ]}
-                    >
-                      <View />
-                    </Surface>
-                  </View>
-                  <RadioButton.Item
-                    label={color.name}
-                    value={color.key}
-                    disabled={modalLoading}
-                  />
-                </View>
-              ))}
-            </RadioButton.Group>
-            <View style={styles.switchContainer}>
-              <Text
-                style={[styles.switchLabel, { color: theme.colors.onSurface }]}
-              >
-                Zapętlaj dźwięk
-              </Text>
-              <Switch
-                value={modalData.isLooping}
-                onValueChange={(value) =>
-                  setModalData((prev) => ({ ...prev, isLooping: value }))
-                }
-                disabled={modalLoading}
-              />
-            </View>
-          </Dialog.Content>
-          <Dialog.Actions style={styles.modalActions}>
-            {" "}
-            <Button
-              onPress={() => {
-                setAddModalVisible(false);
-                setEditModalVisible(false);
-                resetModalData();
-              }}
-              disabled={modalLoading || isLoadingAudio}
-            >
-              Anuluj
-            </Button>
-            <Button
-              onPress={handleSaveConfig}
-              mode="contained"
-              loading={modalLoading}
-              disabled={modalLoading || isLoadingAudio}
-            >
-              Zapisz
-            </Button>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
-      {/* Delete Modal */}
-      <Portal>
-        <Dialog
+          onSave={handleSaveConfig}
+          onSoundSelection={() => {
+            console.log("ColorConfigTab: Sound selection triggered");
+            console.log("Current soundSelectionVisible state:", soundSelectionVisible);
+            console.log("Platform:", Platform.OS);
+            setSoundSelectionVisible(true);
+            console.log("Sound selection modal visibility set to true");
+          }}
+          onModalDataChange={(data) => setModalData(prev => ({ ...prev, ...data }))}
+          // Color sensor integration
+          sensorStatus={sensorStatus}
+          sensorColor={sensorColor}
+          onConnectSensor={connectSensor}
+          onDisconnectSensor={disconnectSensor}
+          onAcceptSensorColor={handleAcceptSensorColor}
+        />
+
+        <DeleteConfirmationModal
           visible={deleteModalVisible}
-          onDismiss={() => {
+          loading={modalLoading}
+          isLoadingAudio={isLoadingAudio}
+          onConfirm={handleDeleteConfig}
+          onCancel={() => {
             setDeleteModalVisible(false);
             setSelectedConfigId(null);
           }}
-        >
-          <Dialog.Title>Usuń konfigurację</Dialog.Title>
-          <Dialog.Content>
-            <Text style={{ color: theme.colors.onSurface }}>
-              Czy na pewno chcesz usunąć tę konfigurację? Tej operacji nie można
-              cofnąć.
-            </Text>
-          </Dialog.Content>
-          <Dialog.Actions style={styles.modalActions}>
-            {" "}
-            <Button
-              onPress={() => {
-                setDeleteModalVisible(false);
-                setSelectedConfigId(null);
-              }}
-              disabled={modalLoading || isLoadingAudio}
-            >
-              Anuluj
-            </Button>
-            <Button
-              onPress={handleDeleteConfig}
-              mode="contained"
-              buttonColor={theme.colors.error}
-              loading={modalLoading}
-              disabled={modalLoading || isLoadingAudio}
-            >
-              Usuń
-            </Button>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
-      {/* Sound Selection Modal */}
-      <Portal>
-        <Dialog
+        />
+
+        <SoundSelectionModal
           visible={soundSelectionVisible}
-          onDismiss={() => setSoundSelectionVisible(false)}
-          style={styles.soundSelectionDialog}
-        >
-          <Dialog.Title>Wybierz dźwięk</Dialog.Title>
-          <Dialog.Content style={styles.soundSelectionContent}>
-            {" "}
-            <SoundSelectionComponent
-              selectedSound={modalData.soundName}
-              selectedServerAudioId={modalData.serverAudioId || null}
-              onSoundSelect={handleSoundSelection}
-              onSoundPreview={(
-                soundName: string | null,
-                serverAudioId: string | null
-              ) => {
-                if (serverAudioId) {
-                  playSound("", true, serverAudioId);
-                } else if (soundName) {
-                  playSound(soundName);
-                }
-              }}
-            />
-          </Dialog.Content>
-          <Dialog.Actions style={styles.modalActions}>
-            {" "}
-            <Button
-              onPress={() => setSoundSelectionVisible(false)}
-              disabled={isLoadingAudio}
-            >
-              Zamknij
-            </Button>
-          </Dialog.Actions>
-        </Dialog>
+          selectedSound={modalData.soundName}
+          selectedServerAudioId={modalData.serverAudioId || null}
+          isLoadingAudio={isLoadingAudio}
+          onSoundSelect={handleSoundSelection}
+          onSoundPreview={handleSoundPreview}
+          onClose={() => setSoundSelectionVisible(false)}
+        />
       </Portal>
+
       {/* Snackbar */}
       <Snackbar
         visible={snackbarVisible}
@@ -777,80 +504,41 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 8,
   },
   header: {
     marginBottom: 16,
     alignItems: "center",
+    paddingHorizontal: 8,
   },
   title: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "bold",
     marginBottom: 4,
+    textAlign: "center",
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
+    textAlign: "center",
   },
   progressBar: {
     marginBottom: 16,
   },
   listContainer: {
     flexGrow: 1,
-    paddingBottom: 80, // Space for FAB
-  },
-  listItem: {
-    marginBottom: 8,
-    elevation: 2,
-  },
-  colorIndicatorContainer: {
-    justifyContent: "center",
-    alignItems: "center",
-    marginLeft: 8,
-  },
-  colorIndicator: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    elevation: 2,
-  },
-  itemActions: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  loadingContainer: {
-    width: 48,
-    height: 48,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  playButtonContainer: {
-    position: "relative",
-    width: 48,
-    height: 48,
-  },
-  playButton: {
-    margin: 0,
-  },
-  loadingOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.7)",
-    borderRadius: 24,
+    paddingBottom: 100,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 32,
+    paddingHorizontal: 24,
+    paddingVertical: 40,
   },
   emptyText: {
     fontSize: 18,
-    fontWeight: 600,
+    fontWeight: "600",
     textAlign: "center",
     marginBottom: 8,
   },
@@ -858,60 +546,52 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
     lineHeight: 20,
+    opacity: 0.7,
   },
   noSessionText: {
     fontSize: 16,
     textAlign: "center",
-  },
-  fab: {
+    marginTop: 40,
+  },  fab: {
     position: "absolute",
     margin: 16,
     right: 0,
-    bottom: 0,
+    bottom: 20,
+    borderRadius: 28,
+    elevation: 6,
   },
-  input: {
+  addButtonContainer: {
+    position: "absolute",
+    bottom: 20,
+    left: 16,
+    right: 16,
+    alignItems: "center",
+  },
+  addButton: {
+    borderRadius: 8,
+    minWidth: 200,
+  },
+  addButtonContent: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  sensorCard: {
     marginBottom: 16,
+    elevation: 2,
+    borderRadius: 12,
   },
   sectionLabel: {
     fontSize: 16,
-    fontWeight: 600,
+    fontWeight: "600",
     marginBottom: 12,
-    marginTop: 8,
-  },
-  colorOption: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 4,
-  },
-  colorPreview: {
-    marginRight: 12,
-  },
-  colorDot: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    elevation: 1,
-  },
-  switchContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
     marginTop: 16,
   },
-  switchLabel: {
-    fontSize: 16,
-  },
-  modalActions: {
-    justifyContent: "flex-end",
-  },
-  soundSelectionButton: {
+  helperText: {
+    fontSize: 12,
+    marginTop: -12,
     marginBottom: 16,
-  },
-  soundSelectionDialog: {
-    maxHeight: "80%",
-  },
-  soundSelectionContent: {
-    paddingBottom: 0,
+    opacity: 0.7,
+    textAlign: "center",
   },
 });
 
