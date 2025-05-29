@@ -5,11 +5,10 @@ import { loadAudioFromLocal, loadAudioFromServer } from "../utils/audioUtils";
 
 interface UseColorSoundsReturn {
   playColorSound: (config: ColorConfig) => Promise<void>;
-  stopColorSound: (color: string) => Promise<void>;
+  stopAllColorSounds: () => Promise<void>;
   currentSound: Audio.Sound | null;
   playingSound: string | null;
   isLoadingAudio: boolean;
-  stopSound: () => Promise<void>;
 }
 
 export const useColorSounds = (): UseColorSoundsReturn => {
@@ -17,9 +16,6 @@ export const useColorSounds = (): UseColorSoundsReturn => {
   const [playingSound, setPlayingSound] = useState<string | null>(null);
   const [playingColor, setPlayingColor] = useState<string | null>(null);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
-  
-  // Semaphore to track which colors are currently playing or being processed
-  const [colorSemaphores, setColorSemaphores] = useState<Map<string, boolean>>(new Map());
 
   // Initialize audio system
   useEffect(() => {
@@ -54,14 +50,12 @@ export const useColorSounds = (): UseColorSoundsReturn => {
         setCurrentSound(null);
         setPlayingSound(null);
         setPlayingColor(null);
-        
-        // Clear all semaphores when stopping all audio
-        setColorSemaphores(new Map());
       }
     } catch (error) {
       console.error("Error stopping audio:", error);
     }
   };
+
   const playSound = async (config: ColorConfig) => {
     try {
       const soundKey = config.serverAudioId
@@ -76,13 +70,14 @@ export const useColorSounds = (): UseColorSoundsReturn => {
       let sound: Audio.Sound | null = null;
 
       if (config.serverAudioId) {
-        // Handle server audio        console.log(`🔊 Playing server audio for color: ${config.color} (looping: ${config.isLooping})`);
-        sound = await loadAudioFromServer(config.serverAudioId);        if (sound) {
+        console.log(`🔊 Playing server audio for color: ${config.color} (looping: ${config.isLooping})`);
+        sound = await loadAudioFromServer(config.serverAudioId);
+
+        if (sound) {
           setCurrentSound(sound);
           setPlayingSound(soundKey);
           setPlayingColor(config.color);
 
-          // Set looping based on config
           await sound.setIsLoopingAsync(config.isLooping || false);
 
           sound.setOnPlaybackStatusUpdate((status: any) => {
@@ -90,30 +85,23 @@ export const useColorSounds = (): UseColorSoundsReturn => {
               setPlayingSound(null);
               setPlayingColor(null);
               setCurrentSound(null);
-              
-              // Clear semaphore when server sound finishes naturally
-              const colorKey = config.color.toLowerCase();
-              setColorSemaphores(prev => {
-                const newMap = new Map(prev);
-                newMap.delete(colorKey);
-                return newMap;
-              });
             }
           });
 
           await sound.playAsync();
-          console.log(`✅ Server audio playing for color: ${config.color} (looping: ${config.isLooping})`);
+          console.log(`✅ Server audio playing for color: ${config.color}`);
         } else {
           console.warn(`Failed to load server audio for color: ${config.color}`);
         }
       } else if (config.soundName) {
-        // Handle local sound        console.log(`🔊 Playing local sound for color: ${config.color} (looping: ${config.isLooping})`);
-        sound = await loadAudioFromLocal(config.soundName);        if (sound) {
+        console.log(`🔊 Playing local sound for color: ${config.color} (looping: ${config.isLooping})`);
+        sound = await loadAudioFromLocal(config.soundName);
+
+        if (sound) {
           setCurrentSound(sound);
           setPlayingSound(soundKey);
           setPlayingColor(config.color);
 
-          // Set looping based on config
           await sound.setIsLoopingAsync(config.isLooping || false);
 
           sound.setOnPlaybackStatusUpdate((status: any) => {
@@ -121,115 +109,45 @@ export const useColorSounds = (): UseColorSoundsReturn => {
               setPlayingSound(null);
               setPlayingColor(null);
               setCurrentSound(null);
-              
-              // Clear semaphore when local sound finishes naturally
-              const colorKey = config.color.toLowerCase();
-              setColorSemaphores(prev => {
-                const newMap = new Map(prev);
-                newMap.delete(colorKey);
-                return newMap;
-              });
             }
           });
 
           await sound.playAsync();
-          console.log(`✅ Local audio playing for color: ${config.color} (looping: ${config.isLooping})`);
+          console.log(`✅ Local audio playing for color: ${config.color}`);
         } else {
           console.warn(`Failed to load local sound for color: ${config.color}`);
         }
-      }    } catch (error) {
+      }
+    } catch (error) {
       console.error("Error playing sound for color:", error);
       setPlayingSound(null);
       setPlayingColor(null);
       setCurrentSound(null);
-      
-      // Clear semaphore on error
-      const colorKey = config.color.toLowerCase();
-      setColorSemaphores(prev => {
-        const newMap = new Map(prev);
-        newMap.delete(colorKey);
-        return newMap;
-      });
     } finally {
       setIsLoadingAudio(false);
     }
-  };  const playColorSound = useCallback(async (config: ColorConfig) => {
-    const colorKey = config.color.toLowerCase();
-    console.log(`🎨 Color detected: ${config.color}, checking if sound should be played`);
+  };
+
+  const playColorSound = useCallback(async (config: ColorConfig) => {
+    console.log(`🎨 Playing sound for color: ${config.color}`);
     
-    // Check semaphore - if this color is already being processed or playing, skip
-    if (colorSemaphores.get(colorKey)) {
-      console.log(`🎵 Sound already playing or being processed for color: ${config.color}, skipping`);
+    // If the same color is already playing, don't restart it
+    if (playingColor === config.color) {
+      console.log(`🎵 Sound already playing for color: ${config.color}, skipping`);
       return;
     }
     
-    // Set semaphore to true to indicate this color is being processed
-    setColorSemaphores(prev => new Map(prev).set(colorKey, true));
-    
-    console.log(`🎵 Starting sound for color: ${config.color}`);
     await playSound(config);
-  }, [colorSemaphores]);  const stopColorSound = useCallback(async (color: string) => {
-    try {
-      const colorKey = color.toLowerCase();
-      console.log(`🛑 Request to stop sound for color: ${color}`);
-      console.log(`🛑 Currently playing color: ${playingColor}`);
-      console.log(`🛑 Current sound exists: ${!!currentSound}`);
-      console.log(`🛑 Color semaphore status: ${colorSemaphores.get(colorKey)}`);
-      
-      // Check if this color has an active semaphore (is playing or being processed)
-      if (!colorSemaphores.get(colorKey)) {
-        console.log(`🛑 No active semaphore for color: ${color}, nothing to stop`);
-        return;
-      }
-      
-      // Only stop if the currently playing sound matches this color
-      if (currentSound && playingColor) {
-        const isCurrentColorSound = playingColor.toLowerCase() === colorKey;
-        console.log(`🛑 Is current color sound: ${isCurrentColorSound}`);
-        
-        if (isCurrentColorSound) {
-          console.log(`🛑 Stopping sound for color: ${color}`);
-          await stopAllAudio();
-          
-          // Clear the semaphore for this specific color
-          setColorSemaphores(prev => {
-            const newMap = new Map(prev);
-            newMap.delete(colorKey);
-            return newMap;
-          });
-        } else {
-          console.log(`🛑 Not stopping - different color is playing (${playingColor} vs ${color})`);
-        }
-      } else {
-        console.log(`🛑 No sound currently playing, but clearing semaphore for color: ${color}`);
-        // Clear the semaphore even if no sound is playing
-        setColorSemaphores(prev => {
-          const newMap = new Map(prev);
-          newMap.delete(colorKey);
-          return newMap;
-        });
-      }
-    } catch (error) {
-      console.error(`Error stopping sound for color ${color}:`, error);
-      // Clear the semaphore on error
-      const colorKey = color.toLowerCase();
-      setColorSemaphores(prev => {
-        const newMap = new Map(prev);
-        newMap.delete(colorKey);
-        return newMap;
-      });
-    }
-  }, [currentSound, playingColor, colorSemaphores]);
+  }, [playingColor]);
 
-  const stopSound = useCallback(async () => {
+  const stopAllColorSounds = useCallback(async () => {
+    console.log(`🛑 Stopping all color sounds`);
     await stopAllAudio();
-  }, []);
-  return {
+  }, []);  return {
     playColorSound,
-    stopColorSound,
+    stopAllColorSounds,
     currentSound,
     playingSound,
     isLoadingAudio,
-    stopSound,
   };
 };

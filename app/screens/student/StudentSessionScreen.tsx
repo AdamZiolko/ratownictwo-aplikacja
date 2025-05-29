@@ -71,8 +71,7 @@ const StudentSessionScreen = () => {
   } = useColorConfigs({
     sessionId: accessCode?.toString(),
     sessionJoined,
-  });
-  const { playColorSound, stopColorSound, isLoadingAudio: isLoadingColorAudio } =
+  });  const { playColorSound, stopAllColorSounds, isLoadingAudio: isLoadingColorAudio } =
     useColorSounds();
 
   useNetworkMonitoring();
@@ -82,10 +81,10 @@ const StudentSessionScreen = () => {
     await playColorSound(config);
   };
 
-  const handleColorLost = async (lostColor: string) => {
-    console.log(`Color lost: ${lostColor}`);
-    // Stop the looped sound for the lost color
-    await stopColorSound(lostColor);
+  const handleColorLost = async () => {
+    console.log(`Color lost - stopping all color sounds`);
+    // Stop all color sounds since only one can play at a time
+    await stopAllColorSounds();
   };
 
   const handleGoBack = () => {

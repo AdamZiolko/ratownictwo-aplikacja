@@ -9,7 +9,7 @@ const DEBUG_MODE = __DEV__; // Only in development
 interface ColorSensorProps {
   colorConfigs?: any[]; // Color configurations from parent
   onColorDetected?: (color: string, config?: any) => void; // Callback when color is detected
-  onColorLost?: (color: string) => void; // Callback when color is no longer detected
+  onColorLost?: () => void; // Callback when color is no longer detected
 }
 
 export const ColorSensor: React.FC<ColorSensorProps> = ({
@@ -46,11 +46,10 @@ export const ColorSensor: React.FC<ColorSensorProps> = ({
       // Always check if sound should be played or stopped, regardless of debounce
       if (detectedConfig !== lastDetectedColor) {
         console.log(`🎨 ColorSensor: Color changed from '${lastDetectedColor}' to '${detectedConfig}'`);
-        
-        // Color changed - handle stopping previous sound
+          // Color changed - handle stopping previous sound
         if (lastDetectedColor && onColorLost) {
-          console.log(`🎨 ColorSensor: Lost color ${lastDetectedColor}, stopping sound`);
-          onColorLost(lastDetectedColor);
+          console.log(`🎨 ColorSensor: Lost color ${lastDetectedColor}, stopping all sounds`);
+          onColorLost();
         }
 
         setLastDetectedColor(detectedConfig);
