@@ -1,3 +1,4 @@
+// app/student-session.tsx
 import React, { useState } from "react";
 import {
   View,
@@ -5,6 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
+  Pressable,
 } from "react-native";
 import {
   useTheme,
@@ -18,7 +20,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BackgroundGradient from "@/components/BackgroundGradient";
 import ColorSensor from "@/components/ColorSensor";
-import { router, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import EkgCardDisplay from "@/components/ekg/EkgCardDisplay";
 import SocketConnectionStatus from "@/components/SocketConnectionStatus";
 import SessionInfo from "./components/SessionInfo";
@@ -33,6 +35,7 @@ import ColorConfigDisplay from "./components/ColorConfigDisplay";
 
 const StudentSessionScreen = () => {
   const theme = useTheme();
+  const router = useRouter();
   const { firstName, lastName, albumNumber, accessCode } =
     useLocalSearchParams<{
       firstName: string;
@@ -41,9 +44,12 @@ const StudentSessionScreen = () => {
       accessCode: string;
     }>();
 
+  // Czy to Web, czy urządzenie mobilne
   const isWeb = Platform.OS === "web";
   const [isSessionPanelExpanded, setIsSessionPanelExpanded] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false); // Use our new modular hooks
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Podpinamy się pod manager sesji, podając te same dane co przy dołączaniu
   const { sessionData, isLoading, error, sessionJoined, handleRetry } =
     useSessionManager({
       accessCode: accessCode?.toString(),
@@ -52,6 +58,7 @@ const StudentSessionScreen = () => {
       albumNumber: albumNumber || "",
     });
 
+  // Główne wartości, które wyświetlamy w panelu „Normalnym”
   const {
     temperature,
     bloodPressure,
@@ -60,10 +67,14 @@ const StudentSessionScreen = () => {
     respiratoryRate,
     formatBloodPressure,
   } = useVitalSigns(sessionData);
+
+  // Audio dolekcji
   const { audioReady, isPlayingServerAudio } = useAudioManager(
     accessCode?.toString(),
     sessionJoined
   );
+
+  // Kolorowe konfiguracje
   const {
     colorConfigs,
     isLoading: colorConfigsLoading,
@@ -71,22 +82,29 @@ const StudentSessionScreen = () => {
   } = useColorConfigs({
     sessionId: accessCode?.toString(),
     sessionJoined,
-  });  const { playColorSound, stopAllColorSounds, isLoadingAudio: isLoadingColorAudio } =
-    useColorSounds();
+  });
 
+  const {
+    playColorSound,
+    stopAllColorSounds,
+    isLoadingAudio: isLoadingColorAudio,
+  } = useColorSounds();
+
+  // Monitorowanie stanu sieciowego
   useNetworkMonitoring();
+
+  // Funkcje do ColorSensor
   const handleColorDetected = async (detectedColor: string, config: any) => {
     console.log(`Color detected: ${detectedColor}`);
-    // Play the sound associated with the detected color
     await playColorSound(config);
   };
 
   const handleColorLost = async () => {
     console.log(`Color lost - stopping all color sounds`);
-    // Stop all color sounds since only one can play at a time
     await stopAllColorSounds();
   };
 
+  // Powrót do ekranu wyboru studenta
   const handleGoBack = () => {
     router.replace({
       pathname: "/routes/student-access",
@@ -102,6 +120,7 @@ const StudentSessionScreen = () => {
     setIsSessionPanelExpanded(!isSessionPanelExpanded);
   };
 
+  // Jeśli ciągle ładuje sesję
   if (isLoading) {
     return (
       <BackgroundGradient>
@@ -119,7 +138,7 @@ const StudentSessionScreen = () => {
     );
   }
 
-  // Error state
+  // Jeśli wystąpił błąd
   if (error) {
     return (
       <BackgroundGradient>
@@ -153,7 +172,7 @@ const StudentSessionScreen = () => {
     );
   }
 
-  // No session data
+  // Jeśli brak danych sesji
   if (!sessionData) {
     return (
       <BackgroundGradient>
@@ -179,7 +198,8 @@ const StudentSessionScreen = () => {
       </BackgroundGradient>
     );
   }
-  // Main content when session data is available
+
+  // Gdy wszystko jest OK – wyświetlamy główny UI
   return (
     <BackgroundGradient>
       <SafeAreaView style={styles.container}>
@@ -203,15 +223,35 @@ const StudentSessionScreen = () => {
             setIsSessionPanelExpanded={setIsSessionPanelExpanded}
             isMobile={!isWeb}
           />
+
+          {/* 
+            Karta EKG: po tapnięciu przenosimy na ekran pełnoekranowy,
+            ale przesyłamy tylko dane identyfikacyjne (accessCode itp.).
+            Dzięki temu ekran pełnoekranowy ponownie subskrybuje bieżące dane.
+          */}
           {sessionData.rhythmType !== undefined && (
-            <Surface style={styles.cardContainer}>
+            <Pressable
+              style={styles.cardContainer}
+              onPress={() => {
+                router.push({
+                  pathname: "/screens/student/ekg-fullscreen",
+                  params: {
+                    accessCode: accessCode?.toString() || "",
+                    firstName: firstName || "",
+                    lastName: lastName || "",
+                    albumNumber: albumNumber || "",
+                  },
+                });
+              }}
+            >
               <EkgCardDisplay
                 ekgType={sessionData.rhythmType}
                 bpm={sessionData.beatsPerMinute}
                 isRunning={true}
               />
-            </Surface>
+            </Pressable>
           )}
+
           <VitalSignsDisplay
             temperature={temperature}
             bloodPressure={bloodPressure}
@@ -221,17 +261,21 @@ const StudentSessionScreen = () => {
             formatBloodPressure={formatBloodPressure}
             isFullscreen={isFullscreen}
           />
+
           <ColorConfigDisplay
             colorConfigs={colorConfigs}
             isLoading={colorConfigsLoading}
             error={colorConfigsError}
-          />          {!isWeb && (
+          />
+
+          {!isWeb && (
             <ColorSensor
               colorConfigs={colorConfigs}
               onColorDetected={handleColorDetected}
               onColorLost={handleColorLost}
             />
           )}
+
           <Surface style={styles.cardContainer}>
             <View style={styles.audioStatusContainer}>
               <MaterialCommunityIcons
@@ -259,10 +303,10 @@ const StudentSessionScreen = () => {
               >
                 Audio:
                 {isPlayingServerAudio
-                  ? "Odtwarzanie..."
+                  ? " Odtwarzanie..."
                   : audioReady
-                  ? "Gotowe"
-                  : "Niedostępne"}
+                  ? " Gotowe"
+                  : " Niedostępne"}
               </Text>
               {isPlayingServerAudio && (
                 <ActivityIndicator
@@ -273,6 +317,7 @@ const StudentSessionScreen = () => {
               )}
             </View>
           </Surface>
+
           <SocketConnectionStatus />
         </ScrollView>
       </SafeAreaView>
@@ -323,6 +368,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderRadius: 12,
     elevation: 2,
+    overflow: "hidden",
   },
   audioStatusContainer: {
     flexDirection: "row",
