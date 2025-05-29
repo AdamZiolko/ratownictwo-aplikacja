@@ -444,7 +444,13 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
             resetModalData();
           }}
           onSave={handleSaveConfig}
-          onSoundSelection={() => setSoundSelectionVisible(true)}
+          onSoundSelection={() => {
+            console.log("ColorConfigTab: Sound selection triggered");
+            console.log("Current soundSelectionVisible state:", soundSelectionVisible);
+            console.log("Platform:", Platform.OS);
+            setSoundSelectionVisible(true);
+            console.log("Sound selection modal visibility set to true");
+          }}
           onModalDataChange={(data) => setModalData(prev => ({ ...prev, ...data }))}
           // Color sensor integration
           sensorStatus={sensorStatus}
