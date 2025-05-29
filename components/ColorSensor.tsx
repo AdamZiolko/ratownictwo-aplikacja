@@ -68,32 +68,24 @@ export const ColorSensor: React.FC<ColorSensorProps> = ({
           console.log(`🎨 ColorSensor: Looking for config for '${detectedConfig}'`);
           console.log(`🎨 ColorSensor: Available configs:`, colorConfigs.map(cfg => `${cfg.color}:${cfg.isEnabled}`));
 
-          if (config && onColorDetected) {
-            console.log(`🎨 ColorSensor: Found config for ${detectedConfig}:`, {
+          if (config && onColorDetected) {            console.log(`🎨 ColorSensor: Found config for ${detectedConfig}:`, {
               soundName: config.soundName,
               serverAudioId: config.serverAudioId,
               volume: config.volume,
               isLooping: config.isLooping
             });
+            console.log(`🎨 ColorSensor: Calling onColorDetected for NEW color detection`);
             onColorDetected(detectedConfig, config);
           } else if (!config) {
             console.log(`🎨 ColorSensor: Detected color ${detectedConfig}, but no enabled configuration found`);
           }
         } else {
           console.log(`🎨 ColorSensor: No color detected, no sound to play`);
-        }
-      } else if (detectedConfig) {
-        // Same color detected - ensure sound continues playing if it should be looping
-        const config = colorConfigs.find((cfg) => {
-          if (cfg.color === 'custom') {
-            return `custom-${cfg.id}` === detectedConfig && cfg.isEnabled;
-          } else {
-            return cfg.color.toLowerCase() === detectedConfig.toLowerCase() && cfg.isEnabled;
-          }
-        });
-          if (config?.isLooping) {
-          console.log(`🎨 ColorSensor: Continuing to detect ${detectedConfig}, ensuring looped sound continues`);
-        }
+        }      } else if (detectedConfig) {
+        // Same color detected - just log but don't trigger callbacks again
+        console.log(`🎨 ColorSensor: Same color '${detectedConfig}' still detected - not triggering callbacks again`);
+      } else {
+        console.log(`🎨 ColorSensor: Still no color detected`);
       }
       
       console.log(`🎨 ColorSensor: ===== END COLOR UPDATE CYCLE =====`);

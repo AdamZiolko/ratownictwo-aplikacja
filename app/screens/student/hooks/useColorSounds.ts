@@ -126,20 +126,36 @@ export const useColorSounds = (): UseColorSoundsReturn => {
     } finally {
       setIsLoadingAudio(false);
     }
-  };
-  const playColorSound = useCallback(async (config: ColorConfig) => {
-    console.log(`🎨 Color detected: ${config.color}, playing associated sound`);
+  };  const playColorSound = useCallback(async (config: ColorConfig) => {
+    console.log(`🎨 Color detected: ${config.color}, checking if sound should be played`);
+    
+    // Check if we're already playing the sound for this color
+    if (playingColor && playingColor.toLowerCase() === config.color.toLowerCase()) {
+      console.log(`🎵 Sound already playing for color: ${config.color}, skipping`);
+      return;
+    }
+    
+    console.log(`🎵 Starting sound for color: ${config.color}`);
     await playSound(config);
-  }, []);
-  const stopColorSound = useCallback(async (color: string) => {
+  }, [playingColor]);  const stopColorSound = useCallback(async (color: string) => {
     try {
+      console.log(`🛑 Request to stop sound for color: ${color}`);
+      console.log(`🛑 Currently playing color: ${playingColor}`);
+      console.log(`🛑 Current sound exists: ${!!currentSound}`);
+      
       // Only stop if the currently playing sound matches this color
       if (currentSound && playingColor) {
         const isCurrentColorSound = playingColor.toLowerCase() === color.toLowerCase();
+        console.log(`🛑 Is current color sound: ${isCurrentColorSound}`);
+        
         if (isCurrentColorSound) {
           console.log(`🛑 Stopping sound for color: ${color}`);
           await stopAllAudio();
+        } else {
+          console.log(`🛑 Not stopping - different color is playing (${playingColor} vs ${color})`);
         }
+      } else {
+        console.log(`🛑 No sound to stop (currentSound: ${!!currentSound}, playingColor: ${playingColor})`);
       }
     } catch (error) {
       console.error(`Error stopping sound for color ${color}:`, error);
