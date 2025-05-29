@@ -25,6 +25,7 @@ export interface ColorConfigModalData {
   name: string;
   color: string;
   soundName: string;
+  displayName?: string;
   serverAudioId?: string;
   isLooping: boolean;
   customColorRgb?: { r: number; g: number; b: number };
@@ -100,18 +101,17 @@ const ColorConfigModal: React.FC<ColorConfigModalProps> = ({
             paddingTop: 8,
             paddingBottom: 16,
           }}
-        >
-          <TextInput
-            label="Nazwa dźwięku"
+        >          <TextInput
+            label="Nazwa wyświetlana"
             value={modalData.name}
             onChangeText={(text) =>
               onModalDataChange({
                 name: text,
-                soundName: text,
+                displayName: text,
               })
             }
             style={styles.input}
-            disabled={modalLoading}            right={
+            disabled={modalLoading}right={
               <TextInput.Icon
                 icon="music"
                 size={Platform.OS === 'web' ? 20 : 24}

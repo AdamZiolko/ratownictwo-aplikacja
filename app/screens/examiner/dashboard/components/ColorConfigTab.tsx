@@ -54,12 +54,12 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [soundSelectionVisible, setSoundSelectionVisible] = useState(false);
   const [modalLoading, setModalLoading] = useState(false);
-
   // Modal form data
   const [modalData, setModalData] = useState<ColorConfigModalData>({
     name: "",
     color: "red",
     soundName: "",
+    displayName: "",
     isLooping: false,
     customColorRgb: { r: 255, g: 0, b: 0 },
     colorTolerance: 0.15,
@@ -137,12 +137,12 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
     setSnackbarMessage(message);
     setSnackbarVisible(true);
   };
-
   const resetModalData = () => {
     setModalData({
       name: "",
       color: "red",
       soundName: "",
+      displayName: "",
       serverAudioId: undefined,
       isLooping: false,
       customColorRgb: { r: 255, g: 0, b: 0 },
@@ -165,13 +165,13 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
     resetModalData();
     setAddModalVisible(true);
   };
-
   const openEditModal = (config: ColorConfig) => {
     setModalData({
       id: config.id,
-      name: config.soundName || "",
+      name: config.displayName || config.soundName || "",
       color: config.color,
       soundName: config.soundName || "",
+      displayName: config.displayName,
       serverAudioId: config.serverAudioId,
       isLooping: config.isLooping,
       customColorRgb: config.customColorRgb || { r: 255, g: 0, b: 0 },
@@ -231,10 +231,10 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
     }
 
     setModalLoading(true);
-    try {
-      const configRequest: ColorConfigRequest = {
+    try {      const configRequest: ColorConfigRequest = {
         color: modalData.color as any,
         soundName: modalData.soundName,
+        displayName: modalData.displayName || modalData.name,
         serverAudioId: modalData.serverAudioId,
         isEnabled: true,
         volume: 1.0,
@@ -303,7 +303,6 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
       }
     }
   };
-
   const handleSoundSelection = (
     soundName: string | null,
     serverAudioId: string | null
@@ -312,12 +311,20 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
       setModalData((prev) => ({
         ...prev,
         soundName: "",
+        displayName: "",
         serverAudioId: serverAudioId,
       }));
     } else if (soundName) {
+      // Extract display name from file path
+      const pathParts = soundName.split('/');
+      const fileName = pathParts[pathParts.length - 1];
+      const displayName = fileName.replace(/\.[^/.]+$/, ""); // Remove file extension
+      
       setModalData((prev) => ({
         ...prev,
+        name: displayName,
         soundName: soundName,
+        displayName: displayName,
         serverAudioId: undefined,
       }));
     }

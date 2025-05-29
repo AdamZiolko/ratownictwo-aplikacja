@@ -5,6 +5,7 @@ export interface ColorConfig {
   sessionId: string;
   color: 'red' | 'green' | 'blue' | 'yellow' | 'orange' | 'purple' | 'custom';
   soundName?: string;
+  displayName?: string;
   serverAudioId?: string;
   isEnabled: boolean;
   volume: number;
@@ -22,6 +23,7 @@ export interface ColorConfigRequest {
   id?: number;
   color: 'red' | 'green' | 'blue' | 'yellow' | 'orange' | 'purple' | 'custom';
   soundName?: string;
+  displayName?: string;
   serverAudioId?: string;
   isEnabled?: boolean;
   volume?: number;

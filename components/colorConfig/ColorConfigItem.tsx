@@ -72,11 +72,10 @@ const ColorConfigItem: React.FC<ColorConfigItemProps> = ({
               ]}
             />
           </View>
-          <View style={{ flex: 1, marginLeft: 12 }}>
-            <Text
+          <View style={{ flex: 1, marginLeft: 12 }}>            <Text
               style={[styles.listItemTitle, { color: theme.colors.onSurface }]}
             >
-              {item.soundName || "Bez nazwy"}
+              {item.displayName || item.soundName || "Bez nazwy"}
             </Text>
             <Text
               style={[
