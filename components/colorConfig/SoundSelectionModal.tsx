@@ -32,7 +32,6 @@ const SoundSelectionModal: React.FC<SoundSelectionModalProps> = ({
     console.log("SoundSelectionModal: Platform:", Platform.OS);
     console.log("SoundSelectionModal: Screen dimensions:", { height: screenHeight, width: screenWidth });
   }, [visible]);
-
   return (
     <Dialog
       visible={visible}
@@ -42,13 +41,15 @@ const SoundSelectionModal: React.FC<SoundSelectionModalProps> = ({
     >
       <Dialog.Title>Wybierz dźwięk</Dialog.Title>
       <Dialog.Content style={Platform.OS === 'web' ? styles.webDialogContent : styles.mobileDialogContent}>
-        <SoundSelectionComponent
-          selectedSound={selectedSound}
-          selectedServerAudioId={selectedServerAudioId}
-          onSoundSelect={onSoundSelect}
-          onSoundPreview={onSoundPreview}
-          style={styles.soundSelection}
-        />
+        <View style={styles.soundSelectionContainer}>
+          <SoundSelectionComponent
+            selectedSound={selectedSound}
+            selectedServerAudioId={selectedServerAudioId}
+            onSoundSelect={onSoundSelect}
+            onSoundPreview={onSoundPreview}
+            style={styles.soundSelection}
+          />
+        </View>
       </Dialog.Content>
       <Dialog.Actions style={styles.modalActions}>
         <Button
@@ -72,7 +73,7 @@ const styles = StyleSheet.create({
     paddingBottom: 0,
     maxHeight: Platform.OS === 'web' ? 400 : 500,
   },
-    // New responsive styles
+  // New responsive styles
   webDialog: {
     maxHeight: "85%",
     marginHorizontal: 16,
@@ -93,16 +94,23 @@ const styles = StyleSheet.create({
     paddingBottom: 0,
     maxHeight: 400,
     minHeight: 300,
+    overflow: 'hidden',
   },
   mobileDialogContent: {
     paddingBottom: 0,
-    maxHeight: screenHeight * 0.7,
-    minHeight: screenHeight * 0.4,
-    paddingHorizontal: 8,
+    maxHeight: screenHeight * 0.65,
+    minHeight: screenHeight * 0.65,
+    paddingHorizontal: 4,
+    overflow: 'hidden',
+  },
+  soundSelectionContainer: {
+    flex: 1,
+    height: Platform.OS === 'web' ? 350 : screenHeight * 0.75,
+    maxHeight: Platform.OS === 'web' ? 350 : screenHeight * 0.75,
   },
   soundSelection: {
     flex: 1,
-    minHeight: Platform.OS === 'web' ? 300 : screenHeight * 0.35,
+    height: '100%',
   },
   modalActions: {
     justifyContent: "flex-end",

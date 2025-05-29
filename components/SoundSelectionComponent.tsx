@@ -117,9 +117,16 @@ interface ServerAudioFile {
 interface SoundSelectionComponentProps {
   selectedSound: string | null;
   selectedServerAudioId: string | null;
-  onSoundSelect: (soundName: string | null, serverAudioId: string | null) => void;
-  onSoundPreview?: (soundName: string | null, serverAudioId: string | null) => void;
+  onSoundSelect: (
+    soundName: string | null,
+    serverAudioId: string | null
+  ) => void;
+  onSoundPreview?: (
+    soundName: string | null,
+    serverAudioId: string | null
+  ) => void;
   style?: any;
+  maxHeight?: number;
 }
 
 const SoundSelectionComponent: React.FC<SoundSelectionComponentProps> = ({
@@ -128,21 +135,25 @@ const SoundSelectionComponent: React.FC<SoundSelectionComponentProps> = ({
   onSoundSelect,
   onSoundPreview,
   style,
+  maxHeight,
 }) => {
   const theme = useTheme();
   const [activeTab, setActiveTab] = useState<"local" | "server">("local");
   const [currentPath, setCurrentPath] = useState<string[]>([]);
-  const [serverAudioFiles, setServerAudioFiles] = useState<ServerAudioFile[]>([]);
+  const [serverAudioFiles, setServerAudioFiles] = useState<ServerAudioFile[]>(
+    []
+  );
   const [loadingServerAudio, setLoadingServerAudio] = useState(false);
   const [playingSound, setPlayingSound] = useState<string | null>(null);
-  const [currentAudioSound, setCurrentAudioSound] = useState<Audio.Sound | null>(null);
+  const [currentAudioSound, setCurrentAudioSound] =
+    useState<Audio.Sound | null>(null);
 
   // Initialize audio system for mobile
   useEffect(() => {
-    if (Platform.OS !== 'web') {
+    if (Platform.OS !== "web") {
       initializeAudioSystem();
     }
-    
+
     return () => {
       // Cleanup audio on unmount
       if (currentAudioSound) {
@@ -207,14 +218,15 @@ const SoundSelectionComponent: React.FC<SoundSelectionComponentProps> = ({
 
   const handleServerAudioSelect = (audioId: string) => {
     onSoundSelect(null, audioId);
-  };  const playLocalSound = async (soundPath: string) => {
+  };
+  const playLocalSound = async (soundPath: string) => {
     try {
       // Stop any currently playing sound
       await stopSound();
-      
+
       setPlayingSound(soundPath);
-      
-      if (Platform.OS === 'web') {
+
+      if (Platform.OS === "web") {
         // On web, just call the preview handler
         if (onSoundPreview) {
           onSoundPreview(soundPath, null);
@@ -225,13 +237,13 @@ const SoundSelectionComponent: React.FC<SoundSelectionComponentProps> = ({
       // On mobile, use the proper audio loading utility
       try {
         const sound = await loadAudioFromLocal(soundPath);
-        
+
         if (!sound) {
           console.warn(`Failed to load local audio: ${soundPath}`);
           setPlayingSound(null);
           return;
         }
-        
+
         // Set up playback status listener
         sound.setOnPlaybackStatusUpdate((status) => {
           if (status.isLoaded && status.didJustFinish) {
@@ -239,15 +251,18 @@ const SoundSelectionComponent: React.FC<SoundSelectionComponentProps> = ({
             setCurrentAudioSound(null);
           }
         });
-        
+
         setCurrentAudioSound(sound);
         await sound.playAsync();
-        
+
         if (onSoundPreview) {
           onSoundPreview(soundPath, null);
         }
       } catch (audioError) {
-        console.warn("Failed to play local audio, falling back to preview handler:", audioError);
+        console.warn(
+          "Failed to play local audio, falling back to preview handler:",
+          audioError
+        );
         setPlayingSound(null);
         if (onSoundPreview) {
           onSoundPreview(soundPath, null);
@@ -263,9 +278,9 @@ const SoundSelectionComponent: React.FC<SoundSelectionComponentProps> = ({
     try {
       // Stop any currently playing sound
       await stopSound();
-      
+
       setPlayingSound(`server_${audioId}`);
-      
+
       if (onSoundPreview) {
         onSoundPreview(null, audioId);
       }
@@ -300,7 +315,8 @@ const SoundSelectionComponent: React.FC<SoundSelectionComponentProps> = ({
           <RadioButton.Group
             onValueChange={handleSoundSelect}
             value={selectedSound || ""}
-          >            {currentLevel.map((item) => {
+          >
+            {currentLevel.map((item) => {
               const soundPath = `${currentPath.join("/")}/${item}.wav`;
               return (
                 <List.Item
@@ -311,9 +327,12 @@ const SoundSelectionComponent: React.FC<SoundSelectionComponentProps> = ({
                   left={() => (
                     <RadioButton
                       value={soundPath}
-                      status={selectedSound === soundPath ? "checked" : "unchecked"}
+                      status={
+                        selectedSound === soundPath ? "checked" : "unchecked"
+                      }
                     />
-                  )}                  right={() => (
+                  )}
+                  right={() => (
                     <IconButton
                       icon={playingSound === soundPath ? "stop" : "play"}
                       size={20}
@@ -334,7 +353,6 @@ const SoundSelectionComponent: React.FC<SoundSelectionComponentProps> = ({
         </View>
       );
     } else {
-      // We're at a category level, show folders
       return (
         <View style={styles.soundListContainer}>
           {Object.keys(currentLevel).map((key) => (
@@ -357,7 +375,9 @@ const SoundSelectionComponent: React.FC<SoundSelectionComponentProps> = ({
       return (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" />
-          <Text style={styles.loadingText}>Ładowanie plików audio z serwera...</Text>
+          <Text style={styles.loadingText}>
+            Ładowanie plików audio z serwera...
+          </Text>
         </View>
       );
     }
@@ -386,9 +406,12 @@ const SoundSelectionComponent: React.FC<SoundSelectionComponentProps> = ({
               left={() => (
                 <RadioButton
                   value={file.id}
-                  status={selectedServerAudioId === file.id ? "checked" : "unchecked"}
+                  status={
+                    selectedServerAudioId === file.id ? "checked" : "unchecked"
+                  }
                 />
-              )}              right={() => (
+              )}
+              right={() => (
                 <IconButton
                   icon={playingSound === `server_${file.id}` ? "stop" : "play"}
                   size={20}
@@ -456,9 +479,9 @@ const SoundSelectionComponent: React.FC<SoundSelectionComponentProps> = ({
           <>
             <View style={styles.serverControlsHeader}>
               <Text style={styles.sectionHeader}>Pliki audio serwera:</Text>
-              <Button 
-                mode="text" 
-                icon="refresh" 
+              <Button
+                mode="text"
+                icon="refresh"
                 onPress={loadServerAudioFiles}
                 disabled={loadingServerAudio}
               >
@@ -476,7 +499,7 @@ const SoundSelectionComponent: React.FC<SoundSelectionComponentProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: Platform.OS === 'web' ? 16 : 8,
+    padding: Platform.OS === "web" ? 16 : 8,
   },
   tabsContainer: {
     flexDirection: "row",
@@ -488,12 +511,12 @@ const styles = StyleSheet.create({
     minHeight: 40,
   },
   tabLabel: {
-    fontSize: Platform.OS === 'web' ? 12 : 14,
-    fontWeight: '500',
+    fontSize: Platform.OS === "web" ? 12 : 14,
+    fontWeight: "500",
   },
   scrollContainer: {
     flex: 1,
-    minHeight: Platform.OS === 'web' ? 200 : 300,
+    minHeight: Platform.OS === "web" ? 200 : 500,
   },
   sectionHeader: {
     fontSize: 16,
