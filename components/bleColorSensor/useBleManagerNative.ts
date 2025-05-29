@@ -374,14 +374,19 @@ export const useBleManager = (onColorUpdate: (color: ColorValue) => Promise<void
                     console.error("[BLE] Monitor error", error);
                     return;
                   }
-                  if (!characteristic?.value) return;
-
-                  try {
+                  if (!characteristic?.value) return;                  try {
                     // Decode data from base64
                     const rawData = atob(characteristic.value);
                     
                     // Print raw data for debugging
-                    console.log("[BLE] Raw data length:", rawData.length);
+                    console.log("[BLE] 📦 Raw data received:");
+                    console.log(`[BLE]   - Base64 value: ${characteristic.value}`);
+                    console.log(`[BLE]   - Raw data length: ${rawData.length} bytes`);
+                    const bytes = [];
+                    for (let i = 0; i < rawData.length; i++) {
+                      bytes.push(rawData.charCodeAt(i));
+                    }
+                    console.log(`[BLE]   - Raw bytes: [${bytes.join(', ')}]`);
                     
                     // Parse RGB data (format: 2 bytes per color, big-endian)
                     if (rawData.length >= 6) {
@@ -389,10 +394,15 @@ export const useBleManager = (onColorUpdate: (color: ColorValue) => Promise<void
                       const g = (rawData.charCodeAt(2) << 8) + rawData.charCodeAt(3);
                       const b = (rawData.charCodeAt(4) << 8) + rawData.charCodeAt(5);
                       
+                      console.log("[BLE] 🎨 Raw RGB values parsed:");
+                      console.log(`[BLE]   - R: ${r} (bytes: ${rawData.charCodeAt(0)}, ${rawData.charCodeAt(1)})`);
+                      console.log(`[BLE]   - G: ${g} (bytes: ${rawData.charCodeAt(2)}, ${rawData.charCodeAt(3)})`);
+                      console.log(`[BLE]   - B: ${b} (bytes: ${rawData.charCodeAt(4)}, ${rawData.charCodeAt(5)})`);
+                      
                       // Check if all values are exactly equal to 1000
                       // This may indicate a problem with the sensor
                       if (r === 1000 && g === 1000 && b === 1000) {
-                        console.log("[BLE] Warning: All RGB values are exactly 1000 - possible sensor issue");
+                        console.log("[BLE] ⚠️ Warning: All RGB values are exactly 1000 - possible sensor issue");
                         // Ignore this data
                         return;
                       }
@@ -400,7 +410,8 @@ export const useBleManager = (onColorUpdate: (color: ColorValue) => Promise<void
                       // Check if all values are almost identical (like 501, 501, 501)
                       const isAllSimilar = Math.abs(r - g) < 10 && Math.abs(r - b) < 10 && Math.abs(g - b) < 10;
                       if (isAllSimilar && r > 400 && r < 600) {
-                        console.log("[BLE] Warning: All RGB values are similar and in mid-range - possible sensor issue");
+                        console.log("[BLE] ⚠️ Warning: All RGB values are similar and in mid-range - possible sensor issue");
+                        console.log(`[BLE]   - Values: R:${r}, G:${g}, B:${b}`);
                         // Ignore this data
                         return;
                       }
@@ -410,13 +421,19 @@ export const useBleManager = (onColorUpdate: (color: ColorValue) => Promise<void
                       const filteredG = g < 2 ? 0 : g;
                       const filteredB = b < 2 ? 0 : b;
                       
+                      console.log("[BLE] 🔧 After noise filtering:");
+                      console.log(`[BLE]   - R: ${r} -> ${filteredR} ${r !== filteredR ? '(filtered)' : ''}`);
+                      console.log(`[BLE]   - G: ${g} -> ${filteredG} ${g !== filteredG ? '(filtered)' : ''}`);
+                      console.log(`[BLE]   - B: ${b} -> ${filteredB} ${b !== filteredB ? '(filtered)' : ''}`);
+                      
                       const newColor = { r: filteredR, g: filteredG, b: filteredB };
-                      console.log("[BLE] Parsed RGB:", newColor);
+                      console.log("[BLE] ✅ Final parsed RGB color:", newColor);
                       
                       // Check if values are sensible (not too high)
                       const maxValidValue = 65535; // Maximum value for 16-bit unsigned int
                       if (filteredR > maxValidValue || filteredG > maxValidValue || filteredB > maxValidValue) {
-                        console.log("[BLE] Invalid color values detected, ignoring");
+                        console.log("[BLE] ❌ Invalid color values detected, ignoring");
+                        console.log(`[BLE]   - Max valid: ${maxValidValue}, Got: R:${filteredR}, G:${filteredG}, B:${filteredB}`);
                         return;
                       }
                       
@@ -441,10 +458,11 @@ export const useBleManager = (onColorUpdate: (color: ColorValue) => Promise<void
                           console.log("[BLE] No color updates for 1 second, resetting");
                           setColor({ r: 0, g: 0, b: 0 });
                         }
-                      }, 1000);
-                      
-                      // Call color update callback
+                      }, 1000);                      // Call color update callback
+                      console.log("[BLE] 🚀 Calling onColorUpdate callback with color:", newColor);
                       await onColorUpdate(newColor);
+                    } else {
+                      console.log(`[BLE] ❌ Insufficient data received: ${rawData.length} bytes (expected at least 6)`);
                     }
                   } catch (error) {
                     console.error(
