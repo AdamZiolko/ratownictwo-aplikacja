@@ -3,12 +3,14 @@ import ApiService from './ApiService';
 export interface ColorConfig {
   id: number;
   sessionId: string;
-  color: 'red' | 'green' | 'blue' | 'yellow' | 'orange' | 'purple';
+  color: 'red' | 'green' | 'blue' | 'yellow' | 'orange' | 'purple' | 'custom';
   soundName?: string;
   serverAudioId?: string;
   isEnabled: boolean;
   volume: number;
   isLooping: boolean;
+  customColorRgb?: { r: number; g: number; b: number };
+  colorTolerance?: number;
   serverAudio?: {
     id: string;
     name: string;
@@ -18,12 +20,14 @@ export interface ColorConfig {
 
 export interface ColorConfigRequest {
   id?: number;
-  color: 'red' | 'green' | 'blue' | 'yellow' | 'orange' | 'purple';
+  color: 'red' | 'green' | 'blue' | 'yellow' | 'orange' | 'purple' | 'custom';
   soundName?: string;
   serverAudioId?: string;
   isEnabled?: boolean;
   volume?: number;
   isLooping?: boolean;
+  customColorRgb?: { r: number; g: number; b: number };
+  colorTolerance?: number;
 }
 
 class ColorConfigService {

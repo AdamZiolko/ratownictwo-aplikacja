@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { Platform, PermissionsAndroid, ColorValue } from 'react-native';
+import { Platform, PermissionsAndroid } from 'react-native';
 import { BleManager, Device, Subscription, BleError } from 'react-native-ble-plx';
 import { decode as atob } from 'base-64';
-import { BLE_CONFIG, COLOR_RATIO_THRESHOLDS } from '../bleColorSensor';
+import { BLE_CONFIG, COLOR_RATIO_THRESHOLDS } from './constants';
+import { ColorValue } from './colorUtils';
 
 // Global flag for automatic reconnection
 let GLOBAL_AUTO_RECONNECT_ENABLED = true;

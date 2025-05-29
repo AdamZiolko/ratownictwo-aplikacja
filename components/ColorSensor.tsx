@@ -1,10 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, ScrollView } from "react-native";
 import { Surface, Text, useTheme } from "react-native-paper";
-import { useBleManager } from "./colorSensor/useBleManager";
-import { ColorDisplay } from "./colorSensor/ColorDisplay";
-import { ConnectionControls } from "./colorSensor/ConnectionControls";
-import { ColorValue } from "./colorSensor/colorUtils";
+import { useBleManager, ColorDisplay, ConnectionControls, ColorValue } from "./bleColorSensor";
 
 interface ColorSensorProps {
   colorConfigs?: any[]; // Color configurations from parent
@@ -28,43 +25,43 @@ export const ColorSensor: React.FC<ColorSensorProps> = ({
       // Clear any existing debounce timeout
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current);
-      }
+      }        // Debounce color detection to prevent rapid repeated triggering
+        debounceTimeoutRef.current = setTimeout(() => {
+          // Check if detected color matches any configured colors (including custom)
+          const detectedConfig = detectConfiguredColor(color);
 
-      // Debounce color detection to prevent rapid repeated triggering
-      debounceTimeoutRef.current = setTimeout(() => {
-        // Determine detected color based on RGB values
-        const detectedColor = determineColor(color);
+          if (detectedConfig !== lastDetectedColor) {
+            // Color changed
+            if (lastDetectedColor && onColorLost) {
+              console.log(`🎨 ColorSensor: Lost color ${lastDetectedColor}`);
+              onColorLost(lastDetectedColor);
+            }
 
-        if (detectedColor !== lastDetectedColor) {
-          // Color changed
-          if (lastDetectedColor && onColorLost) {
-            console.log(`🎨 ColorSensor: Lost color ${lastDetectedColor}`);
-            onColorLost(lastDetectedColor);
-          }
+            setLastDetectedColor(detectedConfig);
 
-          setLastDetectedColor(detectedColor);
+            if (detectedConfig) {
+              // Find the configuration for this detected color
+              const config = colorConfigs.find((cfg) => {
+                if (cfg.color === 'custom') {
+                  return `custom-${cfg.id}` === detectedConfig && cfg.isEnabled;
+                } else {
+                  return cfg.color.toLowerCase() === detectedConfig.toLowerCase() && cfg.isEnabled;
+                }
+              });
 
-          if (detectedColor) {
-            // Check if this color has an enabled configuration
-            const config = colorConfigs.find(
-              (cfg) =>
-                cfg.color.toLowerCase() === detectedColor.toLowerCase() &&
-                cfg.isEnabled
-            );
-
-            if (config && onColorDetected) {
-              console.log(
-                `🎨 ColorSensor: Detected color ${detectedColor}, triggering callback`
-              );
-              onColorDetected(detectedColor, config);
-            } else if (!config) {
-              console.log(
-                `🎨 ColorSensor: Detected color ${detectedColor}, but no enabled configuration found`
-              );
+              if (config && onColorDetected) {
+                console.log(
+                  `🎨 ColorSensor: Detected color ${detectedConfig}, triggering callback`
+                );
+                onColorDetected(detectedConfig, config);
+              } else if (!config) {
+                console.log(
+                  `🎨 ColorSensor: Detected color ${detectedConfig}, but no enabled configuration found`
+                );
+              }
             }
           }
-        }
-      }, 300); // 300ms debounce delay
+        }, 300); // 300ms debounce delay
     },
     [colorConfigs, onColorDetected, onColorLost, lastDetectedColor]
   );
@@ -85,8 +82,67 @@ export const ColorSensor: React.FC<ColorSensorProps> = ({
     isReconnecting,
     color,
     startConnection,
-    disconnectDevice,
-  } = useBleManager(handleColorUpdate);
+    disconnectDevice,  } = useBleManager(handleColorUpdate);
+
+  // Function to detect if current color matches any configured color (including custom)
+  const detectConfiguredColor = (currentColor: ColorValue): string | null => {
+    const { r, g, b } = currentColor;
+    const totalBrightness = r + g + b;
+
+    // Ignore very dark colors
+    if (totalBrightness < 100) {
+      return null;
+    }
+
+    // Check all configured colors
+    for (const config of colorConfigs) {
+      if (!config.isEnabled) continue;
+      
+      if (config.color === 'custom' && config.customColorRgb) {
+        const { r: targetR, g: targetG, b: targetB } = config.customColorRgb;
+        const tolerance = config.colorTolerance || 0.15;
+        
+        if (isColorMatch(currentColor, { r: targetR, g: targetG, b: targetB }, tolerance)) {
+          return `custom-${config.id}`;
+        }
+      } else if (config.color !== 'custom') {
+        // Check predefined colors using existing logic
+        const detectedColor = determineColor(currentColor);
+        if (detectedColor === config.color) {
+          return config.color;
+        }
+      }
+    }
+
+    return null;
+  };
+
+  // Function to check if two colors match within tolerance
+  const isColorMatch = (color1: ColorValue, color2: ColorValue, tolerance: number): boolean => {
+    const { r: r1, g: g1, b: b1 } = color1;
+    const { r: r2, g: g2, b: b2 } = color2;
+
+    // Calculate total brightness for both colors
+    const total1 = r1 + g1 + b1;
+    const total2 = r2 + g2 + b2;
+
+    if (total1 === 0 || total2 === 0) return false;
+
+    // Calculate color ratios
+    const ratio1 = { r: r1 / total1, g: g1 / total1, b: b1 / total1 };
+    const ratio2 = { r: r2 / total2, g: g2 / total2, b: b2 / total2 };
+
+    // Calculate Euclidean distance between ratios
+    const distance = Math.sqrt(
+      Math.pow(ratio1.r - ratio2.r, 2) +
+      Math.pow(ratio1.g - ratio2.g, 2) +
+      Math.pow(ratio1.b - ratio2.b, 2)
+    );
+
+    // Check if distance is within tolerance
+    return distance <= tolerance;
+  };
+
   // Enhanced color detection function with better RGB thresholds
   const determineColor = (rgbColor: ColorValue): string | null => {
     const { r, g, b } = rgbColor;
@@ -207,18 +263,30 @@ export const ColorSensor: React.FC<ColorSensorProps> = ({
           <Text style={[styles.configTitle, { color: theme.colors.onSurface }]}>
             Aktywne konfiguracje kolorów:
           </Text>
-          {colorConfigs
-            .filter((cfg) => cfg.isEnabled)
-            .map((cfg) => (              <Text
-                key={cfg.color}
-                style={[
-                  styles.configItem,
-                  { color: theme.colors.onSurfaceVariant },
-                ]}
-              >
-                {cfg.color}: {cfg.soundName || "Dźwięk serwera"}{cfg.isLooping ? " (zapętlony)" : ""}
-              </Text>
-            ))}
+          <ScrollView 
+            style={styles.configScrollView}
+            showsVerticalScrollIndicator={true}
+            nestedScrollEnabled={true}
+          >
+            {colorConfigs
+              .filter((cfg) => cfg.isEnabled)
+              .map((cfg) => (
+                <Text
+                  key={cfg.id}
+                  style={[
+                    styles.configItem,
+                    { color: theme.colors.onSurfaceVariant },
+                  ]}
+                >
+                  {cfg.color === 'custom' 
+                    ? `Custom (RGB: ${cfg.customColorRgb?.r}, ${cfg.customColorRgb?.g}, ${cfg.customColorRgb?.b})`
+                    : cfg.color
+                  }: {cfg.soundName || "Dźwięk serwera"}
+                  {cfg.isLooping ? " (zapętlony)" : ""}
+                  {cfg.colorTolerance ? ` - tolerancja: ${(cfg.colorTolerance * 100).toFixed(0)}%` : ""}
+                </Text>
+              ))}
+          </ScrollView>
         </View>
       )}
 
@@ -254,12 +322,14 @@ const styles = StyleSheet.create({
   colorDisplay: {
     alignItems: "center",
     marginVertical: 16,
-  },
-  configInfo: {
+  },  configInfo: {
     marginTop: 16,
     padding: 12,
     borderRadius: 8,
     // backgroundColor removed - will be set dynamically with theme
+  },
+  configScrollView: {
+    maxHeight: 120,
   },
   configTitle: {
     fontSize: 14,

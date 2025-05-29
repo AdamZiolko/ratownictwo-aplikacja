@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, StyleSheet, Platform, ActivityIndicator } from "react-native";
+import { View, StyleSheet, Platform, ActivityIndicator, ScrollView } from "react-native";
 import { Surface, Text, useTheme, Chip, IconButton } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { ColorConfig } from "@/services/ColorConfigService";
@@ -248,10 +248,11 @@ const ColorConfigDisplay: React.FC<ColorConfigDisplayProps> = ({
         <Text style={[styles.title, { color: theme.colors.onSurface }]}>
           Konfiguracja Kolorów ({colorConfigs.length})
         </Text>
-      </View>
-
-      <View style={styles.colorsContainer}>
-        {" "}
+      </View>      <ScrollView 
+        style={styles.colorsContainer}
+        showsVerticalScrollIndicator={true}
+        nestedScrollEnabled={true}
+      >
         {colorConfigs.map((config) => (
           <View key={config.color} style={styles.colorItem}>
             <Chip
@@ -355,8 +356,7 @@ const ColorConfigDisplay: React.FC<ColorConfigDisplayProps> = ({
                   ]}
                 />                {isLoadingAudio && loadingAudioKey === (config.serverAudioId
                   ? `server_${config.serverAudioId}`
-                  : config.soundName) && (
-                  <View style={[styles.loadingOverlay, { backgroundColor: `${theme.colors.surface}CC` }]}>
+                  : config.soundName) && (                  <View style={[styles.loadingOverlay, { backgroundColor: `${theme.colors.surface}CC` }]}>
                     <ActivityIndicator 
                       size="small" 
                       color={theme.colors.primary}
@@ -367,7 +367,7 @@ const ColorConfigDisplay: React.FC<ColorConfigDisplayProps> = ({
             )}
           </View>
         ))}
-      </View>
+      </ScrollView>
     </Surface>
   );
 };
@@ -402,9 +402,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 14,
     fontStyle: "italic",
-  },
-  colorsContainer: {
+  },  colorsContainer: {
     gap: 12,
+    maxHeight: 300,
   },
   colorItem: {
     flexDirection: "row",

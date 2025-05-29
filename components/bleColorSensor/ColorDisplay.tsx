@@ -23,20 +23,19 @@ export const ColorDisplay: React.FC<ColorDisplayProps> = ({ color, currentSound 
         return "Nieznany";
     }
   };
-
   return (
     <View>
       <View
         style={[
           styles.colorBox,
           {
-            backgroundColor: `rgb(${Math.min(255, Math.floor(color.r / 100))}, ${Math.min(255, Math.floor(color.g / 100))}, ${Math.min(255, Math.floor(color.b / 100))})`,
+            backgroundColor: `rgb(${Math.min(255, Math.max(0, Math.floor(color.r)))}, ${Math.min(255, Math.max(0, Math.floor(color.g)))}, ${Math.min(255, Math.max(0, Math.floor(color.b)))})`,
             borderColor: theme.colors.outline,
           },
         ]}
       />
       <Text style={[styles.colorValues, { color: theme.colors.onSurface }]}>
-        R: {color.r}, G: {color.g}, B: {color.b}
+        R: {Math.floor(color.r)}, G: {Math.floor(color.g)}, B: {Math.floor(color.b)}
       </Text>
 
       {currentSound && (
