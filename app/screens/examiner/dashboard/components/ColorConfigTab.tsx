@@ -202,30 +202,69 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
         showSnackbar("Dla koloru niestandardowego wymagane są prawidłowe wartości RGB (0-255)");
         return;
       }
-    }
-
-    // Check if color already exists (only for add mode, not edit mode)
+    }    // Check for duplicates
     if (!modalData.id) {
-      const existingConfig = colorConfigs.find(
-        (config) => config.color === modalData.color
-      );
-      if (existingConfig) {
-        showSnackbar("Konfiguracja dla tego koloru już istnieje");
-        return;
+      // Add mode - check for duplicates
+      if (modalData.color === 'custom') {
+        // For custom colors, check RGB values
+        if (modalData.customColorRgb) {
+          const existingCustomConfig = colorConfigs.find(
+            (config) => 
+              config.color === 'custom' && 
+              config.customColorRgb &&
+              config.customColorRgb.r === modalData.customColorRgb!.r &&
+              config.customColorRgb.g === modalData.customColorRgb!.g &&
+              config.customColorRgb.b === modalData.customColorRgb!.b
+          );
+          if (existingCustomConfig) {
+            showSnackbar("Konfiguracja z tymi wartościami RGB już istnieje");
+            return;
+          }
+        }
+      } else {
+        // For predefined colors, check color type
+        const existingConfig = colorConfigs.find(
+          (config) => config.color === modalData.color
+        );
+        if (existingConfig) {
+          showSnackbar("Konfiguracja dla tego koloru już istnieje");
+          return;
+        }
       }
     } else {
-      // For edit mode, check if color changed and conflicts with another config
+      // Edit mode - check if changes conflict with other configs
       const currentConfig = colorConfigs.find(
         (config) => config.id === modalData.id
       );
-      if (currentConfig && currentConfig.color !== modalData.color) {
-        const conflictingConfig = colorConfigs.find(
-          (config) =>
-            config.color === modalData.color && config.id !== modalData.id
-        );
-        if (conflictingConfig) {
-          showSnackbar("Konfiguracja dla tego koloru już istnieje");
-          return;
+      
+      if (currentConfig) {
+        if (modalData.color === 'custom') {
+          // For custom colors, check if RGB values conflict
+          if (modalData.customColorRgb) {
+            const conflictingCustomConfig = colorConfigs.find(
+              (config) => 
+                config.id !== modalData.id &&
+                config.color === 'custom' && 
+                config.customColorRgb &&
+                config.customColorRgb.r === modalData.customColorRgb!.r &&
+                config.customColorRgb.g === modalData.customColorRgb!.g &&
+                config.customColorRgb.b === modalData.customColorRgb!.b
+            );
+            if (conflictingCustomConfig) {
+              showSnackbar("Konfiguracja z tymi wartościami RGB już istnieje");
+              return;
+            }
+          }
+        } else {
+          // For predefined colors, check color type
+          const conflictingConfig = colorConfigs.find(
+            (config) =>
+              config.color === modalData.color && config.id !== modalData.id
+          );
+          if (conflictingConfig) {
+            showSnackbar("Konfiguracja dla tego koloru już istnieje");
+            return;
+          }
         }
       }
     }
@@ -260,7 +299,6 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
       setModalLoading(false);
     }
   };
-
   const handleDeleteConfig = async () => {
     if (!sessionId || !selectedConfigId) return;
 
@@ -271,7 +309,7 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
     try {
       await colorConfigService.deleteColorConfig(
         sessionId,
-        configToDelete.color
+        configToDelete.id
       );
       showSnackbar("Konfiguracja usunięta");
       setDeleteModalVisible(false);
@@ -279,7 +317,8 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
       await loadColorConfigs();
     } catch (error) {
       console.error("Error deleting config:", error);
-      showSnackbar("Błąd podczas usuwania konfiguracji");    } finally {
+      showSnackbar("Błąd podczas usuwania konfiguracji");
+    } finally {
       setModalLoading(false);
     }
   };

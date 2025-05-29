@@ -24,6 +24,7 @@ export interface ColorConfigModalData {
   id?: number;
   name: string;
   color: string;
+  colorIdentifier?: string;
   soundName: string;
   displayName?: string;
   serverAudioId?: string;

@@ -76,14 +76,15 @@ const ColorConfigItem: React.FC<ColorConfigItemProps> = ({
               style={[styles.listItemTitle, { color: theme.colors.onSurface }]}
             >
               {item.displayName || item.soundName || "Bez nazwy"}
-            </Text>
-            <Text
+            </Text>            <Text
               style={[
                 styles.listItemDescription,
                 { color: theme.colors.onSurfaceVariant },
               ]}
             >
-              {item.color === "custom"
+              {item.color === "custom" && item.customColorRgb
+                ? `RGB(${item.customColorRgb.r}, ${item.customColorRgb.g}, ${item.customColorRgb.b})`
+                : item.color === "custom"
                 ? "Kolor niestandardowy"
                 : `Kolor: ${colorInfo.name}`}
             </Text>

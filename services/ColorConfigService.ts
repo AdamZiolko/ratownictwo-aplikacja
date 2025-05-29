@@ -4,6 +4,7 @@ export interface ColorConfig {
   id: number;
   sessionId: string;
   color: 'red' | 'green' | 'blue' | 'yellow' | 'orange' | 'purple' | 'custom';
+  colorIdentifier?: string;
   soundName?: string;
   displayName?: string;
   serverAudioId?: string;
@@ -22,6 +23,7 @@ export interface ColorConfig {
 export interface ColorConfigRequest {
   id?: number;
   color: 'red' | 'green' | 'blue' | 'yellow' | 'orange' | 'purple' | 'custom';
+  colorIdentifier?: string;
   soundName?: string;
   displayName?: string;
   serverAudioId?: string;
@@ -77,13 +79,12 @@ class ColorConfigService {
       throw error;
     }
   }
-
   /**
    * Delete a color configuration
    */
-  async deleteColorConfig(sessionId: string, color: string): Promise<void> {
+  async deleteColorConfig(sessionId: string, id: number): Promise<void> {
     try {
-      await this.api.delete(`color-config/${sessionId}/${color}`);
+      await this.api.delete(`color-config/${sessionId}/${id}`);
     } catch (error) {
       console.error('Error deleting color configuration:', error);
       throw error;
@@ -102,13 +103,12 @@ class ColorConfigService {
       throw error;
     }
   }
-
   /**
    * Toggle color configuration enabled status
    */
-  async toggleColorConfig(sessionId: string, color: string, isEnabled: boolean): Promise<ColorConfig> {
+  async toggleColorConfig(sessionId: string, id: number, isEnabled: boolean): Promise<ColorConfig> {
     try {
-      const response = await this.api.put(`color-config/${sessionId}/${color}/toggle`, { isEnabled });
+      const response = await this.api.put(`color-config/${sessionId}/${id}/toggle`, { isEnabled });
       return response.colorConfig;
     } catch (error) {
       console.error('Error toggling color configuration:', error);
