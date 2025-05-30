@@ -38,14 +38,24 @@ export const useVitalSigns = (sessionData: Session | null) => {
     fluctuationRange: 5,
   });
 
+ 
   const generateFluctuation = (
     value: number | null,
-    fluctuationRange: number
+    fluctuationRange: number,
+    min: number | null = null,  
+    max: number | null = null  
   ): number | null => {
     if (value === null) return null;
+    
     const fluctPercent = (Math.random() - 0.5) * 2 * fluctuationRange;
     const fluctAmount = value * (fluctPercent / 100);
-    return Math.round((value + fluctAmount) * 10) / 10;
+    let result = Math.round((value + fluctAmount) * 10) / 10;
+    
+    // Ograniczanie wartości do dozwolonego zakresu
+    if (min !== null && result < min) result = min;
+    if (max !== null && result > max) result = max;
+    
+    return result;
   };
 
   const parseBloodPressure = (
@@ -146,11 +156,13 @@ export const useVitalSigns = (sessionData: Session | null) => {
         currentSystolic: generateFluctuation(prev.systolic, 2),
         currentDiastolic: generateFluctuation(prev.diastolic, 2),
       }));
-      setSpo2((prev) => ({
+       setSpo2((prev) => ({
         ...prev,
         currentValue: generateFluctuation(
           prev.baseValue,
-          prev.fluctuationRange
+          prev.fluctuationRange,
+          70,  
+          100 
         ),
       }));
       setEtco2((prev) => ({

@@ -210,7 +210,7 @@ const EkgFullscreenScreen = () => {
                 bpmFontSize={22}
               />
             )}
-            {activeChart === 'spo2' && (
+           {activeChart === 'spo2' && (
               <Spo2Chart
                 value={spo2Num}
               />
