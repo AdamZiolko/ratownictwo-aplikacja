@@ -22,9 +22,41 @@ export const ColorSensor: React.FC<ColorSensorProps> = ({
     null
   );
   const [showDebugControls, setShowDebugControls] = useState(false);
-  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);  // Handle color updates from BLE manager
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Function to process a detected color and play its sound
+  const processDetectedColor = useCallback((detectedColor: string) => {
+    console.log(`🎨 ColorSensor: processDetectedColor STARTED for ${detectedColor}`);
+    // Find the configuration for this detected color
+    const config = colorConfigs.find((cfg) => {
+      if (cfg.color === 'custom') {
+        return `custom-${cfg.id}` === detectedColor && cfg.isEnabled;
+      } else {
+        return cfg.color.toLowerCase() === detectedColor.toLowerCase() && cfg.isEnabled;
+      }
+    });
+
+    console.log(`🎨 ColorSensor: Looking for config for '${detectedColor}'`);
+    console.log(`🎨 ColorSensor: Available configs:`, colorConfigs.map(cfg => `${cfg.color}:${cfg.isEnabled}`));
+
+    if (config && onColorDetected) {
+      console.log(`🎨 ColorSensor: Found config for ${detectedColor}:`, {
+        soundName: config.soundName,
+        serverAudioId: config.serverAudioId,
+        volume: config.volume,
+        isLooping: config.isLooping
+      });
+      console.log(`🎨 ColorSensor: Calling onColorDetected for NEW color detection`);
+      onColorDetected(detectedColor, config);
+    } else if (!config) {
+      console.log(`🎨 ColorSensor: Detected color ${detectedColor}, but no enabled configuration found`);
+    }
+  }, [colorConfigs, onColorDetected]);
+
+  // Handle color updates from BLE manager
   const handleColorUpdate = useCallback(
-    async (color: ColorValue) => {      console.log(`🎨 ColorSensor: ===== NEW COLOR UPDATE CYCLE =====`);
+    async (color: ColorValue) => {
+      console.log(`🎨 ColorSensor: ===== NEW COLOR UPDATE CYCLE =====`);
       console.log(`🎨 ColorSensor: Raw RGB input - R:${color.r} G:${color.g} B:${color.b}`);
       console.log(`🎨 ColorSensor: Current detected color: ${lastDetectedColor}`);
       console.log(`🎨 ColorSensor: Number of color configs: ${colorConfigs.length}`);
@@ -39,48 +71,49 @@ export const ColorSensor: React.FC<ColorSensorProps> = ({
         clearTimeout(debounceTimeoutRef.current);
       }
       
-      // Check if detected color matches any configured colors (including custom) - no debounce for immediate response
+      // Check if detected color matches any configured colors (including custom)
       const detectedConfig = detectConfiguredColor(color);
       console.log(`🎨 ColorSensor: Detection result: ${detectedConfig ? detectedConfig : 'NO_COLOR'}`);
 
-      // Always check if sound should be played or stopped, regardless of debounce
+      // Debounce color changes to prevent rapid switching between colors
+      // This helps prevent sounds from being interrupted too quickly
       if (detectedConfig !== lastDetectedColor) {
         console.log(`🎨 ColorSensor: Color changed from '${lastDetectedColor}' to '${detectedConfig}'`);
-          // Color changed - handle stopping previous sound
-        if (lastDetectedColor && onColorLost) {
-          console.log(`🎨 ColorSensor: Lost color ${lastDetectedColor}, stopping all sounds`);
-          onColorLost();
-        }
-
-        setLastDetectedColor(detectedConfig);
-
-        if (detectedConfig) {
-          // Find the configuration for this detected color
-          const config = colorConfigs.find((cfg) => {
-            if (cfg.color === 'custom') {
-              return `custom-${cfg.id}` === detectedConfig && cfg.isEnabled;
-            } else {
-              return cfg.color.toLowerCase() === detectedConfig.toLowerCase() && cfg.isEnabled;
+        
+        // Use debounce for color changes to prevent rapid switching
+        console.log(`🎨 ColorSensor: Setting up debounce timeout for color change`);
+        debounceTimeoutRef.current = setTimeout(() => {
+          console.log(`🎨 ColorSensor: Debounce timeout triggered for color change to ${detectedConfig}`);
+          // If previous color exists, stop its sound
+          if (lastDetectedColor && onColorLost) {
+            console.log(`🎨 ColorSensor: Lost color ${lastDetectedColor}, stopping all sounds`);
+            onColorLost();
+        
+            // Add a small delay before playing the new sound to ensure clean transition
+            console.log(`🎨 ColorSensor: Setting up delay for new sound after stopping previous`);
+            setTimeout(() => {
+              console.log(`🎨 ColorSensor: Delay completed, updating state and playing new sound`);
+              // Update state with new detected color
+              setLastDetectedColor(detectedConfig);
+              
+              // If new color detected, play its sound
+              if (detectedConfig) {
+                console.log(`🎨 ColorSensor: Calling processDetectedColor for ${detectedConfig}`);
+                processDetectedColor(detectedConfig);
+              }
+            }, 20); // Zmniejszono z 50ms na 20ms dla szybszej reakcji
+          } else {
+            console.log(`🎨 ColorSensor: No previous color to stop, directly playing new sound`);
+            // No previous color, just update state and play new sound if needed
+            setLastDetectedColor(detectedConfig);
+            
+            if (detectedConfig) {
+              console.log(`🎨 ColorSensor: Calling processDetectedColor for ${detectedConfig}`);
+              processDetectedColor(detectedConfig);
             }
-          });
-
-          console.log(`🎨 ColorSensor: Looking for config for '${detectedConfig}'`);
-          console.log(`🎨 ColorSensor: Available configs:`, colorConfigs.map(cfg => `${cfg.color}:${cfg.isEnabled}`));
-
-          if (config && onColorDetected) {            console.log(`🎨 ColorSensor: Found config for ${detectedConfig}:`, {
-              soundName: config.soundName,
-              serverAudioId: config.serverAudioId,
-              volume: config.volume,
-              isLooping: config.isLooping
-            });
-            console.log(`🎨 ColorSensor: Calling onColorDetected for NEW color detection`);
-            onColorDetected(detectedConfig, config);
-          } else if (!config) {
-            console.log(`🎨 ColorSensor: Detected color ${detectedConfig}, but no enabled configuration found`);
           }
-        } else {
-          console.log(`🎨 ColorSensor: No color detected, no sound to play`);
-        }      } else if (detectedConfig) {
+        }, 50); // Zmniejszono z 100ms na 50ms dla szybszej reakcji
+      } else if (detectedConfig) {
         // Same color detected - just log but don't trigger callbacks again
         console.log(`🎨 ColorSensor: Same color '${detectedConfig}' still detected - not triggering callbacks again`);
       } else {
@@ -89,7 +122,7 @@ export const ColorSensor: React.FC<ColorSensorProps> = ({
       
       console.log(`🎨 ColorSensor: ===== END COLOR UPDATE CYCLE =====`);
     },
-    [colorConfigs, onColorDetected, onColorLost, lastDetectedColor]
+    [colorConfigs, onColorDetected, onColorLost, lastDetectedColor, processDetectedColor]
   );
 
   // Cleanup debounce timeout on unmount
@@ -109,6 +142,20 @@ export const ColorSensor: React.FC<ColorSensorProps> = ({
     color,
     startConnection,
     disconnectDevice,  } = useBleManager(handleColorUpdate);
+    
+  // Reset lastDetectedColor when connection status changes
+  useEffect(() => {
+    if (status === "idle" || status === "error") {
+      console.log(`🎨 ColorSensor: Connection status changed to ${status}, resetting lastDetectedColor`);
+      setLastDetectedColor(null);
+      
+      // Also trigger onColorLost callback if provided
+      if (lastDetectedColor && onColorLost) {
+        console.log(`🎨 ColorSensor: Connection lost, triggering onColorLost callback`);
+        onColorLost();
+      }
+    }
+  }, [status, onColorLost, lastDetectedColor]);
   // Function to detect if current color matches any configured color (including custom)
   const detectConfiguredColor = (currentColor: ColorValue): string | null => {
     const { r, g, b } = currentColor;

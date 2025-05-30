@@ -254,7 +254,7 @@ const ColorConfigDisplay: React.FC<ColorConfigDisplayProps> = ({
         nestedScrollEnabled={true}
       >
         {colorConfigs.map((config) => (
-          <View key={config.color} style={styles.colorItem}>
+          <View key={`color-${config.id}`} style={styles.colorItem}>
             <Chip
               icon={() => (
                 <MaterialCommunityIcons

@@ -96,7 +96,8 @@ export const useColorSounds = (): UseColorSoundsReturn => {
           // Check if sound is loaded before attempting to stop
           const status = await soundToStop.getStatusAsync();
           
-          if (status.isLoaded) {
+          // Check if status indicates the sound is loaded (not an error)
+          if ('isLoaded' in status && status.isLoaded) {
             console.log(`🔄 [${stopId}] Sound is loaded, proceeding with stop sequence`);
             
             // First set looping to false to prevent auto-restart
@@ -169,7 +170,7 @@ export const useColorSounds = (): UseColorSoundsReturn => {
       if (currentSoundKeyRef.current && currentSoundInstance) {
         try {
           const status = await currentSoundInstance.getStatusAsync();
-          if (status.isLoaded && status.isPlaying) {
+          if (status.isLoaded && 'isPlaying' in status && status.isPlaying) {
             console.log(`🔊 [${playId}] A sound (${currentSoundKeyRef.current}) is already playing, updating color reference to ${config.color}`);
             setPlayingColor(config.color);
             setIsLoadingAudio(false);
@@ -213,6 +214,16 @@ export const useColorSounds = (): UseColorSoundsReturn => {
         setIsLoadingAudio(false);
         return;
       }
+      
+      // Check if the current sound key matches what we're trying to play
+      // This is a safety check to prevent duplicate sounds
+      if (playingSound === soundKey) {
+        console.log(`⚠️ [${playId}] This sound is already in state as playing, updating color reference only`);
+        setPlayingColor(config.color);
+        await sound.unloadAsync().catch(() => {});
+        setIsLoadingAudio(false);
+        return;
+      }
 
       // Update state to reflect the new sound
       setCurrentSound(sound);
@@ -237,7 +248,8 @@ export const useColorSounds = (): UseColorSoundsReturn => {
 
       // Set up playback status listener
       sound.setOnPlaybackStatusUpdate((status: any) => {
-        if (status.isLoaded) {
+        // Check if status indicates the sound is loaded (not an error)
+        if ('isLoaded' in status && status.isLoaded) {
           // If the sound has been playing for at least 500ms, allow new sounds to be played
           // This ensures that sounds can be played in sequence without long gaps
           const now = Date.now();
@@ -311,31 +323,106 @@ export const useColorSounds = (): UseColorSoundsReturn => {
       return;
     }
     
-    // Prevent rapid consecutive calls (debounce) - increase to 500ms
+    // Prevent rapid consecutive calls (debounce) - reduce to 300ms for better responsiveness
     const now = Date.now();
     const timeSinceLastPlay = now - lastPlayTimeRef.current;
-    if (timeSinceLastPlay < 500) { // 500ms debounce
+    if (timeSinceLastPlay < 300) { // 300ms debounce
       console.log(`🛑 Debouncing sound request for ${config.color}, too soon after last request (${timeSinceLastPlay}ms)`);
+      // Update the playing color even if we're debouncing
+      if (playingColor !== config.color) {
+        console.log(`🔄 Updating playing color from ${playingColor} to ${config.color} during debounce`);
+        setPlayingColor(config.color);
+      }
       return;
     }
     
-    // If we're already in the process of playing a sound, don't start another one
+    // Check if isPlayingRef has been stuck in 'true' state for too long
+    // This is a safety mechanism to prevent the flag from getting stuck
     if (isPlayingRef.current) {
-      console.log(`🛑 Already in process of playing a sound, ignoring request for ${config.color}`);
-      return;
+      const timeSinceLastPlayStart = now - lastPlayTimeRef.current;
+      if (timeSinceLastPlayStart > 3000) { // 3 seconds is too long for a play operation
+        console.log(`🔄 Safety check: isPlayingRef has been true for ${timeSinceLastPlayStart}ms, resetting it`);
+        isPlayingRef.current = false;
+      } else {
+        console.log(`🛑 Already in process of playing a sound, ignoring request for ${config.color}`);
+        return;
+      }
     }
     
-    // If a sound is playing to completion, don't interrupt it
-    // This ensures that sounds are played to completion
+    // Check if isPlayingToCompletionRef has been stuck in 'true' state for too long
     if (isPlayingToCompletionRef.current) {
-      console.log(`🛑 A sound is currently playing to completion, ignoring request for ${config.color}`);
-      return;
+      const timeSinceSoundStart = now - soundStartTimeRef.current;
+      if (timeSinceSoundStart > 5000) { // 5 seconds is a reasonable max time for most sounds
+        console.log(`🔄 Safety check: Sound has been playing for ${timeSinceSoundStart}ms, resetting completion flag`);
+        isPlayingToCompletionRef.current = false;
+      } else {
+        console.log(`🛑 A sound is currently playing to completion, ignoring request for ${config.color}`);
+        return;
+      }
+    }
+    
+    // Check if there's a sound in state but it's not actually playing
+    if (currentSoundRef.current) {
+      try {
+        const status = await currentSoundRef.current.getStatusAsync();
+        // First check if status is loaded (not an error)
+        if (status.isLoaded) {
+          // Now we can safely check isPlaying since we know it's a loaded status
+          if (!('isPlaying' in status) || !status.isPlaying) {
+            console.log(`🔄 Safety check: Sound not playing but flags still set, resetting flags`);
+            // Clean up the non-playing sound
+            await currentSoundRef.current.unloadAsync().catch(() => {});
+            currentSoundRef.current = null;
+            currentSoundKeyRef.current = null;
+            setCurrentSound(null);
+            setPlayingSound(null);
+            isPlayingToCompletionRef.current = false;
+          }
+        } else {
+          // Status is an error, clean up
+          console.log(`🔄 Safety check: Sound status is an error, resetting flags`);
+          await currentSoundRef.current.unloadAsync().catch(() => {});
+          currentSoundRef.current = null;
+          currentSoundKeyRef.current = null;
+          setCurrentSound(null);
+          setPlayingSound(null);
+          isPlayingToCompletionRef.current = false;
+        }
+      } catch (error) {
+        console.warn(`Error checking sound status during safety check: ${error}`);
+        // If we can't check status, reset everything to be safe
+        currentSoundRef.current = null;
+        currentSoundKeyRef.current = null;
+        setCurrentSound(null);
+        setPlayingSound(null);
+        isPlayingToCompletionRef.current = false;
+      }
     }
     
     // If the same color is already playing, don't restart it
     if (playingColor === config.color) {
       console.log(`🎵 Sound already playing for color: ${config.color}, skipping`);
-      return;
+      
+      // Double-check if the sound is actually playing
+      const currentSoundInstance = currentSoundRef.current;
+      if (currentSoundInstance) {
+        try {
+          const status = await currentSoundInstance.getStatusAsync();
+          if ('isLoaded' in status && status.isLoaded && 'isPlaying' in status && status.isPlaying) {
+            console.log(`✅ Verified sound is actually playing for color: ${config.color}`);
+            return;
+          } else {
+            console.log(`⚠️ Sound for ${config.color} is in state but not playing, will restart it`);
+            // Continue with playback since the sound isn't actually playing
+          }
+        } catch (error) {
+          console.warn(`Error checking sound status for ${config.color}:`, error);
+          // Continue with playback since we couldn't verify if it's playing
+        }
+      } else {
+        console.log(`⚠️ Sound for ${config.color} is marked as playing but no sound instance found, will restart it`);
+        // Continue with playback since there's no sound instance
+      }
     }
     
     // If the same sound is already playing (even if for a different color), don't restart it
@@ -344,15 +431,32 @@ export const useColorSounds = (): UseColorSoundsReturn => {
       try {
         // Double-check if the sound is actually playing
         const status = await currentSoundInstance.getStatusAsync();
-        if (status.isLoaded && status.isPlaying) {
-          console.log(`🎵 Sound ${soundKey} already playing, updating playingColor to: ${config.color}`);
-          // Update the playing color to match the new detection
-          setPlayingColor(config.color);
-          return;
+        if (status.isLoaded) {
+          // Now we can safely check isPlaying since we know it's a loaded status
+          if ('isPlaying' in status && status.isPlaying) {
+            console.log(`🎵 Sound ${soundKey} already playing, updating playingColor to: ${config.color}`);
+            // Update the playing color to match the new detection
+            setPlayingColor(config.color);
+            return;
+          } else {
+            // Sound is loaded but not playing - this is an inconsistent state
+            console.log(`🔄 Found non-playing sound in state, replacing it`);
+            await currentSoundInstance.unloadAsync().catch(() => {});
+            currentSoundRef.current = null;
+            currentSoundKeyRef.current = null;
+          }
+        } else {
+          // Status is an error, clean up
+          console.log(`🔄 Sound status is an error, cleaning up`);
+          await currentSoundInstance.unloadAsync().catch(() => {});
+          currentSoundRef.current = null;
+          currentSoundKeyRef.current = null;
         }
       } catch (error) {
         console.warn(`Error checking sound status: ${error}`);
         // If we can't check status, assume it's not playing properly and continue
+        currentSoundRef.current = null;
+        currentSoundKeyRef.current = null;
       }
     }
     
@@ -362,6 +466,8 @@ export const useColorSounds = (): UseColorSoundsReturn => {
     
     try {
       await playSound(config);
+    } catch (error) {
+      console.error(`Error in playColorSound for ${config.color}:`, error);
     } finally {
       // Always reset the flag when done, even if there was an error
       isPlayingRef.current = false;
