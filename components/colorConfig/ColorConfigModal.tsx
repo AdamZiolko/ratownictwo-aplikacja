@@ -28,7 +28,6 @@ export interface ColorConfigModalData {
   soundName: string;
   displayName?: string;
   serverAudioId?: string;
-  isLooping: boolean;
   customColorRgb?: { r: number; g: number; b: number };
   colorTolerance?: number;
 }
@@ -133,7 +132,8 @@ const ColorConfigModal: React.FC<ColorConfigModalProps> = ({
                 disabled={modalLoading || isLoadingAudio}
               />
             }
-          />          <Button
+          />
+          <Button
             mode="outlined"
             onPress={() => {
               console.log("Sound selection button pressed, modalLoading:", modalLoading, "isLoadingAudio:", isLoadingAudio);
@@ -155,23 +155,18 @@ const ColorConfigModal: React.FC<ColorConfigModalProps> = ({
             labelStyle={styles.soundSelectionButtonLabel}
             contentStyle={styles.soundSelectionButtonContent}
           >
-            Wybierz dźwięk z biblioteki
+            <Text>Wybierz dźwięk z biblioteki</Text>
           </Button>
           <Text
             style={[styles.sectionLabel, { color: theme.colors.onSurface }]}
           >
             Wybierz kolor:
-          </Text>{" "}
+          </Text>
           <RadioButton.Group
             onValueChange={(value) => onModalDataChange({ color: value })}
             value={modalData.color}
           >
-            {AVAILABLE_COLORS.filter((color) => {
-              if (Platform.OS === "web" && color.key === "custom") {
-                return false;
-              }
-              return true;
-            }).map((color) => (
+            {AVAILABLE_COLORS.map((color) => (
               <View key={color.key} style={styles.colorOption}>
                 <View style={styles.colorPreview}>
                   <View
@@ -288,18 +283,7 @@ const ColorConfigModal: React.FC<ColorConfigModalProps> = ({
               </View>
             </View>
           )}
-          <View style={styles.switchContainer}>
-            <Text
-              style={[styles.switchLabel, { color: theme.colors.onSurface }]}
-            >
-              Zapętlaj dźwięk
-            </Text>
-            <Switch
-              value={modalData.isLooping}
-              onValueChange={(value) => onModalDataChange({ isLooping: value })}
-              disabled={modalLoading}
-            />
-          </View>
+
           {modalData.color === "custom" && (
             <View>
               <Text
@@ -326,7 +310,7 @@ const ColorConfigModal: React.FC<ColorConfigModalProps> = ({
                         style={styles.sensorButton}
                         icon="bluetooth"
                       >
-                        Połącz czujnik
+                        <Text>Połącz czujnik</Text>
                       </Button>
                     ) : sensorStatus === "scanning" ||
                       sensorStatus === "connected" ? (
@@ -336,7 +320,7 @@ const ColorConfigModal: React.FC<ColorConfigModalProps> = ({
                         style={styles.sensorButton}
                         icon="bluetooth-connect"
                       >
-                        Łączenie...
+                        <Text>Łączenie...</Text>
                       </Button>
                     ) : (
                       <Button
@@ -346,7 +330,7 @@ const ColorConfigModal: React.FC<ColorConfigModalProps> = ({
                         style={styles.sensorButton}
                         icon="bluetooth-off"
                       >
-                        Rozłącz czujnik
+                        <Text>Rozłącz czujnik</Text>
                       </Button>
                     )}
                   </View>
@@ -377,8 +361,7 @@ const ColorConfigModal: React.FC<ColorConfigModalProps> = ({
                             { color: theme.colors.onSurface },
                           ]}
                         >
-                          R: {sensorColor.r}, G: {sensorColor.g}, B:{" "}
-                          {sensorColor.b}
+                          R: {sensorColor.r}, G: {sensorColor.g}, B: {sensorColor.b}
                         </Text>
                       </View>
 
@@ -389,7 +372,7 @@ const ColorConfigModal: React.FC<ColorConfigModalProps> = ({
                         disabled={modalLoading}
                         icon="check"
                       >
-                        Akceptuj ten kolor
+                        <Text>Akceptuj ten kolor</Text>
                       </Button>
                     </View>
                   )}

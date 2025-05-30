@@ -57,10 +57,9 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
   // Modal form data
   const [modalData, setModalData] = useState<ColorConfigModalData>({
     name: "",
-    color: "red",
+    color: "custom",
     soundName: "",
     displayName: "",
-    isLooping: false,
     customColorRgb: { r: 255, g: 0, b: 0 },
     colorTolerance: 0.15,
   });
@@ -140,11 +139,10 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
   const resetModalData = () => {
     setModalData({
       name: "",
-      color: "red",
+      color: "custom",
       soundName: "",
       displayName: "",
       serverAudioId: undefined,
-      isLooping: false,
       customColorRgb: { r: 255, g: 0, b: 0 },
       colorTolerance: 0.15,
     });
@@ -173,7 +171,6 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
       soundName: config.soundName || "",
       displayName: config.displayName,
       serverAudioId: config.serverAudioId,
-      isLooping: config.isLooping,
       customColorRgb: config.customColorRgb || { r: 255, g: 0, b: 0 },
       colorTolerance: config.colorTolerance || 0.15,
     });
@@ -205,29 +202,18 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
     }    // Check for duplicates
     if (!modalData.id) {
       // Add mode - check for duplicates
-      if (modalData.color === 'custom') {
-        // For custom colors, check RGB values
-        if (modalData.customColorRgb) {
-          const existingCustomConfig = colorConfigs.find(
-            (config) => 
-              config.color === 'custom' && 
-              config.customColorRgb &&
-              config.customColorRgb.r === modalData.customColorRgb!.r &&
-              config.customColorRgb.g === modalData.customColorRgb!.g &&
-              config.customColorRgb.b === modalData.customColorRgb!.b
-          );
-          if (existingCustomConfig) {
-            showSnackbar("Konfiguracja z tymi wartościami RGB już istnieje");
-            return;
-          }
-        }
-      } else {
-        // For predefined colors, check color type
-        const existingConfig = colorConfigs.find(
-          (config) => config.color === modalData.color
+      // Tylko dla niestandardowych kolorów, sprawdź wartości RGB
+      if (modalData.customColorRgb) {
+        const existingCustomConfig = colorConfigs.find(
+          (config) => 
+            config.color === 'custom' && 
+            config.customColorRgb &&
+            config.customColorRgb.r === modalData.customColorRgb!.r &&
+            config.customColorRgb.g === modalData.customColorRgb!.g &&
+            config.customColorRgb.b === modalData.customColorRgb!.b
         );
-        if (existingConfig) {
-          showSnackbar("Konfiguracja dla tego koloru już istnieje");
+        if (existingCustomConfig) {
+          showSnackbar("Konfiguracja z tymi wartościami RGB już istnieje");
           return;
         }
       }
@@ -237,34 +223,20 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
         (config) => config.id === modalData.id
       );
       
-      if (currentConfig) {
-        if (modalData.color === 'custom') {
-          // For custom colors, check if RGB values conflict
-          if (modalData.customColorRgb) {
-            const conflictingCustomConfig = colorConfigs.find(
-              (config) => 
-                config.id !== modalData.id &&
-                config.color === 'custom' && 
-                config.customColorRgb &&
-                config.customColorRgb.r === modalData.customColorRgb!.r &&
-                config.customColorRgb.g === modalData.customColorRgb!.g &&
-                config.customColorRgb.b === modalData.customColorRgb!.b
-            );
-            if (conflictingCustomConfig) {
-              showSnackbar("Konfiguracja z tymi wartościami RGB już istnieje");
-              return;
-            }
-          }
-        } else {
-          // For predefined colors, check color type
-          const conflictingConfig = colorConfigs.find(
-            (config) =>
-              config.color === modalData.color && config.id !== modalData.id
-          );
-          if (conflictingConfig) {
-            showSnackbar("Konfiguracja dla tego koloru już istnieje");
-            return;
-          }
+      if (currentConfig && modalData.customColorRgb) {
+        // Dla niestandardowych kolorów, sprawdź czy wartości RGB kolidują
+        const conflictingCustomConfig = colorConfigs.find(
+          (config) => 
+            config.id !== modalData.id &&
+            config.color === 'custom' && 
+            config.customColorRgb &&
+            config.customColorRgb.r === modalData.customColorRgb!.r &&
+            config.customColorRgb.g === modalData.customColorRgb!.g &&
+            config.customColorRgb.b === modalData.customColorRgb!.b
+        );
+        if (conflictingCustomConfig) {
+          showSnackbar("Konfiguracja z tymi wartościami RGB już istnieje");
+          return;
         }
       }
     }
@@ -277,7 +249,7 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
         serverAudioId: modalData.serverAudioId,
         isEnabled: true,
         volume: 1.0,
-        isLooping: modalData.isLooping,
+        isLooping: false, // Zawsze ustawione na false, ponieważ usunęliśmy przełącznik
         customColorRgb: modalData.customColorRgb,
         colorTolerance: modalData.colorTolerance,
         ...(modalData.id && { id: modalData.id }),
@@ -288,6 +260,11 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
       showSnackbar(
         modalData.id ? "Konfiguracja zaktualizowana" : "Konfiguracja dodana"
       );
+      // Rozłącz czujnik RGB po zapisaniu konfiguracji
+      if (sensorStatus === "monitoring") {
+        disconnectSensor();
+      }
+      
       setAddModalVisible(false);
       setEditModalVisible(false);
       resetModalData();
@@ -485,6 +462,11 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
           modalLoading={modalLoading}
           isLoadingAudio={isLoadingAudio}
           onDismiss={() => {
+            // Rozłącz czujnik RGB po zamknięciu modalu
+            if (sensorStatus === "monitoring") {
+              disconnectSensor();
+            }
+            
             setAddModalVisible(false);
             setEditModalVisible(false);
             resetModalData();

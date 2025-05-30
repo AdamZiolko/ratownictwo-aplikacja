@@ -72,11 +72,13 @@ const ColorConfigItem: React.FC<ColorConfigItemProps> = ({
               ]}
             />
           </View>
-          <View style={{ flex: 1, marginLeft: 12 }}>            <Text
+          <View style={{ flex: 1, marginLeft: 12 }}>
+            <Text
               style={[styles.listItemTitle, { color: theme.colors.onSurface }]}
             >
               {item.displayName || item.soundName || "Bez nazwy"}
-            </Text>            <Text
+            </Text>
+            <Text
               style={[
                 styles.listItemDescription,
                 { color: theme.colors.onSurfaceVariant },
@@ -103,8 +105,10 @@ const ColorConfigItem: React.FC<ColorConfigItemProps> = ({
                 {item.isLooping ? "Zapętlony" : "Pojedynczy"}
               </Text>
             </View>
-          </View>          <View style={styles.itemActions}>
-            <View style={styles.playButtonContainer}>              <Button
+          </View>
+          <View style={styles.itemActions}>
+            <View style={styles.playButtonContainer}>
+              <Button
                 mode="outlined"
                 icon={isCurrentlyPlaying ? "stop" : "play"}
                 compact
@@ -116,7 +120,7 @@ const ColorConfigItem: React.FC<ColorConfigItemProps> = ({
                 buttonColor={theme.colors.surface}
                 textColor={theme.colors.primary}
               >
-                {isCurrentlyPlaying ? "Stop" : "Play"}
+                <Text>{isCurrentlyPlaying ? "Stop" : "Play"}</Text>
               </Button>
               {isCurrentlyLoading && (
                 <View style={styles.loadingOverlay}>
@@ -126,7 +130,8 @@ const ColorConfigItem: React.FC<ColorConfigItemProps> = ({
                   />
                 </View>
               )}
-            </View>            <Button
+            </View>
+            <Button
               mode="outlined"
               icon="pencil"
               compact
@@ -138,7 +143,7 @@ const ColorConfigItem: React.FC<ColorConfigItemProps> = ({
               buttonColor={theme.colors.surface}
               textColor={theme.colors.primary}
             >
-              Edytuj
+              <Text>Edytuj</Text>
             </Button>
             <Button
               mode="outlined"
@@ -152,7 +157,7 @@ const ColorConfigItem: React.FC<ColorConfigItemProps> = ({
               rippleColor={theme.colors.error + "20"}
               buttonColor={theme.colors.surface}
             >
-              Usuń
+              <Text>Usuń</Text>
             </Button>
           </View>
         </View>
@@ -183,7 +188,8 @@ const styles = StyleSheet.create({
     elevation: 2,
     borderWidth: 2,
     borderColor: "rgba(0,0,0,0.1)",
-  },  itemActions: {
+  },
+  itemActions: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "flex-end",
@@ -204,7 +210,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     width: 140, // Doubled width  
     height: 36, // Fixed height
-  },buttonContent: {
+  },
+  buttonContent: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     height: 36, // Fixed height

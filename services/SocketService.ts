@@ -364,7 +364,7 @@ class SocketService {
       
       // Listen for subscription confirmation with timeout
       const timeoutId = setTimeout(() => {
-        console.warn(`Subscription to ${sessionCode} timed out, assuming failure`);
+        console.log(`Subscription to ${sessionCode} timed out, will retry automatically`);
         this.socket?.off('examiner-subscribe-success');
         this.socket?.off('examiner-subscribe-error');
         resolve({ success: false });

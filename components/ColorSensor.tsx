@@ -196,17 +196,8 @@ export const ColorSensor: React.FC<ColorSensorProps> = ({
           console.log(`🎯 ColorSensor: CUSTOM COLOR MATCH! Returning: ${result}`);
           return result;
         }
-      } else if (config.color !== 'custom') {
-        // Check predefined colors using existing logic
-        console.log(`🔍 ColorSensor: Checking predefined color: ${config.color}`);
-        const detectedColor = determineColor(currentColor);
-        console.log(`  Determined color: ${detectedColor}`);
-        
-        if (detectedColor === config.color) {
-          console.log(`🎯 ColorSensor: PREDEFINED COLOR MATCH! Returning: ${config.color}`);
-          return config.color;
-        }
       }
+      // Usunięto sprawdzanie predefiniowanych kolorów
     }
 
     console.log(`🔍 ColorSensor: No matching color configuration found`);
@@ -259,7 +250,7 @@ export const ColorSensor: React.FC<ColorSensorProps> = ({
   const determineColor = (rgbColor: ColorValue): string | null => {
     const { r, g, b } = rgbColor;
 
-    console.log(`🎨 ColorSensor: Determining predefined color for RGB(${r}, ${g}, ${b})`);
+    console.log(`🎨 ColorSensor: Determining color for RGB(${r}, ${g}, ${b})`);
 
     // Normalize RGB values to 0-255 range if they're in percentage or other format
     const normalizedR = Math.min(255, Math.max(0, r));
@@ -279,95 +270,8 @@ export const ColorSensor: React.FC<ColorSensorProps> = ({
       return null;
     }
 
-    // More sophisticated color detection based on dominant channels and ratios
-    const redRatio = normalizedR / totalBrightness;
-    const greenRatio = normalizedG / totalBrightness;
-    const blueRatio = normalizedB / totalBrightness;
-
-    console.log(`🎨 ColorSensor: Color ratios - R:${redRatio.toFixed(3)}, G:${greenRatio.toFixed(3)}, B:${blueRatio.toFixed(3)}`);
-
-    // Thresholds for color detection
-    const threshold = 0.4; // Dominant color should be at least 40% of total
-    const secondaryThreshold = 0.25; // Secondary color threshold
-
-    console.log(`🎨 ColorSensor: Using thresholds - dominant:${threshold}, secondary:${secondaryThreshold}`);
-
-    // Red detection
-    if (
-      redRatio > threshold &&
-      greenRatio < secondaryThreshold &&
-      blueRatio < secondaryThreshold
-    ) {
-      console.log(`🎨 ColorSensor: Detected RED (R:${redRatio.toFixed(3)} > ${threshold}, G:${greenRatio.toFixed(3)} < ${secondaryThreshold}, B:${blueRatio.toFixed(3)} < ${secondaryThreshold})`);
-      return "red";
-    }
-
-    // Green detection
-    if (
-      greenRatio > threshold &&
-      redRatio < secondaryThreshold &&
-      blueRatio < secondaryThreshold
-    ) {
-      console.log(`🎨 ColorSensor: Detected GREEN (G:${greenRatio.toFixed(3)} > ${threshold}, R:${redRatio.toFixed(3)} < ${secondaryThreshold}, B:${blueRatio.toFixed(3)} < ${secondaryThreshold})`);
-      return "green";
-    }
-
-    // Blue detection
-    if (
-      blueRatio > threshold &&
-      redRatio < secondaryThreshold &&
-      greenRatio < secondaryThreshold
-    ) {
-      console.log(`🎨 ColorSensor: Detected BLUE (B:${blueRatio.toFixed(3)} > ${threshold}, R:${redRatio.toFixed(3)} < ${secondaryThreshold}, G:${greenRatio.toFixed(3)} < ${secondaryThreshold})`);
-      return "blue";
-    }
-
-    // Yellow detection (red + green, low blue)
-    if (redRatio > 0.3 && greenRatio > 0.3 && blueRatio < 0.25) {
-      console.log(`🎨 ColorSensor: Detected YELLOW (R:${redRatio.toFixed(3)} > 0.3, G:${greenRatio.toFixed(3)} > 0.3, B:${blueRatio.toFixed(3)} < 0.25)`);
-      return "yellow";
-    }
-
-    // Orange detection (red dominant, some green, low blue)
-    if (
-      redRatio > 0.4 &&
-      greenRatio > 0.2 &&
-      greenRatio < 0.4 &&
-      blueRatio < 0.25
-    ) {
-      console.log(`🎨 ColorSensor: Detected ORANGE (R:${redRatio.toFixed(3)} > 0.4, G:${greenRatio.toFixed(3)} 0.2-0.4, B:${blueRatio.toFixed(3)} < 0.25)`);
-      return "orange";
-    }
-
-    // Purple/Magenta detection (red + blue, low green)
-    if (redRatio > 0.3 && blueRatio > 0.3 && greenRatio < 0.25) {
-      console.log(`🎨 ColorSensor: Detected PURPLE (R:${redRatio.toFixed(3)} > 0.3, B:${blueRatio.toFixed(3)} > 0.3, G:${greenRatio.toFixed(3)} < 0.25)`);
-      return "purple";
-    }
-
-    // Cyan detection (green + blue, low red)
-    if (greenRatio > 0.3 && blueRatio > 0.3 && redRatio < 0.25) {
-      console.log(`🎨 ColorSensor: Detected CYAN (G:${greenRatio.toFixed(3)} > 0.3, B:${blueRatio.toFixed(3)} > 0.3, R:${redRatio.toFixed(3)} < 0.25)`);
-      return "cyan";
-    }
-
-    // White/light colors (all channels high)
-    if (
-      redRatio > 0.3 &&
-      greenRatio > 0.3 &&
-      blueRatio > 0.3 &&
-      totalBrightness > 400
-    ) {
-      console.log(`🎨 ColorSensor: Detected WHITE (all ratios > 0.3, brightness ${totalBrightness} > 400)`);
-      return "white";
-    }
-
-    // If no clear color detected, return null
-    console.log(
-      `🎨 ColorSensor: NO CLEAR COLOR detected - R:${normalizedR} G:${normalizedG} B:${normalizedB} (ratios: R:${redRatio.toFixed(
-        2
-      )} G:${greenRatio.toFixed(2)} B:${blueRatio.toFixed(2)})`
-    );
+    // Predefiniowane kolory zostały usunięte - funkcja zawsze zwraca null
+    console.log(`🎨 ColorSensor: Predefiniowane kolory zostały usunięte, używaj tylko niestandardowych kolorów`);
     return null;
   };
 
