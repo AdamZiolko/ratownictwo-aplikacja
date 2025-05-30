@@ -1,8 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
-import { Platform, PermissionsAndroid, ColorValue } from 'react-native';
+import { Platform, PermissionsAndroid } from 'react-native';
 import { BleManager, Device, Subscription, BleError } from 'react-native-ble-plx';
 import { decode as atob } from 'base-64';
 import { BLE_CONFIG, COLOR_RATIO_THRESHOLDS } from '../bleColorSensor';
+
+// Własny typ dla koloru RGB
+interface RgbColor {
+  r: number;
+  g: number;
+  b: number;
+}
 
 // Global flag for automatic reconnection
 let GLOBAL_AUTO_RECONNECT_ENABLED = true;
@@ -14,11 +21,11 @@ interface BleManagerState {
   error: string | null;
   isReconnecting: boolean;
   autoReconnect: boolean;
-  color: ColorValue;
+  color: RgbColor;
   lastColorUpdate: number;
 }
 
-export const useBleManager = (onColorUpdate: (color: ColorValue) => Promise<void>) => {
+export const useBleManager = (onColorUpdate: (color: RgbColor) => Promise<void>) => {
   // Only create BleManager on native platforms
   const [manager] = useState(() => {
     if (Platform.OS === 'web') {
@@ -30,7 +37,7 @@ export const useBleManager = (onColorUpdate: (color: ColorValue) => Promise<void
   const [bleState, setBleState] = useState<string>("Unknown");
   const [device, setDevice] = useState<Device | null>(null);
   const [sub, setSub] = useState<Subscription | null>(null);
-  const [color, setColor] = useState<ColorValue>({ r: 0, g: 0, b: 0 });
+  const [color, setColor] = useState<RgbColor>({ r: 0, g: 0, b: 0 });
   const [status, setStatus] = useState<BleManagerState['status']>("idle");
   const [error, setError] = useState<string | null>(null);
   const [isReconnecting, setIsReconnecting] = useState<boolean>(false);
@@ -137,7 +144,14 @@ export const useBleManager = (onColorUpdate: (color: ColorValue) => Promise<void
           if (isConnected) {
             console.log(`[BLE] Cancelling connection to device ${device.id}...`);
             await manager.cancelDeviceConnection(device.id)
-              .catch(e => console.warn("[BLE] Error cancelling device connection:", e));
+              .catch(e => {
+                // Ignoruj błędy anulowania operacji, które są normalne podczas rozłączania
+                if (e.message && e.message.includes('Operation was cancelled')) {
+                  console.log("[BLE] Connection cancel operation was itself cancelled - normal during cleanup");
+                } else {
+                  console.warn("[BLE] Error cancelling device connection:", e);
+                }
+              });
             console.log(`[BLE] Successfully disconnected from device ${device.id}`);
           } else {
             console.log(`[BLE] Device ${device.id} is already disconnected`);
@@ -149,7 +163,7 @@ export const useBleManager = (onColorUpdate: (color: ColorValue) => Promise<void
       }
       
       // Reset state
-      setColor({ r: 0, g: 0, b: 0 });
+      setColor({ r: 0, g: 0, b: 0 } as RgbColor);
       
       console.log("[BLE] Connection cleanup completed successfully");
     } catch (error) {
@@ -318,10 +332,11 @@ export const useBleManager = (onColorUpdate: (color: ColorValue) => Promise<void
                 error: BleError | null,
                 disconnectedDevice: Device,
               ) => {
-                console.log(
-                  `Device ${disconnectedDevice.id} was disconnected`,
-                  error,
-                );
+                if (error && error.message && error.message.includes('Operation was cancelled')) {
+                  console.log(`Device ${disconnectedDevice.id} was disconnected (operation cancelled - normal during cleanup)`);
+                } else {
+                  console.log(`Device ${disconnectedDevice.id} was disconnected`, error);
+                }
 
                 // Check if this is our device
                 if (disconnectedDevice.id === d.id) {
@@ -370,7 +385,14 @@ export const useBleManager = (onColorUpdate: (color: ColorValue) => Promise<void
                 BLE_CONFIG.CHARACTERISTIC_UUID,
                 async (error, characteristic) => {
                   if (error) {
-                    console.error("[BLE] Monitor error", error);
+                    // Ignoruj błędy anulowania operacji, które są normalne podczas rozłączania
+                    if (error.message && error.message.includes('Operation was cancelled')) {
+                      // Całkowicie wyciszamy ten błąd - nie logujemy go wcale
+                      return;
+                    } else {
+                      // Logujemy tylko jako ostrzeżenie, nie jako błąd
+                      console.warn("[BLE] Monitor issue:", error.message || "Unknown error");
+                    }
                     return;
                   }
                   if (!characteristic?.value) return;
@@ -409,7 +431,7 @@ export const useBleManager = (onColorUpdate: (color: ColorValue) => Promise<void
                       const filteredG = g < 2 ? 0 : g;
                       const filteredB = b < 2 ? 0 : b;
                       
-                      const newColor = { r: filteredR, g: filteredG, b: filteredB };
+                      const newColor: RgbColor = { r: filteredR, g: filteredG, b: filteredB };
                       console.log("[BLE] Parsed RGB:", newColor);
                       
                       // Check if values are sensible (not too high)
@@ -438,7 +460,7 @@ export const useBleManager = (onColorUpdate: (color: ColorValue) => Promise<void
                       colorTimeoutRef.current = setTimeout(async () => {
                         if (Date.now() - lastColorUpdate > 1000) {
                           console.log("[BLE] No color updates for 1 second, resetting");
-                          setColor({ r: 0, g: 0, b: 0 });
+                          setColor({ r: 0, g: 0, b: 0 } as RgbColor);
                         }
                       }, 1000);
                       

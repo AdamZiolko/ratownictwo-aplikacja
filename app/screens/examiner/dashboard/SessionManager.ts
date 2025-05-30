@@ -163,7 +163,7 @@ export const useSessionManager = (user: any) => {
       if (success) {
         console.log(`Successfully subscribed to student updates for session ${sessionCode}`);
       } else {
-        console.error(`Failed to subscribe to student updates for session ${sessionCode}`);
+        console.warn(`Failed to subscribe to student updates for session ${sessionCode} - will retry once`);
         
         if (!subscribedSessions.current.has(`${subscriptionKey}-retry`)) {
           subscribedSessions.current.add(`${subscriptionKey}-retry`);
