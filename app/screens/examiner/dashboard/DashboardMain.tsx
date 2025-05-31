@@ -174,6 +174,12 @@ const ExaminerDashboardScreen = () => {
     setStudentsDialogVisible(true);
   };
 
+  // Funkcja do przejścia do karty konfiguracji kolorów dla wybranej sesji
+  const openColorConfigForSession = (session: Session) => {
+    setCurrentSession(session);
+    setActiveTab("color-config");
+  };
+
   const handleLogout = () => {
     logout();
     router.replace("/");
@@ -369,6 +375,19 @@ const ExaminerDashboardScreen = () => {
                         </TouchableOpacity>
                       </View>
                     ))}
+                    
+                    <View style={dashboardStyles.sessionActions}>
+                      <Button
+                        mode="outlined"
+                        onPress={() => openColorConfigForSession(session)}
+                        style={dashboardStyles.colorConfigButton}
+                        icon="palette"
+                        compact
+                        labelStyle={{ fontSize: 12 }}
+                      >
+                        Konfiguracja kolorów
+                      </Button>
+                    </View>
                   </View>
                 )}
               </View>
@@ -414,11 +433,6 @@ const ExaminerDashboardScreen = () => {
             value: 'audio',
             label: 'Audio',
             icon: 'music',
-          },
-          {
-            value: 'color-config',
-            label: 'Kolory',
-            icon: 'palette',
           },
         ]}
         style={{ margin: 16 }}
@@ -562,6 +576,15 @@ const ExaminerDashboardScreen = () => {
                                   </View>
                                 )}
                             </View>
+                            <IconButton
+                              icon="palette"
+                              size={24}
+                              onPress={(e) => {
+                                e.stopPropagation();
+                                openColorConfigForSession(session);
+                              }}
+                              iconColor={theme.colors.onSurface}
+                            />
                           </View>
                         </Card.Content>
                       </Card>
@@ -579,6 +602,7 @@ const ExaminerDashboardScreen = () => {
           <ColorConfigTab
             sessionId={currentSession?.sessionId || null}
             sessionCode={currentSession?.sessionCode || null}
+            onGoBack={() => setActiveTab("sessions")}
           />
         )}
       </View>

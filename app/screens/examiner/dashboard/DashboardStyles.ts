@@ -416,6 +416,16 @@ globalOverlay: {
 historyButton: {
       marginHorizontal: 8,
       borderRadius: 8,
+},
+
+sessionActions: {
+    paddingTop: 8,
+    paddingBottom: 4,
+},
+
+colorConfigButton: {
+    marginHorizontal: 4,
+    borderRadius: 6,
 }
 
 });

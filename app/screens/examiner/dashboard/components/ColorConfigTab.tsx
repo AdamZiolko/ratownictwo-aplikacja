@@ -8,6 +8,8 @@ import {
   ProgressBar,
   Portal,
   useTheme,
+  IconButton,
+  Appbar,
 } from 'react-native-paper';
 import { ColorConfig, ColorConfigRequest, colorConfigService } from '@/services/ColorConfigService';
 import { socketService } from '@/services/SocketService';
@@ -27,11 +29,13 @@ import { ColorValue } from '@/components/bleColorSensor';
 interface ColorConfigTabProps {
   sessionId: string | null;
   sessionCode: string | null;
+  onGoBack?: () => void;
 }
 
 const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
   sessionId,
   sessionCode,
+  onGoBack,
 }) => {
   const theme = useTheme();
   const {
@@ -408,21 +412,54 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
       </Text>
     </View>
   );
-
   if (!sessionId) {
     return (
       <View style={styles.container}>
-        <Text style={[styles.noSessionText, { color: theme.colors.onSurface }]}>
-          Brak aktywnej sesji
-        </Text>
+        <View style={styles.emptyContainer}>
+          <Text style={[styles.emptyText, { color: theme.colors.onSurface }]}>
+            Brak wybranej sesji
+          </Text>          <Text style={[styles.emptySubtext, { color: theme.colors.onSurfaceVariant }]}>
+            Aby zarządzać konfiguracją kolorów, wróć do karty "Sesje" i kliknij przycisk palety kolorów (🎨) przy wybranej sesji
+          </Text>
+          {onGoBack && (
+            <Button mode="contained" onPress={onGoBack} style={{ marginTop: 16 }}>
+              Powrót do sesji
+            </Button>
+          )}
+        </View>
       </View>
     );
-  }
-
-  return (
+  }return (
     <View
       style={[styles.container, { backgroundColor: theme.colors.background }]}
     >
+      {/* Header with session info and back button */}
+      {sessionCode && onGoBack && (
+        <Appbar.Header>
+          <Appbar.BackAction onPress={onGoBack} />
+          <Appbar.Content
+            title="Konfiguracja kolorów"
+            subtitle={`Sesja: ${sessionCode}`}
+          />
+        </Appbar.Header>
+      )}
+
+      {/* Simple header for tab view */}
+      {sessionCode && !onGoBack && (
+        <View style={styles.header}>
+          <View style={styles.headerContent}>
+            <View style={styles.titleContainer}>
+              <Text style={[styles.title, { color: theme.colors.onSurface }]}>
+                Konfiguracja kolorów
+              </Text>
+              <Text style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
+                Sesja: {sessionCode}
+              </Text>
+            </View>
+          </View>
+        </View>
+      )}
+
       {/* Loading indicator */}
       {loading && <ProgressBar indeterminate style={styles.progressBar} />}
 
@@ -525,13 +562,26 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    zIndex: 0,
     paddingHorizontal: 16,
     paddingTop: 8,
-  },
+  },  
   header: {
     marginBottom: 16,
     alignItems: "center",
     paddingHorizontal: 8,
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    width: "100%",
+  },
+  backButton: {
+    marginRight: 8,
+  },
+  titleContainer: {
+    flex: 1,
+    alignItems: "center",
   },
   title: {
     fontSize: 22,

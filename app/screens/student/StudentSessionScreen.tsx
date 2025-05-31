@@ -31,6 +31,7 @@ import { useAudioManager } from "./hooks/useAudioManager";
 import { useNetworkMonitoring } from "./hooks/useNetworkMonitoring";
 import { useColorConfigs } from "./hooks/useColorConfigs";
 import { useColorSounds } from "./hooks/useColorSounds";
+import { useSessionDeletion } from "./hooks/useSessionDeletion";
 import ColorConfigDisplay from "./components/ColorConfigDisplay";
 
 const StudentSessionScreen = () => {
@@ -89,9 +90,16 @@ const StudentSessionScreen = () => {
     stopAllColorSounds,
     isLoadingAudio: isLoadingColorAudio,
   } = useColorSounds();
-
   // Monitorowanie stanu sieciowego
   useNetworkMonitoring();
+  // Handle session deletion
+  useSessionDeletion({
+    accessCode: accessCode?.toString(),
+    firstName: firstName || "",
+    lastName: lastName || "",
+    albumNumber: albumNumber || "",
+    sessionJoined,
+  });
 
   // Funkcje do ColorSensor
   const handleColorDetected = async (detectedColor: string, config: any) => {
@@ -115,7 +123,6 @@ const StudentSessionScreen = () => {
       },
     });
   };
-
   const toggleSessionPanel = () => {
     setIsSessionPanelExpanded(!isSessionPanelExpanded);
   };
