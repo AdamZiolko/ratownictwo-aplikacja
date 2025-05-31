@@ -17,7 +17,8 @@ export const useSessionManager = (user: any) => {
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarType, setSnackbarType] = useState<"success" | "error">("success");
-  
+  const [lastLoopedSound, setLastLoopedSound] = useState<string | null>(null);
+
   const subscribedSessions = useRef<Set<string>>(new Set());
 
   const storage: Storage = {
@@ -303,7 +304,9 @@ export const useSessionManager = (user: any) => {
   
   const handleSendAudioCommand = (loop?: boolean) => {
     if (!currentSession || !selectedSound) return false;
-  
+   if (loop) {
+    setLastLoopedSound(selectedSound);
+  }
     socketService.emitAudioCommand(
       currentSession.sessionCode,
       "PLAY",
@@ -452,6 +455,8 @@ export const useSessionManager = (user: any) => {
     handlePauseAudioCommand,
     handleResumeAudioCommand,
     handleStopAudioCommand,
-    handleSendQueue
+    handleSendQueue,
+    setLastLoopedSound,
+    lastLoopedSound
   };
 };

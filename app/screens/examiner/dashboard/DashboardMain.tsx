@@ -138,6 +138,8 @@ const ExaminerDashboardScreen = () => {
     handleServerAudioPauseCommand,
     handleServerAudioResumeCommand,
     handleServerAudioStopCommand,
+    lastLoopedSound,
+    setLastLoopedSound
   } = useSessionManager(user);
 
   const toggleSidebar = () => {
@@ -753,6 +755,7 @@ const ExaminerDashboardScreen = () => {
             onServerAudioPauseCommand={handleServerAudioPauseCommand}
             onServerAudioResumeCommand={handleServerAudioResumeCommand}
             onServerAudioStopCommand={handleServerAudioStopCommand}
+            lastLoopedSound={lastLoopedSound}
           />
 
           <ViewSessionDialog

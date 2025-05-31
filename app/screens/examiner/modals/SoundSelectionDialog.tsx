@@ -11,7 +11,6 @@ import {
   Checkbox,
   useTheme,
   ActivityIndicator,
-  Divider,
 } from "react-native-paper";
 import { Session, SoundQueueItem } from "../types/types";
 import { audioApiService } from "@/services/AudioApiService";
@@ -31,9 +30,14 @@ interface SoundSelectionDialogProps {
   onServerAudioPauseCommand?: (audioId: string) => void;
   onServerAudioResumeCommand?: (audioId: string) => void;
   onServerAudioStopCommand?: (audioId: string) => void;
+  lastLoopedSound: string | null; 
   // New props for color assignment mode
   isColorAssignmentMode?: boolean;
-  onSoundAssign?: (soundName: string | null, serverAudioId: string | null, isLooping: boolean) => void;
+  onSoundAssign?: (
+    soundName: string | null,
+    serverAudioId: string | null,
+    isLooping: boolean
+  ) => void;
 }
 
 // Type definition for server audio files
@@ -154,19 +158,35 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
   onServerAudioStopCommand,
   isColorAssignmentMode = false,
   onSoundAssign,
+   lastLoopedSound, 
 }) => {
   const theme = useTheme();
-  const [activeTab, setActiveTab] = useState<"single" | "queue" | "server">("single");
+  const [activeTab, setActiveTab] = useState<"single" | "queue" | "server">(
+    "single"
+  );
   const [currentPath, setCurrentPath] = useState<string[]>([]);
   const [isLooping, setIsLooping] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [delay, setDelay] = useState("0");
   const [queue, setQueue] = useState<SoundQueueItem[]>([]);
-  const [serverAudioFiles, setServerAudioFiles] = useState<ServerAudioFile[]>([]);
+  const [serverAudioFiles, setServerAudioFiles] = useState<ServerAudioFile[]>(
+    []
+  );
   const [loadingServerAudio, setLoadingServerAudio] = useState(false);
-  const [selectedServerAudioId, setSelectedServerAudioId] = useState<string | null>(null);
+  const [selectedServerAudioId, setSelectedServerAudioId] = useState<
+    string | null
+  >(null);
   const [serverIsLooping, setServerIsLooping] = useState(false);
   const [serverIsPlaying, setServerIsPlaying] = useState(false);
+
+
+ useEffect(() => {
+    if (lastLoopedSound) {
+      setSelectedSound(lastLoopedSound);
+      setIsPlaying(true);
+      setIsLooping(true);
+    }
+  }, [visible, lastLoopedSound]);
 
   // Load server audio files when the server tab is selected
   useEffect(() => {
@@ -196,13 +216,12 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
   };
 
   const handleNavigate = (item: string) => {
-    const newPath = [...currentPath, item];
-    setCurrentPath(newPath);
+    setCurrentPath((prev) => [...prev, item]);
   };
 
   const handleGoBack = () => {
     if (currentPath.length === 0) return;
-    setCurrentPath(currentPath.slice(0, -1));
+    setCurrentPath((prev) => prev.slice(0, -1));
   };
 
   const renderNavigationItems = () => {
@@ -210,38 +229,40 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
 
     if (Array.isArray(currentLevel)) {
       return (
-        <View style={styles.soundListContainer}>
-          {currentLevel.map((item) => (
-            <List.Item
-              key={item}
-              title={item}
-              style={{ paddingVertical: 2 }}
-              titleStyle={{ fontSize: 14 }}
-              left={() => (
-                <RadioButton
-                  value={`${currentPath.join("/")}/${item}`}
-                  status={
-                    selectedSound === `${currentPath.join("/")}/${item}`
-                      ? "checked"
-                      : "unchecked"
-                  }
-                />
-              )}
-              onPress={() => setSelectedSound(`${currentPath.join("/")}/${item}`)}
-            />
-          ))}
+        <View style={styles.listWrapper}>
+          <RadioButton.Group
+            onValueChange={setSelectedSound}
+            value={selectedSound || ""}
+          >
+            {currentLevel.map((item) => (
+              <List.Item
+                key={item}
+                title={item}
+                style={styles.listItem}
+                titleStyle={styles.listItemText}
+                left={() => (
+                  <RadioButton
+                    value={`${currentPath.join("/")}/${item}`}
+                  />
+                )}
+                onPress={() =>
+                  setSelectedSound(`${currentPath.join("/")}/${item}`)
+                }
+              />
+            ))}
+          </RadioButton.Group>
         </View>
       );
     } else {
       return (
-        <View style={styles.soundListContainer}>
+        <View style={styles.listWrapper}>
           {Object.keys(currentLevel).map((key) => (
             <List.Item
               key={key}
               title={key}
               left={() => <IconButton icon="folder" size={24} />}
-              style={{ paddingVertical: 2 }}
-              titleStyle={{ fontSize: 14 }}
+              style={styles.listItem}
+              titleStyle={styles.listItemText}
               onPress={() => handleNavigate(key)}
             />
           ))}
@@ -255,7 +276,9 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
       return (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" />
-          <Text style={styles.loadingText}>Ładowanie plików audio z serwera...</Text>
+          <Text style={styles.loadingText}>
+            Ładowanie plików audio z serwera...
+          </Text>
         </View>
       );
     }
@@ -269,7 +292,7 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
     }
 
     return (
-      <View style={styles.soundListContainer}>
+      <View style={styles.listWrapper}>
         <RadioButton.Group
           onValueChange={(value) => setSelectedServerAudioId(value)}
           value={selectedServerAudioId || ""}
@@ -279,12 +302,14 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
               key={file.id}
               title={file.name}
               description={`Utworzony przez: ${file.createdBy}`}
-              style={{ paddingVertical: 2 }}
-              titleStyle={{ fontSize: 14 }}
+              style={styles.listItem}
+              titleStyle={styles.listItemText}
               left={() => (
                 <RadioButton
                   value={file.id}
-                  status={selectedServerAudioId === file.id ? "checked" : "unchecked"}
+                  status={
+                    selectedServerAudioId === file.id ? "checked" : "unchecked"
+                  }
                 />
               )}
               onPress={() => setSelectedServerAudioId(file.id)}
@@ -360,15 +385,15 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
 
   if (!session) return null;
 
-  return (    <Dialog
-      visible={visible}
-      onDismiss={onDismiss}
-      style={styles.dialog}
-    >
+  return (
+    <Dialog visible={visible} onDismiss={onDismiss} style={styles.dialog}>
       <Dialog.Title style={styles.title}>
-        {isColorAssignmentMode ? "Wybierz dźwięk dla koloru" : "Odtwórz dźwięk"}
+        {isColorAssignmentMode
+          ? "Wybierz dźwięk dla koloru"
+          : "Odtwórz dźwięk"}
       </Dialog.Title>
 
+      {/* Tabs */}
       <View style={styles.tabsContainer}>
         <Button
           mode={activeTab === "single" ? "contained" : "outlined"}
@@ -394,231 +419,262 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
         >
           Serwer
         </Button>
-      </View>      <Dialog.ScrollArea style={styles.dialogScrollArea}>
-        <ScrollView>
-          <View style={styles.contentContainer}>
-            {/* Debug Info */}
-            <View style={styles.debugContainer}>
-              <Text style={styles.debugText}>
-                Debug: Selected Sound: {selectedSound || 'None'} | 
-                Current Path: {currentPath.join('/') || 'Root'} | 
-                Server Audio: {selectedServerAudioId || 'None'}
+      </View>
+
+      {/* Content */}
+      <Dialog.Content style={styles.contentContainer}>
+        {/* Debug Info */}
+        <View style={styles.debugContainer}>
+          <Text style={styles.debugText}>
+            Debug: SelectedSound: {selectedSound || "None"} | Path:{" "}
+            {currentPath.join("/") || "Root"} | ServerAudio:{" "}
+            {selectedServerAudioId || "None"}
+          </Text>
+        </View>
+
+        {(activeTab === "single" || activeTab === "queue") && (
+          <>
+            <Text style={styles.sectionHeader}>Wybierz dźwięk:</Text>
+            {currentPath.length > 0 && (
+              <Button
+                mode="text"
+                onPress={handleGoBack}
+                icon="arrow-left"
+                style={styles.backButton}
+                labelStyle={styles.backLabel}
+              >
+                Powrót
+              </Button>
+            )}
+
+            {/* Przewijana lista dźwięków */}
+            <ScrollView style={styles.listContainer}>
+              <RadioButton.Group
+                onValueChange={setSelectedSound}
+                value={selectedSound || ""}
+              >
+                {renderNavigationItems()}
+              </RadioButton.Group>
+            </ScrollView>
+          </>
+        )}
+
+        {activeTab === "server" && (
+          <>
+            <View style={styles.serverControlsHeader}>
+              <Text style={styles.sectionHeader}>
+                Pliki audio serwera:
               </Text>
+              <Button
+                mode="text"
+                icon="refresh"
+                onPress={loadServerAudioFiles}
+                disabled={loadingServerAudio}
+              >
+                Odśwież
+              </Button>
+            </View>
+            <ScrollView style={styles.listContainer}>
+              {renderServerAudioList()}
+            </ScrollView>
+          </>
+        )}
+
+        {/* Dolne panele zależne od aktywnej zakładki */}
+        {activeTab === "single" && (
+          <View style={styles.bottomPane}>
+            <Text style={styles.sectionHeader}>Opcje odtwarzania:</Text>
+            <View style={styles.checkboxRow}>
+              <Checkbox
+                status={isLooping ? "checked" : "unchecked"}
+                onPress={() => setIsLooping(!isLooping)}
+                color={theme.colors.primary}
+              />
+              <Text style={styles.checkboxLabel}>Odtwarzaj w pętli</Text>
             </View>
 
-            {(activeTab === "single" || activeTab === "queue") && (
-              <>
-                <Text style={styles.sectionHeader}>Wybierz dźwięk:</Text>
+            <Button
+              onPress={() => {
+                onSendAudioCommand(isLooping);
+                setIsPlaying(true);
+              }}
+              disabled={!selectedSound}
+              mode="contained"
+              style={styles.playButton}
+            >
+              Odtwórz{" "}
+              {selectedSound
+                ? `(${selectedSound.split("/").pop()})`
+                : "(wybierz dźwięk)"}
+            </Button>
 
-                {currentPath.length > 0 && (
-                  <Button
-                    mode="text"
-                    onPress={handleGoBack}
-                    icon="arrow-left"
-                    style={styles.backButton}
-                    labelStyle={styles.backLabel}
-                  >
-                    Powrót
-                  </Button>
-                )}
-
-                <RadioButton.Group
-                  onValueChange={setSelectedSound}
-                  value={selectedSound || ""}
-                >
-                  {renderNavigationItems()}
-                </RadioButton.Group>
-              </>
+            {isColorAssignmentMode && (
+              <Button
+                onPress={handleAssignSound}
+                disabled={!selectedSound}
+                mode="contained"
+                style={[styles.playButton, { backgroundColor: "#4CAF50" }]}
+                icon="check"
+              >
+                Przypisz dźwięk{" "}
+                {selectedSound
+                  ? `(${selectedSound.split("/").pop()})`
+                  : "(wybierz dźwięk)"}
+              </Button>
             )}
 
-            {activeTab === "server" && (
-              <>
-                <View style={styles.serverControlsHeader}>
-                  <Text style={styles.sectionHeader}>Pliki audio serwera:</Text>
-                  <Button 
-                    mode="text" 
-                    icon="refresh" 
-                    onPress={loadServerAudioFiles}
-                    disabled={loadingServerAudio}
-                  >
-                    Odśwież
-                  </Button>
-                </View>
-                {renderServerAudioList()}
-              </>
-            )}
-
-            {activeTab === "single" && (
-              <>
-                <Text style={styles.sectionHeader}>Opcje odtwarzania:</Text>
-                <View style={styles.checkboxRow}>
-                  <Checkbox
-                    status={isLooping ? "checked" : "unchecked"}
-                    onPress={() => setIsLooping(!isLooping)}
-                    color={theme.colors.primary}
-                  />
-                  <Text style={styles.checkboxLabel}>Odtwarzaj w pętli</Text>
-                </View>                <Button
+            {isLooping && (
+              <View style={styles.controlIcons}>
+                <IconButton
+                  icon={isPlaying ? "pause-circle" : "play-circle"}
+                  size={32}
                   onPress={() => {
-                    console.log("Playing sound:", selectedSound);
-                    onSendAudioCommand(isLooping);
-                    setIsPlaying(true);
+                    if (isPlaying) {
+                      onPauseAudioCommand();
+                    } else {
+                      onResumeAudioCommand();
+                    }
+                    setIsPlaying(!isPlaying);
                   }}
-                  disabled={!selectedSound}
-                  mode="contained"
-                  style={styles.playButton}
-                >
-                  Odtwórz {selectedSound ? `(${selectedSound.split('/').pop()})` : '(wybierz dźwięk)'}
-                </Button>
-
-                {isColorAssignmentMode && (
-                  <Button
-                    onPress={handleAssignSound}
-                    disabled={!selectedSound}
-                    mode="contained"
-                    style={[styles.playButton, { backgroundColor: '#4CAF50' }]}
-                    icon="check"
-                  >
-                    Przypisz dźwięk {selectedSound ? `(${selectedSound.split('/').pop()})` : '(wybierz dźwięk)'}
-                  </Button>
-                )}
-
-                {isLooping && (
-                  <View style={styles.controlIcons}>
-                    <IconButton
-                      icon={isPlaying ? "pause-circle" : "play-circle"}
-                      size={32}
-                      onPress={() => {
-                        if (isPlaying) {
-                          onPauseAudioCommand();
-                        } else {
-                          onResumeAudioCommand();
-                        }
-                        setIsPlaying(!isPlaying);
-                      }}
-                      style={styles.controlIcon}
-                      iconColor={theme.colors.primary}
-                    />
-                    <IconButton
-                      icon="stop-circle"
-                      size={32}
-                      onPress={() => {
-                        onStopAudioCommand();
-                        setIsPlaying(false);
-                        setIsLooping(false);
-                      }}
-                      style={styles.controlIcon}
-                      iconColor={theme.colors.primary}
-                    />
-                  </View>
-                )}
-              </>
-            )}
-
-            {activeTab === "server" && (
-              <>
-                <Text style={styles.sectionHeader}>Opcje odtwarzania:</Text>
-                <View style={styles.checkboxRow}>
-                  <Checkbox
-                    status={serverIsLooping ? "checked" : "unchecked"}
-                    onPress={() => setServerIsLooping(!serverIsLooping)}
-                    color={theme.colors.primary}
-                  />
-                  <Text style={styles.checkboxLabel}>Odtwarzaj w pętli</Text>
-                </View>                <Button
-                  onPress={handleServerAudioPlayback}
-                  disabled={!selectedServerAudioId || !onServerAudioCommand}
-                  mode="contained"
-                  style={styles.playButton}
-                >
-                  Odtwórz dla całej sesji {selectedServerAudioId ? `(${serverAudioFiles.find(f => f.id === selectedServerAudioId)?.name})` : '(wybierz plik)'}
-                </Button>
-
-                {isColorAssignmentMode && (
-                  <Button
-                    onPress={handleAssignServerAudio}
-                    disabled={!selectedServerAudioId}
-                    mode="contained"
-                    style={[styles.playButton, { backgroundColor: '#4CAF50' }]}
-                    icon="check"
-                  >
-                    Przypisz plik {selectedServerAudioId ? `(${serverAudioFiles.find(f => f.id === selectedServerAudioId)?.name})` : '(wybierz plik)'}
-                  </Button>
-                )}
-
-                {serverIsLooping && (
-                  <View style={styles.controlIcons}>
-                    <IconButton
-                      icon={serverIsPlaying ? "pause-circle" : "play-circle"}
-                      size={32}
-                      onPress={() => {
-                        if (serverIsPlaying) {
-                          handleServerAudioPause();
-                        } else {
-                          handleServerAudioResume();
-                        }
-                      }}
-                      style={styles.controlIcon}
-                      iconColor={theme.colors.primary}
-                      disabled={!onServerAudioPauseCommand || !onServerAudioResumeCommand}
-                    />
-                    <IconButton
-                      icon="stop-circle"
-                      size={32}
-                      onPress={handleServerAudioStop}
-                      style={styles.controlIcon}
-                      iconColor={theme.colors.primary}
-                      disabled={!onServerAudioStopCommand}
-                    />
-                  </View>
-                )}
-              </>
-            )}
-
-            {activeTab === "queue" && (
-              <>
-                <Text style={styles.sectionHeader}>Opóźnienie (ms):</Text>
-                <TextInput
-                  mode="outlined"
-                  keyboardType="numeric"
-                  value={delay}
-                  onChangeText={setDelay}
-                  style={styles.input}
-                  outlineStyle={styles.inputOutline}
+                  style={styles.controlIcon}
+                  iconColor={theme.colors.primary}
                 />
-
-                <Button
-                  mode="outlined"
-                  onPress={addToQueue}
-                  disabled={!selectedSound}
-                  style={styles.addButton}
-                  icon="playlist-plus"
-                >
-                  Dodaj do kolejki
-                </Button>
-
-                <Text style={styles.sectionHeader}>Kolejka dźwięków:</Text>
-                <ScrollView style={styles.queueList}>
-                  {queue.map((item, index) => (
-                    <View key={index} style={styles.queueItem}>
-                      <Text style={styles.queueText}>
-                        {item.soundName.split('/').pop()?.replace(/\.wav$/, "") || item.soundName.replace(/\.wav$/, "")} (+{item.delay}ms)
-                      </Text>
-                      <IconButton
-                        icon="close"
-                        size={20}
-                        onPress={() => removeFromQueue(index)}
-                        style={styles.queueIcon}
-                        iconColor={theme.colors.error}
-                      />
-                    </View>
-                  ))}
-                </ScrollView>
-              </>
+                <IconButton
+                  icon="stop-circle"
+                  size={32}
+                  onPress={() => {
+                    onStopAudioCommand();
+                    setIsPlaying(false);
+                    setIsLooping(false);
+                  }}
+                  style={styles.controlIcon}
+                  iconColor={theme.colors.primary}
+                />
+              </View>
             )}
           </View>
-        </ScrollView>
-      </Dialog.ScrollArea>
+        )}
+
+        {activeTab === "server" && (
+          <View style={styles.bottomPane}>
+            <Text style={styles.sectionHeader}>Opcje odtwarzania:</Text>
+            <View style={styles.checkboxRow}>
+              <Checkbox
+                status={serverIsLooping ? "checked" : "unchecked"}
+                onPress={() => setServerIsLooping(!serverIsLooping)}
+                color={theme.colors.primary}
+              />
+              <Text style={styles.checkboxLabel}>Odtwarzaj w pętli</Text>
+            </View>
+
+            <Button
+              onPress={handleServerAudioPlayback}
+              disabled={!selectedServerAudioId || !onServerAudioCommand}
+              mode="contained"
+              style={styles.playButton}
+            >
+              Odtwórz dla całej sesji{" "}
+              {selectedServerAudioId
+                ? `(${serverAudioFiles.find(
+                    (f) => f.id === selectedServerAudioId
+                  )?.name})`
+                : "(wybierz plik)"}
+            </Button>
+
+            {isColorAssignmentMode && (
+              <Button
+                onPress={handleAssignServerAudio}
+                disabled={!selectedServerAudioId}
+                mode="contained"
+                style={[styles.playButton, { backgroundColor: "#4CAF50" }]}
+                icon="check"
+              >
+                Przypisz plik{" "}
+                {selectedServerAudioId
+                  ? `(${serverAudioFiles.find(
+                      (f) => f.id === selectedServerAudioId
+                    )?.name})`
+                  : "(wybierz plik)"}
+              </Button>
+            )}
+
+            {serverIsLooping && (
+              <View style={styles.controlIcons}>
+                <IconButton
+                  icon={serverIsPlaying ? "pause-circle" : "play-circle"}
+                  size={32}
+                  onPress={() => {
+                    if (serverIsPlaying) {
+                      handleServerAudioPause();
+                    } else {
+                      handleServerAudioResume();
+                    }
+                  }}
+                  style={styles.controlIcon}
+                  iconColor={theme.colors.primary}
+                  disabled={
+                    !onServerAudioPauseCommand || !onServerAudioResumeCommand
+                  }
+                />
+                <IconButton
+                  icon="stop-circle"
+                  size={32}
+                  onPress={handleServerAudioStop}
+                  style={styles.controlIcon}
+                  iconColor={theme.colors.primary}
+                  disabled={!onServerAudioStopCommand}
+                />
+              </View>
+            )}
+          </View>
+        )}
+
+        {activeTab === "queue" && (
+          <View style={styles.bottomPane}>
+            <Text style={styles.sectionHeader}>Opóźnienie (ms):</Text>
+            <TextInput
+              mode="outlined"
+              keyboardType="numeric"
+              value={delay}
+              onChangeText={setDelay}
+              style={styles.input}
+              outlineStyle={styles.inputOutline}
+            />
+
+            <Button
+              mode="outlined"
+              onPress={addToQueue}
+              disabled={!selectedSound}
+              style={styles.addButton}
+              icon="playlist-plus"
+            >
+              Dodaj do kolejki
+            </Button>
+
+            <Text style={styles.sectionHeader}>Kolejka dźwięków:</Text>
+            <ScrollView style={styles.queueList}>
+              {queue.map((item, index) => (
+                <View key={index} style={styles.queueItem}>
+                  <Text style={styles.queueText}>
+                    {item.soundName
+                      .split("/")
+                      .pop()
+                      ?.replace(/\.wav$/, "") || item.soundName.replace(/\.wav$/, "")}{" "}
+                    (+{item.delay}ms)
+                  </Text>
+                  <IconButton
+                    icon="close"
+                    size={20}
+                    onPress={() => removeFromQueue(index)}
+                    style={styles.queueIcon}
+                    iconColor={theme.colors.error}
+                  />
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+      </Dialog.Content>
 
       <Dialog.Actions style={styles.actions}>
         <Button onPress={onDismiss}>Anuluj</Button>
@@ -643,9 +699,6 @@ const styles = StyleSheet.create({
     width: "90%",
     borderRadius: 12,
     alignSelf: "center",
-  },
-  dialogScrollArea: {
-    maxHeight: Dimensions.get("window").height * 0.6,
   },
   title: {
     fontSize: 20,
@@ -672,6 +725,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
+  debugContainer: {
+    backgroundColor: "#f0f0f0",
+    padding: 8,
+    marginBottom: 12,
+    borderRadius: 4,
+  },
+  debugText: {
+    fontSize: 12,
+    fontFamily: "monospace",
+    color: "#666",
+  },
   sectionHeader: {
     fontSize: 16,
     fontWeight: "600",
@@ -686,10 +750,23 @@ const styles = StyleSheet.create({
   backLabel: {
     fontWeight: "500",
   },
-  soundListContainer: {
-    maxHeight: 260,
+  // Nowe style dla listy
+  listContainer: {
+    maxHeight: 260, // stała wysokość listy
     marginBottom: 12,
-    borderRadius: 8,
+  },
+  listWrapper: {
+    paddingRight: 8, // dla poprawienia odsunięcia radio buttonów
+  },
+  listItem: {
+    paddingVertical: 2,
+  },
+  listItemText: {
+    fontSize: 14,
+  },
+  // Panel przycisków przyklejony do dołu
+  bottomPane: {
+    marginTop: 8,
   },
   checkboxRow: {
     flexDirection: "row",
@@ -733,7 +810,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
+    borderColor: "rgba(0, 0, 0, 0.1)",
   },
   queueItem: {
     flexDirection: "row",
@@ -742,7 +819,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
+    borderBottomColor: "rgba(0, 0, 0, 0.1)",
   },
   queueText: {
     fontSize: 14,
@@ -751,10 +828,9 @@ const styles = StyleSheet.create({
   queueIcon: {
     margin: 0,
   },
-  actions: {
-    padding: 16,
+  serverControlsHeader: {
     flexDirection: "row",
-    justifyContent: "flex-end",
+    justifyContent: "space-between",
     alignItems: "center",
   },
   loadingContainer: {
@@ -770,21 +846,12 @@ const styles = StyleSheet.create({
     padding: 20,
     alignItems: "center",
     justifyContent: "center",
-  },  serverControlsHeader: {
+  },
+  actions: {
+    padding: 16,
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "flex-end",
     alignItems: "center",
-  },
-  debugContainer: {
-    backgroundColor: '#f0f0f0',
-    padding: 8,
-    marginBottom: 12,
-    borderRadius: 4,
-  },
-  debugText: {
-    fontSize: 12,
-    fontFamily: 'monospace',
-    color: '#666',
   },
 });
 
