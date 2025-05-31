@@ -750,13 +750,12 @@ const styles = StyleSheet.create({
   backLabel: {
     fontWeight: "500",
   },
-  // Nowe style dla listy
   listContainer: {
-    maxHeight: 260, // stała wysokość listy
+    maxHeight: 260, 
     marginBottom: 12,
   },
   listWrapper: {
-    paddingRight: 8, // dla poprawienia odsunięcia radio buttonów
+    paddingRight: 8, 
   },
   listItem: {
     paddingVertical: 2,
@@ -764,7 +763,6 @@ const styles = StyleSheet.create({
   listItemText: {
     fontSize: 14,
   },
-  // Panel przycisków przyklejony do dołu
   bottomPane: {
     marginTop: 8,
   },
