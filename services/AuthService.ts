@@ -1,6 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const API_URL = 'http://localhost:8080/api/auth/';
+import { API_URL } from '../constants/Config';
 
 interface User {
   id: number;
@@ -27,10 +26,9 @@ interface TokenRefreshResponse {
 }
 
 class AuthService {
-  
-  async register(data: RegisterData): Promise<any> {
+    async register(data: RegisterData): Promise<any> {
     try {
-      const response = await fetch(`${API_URL}signup`, {
+      const response = await fetch(`${API_URL}/api/auth/signup`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -44,10 +42,9 @@ class AuthService {
     }
   }
 
-  
-  async login(data: LoginData): Promise<any> {
+    async login(data: LoginData): Promise<any> {
     try {
-      const response = await fetch(`${API_URL}signin`, {
+      const response = await fetch(`${API_URL}/api/auth/signin`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -103,9 +100,7 @@ class AuthService {
       
       if (!refreshToken) {
         return null;
-      }
-
-      const response = await fetch(`${API_URL}refreshtoken`, {
+      }      const response = await fetch(`${API_URL}/api/auth/refreshtoken`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

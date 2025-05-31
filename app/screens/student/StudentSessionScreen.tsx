@@ -211,7 +211,6 @@ const StudentSessionScreen = () => {
             onPress={toggleSessionPanel}
           />
         </Appbar.Header>
-
         <ScrollView style={styles.scrollContainer}>
           <SessionInfo
             accessCode={accessCode?.toString() || ""}
@@ -223,12 +222,6 @@ const StudentSessionScreen = () => {
             setIsSessionPanelExpanded={setIsSessionPanelExpanded}
             isMobile={!isWeb}
           />
-
-          {/* 
-            Karta EKG: po tapnięciu przenosimy na ekran pełnoekranowy,
-            ale przesyłamy tylko dane identyfikacyjne (accessCode itp.).
-            Dzięki temu ekran pełnoekranowy ponownie subskrybuje bieżące dane.
-          */}
           {sessionData.rhythmType !== undefined && (
             <Pressable
               style={styles.cardContainer}
@@ -251,7 +244,6 @@ const StudentSessionScreen = () => {
               />
             </Pressable>
           )}
-
           <VitalSignsDisplay
             temperature={temperature}
             bloodPressure={bloodPressure}
@@ -261,13 +253,11 @@ const StudentSessionScreen = () => {
             formatBloodPressure={formatBloodPressure}
             isFullscreen={isFullscreen}
           />
-
           <ColorConfigDisplay
             colorConfigs={colorConfigs}
             isLoading={colorConfigsLoading}
             error={colorConfigsError}
           />
-
           {!isWeb && (
             <ColorSensor
               colorConfigs={colorConfigs}
@@ -275,7 +265,6 @@ const StudentSessionScreen = () => {
               onColorLost={handleColorLost}
             />
           )}
-
           <Surface style={styles.cardContainer}>
             <View style={styles.audioStatusContainer}>
               <MaterialCommunityIcons
@@ -317,7 +306,6 @@ const StudentSessionScreen = () => {
               )}
             </View>
           </Surface>
-
           <SocketConnectionStatus />
         </ScrollView>
       </SafeAreaView>

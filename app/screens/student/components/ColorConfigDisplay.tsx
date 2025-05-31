@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { View, StyleSheet, Platform, ActivityIndicator, ScrollView } from "react-native";
+import {
+  View,
+  StyleSheet,
+  Platform,
+  ActivityIndicator,
+  ScrollView,
+} from "react-native";
 import { Surface, Text, useTheme, Chip, IconButton } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { ColorConfig } from "@/services/ColorConfigService";
@@ -16,7 +22,8 @@ const ColorConfigDisplay: React.FC<ColorConfigDisplayProps> = ({
   colorConfigs,
   isLoading,
   error,
-}) => {  const theme = useTheme();
+}) => {
+  const theme = useTheme();
   const [currentSound, setCurrentSound] = useState<Audio.Sound | null>(null);
   const [playingSound, setPlayingSound] = useState<string | null>(null);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
@@ -51,8 +58,12 @@ const ColorConfigDisplay: React.FC<ColorConfigDisplayProps> = ({
       setPlayingSound(null);
     };
   }, []);
+  const getColorValue = (config: ColorConfig): string => {
+    if (config.color === "custom" && config.customColorRgb) {
+      const { r, g, b } = config.customColorRgb;
+      return `rgb(${r}, ${g}, ${b})`;
+    }
 
-  const getColorValue = (color: string): string => {
     const colorMap: Record<string, string> = {
       red: "#F44336",
       green: "#4CAF50",
@@ -61,7 +72,32 @@ const ColorConfigDisplay: React.FC<ColorConfigDisplayProps> = ({
       orange: "#FF9800",
       purple: "#9C27B0",
     };
-    return colorMap[color] || "#666666";
+    return colorMap[config.color] || "#666666";
+  };
+
+  const getColorValueWithAlpha = (
+    config: ColorConfig,
+    alpha: number = 0.2
+  ): string => {
+    if (config.color === "custom" && config.customColorRgb) {
+      const { r, g, b } = config.customColorRgb;
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    const colorMap: Record<string, string> = {
+      red: "#F44336",
+      green: "#4CAF50",
+      blue: "#2196F3",
+      yellow: "#FFEB3B",
+      orange: "#FF9800",
+      purple: "#9C27B0",
+    };
+    const hexColor = colorMap[config.color] || "#666666";
+    // Convert hex to rgba
+    const r = parseInt(hexColor.slice(1, 3), 16);
+    const g = parseInt(hexColor.slice(3, 5), 16);
+    const b = parseInt(hexColor.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   };
   const getColorIcon = (
     color: string
@@ -86,7 +122,7 @@ const ColorConfigDisplay: React.FC<ColorConfigDisplayProps> = ({
       const soundKey = config.serverAudioId
         ? `server_${config.serverAudioId}`
         : config.soundName || "";
-      
+
       setIsLoadingAudio(true);
       setLoadingAudioKey(soundKey);
 
@@ -248,7 +284,8 @@ const ColorConfigDisplay: React.FC<ColorConfigDisplayProps> = ({
         <Text style={[styles.title, { color: theme.colors.onSurface }]}>
           Konfiguracja Kolorów ({colorConfigs.length})
         </Text>
-      </View>      <ScrollView 
+      </View>
+      <ScrollView
         style={styles.colorsContainer}
         showsVerticalScrollIndicator={true}
         nestedScrollEnabled={true}
@@ -260,7 +297,7 @@ const ColorConfigDisplay: React.FC<ColorConfigDisplayProps> = ({
                 <MaterialCommunityIcons
                   name={getColorIcon(config.color)}
                   size={16}
-                  color={getColorValue(config.color)}
+                  color={getColorValue(config)}
                 />
               )}
               mode={config.isEnabled ? "flat" : "outlined"}
@@ -268,9 +305,9 @@ const ColorConfigDisplay: React.FC<ColorConfigDisplayProps> = ({
                 styles.colorChip,
                 {
                   backgroundColor: config.isEnabled
-                    ? `${getColorValue(config.color)}20`
+                    ? getColorValueWithAlpha(config, 0.2)
                     : "transparent",
-                  borderColor: getColorValue(config.color),
+                  borderColor: getColorValue(config),
                 },
               ]}
               textStyle={{
@@ -279,16 +316,18 @@ const ColorConfigDisplay: React.FC<ColorConfigDisplayProps> = ({
                   : theme.colors.outline,
               }}
             >
-              {config.color.toUpperCase()}
+              {config.displayName ||
+                `RGB(${config.customColorRgb?.r || 0}, ${
+                  config.customColorRgb?.g || 0
+                }, ${config.customColorRgb?.b || 0})`}
             </Chip>
-
             <View style={styles.configDetails}>
               {config.soundName && (
                 <Text
                   style={[styles.soundName, { color: theme.colors.onSurface }]}
                   numberOfLines={1}
                 >
-                  Local:{" "}
+                  Local:
                   {config.soundName.split("/").pop()?.replace(".wav", "")}
                 </Text>
               )}
@@ -300,7 +339,6 @@ const ColorConfigDisplay: React.FC<ColorConfigDisplayProps> = ({
                   Server: {config.serverAudio.name}
                 </Text>
               )}
-
               <View style={styles.statusRow}>
                 <Text
                   style={[
@@ -334,37 +372,59 @@ const ColorConfigDisplay: React.FC<ColorConfigDisplayProps> = ({
                   </>
                 )}
               </View>
-            </View>            {/* Play/Stop Button */}
-            {(config.soundName || config.serverAudioId) && (
-              <View style={styles.playButtonContainer}>
-                <IconButton
-                  icon={
-                    playingSound ===
+            </View>
+            <View style={styles.playButtonContainer}>
+              <IconButton
+                icon={
+                  (config.soundName || config.serverAudioId) &&
+                  playingSound ===
                     (config.serverAudioId
                       ? `server_${config.serverAudioId}`
                       : config.soundName)
-                      ? "stop"
-                      : "play"
-                  }
-                  size={24}
-                  iconColor={theme.colors.primary}
-                  disabled={isLoadingAudio}
-                  onPress={isLoadingAudio ? undefined : () => handlePlaySound(config)}
-                  style={[
-                    styles.playButton,
-                    isLoadingAudio && { opacity: 0.5 }
-                  ]}
-                />                {isLoadingAudio && loadingAudioKey === (config.serverAudioId
-                  ? `server_${config.serverAudioId}`
-                  : config.soundName) && (                  <View style={[styles.loadingOverlay, { backgroundColor: `${theme.colors.surface}CC` }]}>
-                    <ActivityIndicator 
-                      size="small" 
+                    ? "stop"
+                    : "play"
+                }
+                size={24}
+                iconColor={
+                  config.soundName || config.serverAudioId
+                    ? theme.colors.primary
+                    : theme.colors.outline
+                }
+                disabled={
+                  isLoadingAudio || !(config.soundName || config.serverAudioId)
+                }
+                onPress={
+                  isLoadingAudio || !(config.soundName || config.serverAudioId)
+                    ? undefined
+                    : () => handlePlaySound(config)
+                }
+                style={[
+                  styles.playButton,
+                  isLoadingAudio && { opacity: 0.5 },
+                  !(config.soundName || config.serverAudioId) && {
+                    opacity: 0.3,
+                  },
+                ]}
+              />
+              {isLoadingAudio &&
+                (config.soundName || config.serverAudioId) &&
+                loadingAudioKey ===
+                  (config.serverAudioId
+                    ? `server_${config.serverAudioId}`
+                    : config.soundName) && (
+                  <View
+                    style={[
+                      styles.loadingOverlay,
+                      { backgroundColor: `${theme.colors.surface}CC` },
+                    ]}
+                  >
+                    <ActivityIndicator
+                      size="small"
                       color={theme.colors.primary}
                     />
                   </View>
                 )}
-              </View>
-            )}
+            </View>
           </View>
         ))}
       </ScrollView>
@@ -402,7 +462,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 14,
     fontStyle: "italic",
-  },  colorsContainer: {
+  },
+  colorsContainer: {
     gap: 12,
     maxHeight: 300,
   },
@@ -438,9 +499,11 @@ const styles = StyleSheet.create({
   },
   volume: {
     fontSize: 11,
-  },  loopIcon: {
+  },
+  loopIcon: {
     marginLeft: 4,
-  },  playButtonContainer: {
+  },
+  playButtonContainer: {
     marginLeft: 8,
     minWidth: 48,
     minHeight: 48,
@@ -450,7 +513,8 @@ const styles = StyleSheet.create({
   },
   playButton: {
     margin: 0,
-  },  loadingOverlay: {
+  },
+  loadingOverlay: {
     position: "absolute",
     top: 0,
     left: 0,
@@ -458,7 +522,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: "center",
     alignItems: "center",
-    // backgroundColor will be set dynamically with theme (80% opacity)
     borderRadius: 24,
   },
 });

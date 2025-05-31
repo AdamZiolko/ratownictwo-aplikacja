@@ -3,7 +3,7 @@ import ApiService from './ApiService';
 export interface ColorConfig {
   id: number;
   sessionId: string;
-  color: 'red' | 'green' | 'blue' | 'yellow' | 'orange' | 'purple' | 'custom';
+  color: 'custom';
   colorIdentifier?: string;
   soundName?: string;
   displayName?: string;
@@ -22,7 +22,7 @@ export interface ColorConfig {
 
 export interface ColorConfigRequest {
   id?: number;
-  color: 'red' | 'green' | 'blue' | 'yellow' | 'orange' | 'purple' | 'custom';
+  color: 'custom';
   colorIdentifier?: string;
   soundName?: string;
   displayName?: string;
@@ -115,49 +115,66 @@ class ColorConfigService {
       throw error;
     }
   }
-
   /**
    * Get default color configurations for a new session
    */
   getDefaultColorConfigs(): ColorConfigRequest[] {
     return [
       {
-        color: 'red',
+        color: 'custom',
+        customColorRgb: { r: 255, g: 0, b: 0 },
+        colorTolerance: 0.15,
+        displayName: 'Czerwony',
         soundName: 'Adult/Male/Screaming.wav',
         isEnabled: true,
         volume: 1.0,
         isLooping: false
       },
       {
-        color: 'green',
+        color: 'custom',
+        customColorRgb: { r: 0, g: 255, b: 0 },
+        colorTolerance: 0.15,
+        displayName: 'Zielony',
         soundName: 'Adult/Female/Screaming.wav',
         isEnabled: true,
         volume: 1.0,
         isLooping: false
       },
       {
-        color: 'blue',
+        color: 'custom',
+        customColorRgb: { r: 0, g: 0, b: 255 },
+        colorTolerance: 0.15,
+        displayName: 'Niebieski',
         soundName: 'Child/Screaming.wav',
         isEnabled: true,
         volume: 1.0,
         isLooping: false
       },
       {
-        color: 'yellow',
+        color: 'custom',
+        customColorRgb: { r: 255, g: 255, b: 0 },
+        colorTolerance: 0.15,
+        displayName: 'Żółty',
         soundName: 'Infant/Screaming.wav',
         isEnabled: true,
         volume: 1.0,
         isLooping: false
       },
       {
-        color: 'orange',
+        color: 'custom',
+        customColorRgb: { r: 255, g: 165, b: 0 },
+        colorTolerance: 0.15,
+        displayName: 'Pomarańczowy',
         soundName: 'Speech/Chest hurts.wav',
         isEnabled: true,
         volume: 1.0,
         isLooping: false
       },
       {
-        color: 'purple',
+        color: 'custom',
+        customColorRgb: { r: 128, g: 0, b: 128 },
+        colorTolerance: 0.15,
+        displayName: 'Fioletowy',
         soundName: 'Speech/I\'m feeling very dizzy.wav',
         isEnabled: true,
         volume: 1.0,
