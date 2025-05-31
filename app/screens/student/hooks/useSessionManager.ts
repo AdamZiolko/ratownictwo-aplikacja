@@ -49,9 +49,7 @@ export const useSessionManager = ({
 
   useEffect(() => {
     fetchSession();
-  }, [accessCode]);
-
-  useEffect(() => {
+  }, [accessCode]);  useEffect(() => {
     let unsub: (() => void) | undefined;
 
     async function setupSessionSubscription() {
@@ -100,44 +98,11 @@ export const useSessionManager = ({
           // Mark session as joined after successful subscription
           console.log('✅ Session subscription successful, setting sessionJoined = true');
           setSessionJoined(true);
-        })
-        .catch(console.error);
-
-      const sessionDeletedUnsubscribe = socketService.on('session-deleted', (data) => {
-        console.log('❌ Session has been deleted by the examiner', data);
-        
-        setError("Sesja została zakończona przez egzaminatora");
-        
-        if (accessCode) {
-          try {
-            sessionService.leaveSession(accessCode.toString());
-          } catch (e) {
-            console.warn("Error leaving session on deletion:", e);
-          }
-        }
-        
-        router.replace({
-          pathname: "/routes/student-access",
-          params: { 
-            firstName: firstName || "", 
-            lastName: lastName || "", 
-            albumNumber: albumNumber || "" 
-          }
-        });
-      });
-
-      return () => {
-        unsub?.();
-        sessionDeletedUnsubscribe();
-
-        if (accessCode) {
-          sessionService.leaveSession(accessCode.toString());
-          console.log(`Left session ${accessCode}`);
-        }
-      };
+        })        .catch(console.error);
     }
 
     setupSessionSubscription();
+    
     return () => {
       unsub?.();
 

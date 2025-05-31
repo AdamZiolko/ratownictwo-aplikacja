@@ -185,14 +185,11 @@ export class SessionService {
       const headers = this.createHeaders(authToken);
       
       const response = await this.api.delete(`sessions/${id}`, headers);
-      
-      const codeToUse = sessionCode || (response && response.sessionCode);
+        const codeToUse = sessionCode || (response && response.sessionCode);
       
       if (codeToUse) {
         console.log(`Notifying clients about deletion of session with code ${codeToUse}`);
-        socketService.emitSessionDeleted(codeToUse);
-        
-        socketService.emitLocalSessionDeleted(codeToUse);
+        // Backend will handle emitting session-deleted event
       } else {
         console.warn(`Could not notify about session ${id} deletion: session code not available`);
       }
