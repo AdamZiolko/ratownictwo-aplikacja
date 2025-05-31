@@ -398,12 +398,16 @@ const styles = StyleSheet.create({
   dialog: {
     width: "80%",
     alignSelf: "center",
+    zIndex: 9999,
+    elevation: 24,
   },
   webDialog: {
     width: "90%",
     maxWidth: 600,
     maxHeight: screenHeight * 0.9,
     alignSelf: "center",
+    zIndex: 9999,
+    elevation: 24,
   },
   dialogContent: {
     padding: 0,
