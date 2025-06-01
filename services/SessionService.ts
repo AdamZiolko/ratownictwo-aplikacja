@@ -51,12 +51,10 @@ export class SessionService {
     return headers;
   }
 
-  
-  async createSession(sessionData: Session, authToken?: string): Promise<Session> {
+    async createSession(sessionData: Session): Promise<Session> {
     try {
-      const headers = this.createHeaders(authToken);
-      const response = await this.api.post('sessions', sessionData, headers);
-      return response.data;
+      const response = await this.api.post('sessions', sessionData);
+      return response;
     } catch (error) {
       console.error('Error creating session:', error);
       throw error;
@@ -135,11 +133,9 @@ export class SessionService {
   }
 }
 
-  
-  async updateSession(id: string, sessionData: Partial<Session>, authToken?: string): Promise<Session> {
+    async updateSession(id: string, sessionData: Partial<Session>): Promise<Session> {
     try {
-      const headers = this.createHeaders(authToken);
-      const response = await this.api.put(`sessions/${id}`, sessionData, headers);
+      const response = await this.api.put(`sessions/${id}`, sessionData);
       return response;
     } catch (error) {
       console.error(`Error updating session with id ${id}:`, error);

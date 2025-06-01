@@ -58,9 +58,7 @@ const ExaminerLoginScreen = () => {
   const isValidEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
-  };
-
-  const handleLogin = async () => {
+  };  const handleLogin = async () => {
     setLoginError("");
 
     if (!email.trim() || !password.trim()) {
@@ -74,15 +72,75 @@ const ExaminerLoginScreen = () => {
       await login(email, password);
       router.push("/routes/examiner-dashboard");
     } catch (err: any) {
-      setLoginError(
-        err.message ||
-          "Logowanie nie powiodło się. Sprawdź swoje dane i spróbuj ponownie."
-      );
-      setSnackbarMessage(err.message || "Logowanie nie powiodło się.");
+      console.log('Login error caught:', err);
+      console.log('Error message:', err.message);
+      
+      let errorMessage = "Logowanie nie powiodło się. Sprawdź swoje dane i spróbuj ponownie.";
+      
+      // Try to parse error response from backend
+      if (err.message && typeof err.message === 'string') {
+        try {
+          const errorData = JSON.parse(err.message);
+          console.log('Parsed error data:', errorData);
+          
+          if (errorData.success === false) {
+            // Handle validation errors
+            if (errorData.errors && Array.isArray(errorData.errors)) {
+              const validationErrors = errorData.errors.map((error: any) => error.message).join(', ');
+              errorMessage = validationErrors;
+            } else if (errorData.message) {
+              errorMessage = errorData.message;
+            }
+          } else if (errorData.error) {
+            errorMessage = errorData.error;
+          } else if (errorData.message) {
+            errorMessage = errorData.message;
+          }
+        } catch (parseError) {
+          // If parsing fails, use the original message
+          console.log('Failed to parse error message:', parseError);
+          errorMessage = err.message;
+        }
+      }
+      
+      // Handle common login errors with better Polish translations
+      if (errorMessage.includes('Invalid credentials') || errorMessage.includes('nieprawidłowe dane')) {
+        errorMessage = "Nieprawidłowy email lub hasło";
+      } else if (errorMessage.includes('User not found') || errorMessage.includes('użytkownik nie znaleziony')) {
+        errorMessage = "Nie znaleziono użytkownika o podanym adresie email";
+      } else if (errorMessage.includes('Account locked') || errorMessage.includes('konto zablokowane')) {
+        errorMessage = "Konto zostało tymczasowo zablokowane";
+      } else if (errorMessage.includes('Network') || errorMessage.includes('sieć')) {
+        errorMessage = "Błąd połączenia z serwerem. Sprawdź połączenie internetowe";
+      }
+      
+      console.log('Final error message:', errorMessage);
+      
+      setLoginError(errorMessage);
+      setSnackbarMessage(errorMessage);
       setSnackbarVisible(true);
+      setIsSuccess(false);
     } finally {
       setLoginLoading(false);
     }
+  };const isValidPassword = (password: string) => {
+    if (password.length < 8) {
+      return { valid: false, message: "Hasło musi mieć co najmniej 8 znaków" };
+    }
+    
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSpecialChar = /[@$!%*?&]/.test(password);
+    
+    if (!hasLowerCase || !hasUpperCase || !hasNumbers || !hasSpecialChar) {
+      return { 
+        valid: false, 
+        message: "Hasło musi zawierać: małą literę, wielką literę, cyfrę i znak specjalny (@$!%*?&)" 
+      };
+    }
+    
+    return { valid: true, message: "" };
   };
 
   const handleRegister = async () => {
@@ -103,12 +161,11 @@ const ExaminerLoginScreen = () => {
       return;
     }
 
-    if (regPassword.length < 6) {
-      setRegisterError("Hasło musi zawierać co najmniej 6 znaków");
+    const passwordValidation = isValidPassword(regPassword);
+    if (!passwordValidation.valid) {
+      setRegisterError(passwordValidation.message);
       return;
-    }
-
-    try {
+    }    try {
       setRegisterLoading(true);
       await register(regUsername, regEmail, regPassword);
       setIsSuccess(true);
@@ -121,9 +178,56 @@ const ExaminerLoginScreen = () => {
       setConfirmPassword("");
       setActiveTab("login");
     } catch (err: any) {
-      setRegisterError(err.message || "Rejestracja nie powiodła się");
-      setSnackbarMessage(err.message || "Rejestracja nie powiodła się");
+      console.log('Register error caught:', err);
+      console.log('Error message:', err.message);
+      
+      let errorMessage = "Rejestracja nie powiodła się";
+      
+      // Try to parse error response from backend
+      if (err.message && typeof err.message === 'string') {
+        try {
+          const errorData = JSON.parse(err.message);
+          console.log('Parsed register error data:', errorData);
+          
+          if (errorData.success === false) {
+            // Handle validation errors
+            if (errorData.errors && Array.isArray(errorData.errors)) {
+              const validationErrors = errorData.errors.map((error: any) => error.message).join(', ');
+              errorMessage = validationErrors;
+            } else if (errorData.message) {
+              errorMessage = errorData.message;
+            }
+          } else if (errorData.error) {
+            errorMessage = errorData.error;
+          } else if (errorData.message) {
+            errorMessage = errorData.message;
+          }
+        } catch (parseError) {
+          // If parsing fails, use the original message
+          console.log('Failed to parse register error message:', parseError);
+          errorMessage = err.message;
+        }
+      }
+      
+      // Handle common registration errors with better Polish translations
+      if (errorMessage.includes('User already exists') || errorMessage.includes('użytkownik już istnieje')) {
+        errorMessage = "Użytkownik o podanym adresie email już istnieje";
+      } else if (errorMessage.includes('Username already taken') || errorMessage.includes('nazwa użytkownika zajęta')) {
+        errorMessage = "Nazwa użytkownika jest już zajęta";
+      } else if (errorMessage.includes('Invalid email') || errorMessage.includes('nieprawidłowy email')) {
+        errorMessage = "Podany adres email jest nieprawidłowy";
+      } else if (errorMessage.includes('Password too weak') || errorMessage.includes('hasło zbyt słabe')) {
+        errorMessage = "Hasło jest zbyt słabe. Użyj silniejszego hasła";
+      } else if (errorMessage.includes('Network') || errorMessage.includes('sieć')) {
+        errorMessage = "Błąd połączenia z serwerem. Sprawdź połączenie internetowe";
+      }
+      
+      console.log('Final register error message:', errorMessage);
+      
+      setRegisterError(errorMessage);
+      setSnackbarMessage(errorMessage);
       setSnackbarVisible(true);
+      setIsSuccess(false);
     } finally {
       setRegisterLoading(false);
     }
@@ -336,8 +440,7 @@ const ExaminerLoginScreen = () => {
                   icon="lock"
                   style={styles.inputIcon}
                   color={theme.colors.primary}
-                />
-                <TextInput
+                />                <TextInput
                   label="Hasło"
                   value={regPassword}
                   onChangeText={setRegPassword}
@@ -362,6 +465,16 @@ const ExaminerLoginScreen = () => {
               </View>
             </TouchableRipple>
           </Card>
+          
+          {regPassword && (
+            <HelperText
+              type="info"
+              visible={true}
+              style={styles.passwordHelpText}
+            >
+              Hasło musi mieć min. 8 znaków: małą literę, wielką literę, cyfrę i znak specjalny (@$!%*?&)
+            </HelperText>
+          )}
         </View>
 
         <View
@@ -754,10 +867,15 @@ const styles = StyleSheet.create({
   },
   landscapeTermsContainer: {
     marginBottom: 12,
-  },
-  landscapeInputContent: {
+  },  landscapeInputContent: {
     paddingTop: 6,
     paddingBottom: 6,
+  },
+  passwordHelpText: {
+    textAlign: "center",
+    marginBottom: 8,
+    fontSize: 12,
+    marginTop: -8,
   },
 });
 

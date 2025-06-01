@@ -25,8 +25,7 @@ interface TokenRefreshResponse {
   refreshToken: string;
 }
 
-class AuthService {
-    async register(data: RegisterData): Promise<any> {
+class AuthService {    async register(data: RegisterData): Promise<any> {
     try {
       const response = await fetch(`${API_URL}/api/auth/signup`, {
         method: 'POST',
@@ -36,13 +35,24 @@ class AuthService {
         body: JSON.stringify(data),
       });
       
-      return await response.json();
+      const responseData = await response.json();
+      
+      if (!response.ok) {
+        // Create error with structured data for better handling
+        const error = new Error(JSON.stringify(responseData));
+        throw error;
+      }
+      
+      return responseData;
     } catch (error) {
+      // If it's already our structured error, re-throw it
+      if (error instanceof Error && error.message.startsWith('{')) {
+        throw error;
+      }
+      // Otherwise, wrap in generic error
       throw new Error('Registration failed');
     }
-  }
-
-    async login(data: LoginData): Promise<any> {
+  }    async login(data: LoginData): Promise<any> {
     try {
       const response = await fetch(`${API_URL}/api/auth/signin`, {
         method: 'POST',
@@ -52,14 +62,17 @@ class AuthService {
         body: JSON.stringify(data),
       });
       
+      const responseData = await response.json();
+      
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Login failed');
+        // Create error with structured data for better handling
+        const error = new Error(JSON.stringify(responseData));
+        throw error;
       }
 
-      const userData = await response.json();
+      const userData = responseData;
       
-      
+      // Store user data
       await AsyncStorage.setItem('user', JSON.stringify(userData));
       
       if (userData.refreshToken) {
@@ -68,7 +81,12 @@ class AuthService {
       
       return userData;
     } catch (error) {
-      throw error;
+      // If it's already our structured error, re-throw it
+      if (error instanceof Error && error.message.startsWith('{')) {
+        throw error;
+      }
+      // Otherwise, wrap in generic error
+      throw new Error('Login failed');
     }
   }
 

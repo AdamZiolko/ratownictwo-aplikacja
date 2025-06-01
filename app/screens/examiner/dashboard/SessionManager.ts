@@ -185,8 +185,7 @@ export const useSessionManager = (user: any) => {
     }
   };
 
-  
-  const handleCreateSession = async (data: FormData) => {
+    const handleCreateSession = async (data: FormData) => {
     try {      const newSession = {
         name: data.name || `Sesja ${data.sessionCode}`,
         temperature: parseFloat(data.temperature),
@@ -206,13 +205,28 @@ export const useSessionManager = (user: any) => {
       showSnackbar("Sesja została utworzona", "success");
       loadSessions();
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating session:", error);
-      showSnackbar("Nie udało się utworzyć sesji", "error");
+      
+      // Handle specific validation errors
+      if (error?.response?.data?.message) {
+        const errorMessage = error.response.data.message;
+        
+        if (errorMessage.includes("kodzie już istnieje")) {
+          showSnackbar("Sesja o tym kodzie już istnieje. Wybierz inny kod sesji.", "error");
+        } else if (errorMessage.includes("nazwie już istnieje")) {
+          showSnackbar("Sesja o tej nazwie już istnieje. Wybierz inną nazwę sesji.", "error");
+        } else {
+          showSnackbar(errorMessage, "error");
+        }
+      } else if (error?.message) {
+        showSnackbar(error.message, "error");
+      } else {
+        showSnackbar("Nie udało się utworzyć sesji", "error");
+      }
       return false;
     }
   };
-
   const handleUpdateSession = async (data: FormData) => {
     if (!currentSession) return false;
 
@@ -240,9 +254,25 @@ export const useSessionManager = (user: any) => {
       showSnackbar("Sesja została zaktualizowana", "success");
       loadSessions();
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating session:", error);
-      showSnackbar("Nie udało się zaktualizować sesji", "error");
+      
+      // Handle specific validation errors
+      if (error?.response?.data?.message) {
+        const errorMessage = error.response.data.message;
+        
+        if (errorMessage.includes("kodzie już istnieje")) {
+          showSnackbar("Sesja o tym kodzie już istnieje. Wybierz inny kod sesji.", "error");
+        } else if (errorMessage.includes("nazwie już istnieje")) {
+          showSnackbar("Sesja o tej nazwie już istnieje. Wybierz inną nazwę sesji.", "error");
+        } else {
+          showSnackbar(errorMessage, "error");
+        }
+      } else if (error?.message) {
+        showSnackbar(error.message, "error");
+      } else {
+        showSnackbar("Nie udało się zaktualizować sesji", "error");
+      }
       return false;
     }
   };
