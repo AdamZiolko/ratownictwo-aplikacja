@@ -229,7 +229,7 @@ const StudentSessionScreen = () => {
             setIsSessionPanelExpanded={setIsSessionPanelExpanded}
             isMobile={!isWeb}
           />
-          {sessionData.rhythmType !== undefined && (
+          {sessionData.rhythmType !== undefined && !sessionData.isEkdDisplayHidden && (
             <Pressable
               style={styles.cardContainer}
               onPress={() => {
