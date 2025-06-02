@@ -210,50 +210,63 @@ export class EkgFactory {
   }
 
   
-  static generateNoise(x: number, amplitude: number): number {
-    return 0; 
-  }
+ static generateNoise(x: number, amplitude: number): number {
+  return (Math.random() * 2 - 1) * amplitude;
+}
 
-  
-  static generateBaselineWander(x: number, amplitude: number): number {
-    return 0; 
-  }
+static generateBaselineWander(x: number, amplitude: number): number {
+  if (amplitude <= 0) return 0;
+  const slowFreq = 0.005;
+  return Math.sin(x * slowFreq) * amplitude;
+}
 
-  
-  static generateMuscleArtifact(probability: number, amplitude: number): number {
-    return 0; 
+static generateMuscleArtifact(probability: number, amplitude: number): number {
+  if (Math.random() < probability) {
+    return (Math.random() * 2 - 1) * amplitude * 2;
   }
+  return 0;
+}
 
   
   static generateIrregularity(x: number, cycleCount: number, strength: number): number {
     return 0; 
-  }  static generateEkgValue(
-    x: number,
-    ekgType: EkgType = EkgType.NORMAL_SINUS_RHYTHM,
-    bpm: number = DEFAULT_BPM,
-    noiseType: NoiseType = NoiseType.NONE,
-    xOffset: number = DEFAULT_X_OFFSET
-  ): number {
-    
-    try {
-        const { EkgDataAdapter } = require('./EkgDataAdapter');
-      
-      
-      return EkgDataAdapter.getValueAtTime(ekgType, x, bpm, noiseType);
-    } catch (e) {
-      console.error('Error loading EKG data, falling back to default:', e);
-      
-      
-      if (ekgType === EkgType.ASYSTOLE) {
-        return 150; 
-      } else if (ekgType === EkgType.VENTRICULAR_FIBRILLATION) {
-        return 150 + (Math.random() - 0.5) * 80; 
-      } else {
-        
-        return 150 + Math.sin(x * 0.1) * 30;
-      }
-    }
+  }  
+  
+ static generateEkgValue(
+  x: number,
+  ekgType: EkgType = EkgType.NORMAL_SINUS_RHYTHM,
+  bpm: number = DEFAULT_BPM,
+  noiseType: NoiseType = NoiseType.NONE,
+  xOffset: number = DEFAULT_X_OFFSET
+): number {
+  const { noiseAmplitude, baselineWanderAmplitude, muscleArtifactProbability } =
+    EkgFactory.getNoiseConfig(noiseType);
+
+  try {
+    const { EkgDataAdapter } = require('./EkgDataAdapter');
+    const baseValue = EkgDataAdapter.getValueAtTime(ekgType, x, bpm, noiseType);
+
+    const noiseTerm = EkgFactory.generateNoise(x, noiseAmplitude);
+    const wanderTerm = EkgFactory.generateBaselineWander(x, baselineWanderAmplitude);
+    const muscleTerm = EkgFactory.generateMuscleArtifact(muscleArtifactProbability, noiseAmplitude);
+
+    return baseValue + noiseTerm + wanderTerm + muscleTerm;
+  } catch (e) {
+    console.error('Error loading EKG data, falling back to default:', e);
+
+    const pure = ekgType === EkgType.ASYSTOLE
+      ? 150
+      : ekgType === EkgType.VENTRICULAR_FIBRILLATION
+        ? 150 + (Math.random() - 0.5) * 80
+        : 150 + Math.sin(x * 0.1) * 30;
+
+    const noiseTerm = EkgFactory.generateNoise(x, noiseAmplitude);
+    const wanderTerm = EkgFactory.generateBaselineWander(x, baselineWanderAmplitude);
+    const muscleTerm = EkgFactory.generateMuscleArtifact(muscleArtifactProbability, noiseAmplitude);
+
+    return pure + noiseTerm + wanderTerm + muscleTerm;
   }
+}
 
   
   static getEkgValueWithOffset(

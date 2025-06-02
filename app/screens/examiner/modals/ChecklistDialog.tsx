@@ -424,7 +424,7 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
             <RNTextInput
               style={[
                 styles.commentsInput,
-                { backgroundColor: theme.colors.surface },
+                { backgroundColor: theme.colors.surface,  color: theme.colors.onSurface,  },
               ]}
               placeholder="Wpisz komentarz..."
               placeholderTextColor="#888"

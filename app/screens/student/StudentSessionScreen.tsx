@@ -33,7 +33,7 @@ import { useColorConfigs } from "./hooks/useColorConfigs";
 import { useColorSounds } from "./hooks/useColorSounds";
 import { useSessionDeletion } from "./hooks/useSessionDeletion";
 import ColorConfigDisplay from "./components/ColorConfigDisplay";
-
+import { NoiseType } from "@/services/EkgFactory";
 const StudentSessionScreen = () => {
   const theme = useTheme();
   const router = useRouter();
@@ -100,6 +100,7 @@ const StudentSessionScreen = () => {
     albumNumber: albumNumber || "",
     sessionJoined,
   });
+  const noiseTypeEnumValue = sessionData?.noiseLevel as NoiseType | undefined;
 
   // Funkcje do ColorSensor
   const handleColorDetected = async (detectedColor: string, config: any) => {
@@ -244,11 +245,12 @@ const StudentSessionScreen = () => {
                 });
               }}
             >
-              <EkgCardDisplay
-                ekgType={sessionData.rhythmType}
-                bpm={sessionData.beatsPerMinute}
-                isRunning={true}
-              />
+          <EkgCardDisplay
+      ekgType={sessionData.rhythmType}
+      bpm={sessionData.beatsPerMinute}
+      noiseType={noiseTypeEnumValue}    
+      isRunning={true}
+    />
             </Pressable>
           )}
           <VitalSignsDisplay

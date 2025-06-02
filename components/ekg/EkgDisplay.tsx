@@ -106,41 +106,41 @@ const EkgDisplay: React.FC<EkgDisplayProps> = ({
     xOffsetRef.current += ANIMATION_FRAME_STEP;
     const x = xOffsetRef.current;
 
-    let ekgValue;
-    try {
-      ekgValue = EkgDataAdapter.getValueAtTime(
-        ekgType || EkgType.NORMAL_SINUS_RHYTHM,
-        x,
-        bpm || 72,
-        noiseType || NoiseType.NONE
-      );
+ let ekgValue;
+try {
+  ekgValue = EkgFactory.generateEkgValue(
+    x,
+    ekgType ?? EkgType.NORMAL_SINUS_RHYTHM,
+    bpm ?? 72,
+    noiseType ?? NoiseType.NONE
+  );
+  const centeredValue = BASELINE + (ekgValue - DEFAULT_MIDPOINT);
 
-      const centeredValue = BASELINE + (ekgValue - DEFAULT_MIDPOINT);
-
-      if (x > containerWidth) {
-        resetEkgState();
-        setPathData("");
-      } else {
-        if (isFirstPointRef.current) {
-          pathDataRef.current = `M 0 ${centeredValue} L ${x} ${centeredValue}`;
-          isFirstPointRef.current = false;
-        } else {
-          pathDataRef.current += ` L ${x} ${centeredValue}`;
-        }
-
-        previousXRef.current = x;
-        previousYRef.current = centeredValue;
-
-        if (
-          frameCountRef.current % 2 === 0 ||
-          x >= containerWidth - ANIMATION_FRAME_STEP
-        ) {
-          setPathData(pathDataRef.current);
-        }
-      }
-    } catch (error) {
-      console.error("Error drawing EKG:", error);
+  if (x > containerWidth) {
+    resetEkgState();
+    setPathData("");
+  } else {
+    if (isFirstPointRef.current) {
+      pathDataRef.current = `M 0 ${centeredValue} L ${x} ${centeredValue}`;
+      isFirstPointRef.current = false;
+    } else {
+      pathDataRef.current += ` L ${x} ${centeredValue}`;
     }
+
+    previousXRef.current = x;
+    previousYRef.current = centeredValue;
+
+    if (
+      frameCountRef.current % 2 === 0 ||
+      x >= containerWidth - ANIMATION_FRAME_STEP
+    ) {
+      setPathData(pathDataRef.current);
+    }
+  }
+} catch (error) {
+  console.error("Error drawing EKG:", error);
+}
+
 
     if (isRunning) {
       animationRef.current = requestAnimationFrame(drawFrame);
