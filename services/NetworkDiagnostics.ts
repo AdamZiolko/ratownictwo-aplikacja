@@ -33,7 +33,7 @@ class NetworkDiagnosticsService {
         method: 'GET',
         signal: controller.signal,
         headers: {
-          'Cache-Control': 'no-cache',
+          // Usunięto 'Cache-Control': 'no-cache', który powodował błędy CORS
           'Accept': 'application/json'
         }
       });
@@ -77,8 +77,8 @@ class NetworkDiagnosticsService {
       
       const response = await fetch(`${API_URL}/api/health`, {
         method: 'HEAD', // Use HEAD for faster response
-        signal: controller.signal,
-        headers: { 'Cache-Control': 'no-cache' }
+        signal: controller.signal
+        // Usunięto nagłówek 'Cache-Control', który powodował błędy CORS
       });
 
       clearTimeout(timeoutId);
@@ -119,8 +119,8 @@ class NetworkDiagnosticsService {
       // Test with health endpoint instead of audio (which has been removed)
       const response = await fetch(`${API_URL}/api/health`, {
         method: 'GET',
-        signal: controller.signal,
-        headers: { 'Cache-Control': 'no-cache' }
+        signal: controller.signal
+        // Usunięto nagłówek 'Cache-Control', który powodował błędy CORS
       });
 
       clearTimeout(timeoutId);

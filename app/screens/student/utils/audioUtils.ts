@@ -14,10 +14,8 @@ export const checkNetworkConnectivity = async (): Promise<boolean> => {
     
     const response = await fetch(`${API_URL}/api/health`, {
       method: 'GET',
-      signal: controller.signal,
-      headers: {
-        'Cache-Control': 'no-cache'
-      }
+      signal: controller.signal
+      // Usunięto nagłówek 'Cache-Control', który powodował błędy CORS
     });
     
     clearTimeout(timeoutId);

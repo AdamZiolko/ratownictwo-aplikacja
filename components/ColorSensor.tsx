@@ -146,12 +146,12 @@ export const ColorSensor: React.FC<ColorSensorProps> = ({
   // Reset lastDetectedColor when connection status changes
   useEffect(() => {
     if (status === "idle" || status === "error") {
-      console.log(`🎨 ColorSensor: Connection status changed to ${status}, resetting lastDetectedColor`);
+      // Usunięto log o zmianie statusu połączenia
       setLastDetectedColor(null);
       
       // Also trigger onColorLost callback if provided
       if (lastDetectedColor && onColorLost) {
-        console.log(`🎨 ColorSensor: Connection lost, triggering onColorLost callback`);
+        // Usunięto log o utracie połączenia
         onColorLost();
       }
     }
