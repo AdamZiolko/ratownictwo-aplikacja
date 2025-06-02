@@ -6,6 +6,9 @@ import audioApiService from "@/services/AudioApiService";
 import { API_URL } from "@/constants/Config";
 import { soundFiles, audioFileMap } from "../constants/soundFiles";
 
+// Globalny cache dla dźwięków - przechowuje załadowane obiekty Audio.Sound
+const audioCache: { [key: string]: Audio.Sound } = {};
+
 // Check network connectivity before streaming
 export const checkNetworkConnectivity = async (): Promise<boolean> => {
   try {
@@ -55,6 +58,26 @@ export const loadAudioFromServer = async (audioIdOrName: string): Promise<Audio.
       }
       console.log(`🗺️ Mapped sound name "${audioIdOrName}" to server ID: ${serverAudioId}`);
     }
+    
+    // Sprawdź, czy dźwięk jest już w cache'u
+    const cacheKey = `server_${serverAudioId}`;
+    if (audioCache[cacheKey]) {
+      console.log(`🔄 Using cached Audio.Sound object for: ${audioIdOrName}`);
+      
+      // Resetuj dźwięk przed ponownym użyciem
+      try {
+        const status = await audioCache[cacheKey].getStatusAsync();
+        if (status.isLoaded) {
+          await audioCache[cacheKey].stopAsync();
+          await audioCache[cacheKey].setPositionAsync(0);
+          return audioCache[cacheKey];
+        }
+      } catch (error) {
+        console.warn(`⚠️ Error resetting cached sound: ${error}`);
+        // Jeśli wystąpił błąd, usuń z cache'u i załaduj ponownie
+        delete audioCache[cacheKey];
+      }
+    }
 
     const isConnected = await checkNetworkConnectivity();
     if (!isConnected) {
@@ -83,29 +106,31 @@ export const loadAudioFromServer = async (audioIdOrName: string): Promise<Audio.
         const fileInfo = await FileSystem.getInfoAsync(localPath);
         if (fileInfo.exists) {
           console.log(`📁 Using cached audio: ${audioIdOrName}`);
+        } else {
+          // Pobierz plik tylko jeśli nie istnieje w cache
+          console.log(`⬇️ Downloading audio ${serverAudioId} for playback...`);
+          const downloadResponse = await audioApiService.streamAudio(serverAudioId);
+          
+          if (!downloadResponse.ok) {
+            throw new Error(`HTTP ${downloadResponse.status}`);
+          }
+          
+          const arrayBuffer = await downloadResponse.arrayBuffer();
+          console.log(`📦 Downloaded ${arrayBuffer.byteLength} bytes for audio: ${serverAudioId}`);
+          
+          const uint8Array = new Uint8Array(arrayBuffer);
+          let binaryString = '';
+          for (let i = 0; i < uint8Array.length; i++) {
+            binaryString += String.fromCharCode(uint8Array[i]);
+          }
+          const base64String = btoa(binaryString);
+          
+          await FileSystem.writeAsStringAsync(localPath, base64String, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+          
+          console.log(`💾 Audio cached to: ${localPath}`);
         }
-        console.log(`⬇️ Downloading audio ${serverAudioId} for playback...`);
-        const downloadResponse = await audioApiService.streamAudio(serverAudioId);
-        
-        if (!downloadResponse.ok) {
-          throw new Error(`HTTP ${downloadResponse.status}`);
-        }
-        
-        const arrayBuffer = await downloadResponse.arrayBuffer();
-        console.log(`📦 Downloaded ${arrayBuffer.byteLength} bytes for audio: ${serverAudioId}`);
-        
-        const uint8Array = new Uint8Array(arrayBuffer);
-        let binaryString = '';
-        for (let i = 0; i < uint8Array.length; i++) {
-          binaryString += String.fromCharCode(uint8Array[i]);
-        }
-        const base64String = btoa(binaryString);
-        
-        await FileSystem.writeAsStringAsync(localPath, base64String, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
-        
-        console.log(`💾 Audio cached to: ${localPath}`);
         
         const { sound } = await Audio.Sound.createAsync(
           { uri: localPath },
@@ -115,6 +140,10 @@ export const loadAudioFromServer = async (audioIdOrName: string): Promise<Audio.
             progressUpdateIntervalMillis: 500,
           }
         );
+        
+        // Zapisz dźwięk w cache'u
+        const cacheKey = `server_${serverAudioId}`;
+        audioCache[cacheKey] = sound;
         
         console.log(`✅ Server audio downloaded and loaded: ${audioIdOrName}`);
         return sound;
@@ -131,6 +160,10 @@ export const loadAudioFromServer = async (audioIdOrName: string): Promise<Audio.
           { uri: audioUri },
           { shouldPlay: false }
         );
+        
+        // Zapisz dźwięk w cache'u
+        const cacheKey = `server_${serverAudioId}`;
+        audioCache[cacheKey] = sound;
         
         console.log(`✅ Server audio loaded (web): ${audioIdOrName}`);
         return sound;
@@ -149,6 +182,26 @@ export const loadAudioFromServer = async (audioIdOrName: string): Promise<Audio.
 // Fallback to local audio files
 export const loadAudioFromLocal = async (soundName: string): Promise<Audio.Sound | null> => {
   try {
+    // Sprawdź, czy dźwięk jest już w cache'u
+    const cacheKey = `local_${soundName}`;
+    if (audioCache[cacheKey]) {
+      console.log(`🔄 Using cached Audio.Sound object for local: ${soundName}`);
+      
+      // Resetuj dźwięk przed ponownym użyciem
+      try {
+        const status = await audioCache[cacheKey].getStatusAsync();
+        if (status.isLoaded) {
+          await audioCache[cacheKey].stopAsync();
+          await audioCache[cacheKey].setPositionAsync(0);
+          return audioCache[cacheKey];
+        }
+      } catch (error) {
+        console.warn(`⚠️ Error resetting cached local sound: ${error}`);
+        // Jeśli wystąpił błąd, usuń z cache'u i załaduj ponownie
+        delete audioCache[cacheKey];
+      }
+    }
+    
     const soundNameWithExt = soundName.endsWith('.wav') ? soundName : `${soundName}.wav`;
     
     let soundModule = soundFiles[soundNameWithExt];
@@ -173,6 +226,9 @@ export const loadAudioFromLocal = async (soundName: string): Promise<Audio.Sound
         })
       }
     );
+    
+    // Zapisz dźwięk w cache'u
+    audioCache[cacheKey] = sound;
     
     console.log(`✅ Local audio loaded: ${soundName}`);
     return sound;
@@ -217,12 +273,39 @@ export const loadAudioWithRetry = async (soundName: string, maxRetries: number =
 };
 
 // Mobile audio debugging and diagnostics
+// Funkcja do czyszczenia cache'u dźwięków
+export const clearAudioCache = async () => {
+  console.log('🧹 Clearing audio cache...');
+  
+  // Wyładuj wszystkie dźwięki z cache'u
+  for (const key in audioCache) {
+    try {
+      const sound = audioCache[key];
+      const status = await sound.getStatusAsync();
+      if (status.isLoaded) {
+        await sound.stopAsync();
+        await sound.unloadAsync();
+      }
+    } catch (error) {
+      console.warn(`⚠️ Error unloading sound ${key}:`, error);
+    }
+  }
+  
+  // Wyczyść obiekt cache'u
+  Object.keys(audioCache).forEach(key => {
+    delete audioCache[key];
+  });
+  
+  console.log('✅ Audio cache cleared');
+};
+
 export const debugMobileAudio = async () => {
   if (Platform.OS === 'web') return;
   
   console.log('🔍 Mobile Audio Diagnostics:');
   console.log(`📱 Platform: ${Platform.OS} ${Platform.Version}`);
   console.log(`🌐 API URL: ${API_URL}`);
+  console.log(`🔊 Audio cache size: ${Object.keys(audioCache).length} sounds`);
   
   try {
     console.log('🌐 Testing network connectivity...');
