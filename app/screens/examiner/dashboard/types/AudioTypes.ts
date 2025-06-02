@@ -14,7 +14,7 @@ export interface AudioFile {
 
 export interface AudioFileUiStatus {
   isLocallyAvailable: boolean;
-  isLoading: boolean; // Covers downloading, streaming, caching activity
+  isLoading: boolean;
   error: string | null;
 }
 

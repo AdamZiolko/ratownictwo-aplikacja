@@ -1,8 +1,8 @@
-import React, { useEffect } from "react";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
-import { useAuth } from "../contexts/AuthContext";
-import { useRouter } from "expo-router";
-import { ThemedView } from "./ThemedView";
+import React, { useEffect } from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { useAuth } from '../contexts/AuthContext';
+import { useRouter } from 'expo-router';
+import { ThemedView } from './ThemedView';
 
 interface AuthProtectionProps {
   children: React.ReactNode;
@@ -18,7 +18,7 @@ export default function AuthProtection({
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
-      router.replace("/routes/examiner-login");
+      router.replace('/routes/examiner-login');
     }
 
     if (
@@ -28,7 +28,7 @@ export default function AuthProtection({
       user?.roles &&
       !user.roles.includes(requiredRole)
     ) {
-      router.replace("/routes/student-access");
+      router.replace('/routes/student-access');
     }
   }, [loading, isAuthenticated, user, requiredRole, router]);
 
@@ -53,7 +53,7 @@ export default function AuthProtection({
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

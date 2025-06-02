@@ -3,7 +3,6 @@ import { View, StyleSheet, Platform, Dimensions } from 'react-native';
 import { Dialog, Button } from 'react-native-paper';
 import SoundSelectionComponent from '@/components/SoundSelectionComponent';
 
-// Get screen dimensions for responsive design
 const { height: screenHeight, width: screenWidth } = Dimensions.get('window');
 
 interface SoundSelectionModalProps {
@@ -11,8 +10,14 @@ interface SoundSelectionModalProps {
   selectedSound: string;
   selectedServerAudioId: string | null;
   isLoadingAudio: boolean;
-  onSoundSelect: (soundName: string | null, serverAudioId: string | null) => void;
-  onSoundPreview: (soundName: string | null, serverAudioId: string | null) => void;
+  onSoundSelect: (
+    soundName: string | null,
+    serverAudioId: string | null
+  ) => void;
+  onSoundPreview: (
+    soundName: string | null,
+    serverAudioId: string | null
+  ) => void;
   onClose: () => void;
 }
 
@@ -25,13 +30,7 @@ const SoundSelectionModal: React.FC<SoundSelectionModalProps> = ({
   onSoundPreview,
   onClose,
 }) => {
-
-  // Debug logging
-  React.useEffect(() => {
-    console.log("SoundSelectionModal: Visibility changed to:", visible);
-    console.log("SoundSelectionModal: Platform:", Platform.OS);
-    console.log("SoundSelectionModal: Screen dimensions:", { height: screenHeight, width: screenWidth });
-  }, [visible]);
+  React.useEffect(() => {}, [visible]);
   return (
     <Dialog
       visible={visible}
@@ -40,7 +39,13 @@ const SoundSelectionModal: React.FC<SoundSelectionModalProps> = ({
       dismissable={!isLoadingAudio}
     >
       <Dialog.Title>Wybierz dźwięk</Dialog.Title>
-      <Dialog.Content style={Platform.OS === 'web' ? styles.webDialogContent : styles.mobileDialogContent}>
+      <Dialog.Content
+        style={
+          Platform.OS === 'web'
+            ? styles.webDialogContent
+            : styles.mobileDialogContent
+        }
+      >
         <View style={styles.soundSelectionContainer}>
           <SoundSelectionComponent
             selectedSound={selectedSound}
@@ -52,10 +57,7 @@ const SoundSelectionModal: React.FC<SoundSelectionModalProps> = ({
         </View>
       </Dialog.Content>
       <Dialog.Actions style={styles.modalActions}>
-        <Button
-          onPress={onClose}
-          disabled={isLoadingAudio}
-        >
+        <Button onPress={onClose} disabled={isLoadingAudio}>
           Zamknij
         </Button>
       </Dialog.Actions>
@@ -64,18 +66,17 @@ const SoundSelectionModal: React.FC<SoundSelectionModalProps> = ({
 };
 
 const styles = StyleSheet.create({
-  // Legacy styles for backwards compatibility
   soundSelectionDialog: {
-    maxHeight: Platform.OS === 'web' ? "85%" : "90%",
+    maxHeight: Platform.OS === 'web' ? '85%' : '90%',
     marginHorizontal: 16,
   },
   soundSelectionContent: {
     paddingBottom: 0,
     maxHeight: Platform.OS === 'web' ? 400 : 500,
   },
-  // New responsive styles
+
   webDialog: {
-    maxHeight: "85%",
+    maxHeight: '85%',
     marginHorizontal: 16,
     width: '90%',
     maxWidth: 600,
@@ -113,7 +114,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   modalActions: {
-    justifyContent: "flex-end",
+    justifyContent: 'flex-end',
     paddingTop: 16,
   },
 });

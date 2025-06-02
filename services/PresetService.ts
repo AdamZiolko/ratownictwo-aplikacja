@@ -1,4 +1,4 @@
-import ApiService from "./ApiService";
+import ApiService from './ApiService';
 
 export interface Preset {
   id: string;
@@ -12,13 +12,13 @@ export interface Preset {
 class PresetService {
   static async getDefaultPresets(): Promise<Preset[]> {
     try {
-      const response = await ApiService.get("presets/default");
+      const response = await ApiService.get('presets/default');
       return response.map((p: any) => ({
         ...p,
-        isDefault: true
+        isDefault: true,
       }));
     } catch (error) {
-      console.error("Error fetching default presets:", error);
+      console.error('Error fetching default presets:', error);
       return [];
     }
   }

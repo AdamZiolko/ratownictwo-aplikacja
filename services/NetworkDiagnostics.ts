@@ -13,29 +13,25 @@ class NetworkDiagnosticsService {
   private lastCheck: NetworkDiagnostics | null = null;
 
   async performDiagnostics(): Promise<NetworkDiagnostics> {
-    console.log('🔍 Performing network diagnostics...');
-    
     const diagnostics: NetworkDiagnostics = {
       isConnected: false,
       latency: null,
       serverReachable: false,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
     try {
-      // Test basic connectivity
       const startTime = Date.now();
-      
+
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-      
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
       const response = await fetch(`${API_URL}/api/health`, {
         method: 'GET',
         signal: controller.signal,
         headers: {
-          // Usunięto 'Cache-Control': 'no-cache', który powodował błędy CORS
-          'Accept': 'application/json'
-        }
+          Accept: 'application/json',
+        },
       });
 
       clearTimeout(timeoutId);
@@ -45,16 +41,15 @@ class NetworkDiagnosticsService {
       if (response.ok) {
         diagnostics.isConnected = true;
         diagnostics.serverReachable = true;
-        console.log(`✅ Network OK - Latency: ${diagnostics.latency}ms`);
       } else {
         diagnostics.error = `Server returned status: ${response.status}`;
         console.warn(`⚠️ Server issue: ${diagnostics.error}`);
       }
-
     } catch (error) {
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
-          diagnostics.error = 'Request timeout - Network may be slow or unreliable';
+          diagnostics.error =
+            'Request timeout - Network may be slow or unreliable';
         } else if (error.message.includes('fetch')) {
           diagnostics.error = 'Network fetch failed - No internet connection';
         } else {
@@ -74,11 +69,10 @@ class NetworkDiagnosticsService {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3000);
-      
+
       const response = await fetch(`${API_URL}/api/health`, {
-        method: 'HEAD', // Use HEAD for faster response
-        signal: controller.signal
-        // Usunięto nagłówek 'Cache-Control', który powodował błędy CORS
+        method: 'HEAD',
+        signal: controller.signal,
       });
 
       clearTimeout(timeoutId);
@@ -93,40 +87,25 @@ class NetworkDiagnosticsService {
   }
 
   logNetworkInfo(): void {
-    console.log('📱 Network Configuration:');
-    console.log(`- Platform: ${Platform.OS}`);
-    console.log(`- API URL: ${API_URL}`);
-    
     if (this.lastCheck) {
-      console.log(`- Last Check: ${this.lastCheck.timestamp.toISOString()}`);
-      console.log(`- Connected: ${this.lastCheck.isConnected ? '✅' : '❌'}`);
-      console.log(`- Server Reachable: ${this.lastCheck.serverReachable ? '✅' : '❌'}`);
-      console.log(`- Latency: ${this.lastCheck.latency || 'N/A'}ms`);
       if (this.lastCheck.error) {
-        console.log(`- Error: ${this.lastCheck.error}`);
       }
     }
   }
 
-  // Test audio streaming specifically
   async testAudioStreaming(): Promise<boolean> {
     try {
-      console.log('🎵 Testing audio streaming endpoint...');
-      
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
-      
-      // Test with health endpoint instead of audio (which has been removed)
+
       const response = await fetch(`${API_URL}/api/health`, {
         method: 'GET',
-        signal: controller.signal
-        // Usunięto nagłówek 'Cache-Control', który powodował błędy CORS
+        signal: controller.signal,
       });
 
       clearTimeout(timeoutId);
-      
+
       if (response.ok) {
-        console.log('✅ API health endpoint accessible');
         return true;
       } else {
         console.warn(`⚠️ Audio streaming failed: ${response.status}`);

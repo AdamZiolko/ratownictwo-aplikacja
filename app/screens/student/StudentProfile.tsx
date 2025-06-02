@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";
-import { StyleSheet, View, ScrollView, Platform } from "react-native";
+import React, { useState, useRef, useEffect } from 'react';
+import { StyleSheet, View, ScrollView, Platform } from 'react-native';
 import {
   Text,
   TextInput,
@@ -10,14 +10,14 @@ import {
   Avatar,
   Appbar,
   useTheme,
-} from "react-native-paper";
-import { router, useLocalSearchParams } from "expo-router";
+} from 'react-native-paper';
+import { router, useLocalSearchParams } from 'expo-router';
 import {
   Student,
   StudentStorageService,
-} from "@/services/StudentStorageService";
-import BackgroundGradient from "@/components/BackgroundGradient";
-import { useOrientation } from "@/hooks/useOrientation";
+} from '@/services/StudentStorageService';
+import BackgroundGradient from '@/components/BackgroundGradient';
+import { useOrientation } from '@/hooks/useOrientation';
 
 const StudentProfileScreen = () => {
   const theme = useTheme();
@@ -26,16 +26,16 @@ const StudentProfileScreen = () => {
   const params = useLocalSearchParams();
   const accessCode = params.accessCode as string;
 
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [albumNumber, setAlbumNumber] = useState("");
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [albumNumber, setAlbumNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [hasExistingData, setHasExistingData] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({
-    firstName: "",
-    lastName: "",
-    albumNumber: "",
+    firstName: '',
+    lastName: '',
+    albumNumber: '',
   });
 
   const lastNameInputRef = useRef<any>(null);
@@ -51,9 +51,9 @@ const StudentProfileScreen = () => {
         studentData.lastName &&
         studentData.albumNumber
       ) {
-        setFirstName(studentData.firstName || "");
-        setLastName(studentData.lastName || "");
-        setAlbumNumber(studentData.albumNumber || "");
+        setFirstName(studentData.firstName || '');
+        setLastName(studentData.lastName || '');
+        setAlbumNumber(studentData.albumNumber || '');
         setHasExistingData(true);
         setShowForm(false);
       } else {
@@ -61,7 +61,7 @@ const StudentProfileScreen = () => {
         setShowForm(true);
       }
     } catch (error) {
-      console.error("Failed to load student data:", error);
+      console.error('Failed to load student data:', error);
       setHasExistingData(false);
       setShowForm(true);
     } finally {
@@ -75,24 +75,24 @@ const StudentProfileScreen = () => {
 
   const validateFields = () => {
     const errors = {
-      firstName: "",
-      lastName: "",
-      albumNumber: "",
+      firstName: '',
+      lastName: '',
+      albumNumber: '',
     };
     let isValid = true;
 
     if (!firstName.trim()) {
-      errors.firstName = "Imię jest wymagane";
+      errors.firstName = 'Imię jest wymagane';
       isValid = false;
     }
 
     if (!lastName.trim()) {
-      errors.lastName = "Nazwisko jest wymagane";
+      errors.lastName = 'Nazwisko jest wymagane';
       isValid = false;
     }
 
     if (!albumNumber.trim()) {
-      errors.albumNumber = "Numer albumu jest wymagany";
+      errors.albumNumber = 'Numer albumu jest wymagany';
       isValid = false;
     }
 
@@ -123,7 +123,7 @@ const StudentProfileScreen = () => {
         navigateToSession();
       }
     } catch (error) {
-      console.error("Error saving student profile:", error);
+      console.error('Error saving student profile:', error);
     } finally {
       setIsLoading(false);
     }
@@ -131,7 +131,7 @@ const StudentProfileScreen = () => {
 
   const navigateToSession = () => {
     router.push({
-      pathname: "/routes/student-access",
+      pathname: '/routes/student-access',
       params: {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
@@ -147,24 +147,26 @@ const StudentProfileScreen = () => {
 
   const renderStudentForm = () => {
     return (
-      <Card style={[
-        styles.card, 
-        { backgroundColor: theme.colors.surface },
-        isLandscape && styles.landscapeCard
-      ]}>
+      <Card
+        style={[
+          styles.card,
+          { backgroundColor: theme.colors.surface },
+          isLandscape && styles.landscapeCard,
+        ]}
+      >
         <Card.Title
           title="Wprowadź dane studenta"
           titleStyle={{ color: theme.colors.onSurface }}
-          titleVariant={isLandscape ? "titleSmall" : "titleMedium"}
+          titleVariant={isLandscape ? 'titleSmall' : 'titleMedium'}
         />
         <Card.Content>
           <View style={styles.form}>
             <TextInput
               label="Imię"
               value={firstName}
-              onChangeText={(text) => {
+              onChangeText={text => {
                 setFirstName(text);
-                setFieldErrors((prev) => ({ ...prev, firstName: "" }));
+                setFieldErrors(prev => ({ ...prev, firstName: '' }));
               }}
               mode="outlined"
               autoCapitalize="words"
@@ -184,9 +186,9 @@ const StudentProfileScreen = () => {
               ref={lastNameInputRef}
               label="Nazwisko"
               value={lastName}
-              onChangeText={(text) => {
+              onChangeText={text => {
                 setLastName(text);
-                setFieldErrors((prev) => ({ ...prev, lastName: "" }));
+                setFieldErrors(prev => ({ ...prev, lastName: '' }));
               }}
               mode="outlined"
               autoCapitalize="words"
@@ -206,9 +208,9 @@ const StudentProfileScreen = () => {
               ref={albumNumberInputRef}
               label="Numer albumu"
               value={albumNumber}
-              onChangeText={(text) => {
+              onChangeText={text => {
                 setAlbumNumber(text);
-                setFieldErrors((prev) => ({ ...prev, albumNumber: "" }));
+                setFieldErrors(prev => ({ ...prev, albumNumber: '' }));
               }}
               mode="outlined"
               keyboardType="number-pad"
@@ -228,7 +230,10 @@ const StudentProfileScreen = () => {
           <Button
             mode="contained"
             onPress={handleSubmit}
-            style={[styles.submitButton, isLandscape && styles.landscapeSubmitButton]}
+            style={[
+              styles.submitButton,
+              isLandscape && styles.landscapeSubmitButton,
+            ]}
             loading={isLoading}
             disabled={isLoading}
             buttonColor={theme.colors.primary}
@@ -242,16 +247,18 @@ const StudentProfileScreen = () => {
 
   const renderStudentCard = () => {
     return (
-      <Card style={[
-        styles.card, 
-        { backgroundColor: theme.colors.surface },
-        isLandscape && styles.landscapeCard
-      ]}>
+      <Card
+        style={[
+          styles.card,
+          { backgroundColor: theme.colors.surface },
+          isLandscape && styles.landscapeCard,
+        ]}
+      >
         <Card.Title
           title="Dane studenta"
           titleStyle={{ color: theme.colors.onSurface }}
-          titleVariant={isLandscape ? "titleSmall" : "titleMedium"}
-          right={(props) => (
+          titleVariant={isLandscape ? 'titleSmall' : 'titleMedium'}
+          right={props => (
             <IconButton
               {...props}
               icon="close"
@@ -261,12 +268,12 @@ const StudentProfileScreen = () => {
             />
           )}
           leftStyle={styles.cardAvatarContainer}
-          left={(props) => (
+          left={props => (
             <View
               style={[
                 styles.iconBackground,
-                { backgroundColor: theme.dark ? "#9A1515" : "#8B0000" },
-                isLandscape && styles.landscapeIconBackground
+                { backgroundColor: theme.dark ? '#9A1515' : '#8B0000' },
+                isLandscape && styles.landscapeIconBackground,
               ]}
             >
               <Avatar.Text
@@ -274,7 +281,7 @@ const StudentProfileScreen = () => {
                 size={isLandscape ? 32 : 40}
                 label={`${firstName.charAt(0)}${lastName.charAt(0)}`}
                 color={theme.colors.onPrimary}
-                style={{ backgroundColor: "transparent" }}
+                style={{ backgroundColor: 'transparent' }}
               />
             </View>
           )}
@@ -286,7 +293,7 @@ const StudentProfileScreen = () => {
               style={[
                 styles.infoLabel,
                 { color: theme.colors.onSurfaceVariant },
-                isLandscape && styles.landscapeInfoLabel
+                isLandscape && styles.landscapeInfoLabel,
               ]}
             >
               Imię:
@@ -294,9 +301,9 @@ const StudentProfileScreen = () => {
             <Text
               variant="bodyLarge"
               style={[
-                styles.infoValue, 
+                styles.infoValue,
                 { color: theme.colors.onSurface },
-                isLandscape && styles.landscapeInfoValue
+                isLandscape && styles.landscapeInfoValue,
               ]}
             >
               {firstName}
@@ -308,7 +315,7 @@ const StudentProfileScreen = () => {
               style={[
                 styles.infoLabel,
                 { color: theme.colors.onSurfaceVariant },
-                isLandscape && styles.landscapeInfoLabel
+                isLandscape && styles.landscapeInfoLabel,
               ]}
             >
               Nazwisko:
@@ -316,9 +323,9 @@ const StudentProfileScreen = () => {
             <Text
               variant="bodyLarge"
               style={[
-                styles.infoValue, 
+                styles.infoValue,
                 { color: theme.colors.onSurface },
-                isLandscape && styles.landscapeInfoValue
+                isLandscape && styles.landscapeInfoValue,
               ]}
             >
               {lastName}
@@ -330,7 +337,7 @@ const StudentProfileScreen = () => {
               style={[
                 styles.infoLabel,
                 { color: theme.colors.onSurfaceVariant },
-                isLandscape && styles.landscapeInfoLabel
+                isLandscape && styles.landscapeInfoLabel,
               ]}
             >
               Numer albumu:
@@ -338,9 +345,9 @@ const StudentProfileScreen = () => {
             <Text
               variant="bodyLarge"
               style={[
-                styles.infoValue, 
+                styles.infoValue,
                 { color: theme.colors.onSurface },
-                isLandscape && styles.landscapeInfoValue
+                isLandscape && styles.landscapeInfoValue,
               ]}
             >
               {albumNumber}
@@ -351,7 +358,10 @@ const StudentProfileScreen = () => {
           <Button
             mode="contained"
             onPress={navigateToSession}
-            style={[styles.continueButton, isLandscape && styles.landscapeContinueButton]}
+            style={[
+              styles.continueButton,
+              isLandscape && styles.landscapeContinueButton,
+            ]}
             buttonColor={theme.colors.primary}
           >
             Kontynuuj
@@ -362,39 +372,38 @@ const StudentProfileScreen = () => {
   };
   return (
     <BackgroundGradient>
-      <Appbar.Header style={{ backgroundColor: "#8B0000" }}>
+      <Appbar.Header style={{ backgroundColor: '#8B0000' }}>
         <Appbar.BackAction onPress={() => router.back()} color="#fff" />
         <Appbar.Content
           title="Profil Studenta"
-          titleStyle={{ color: "#fff", fontWeight: "bold" }}
+          titleStyle={{ color: '#fff', fontWeight: 'bold' }}
         />
       </Appbar.Header>
       <ScrollView
         contentContainerStyle={[
-          styles.scrollContainer, 
-          isLandscape && styles.landscapeScrollContainer
+          styles.scrollContainer,
+          isLandscape && styles.landscapeScrollContainer,
         ]}
         keyboardShouldPersistTaps="handled"
       >
         {isLandscape ? (
-          
           <>
             <View style={styles.landscapeLeftColumn}>
               <Text
                 variant="titleSmall"
                 style={[
-                  styles.subtitle, 
-                  { 
+                  styles.subtitle,
+                  {
                     color: theme.colors.onBackground,
-                    backgroundColor: theme.colors.elevation.level1 
+                    backgroundColor: theme.colors.elevation.level1,
                   },
-                  styles.landscapeSubtitle
+                  styles.landscapeSubtitle,
                 ]}
               >
-                {showForm ? "Wprowadź swoje dane" : "Czy to Ty?"}
+                {showForm ? 'Wprowadź swoje dane' : 'Czy to Ty?'}
               </Text>
             </View>
-            
+
             {isLoading ? (
               <View style={styles.loadingContainer}>
                 <Text style={{ color: theme.colors.onBackground }}>
@@ -408,37 +417,38 @@ const StudentProfileScreen = () => {
                   : renderStudentForm()}
               </View>
             )}
-            
+
             <View style={styles.landscapeRightColumn}>
               <Text
                 variant="bodySmall"
                 style={[
-                  styles.landscapeFooterText, 
-                  { 
+                  styles.landscapeFooterText,
+                  {
                     color: theme.colors.onBackground,
-                    backgroundColor: theme.colors.elevation.level1 
-                  }
+                    backgroundColor: theme.colors.elevation.level1,
+                  },
                 ]}
               >
                 Pamiętaj aby poprawnie wprowadzić swoje dane, gdyż będą one
-                <Text style={{ fontWeight: "bold" }}> widoczne dla nauczyciela.</Text>
+                <Text style={{ fontWeight: 'bold' }}>
+                  widoczne dla nauczyciela.
+                </Text>
               </Text>
             </View>
           </>
         ) : (
-          
           <>
             <Text
               variant="titleLarge"
               style={[
-                styles.subtitle, 
-                { 
+                styles.subtitle,
+                {
                   color: theme.colors.onBackground,
-                  backgroundColor: theme.colors.elevation.level1 
-                }
+                  backgroundColor: theme.colors.elevation.level1,
+                },
               ]}
             >
-              {showForm ? "Wprowadź swoje dane" : "Czy to Ty?"}
+              {showForm ? 'Wprowadź swoje dane' : 'Czy to Ty?'}
             </Text>
             {isLoading ? (
               <View style={styles.loadingContainer}>
@@ -456,15 +466,17 @@ const StudentProfileScreen = () => {
             <Text
               variant="titleMedium"
               style={[
-                styles.subtitle, 
-                { 
+                styles.subtitle,
+                {
                   color: theme.colors.onBackground,
-                  backgroundColor: theme.colors.elevation.level1 
-                }
+                  backgroundColor: theme.colors.elevation.level1,
+                },
               ]}
             >
               Pamiętaj aby poprawnie wprowadzić swoje dane, gdyż będą one
-              <Text style={{ fontWeight: "bold" }}> widoczne dla nauczyciela.</Text>
+              <Text style={{ fontWeight: 'bold' }}>
+                widoczne dla nauczyciela.
+              </Text>
             </Text>
           </>
         )}
@@ -476,55 +488,55 @@ const StudentProfileScreen = () => {
 const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
-    paddingHorizontal: Platform.OS === "web" ? 16 : 16,
+    paddingHorizontal: Platform.OS === 'web' ? 16 : 16,
     paddingVertical: 24,
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: "100%",
-  },  
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: '100%',
+  },
   landscapeScrollContainer: {
     paddingVertical: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-around",
-    paddingHorizontal: Platform.OS === "web" ? 16 : 8,
-    minHeight: "85%",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    paddingHorizontal: Platform.OS === 'web' ? 16 : 8,
+    minHeight: '85%',
   },
   landscapeLeftColumn: {
     flex: 1,
-    maxWidth: "30%",
-    justifyContent: "center",
-    alignItems: "center",
-    alignSelf: "center", 
+    maxWidth: '30%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
     paddingHorizontal: 8,
-    height: "100%", 
+    height: '100%',
   },
   landscapeMiddleColumn: {
     flex: 2,
-    justifyContent: "center",
-    alignItems: "center",
-    alignSelf: "center", 
-    maxWidth: "40%",
-    height: "100%", 
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
+    maxWidth: '40%',
+    height: '100%',
   },
   landscapeRightColumn: {
     flex: 1,
-    maxWidth: "30%",
-    justifyContent: "center",
-    alignItems: "center",
-    alignSelf: "center", 
+    maxWidth: '30%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
     paddingHorizontal: 8,
-    height: "100%", 
+    height: '100%',
   },
   subtitle: {
     marginBottom: 20,
-    textAlign: "center",
-    textAlignVertical: "center", 
+    textAlign: 'center',
+    textAlignVertical: 'center',
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
-    alignSelf: 'auto', 
-    
+    alignSelf: 'auto',
+
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -539,19 +551,19 @@ const styles = StyleSheet.create({
         boxShadow: '0px 2px 3px rgba(0, 0, 0, 0.1)',
       },
     }),
-  },  
+  },
   landscapeSubtitle: {
     marginBottom: 0,
     fontSize: 16,
     lineHeight: 20,
-    flex: 0, 
-    maxWidth: "90%", 
-    textAlignVertical: "center", 
-    alignSelf: "center", 
+    flex: 0,
+    maxWidth: '90%',
+    textAlignVertical: 'center',
+    alignSelf: 'center',
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
-    
+
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -568,13 +580,13 @@ const styles = StyleSheet.create({
     }),
   },
   form: {
-    width: "100%",
+    width: '100%',
     maxWidth: 400,
-    alignSelf: "center",
+    alignSelf: 'center',
   },
   input: {
     marginBottom: 8,
-    backgroundColor: "transparent",
+    backgroundColor: 'transparent',
   },
   landscapeInput: {
     marginBottom: 5,
@@ -591,20 +603,20 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },  
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   card: {
-    width: "100%",
+    width: '100%',
     maxWidth: 400,
-    alignSelf: "center",
+    alignSelf: 'center',
     marginBottom: 20,
     borderRadius: 12,
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
   },
   landscapeCard: {
-    maxWidth: Platform.OS === "web" ? 400 : 350,
-    flex: Platform.OS === "web" ? 0 : 2,
+    maxWidth: Platform.OS === 'web' ? 400 : 350,
+    flex: Platform.OS === 'web' ? 0 : 2,
     marginBottom: 0,
     marginHorizontal: 10,
   },
@@ -613,45 +625,45 @@ const styles = StyleSheet.create({
   },
   cardContent: {
     paddingVertical: 8,
-    justifyContent: "center",
+    justifyContent: 'center',
   },
   infoRow: {
-    flexDirection: "row",
+    flexDirection: 'row',
     marginVertical: 8,
-    alignItems: "center",
-    minHeight: Platform.OS === "web" ? 24 : 30, 
-    backgroundColor: 'rgba(0, 0, 0, 0.02)', 
+    alignItems: 'center',
+    minHeight: Platform.OS === 'web' ? 24 : 30,
+    backgroundColor: 'rgba(0, 0, 0, 0.02)',
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    width: '100%', 
+    width: '100%',
   },
   infoLabel: {
     width: 120,
     fontSize: 14,
-    textAlignVertical: "center", 
-    includeFontPadding: false, 
+    textAlignVertical: 'center',
+    includeFontPadding: false,
   },
   landscapeInfoLabel: {
     width: 90,
     fontSize: 12,
-    textAlignVertical: "center", 
-    includeFontPadding: false, 
+    textAlignVertical: 'center',
+    includeFontPadding: false,
   },
   infoValue: {
     flex: 1,
-    fontWeight: "500",
+    fontWeight: '500',
     fontSize: 16,
-    textAlignVertical: "center", 
-    includeFontPadding: false, 
+    textAlignVertical: 'center',
+    includeFontPadding: false,
   },
   landscapeInfoValue: {
     fontSize: 14,
-    textAlignVertical: "center", 
-    includeFontPadding: false, 
+    textAlignVertical: 'center',
+    includeFontPadding: false,
   },
   continueButton: {
-    marginLeft: "auto",
+    marginLeft: 'auto',
     marginTop: 8,
   },
   landscapeContinueButton: {
@@ -663,27 +675,27 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   landscapeIconBackground: {
     width: 38,
     height: 38,
     borderRadius: 19,
-  },  
+  },
   landscapeFooterText: {
-    textAlign: "center",
-    textAlignVertical: "center", 
-    opacity: 0.8, 
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    opacity: 0.8,
     fontSize: 12,
-    flex: 0, 
-    maxWidth: "90%", 
-    alignSelf: "center",
-    includeFontPadding: false, 
+    flex: 0,
+    maxWidth: '90%',
+    alignSelf: 'center',
+    includeFontPadding: false,
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
-    
+
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -698,7 +710,7 @@ const styles = StyleSheet.create({
         boxShadow: '0px 2px 3px rgba(0, 0, 0, 0.1)',
       },
     }),
-  }
+  },
 });
 
 export default StudentProfileScreen;

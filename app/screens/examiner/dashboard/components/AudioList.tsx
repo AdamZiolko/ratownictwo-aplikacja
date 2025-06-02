@@ -39,7 +39,9 @@ export const AudioList: React.FC<AudioListProps> = ({
     return (
       <View style={dashboardStyles.loadingContainer}>
         <ActivityIndicator size="large" />
-        <Text style={dashboardStyles.loadingText}>Ładowanie plików audio...</Text>
+        <Text style={dashboardStyles.loadingText}>
+          Ładowanie plików audio...
+        </Text>
       </View>
     );
   }
@@ -53,16 +55,14 @@ export const AudioList: React.FC<AudioListProps> = ({
     >
       {audioFiles.length === 0 ? (
         <View style={dashboardStyles.emptyState}>
-          <Text style={dashboardStyles.emptyText}>
-            Brak plików audio
-          </Text>
+          <Text style={dashboardStyles.emptyText}>Brak plików audio</Text>
           <Text style={dashboardStyles.emptySubtext}>
             Dodaj pierwszy plik audio używając przycisku +
           </Text>
         </View>
       ) : (
         <View>
-          {audioFiles.map((audio) => (
+          {audioFiles.map(audio => (
             <AudioCard
               key={audio.id}
               audio={audio}

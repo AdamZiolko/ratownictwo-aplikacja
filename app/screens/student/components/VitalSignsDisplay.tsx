@@ -1,8 +1,8 @@
-import React from "react";
-import { View, StyleSheet, Platform } from "react-native";
-import { useTheme, Text, Surface } from "react-native-paper";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import type { VitalWithFluctuation, BloodPressure } from "../types";
+import React from 'react';
+import { View, StyleSheet, Platform } from 'react-native';
+import { useTheme, Text, Surface } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import type { VitalWithFluctuation, BloodPressure } from '../types';
 
 interface VitalSignsDisplayProps {
   temperature: VitalWithFluctuation;
@@ -32,11 +32,7 @@ const VitalSignsDisplay: React.FC<VitalSignsDisplayProps> = ({
     color: string;
   }> = ({ icon, label, value, color }) => (
     <Surface style={styles.vitalItemCard} elevation={1}>
-      <MaterialCommunityIcons
-        name={icon as any}
-        size={22}
-        color={color}
-      />
+      <MaterialCommunityIcons name={icon as any} size={22} color={color} />
       <Text style={styles.vitalLabel}>{label}</Text>
       <Text style={styles.vitalValue}>{value}</Text>
     </Surface>
@@ -61,7 +57,7 @@ const VitalSignsDisplay: React.FC<VitalSignsDisplayProps> = ({
               value={
                 temperature.currentValue !== null
                   ? `${temperature.currentValue}${temperature.unit}`
-                  : "N/A"
+                  : 'N/A'
               }
               color={theme.colors.tertiary}
             />
@@ -80,7 +76,7 @@ const VitalSignsDisplay: React.FC<VitalSignsDisplayProps> = ({
               value={
                 spo2.currentValue !== null
                   ? `${spo2.currentValue}${spo2.unit}`
-                  : "N/A"
+                  : 'N/A'
               }
               color={theme.colors.primary}
             />
@@ -90,7 +86,7 @@ const VitalSignsDisplay: React.FC<VitalSignsDisplayProps> = ({
               value={
                 etco2.currentValue !== null
                   ? `${etco2.currentValue}${etco2.unit}`
-                  : "N/A"
+                  : 'N/A'
               }
               color={theme.colors.secondary}
             />
@@ -100,7 +96,7 @@ const VitalSignsDisplay: React.FC<VitalSignsDisplayProps> = ({
               value={
                 respiratoryRate.currentValue !== null
                   ? `${respiratoryRate.currentValue}${respiratoryRate.unit}`
-                  : "N/A"
+                  : 'N/A'
               }
               color={theme.colors.tertiary}
             />
@@ -118,13 +114,10 @@ const VitalSignsDisplay: React.FC<VitalSignsDisplayProps> = ({
           size={24}
           color={theme.colors.primary}
         />
-        <Text style={styles.cardHeaderTitle}>
-          Parametry pacjenta
-        </Text>
+        <Text style={styles.cardHeaderTitle}>Parametry pacjenta</Text>
       </View>
 
-      {Platform.OS !== "web" ? (
-        // Mobile layout
+      {Platform.OS !== 'web' ? (
         <>
           <View style={styles.vitalsRow}>
             <VitalItem
@@ -133,7 +126,7 @@ const VitalSignsDisplay: React.FC<VitalSignsDisplayProps> = ({
               value={
                 temperature.currentValue !== null
                   ? `${temperature.currentValue}${temperature.unit}`
-                  : "N/A"
+                  : 'N/A'
               }
               color={theme.colors.tertiary}
             />
@@ -152,7 +145,7 @@ const VitalSignsDisplay: React.FC<VitalSignsDisplayProps> = ({
               value={
                 spo2.currentValue !== null
                   ? `${spo2.currentValue}${spo2.unit}`
-                  : "N/A"
+                  : 'N/A'
               }
               color={theme.colors.primary}
             />
@@ -162,7 +155,7 @@ const VitalSignsDisplay: React.FC<VitalSignsDisplayProps> = ({
               value={
                 etco2.currentValue !== null
                   ? `${etco2.currentValue} ${etco2.unit}`
-                  : "N/A"
+                  : 'N/A'
               }
               color={theme.colors.secondary}
             />
@@ -175,14 +168,13 @@ const VitalSignsDisplay: React.FC<VitalSignsDisplayProps> = ({
               value={
                 respiratoryRate.currentValue !== null
                   ? `${respiratoryRate.currentValue} ${respiratoryRate.unit}`
-                  : "N/A"
+                  : 'N/A'
               }
               color={theme.colors.tertiary}
             />
           </View>
         </>
       ) : (
-        // Web layout
         <>
           <View style={styles.vitalsRow}>
             <VitalItem
@@ -191,7 +183,7 @@ const VitalSignsDisplay: React.FC<VitalSignsDisplayProps> = ({
               value={
                 temperature.currentValue !== null
                   ? `${temperature.currentValue}${temperature.unit}`
-                  : "N/A"
+                  : 'N/A'
               }
               color={theme.colors.tertiary}
             />
@@ -210,7 +202,7 @@ const VitalSignsDisplay: React.FC<VitalSignsDisplayProps> = ({
               value={
                 spo2.currentValue !== null
                   ? `${spo2.currentValue}${spo2.unit}`
-                  : "N/A"
+                  : 'N/A'
               }
               color={theme.colors.primary}
             />
@@ -223,7 +215,7 @@ const VitalSignsDisplay: React.FC<VitalSignsDisplayProps> = ({
               value={
                 etco2.currentValue !== null
                   ? `${etco2.currentValue}${etco2.unit}`
-                  : "N/A"
+                  : 'N/A'
               }
               color={theme.colors.secondary}
             />
@@ -233,7 +225,7 @@ const VitalSignsDisplay: React.FC<VitalSignsDisplayProps> = ({
               value={
                 respiratoryRate.currentValue !== null
                   ? `${respiratoryRate.currentValue}${respiratoryRate.unit}`
-                  : "N/A"
+                  : 'N/A'
               }
               color={theme.colors.tertiary}
             />
@@ -259,8 +251,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   cardHeaderRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 8,
   },
   cardHeaderTitle: {
@@ -269,12 +261,12 @@ const styles = StyleSheet.create({
       android: 16,
       ios: 16,
     }),
-    fontWeight: "bold",
+    fontWeight: 'bold',
     marginLeft: 8,
   },
   vitalsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginBottom: 12,
   },
   vitalItemCard: {
@@ -290,7 +282,7 @@ const styles = StyleSheet.create({
       ios: 2,
     }),
     borderRadius: 8,
-    alignItems: "center",
+    alignItems: 'center',
   },
   vitalLabel: {
     fontSize: Platform.select({
@@ -307,7 +299,7 @@ const styles = StyleSheet.create({
       android: 16,
       ios: 16,
     }),
-    fontWeight: "500",
+    fontWeight: '500',
   },
   vitalsCardFullscreen: {
     flex: 1,
@@ -316,7 +308,7 @@ const styles = StyleSheet.create({
   },
   fullscreenVitalsGrid: {
     flex: 1,
-    justifyContent: "space-between",
+    justifyContent: 'space-between',
   },
 });
 

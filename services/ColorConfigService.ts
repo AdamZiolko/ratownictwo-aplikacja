@@ -41,9 +41,6 @@ class ColorConfigService {
     this.api = ApiService;
   }
 
-  /**
-   * Get color configurations for a session
-   */
   async getColorConfigs(sessionId: string): Promise<ColorConfig[]> {
     try {
       const response = await this.api.get(`color-config/${sessionId}`);
@@ -54,9 +51,6 @@ class ColorConfigService {
     }
   }
 
-  /**
-   * Get color configurations for a session (for students - no auth required)
-   */
   async getColorConfigsForStudent(sessionId: string): Promise<ColorConfig[]> {
     try {
       const response = await this.api.get(`color-config/student/${sessionId}`);
@@ -67,10 +61,10 @@ class ColorConfigService {
     }
   }
 
-  /**
-   * Create or update a color configuration
-   */
-  async saveColorConfig(sessionId: string, config: ColorConfigRequest): Promise<ColorConfig> {
+  async saveColorConfig(
+    sessionId: string,
+    config: ColorConfigRequest
+  ): Promise<ColorConfig> {
     try {
       const response = await this.api.post(`color-config/${sessionId}`, config);
       return response.colorConfig;
@@ -79,9 +73,7 @@ class ColorConfigService {
       throw error;
     }
   }
-  /**
-   * Delete a color configuration
-   */
+
   async deleteColorConfig(sessionId: string, id: number): Promise<void> {
     try {
       await this.api.delete(`color-config/${sessionId}/${id}`);
@@ -91,33 +83,38 @@ class ColorConfigService {
     }
   }
 
-  /**
-   * Bulk update color configurations
-   */
-  async bulkUpdateColorConfigs(sessionId: string, configs: ColorConfigRequest[]): Promise<ColorConfig[]> {
+  async bulkUpdateColorConfigs(
+    sessionId: string,
+    configs: ColorConfigRequest[]
+  ): Promise<ColorConfig[]> {
     try {
-      const response = await this.api.post(`color-config/${sessionId}/bulk`, { colorConfigs: configs });
+      const response = await this.api.post(`color-config/${sessionId}/bulk`, {
+        colorConfigs: configs,
+      });
       return response.colorConfigs;
     } catch (error) {
       console.error('Error bulk updating color configurations:', error);
       throw error;
     }
   }
-  /**
-   * Toggle color configuration enabled status
-   */
-  async toggleColorConfig(sessionId: string, id: number, isEnabled: boolean): Promise<ColorConfig> {
+
+  async toggleColorConfig(
+    sessionId: string,
+    id: number,
+    isEnabled: boolean
+  ): Promise<ColorConfig> {
     try {
-      const response = await this.api.put(`color-config/${sessionId}/${id}/toggle`, { isEnabled });
+      const response = await this.api.put(
+        `color-config/${sessionId}/${id}/toggle`,
+        { isEnabled }
+      );
       return response.colorConfig;
     } catch (error) {
       console.error('Error toggling color configuration:', error);
       throw error;
     }
   }
-  /**
-   * Get default color configurations for a new session
-   */
+
   getDefaultColorConfigs(): ColorConfigRequest[] {
     return [
       {
@@ -128,7 +125,7 @@ class ColorConfigService {
         soundName: 'Adult/Male/Screaming.wav',
         isEnabled: true,
         volume: 1.0,
-        isLooping: false
+        isLooping: false,
       },
       {
         color: 'custom',
@@ -138,7 +135,7 @@ class ColorConfigService {
         soundName: 'Adult/Female/Screaming.wav',
         isEnabled: true,
         volume: 1.0,
-        isLooping: false
+        isLooping: false,
       },
       {
         color: 'custom',
@@ -148,7 +145,7 @@ class ColorConfigService {
         soundName: 'Child/Screaming.wav',
         isEnabled: true,
         volume: 1.0,
-        isLooping: false
+        isLooping: false,
       },
       {
         color: 'custom',
@@ -158,7 +155,7 @@ class ColorConfigService {
         soundName: 'Infant/Screaming.wav',
         isEnabled: true,
         volume: 1.0,
-        isLooping: false
+        isLooping: false,
       },
       {
         color: 'custom',
@@ -168,18 +165,18 @@ class ColorConfigService {
         soundName: 'Speech/Chest hurts.wav',
         isEnabled: true,
         volume: 1.0,
-        isLooping: false
+        isLooping: false,
       },
       {
         color: 'custom',
         customColorRgb: { r: 128, g: 0, b: 128 },
         colorTolerance: 0.15,
         displayName: 'Fioletowy',
-        soundName: 'Speech/I\'m feeling very dizzy.wav',
+        soundName: "Speech/I'm feeling very dizzy.wav",
         isEnabled: true,
         volume: 1.0,
-        isLooping: false
-      }
+        isLooping: false,
+      },
     ];
   }
 }

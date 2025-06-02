@@ -1,3 +1,3 @@
-import StudentSessionScreen from "../screens/student/StudentSessionScreen";
+import StudentSessionScreen from '../screens/student/StudentSessionScreen';
 
 export default StudentSessionScreen;

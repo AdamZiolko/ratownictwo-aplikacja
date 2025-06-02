@@ -25,10 +25,7 @@ const EkgCardDisplay: React.FC<EkgCardDisplayProps> = ({
   const theme = useTheme();
 
   return (
-    <Surface 
-      style={styles.cardContainer} 
-      elevation={3}
-    >
+    <Surface style={styles.cardContainer} elevation={3}>
       {showHeader && (
         <View style={styles.cardHeaderRow}>
           <MaterialCommunityIcons

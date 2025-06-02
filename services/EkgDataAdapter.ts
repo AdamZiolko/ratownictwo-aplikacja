@@ -1,5 +1,5 @@
-import { EkgType, NoiseType } from "./EkgFactory";
-import { EkgJsonDataLoader } from "./EkgJsonDataLoader";
+import { EkgType, NoiseType } from './EkgFactory';
+import { EkgJsonDataLoader } from './EkgJsonDataLoader';
 
 interface EkgData {
   timestamps: number[];
@@ -35,7 +35,6 @@ export class EkgDataAdapter {
 
   public static initialize(): void {
     EkgDataAdapter.getInstance();
-    console.log("EKG data adapter initialized");
   }
 
   public static getDataForType(ekgType: EkgType): EkgData {
@@ -100,7 +99,6 @@ export class EkgDataAdapter {
     bpm: number,
     noiseType: NoiseType
   ): number {
-
     try {
       if (ekgType === EkgType.ASYSTOLE) {
         return this.applyNoise(150, noiseType, time);
@@ -177,7 +175,7 @@ export class EkgDataAdapter {
       default:
         return value;
     }
-    // Użyj deterministycznego szumu bazującego na czasie sygnału
+
     const noise = Math.sin(time * 0.1) * Math.cos(time * 0.07) * noiseLevel;
     const wander = Math.sin(time * 0.001) * baselineWander;
 

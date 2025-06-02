@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   ScrollView,
@@ -11,8 +11,8 @@ import {
   RefreshControl,
   Platform,
   Modal,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Appbar,
   Text,
@@ -28,27 +28,31 @@ import {
   SegmentedButtons,
   TextInput,
   Checkbox,
-} from "react-native-paper";
-import { router } from "expo-router";
-import { useAuth } from "@/contexts/AuthContext";
-import { StyleSheet } from "react-native";
+} from 'react-native-paper';
+import { router } from 'expo-router';
+import { useAuth } from '@/contexts/AuthContext';
+import { StyleSheet } from 'react-native';
 
-import { StatItem, getRhythmTypeName, getNoiseLevelName } from "./components/DashboardComponents";
-import { useSessionManager } from "./SessionManager";
+import {
+  StatItem,
+  getRhythmTypeName,
+  getNoiseLevelName,
+} from './components/DashboardComponents';
+import { useSessionManager } from './SessionManager';
 
-import CreateSessionDialog from "../modals/CreateSessionDialog";
-import EditSessionDialog from "../modals/EditSessionDialog";
-import ViewSessionDialog from "../modals/ViewSessionDialog";
-import DeleteSessionDialog from "../modals/DeleteSessionDialog";
-import SoundSelectionDialog from "../modals/SoundSelectionDialog";
-import { SavePresetDialog, LoadPresetDialog } from "../modals/PresetDialogs";
-import StudentsListDialog from "../modals/StudentsListDialog";
-import { Session } from "../types/types";
-import { createDashboardStyles } from "./DashboardStyles";
-import AudioTab from "./components/AudioTab";
-import ColorConfigTab from "./components/ColorConfigTab";
-import ChecklistDialog from "../modals/ChecklistDialog";
-import apiService from "@/services/ApiService";
+import CreateSessionDialog from '../modals/CreateSessionDialog';
+import EditSessionDialog from '../modals/EditSessionDialog';
+import ViewSessionDialog from '../modals/ViewSessionDialog';
+import DeleteSessionDialog from '../modals/DeleteSessionDialog';
+import SoundSelectionDialog from '../modals/SoundSelectionDialog';
+import { SavePresetDialog, LoadPresetDialog } from '../modals/PresetDialogs';
+import StudentsListDialog from '../modals/StudentsListDialog';
+import { Session } from '../types/types';
+import { createDashboardStyles } from './DashboardStyles';
+import AudioTab from './components/AudioTab';
+import ColorConfigTab from './components/ColorConfigTab';
+import ChecklistDialog from '../modals/ChecklistDialog';
+import apiService from '@/services/ApiService';
 
 interface TestResult {
   id: number;
@@ -70,7 +74,9 @@ const ExaminerDashboardScreen = () => {
   const { user, logout } = useAuth();
   const scrollY = useRef(new Animated.Value(0)).current;
   const [headerVisible, setHeaderVisible] = useState(true);
-  const [activeTab, setActiveTab] = useState<"sessions" | "audio" | "color-config">("sessions");
+  const [activeTab, setActiveTab] = useState<
+    'sessions' | 'audio' | 'color-config'
+  >('sessions');
 
   const [createDialogVisible, setCreateDialogVisible] = useState(false);
   const [editDialogVisible, setEditDialogVisible] = useState(false);
@@ -82,7 +88,9 @@ const ExaminerDashboardScreen = () => {
   const [loadPresetDialogVisible, setLoadPresetDialogVisible] = useState(false);
 
   const [sidebarVisible, setSidebarVisible] = useState(true);
-  const [expandedSessions, setExpandedSessions] = useState<Record<string, boolean>>({});
+  const [expandedSessions, setExpandedSessions] = useState<
+    Record<string, boolean>
+  >({});
   const sidebarWidthValue = 250;
 
   const studentRefs = useRef<{ [id: number]: any }>({});
@@ -95,15 +103,17 @@ const ExaminerDashboardScreen = () => {
     albumNumber?: string;
   } | null>(null);
 
-  const [studentTestStates, setStudentTestStates] = useState<Record<number, StudentTestState>>({});
+  const [studentTestStates, setStudentTestStates] = useState<
+    Record<number, StudentTestState>
+  >({});
 
   const [historyVisible, setHistoryVisible] = useState(false);
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [loadingResults, setLoadingResults] = useState(false);
   const [resultsError, setResultsError] = useState<string | null>(null);
 
-  const [filterName, setFilterName] = useState("");
-  const [filterDate, setFilterDate] = useState("");
+  const [filterName, setFilterName] = useState('');
+  const [filterDate, setFilterDate] = useState('');
 
   const dashboardStyles = createDashboardStyles(theme);
 
@@ -139,7 +149,7 @@ const ExaminerDashboardScreen = () => {
     handleServerAudioResumeCommand,
     handleServerAudioStopCommand,
     lastLoopedSound,
-    setLastLoopedSound
+    setLastLoopedSound,
   } = useSessionManager(user);
 
   const toggleSidebar = () => {
@@ -147,9 +157,12 @@ const ExaminerDashboardScreen = () => {
     setSidebarVisible(!sidebarVisible);
   };
   const toggleSession = (sessionCode: string) =>
-    setExpandedSessions((prev) => ({ ...prev, [sessionCode]: !prev[sessionCode] }));
+    setExpandedSessions(prev => ({
+      ...prev,
+      [sessionCode]: !prev[sessionCode],
+    }));
 
-  const activeSessions = sessions.filter((s) => s.isActive);
+  const activeSessions = sessions.filter(s => s.isActive);
 
   const openCreateDialog = () => setCreateDialogVisible(true);
   const openEditDialog = (s: Session) => {
@@ -174,15 +187,14 @@ const ExaminerDashboardScreen = () => {
     setStudentsDialogVisible(true);
   };
 
-  // Funkcja do przejścia do karty konfiguracji kolorów dla wybranej sesji
   const openColorConfigForSession = (session: Session) => {
     setCurrentSession(session);
-    setActiveTab("color-config");
+    setActiveTab('color-config');
   };
 
   const handleLogout = () => {
     logout();
-    router.replace("/");
+    router.replace('/');
   };
 
   const handleScroll = Animated.event(
@@ -195,7 +207,6 @@ const ExaminerDashboardScreen = () => {
     }
   );
 
- 
   const handleStudentPress = (student: {
     id: number;
     name: string;
@@ -208,7 +219,7 @@ const ExaminerDashboardScreen = () => {
       setPopupTop(y);
       setSelectedStudent(student);
 
-      setStudentTestStates((prev) => {
+      setStudentTestStates(prev => {
         if (prev[student.id]) return prev;
         return {
           ...prev,
@@ -223,7 +234,7 @@ const ExaminerDashboardScreen = () => {
     });
   };
 
-  const windowHeight = Dimensions.get("window").height;
+  const windowHeight = Dimensions.get('window').height;
 
   useEffect(() => {
     if (historyVisible) {
@@ -235,19 +246,21 @@ const ExaminerDashboardScreen = () => {
     setLoadingResults(true);
     setResultsError(null);
     try {
-      const response: TestResult[] = await apiService.get("checklist/test-results");
+      const response: TestResult[] = await apiService.get(
+        'checklist/test-results'
+      );
       setTestResults(response);
     } catch (err) {
-      console.error("Błąd ładowania wyników:", err);
-      setResultsError("Nie udało się pobrać historii testów");
+      console.error('Błąd ładowania wyników:', err);
+      setResultsError('Nie udało się pobrać historii testów');
     } finally {
       setLoadingResults(false);
     }
   };
 
-  const filteredResults = testResults.filter((r) => {
+  const filteredResults = testResults.filter(r => {
     const fullName = `${r.student.name} ${r.student.surname}`.toLowerCase();
-    const localDateStr = new Date(r.createdAt).toLocaleDateString("pl-PL"); 
+    const localDateStr = new Date(r.createdAt).toLocaleDateString('pl-PL');
 
     const matchesName = filterName.trim()
       ? fullName.includes(filterName.trim().toLowerCase())
@@ -260,7 +273,7 @@ const ExaminerDashboardScreen = () => {
   });
 
   return (
-    <View style={{ flexDirection: "row", flex: 1 }}>
+    <View style={{ flexDirection: 'row', flex: 1 }}>
       <Portal>
         {selectedStudent !== null && (
           <ChecklistDialog
@@ -272,7 +285,7 @@ const ExaminerDashboardScreen = () => {
             student={selectedStudent}
             testState={studentTestStates[selectedStudent!.id]!}
             onStartTest={() =>
-              setStudentTestStates((prev) => ({
+              setStudentTestStates(prev => ({
                 ...prev,
                 [selectedStudent!.id]: {
                   ...prev[selectedStudent!.id],
@@ -281,7 +294,7 @@ const ExaminerDashboardScreen = () => {
               }))
             }
             onLoadTemplate={(name, tasks) =>
-              setStudentTestStates((prev) => ({
+              setStudentTestStates(prev => ({
                 ...prev,
                 [selectedStudent!.id]: {
                   ...prev[selectedStudent!.id],
@@ -290,8 +303,8 @@ const ExaminerDashboardScreen = () => {
                 },
               }))
             }
-            onChangeTasks={(newTasks) =>
-              setStudentTestStates((prev) => ({
+            onChangeTasks={newTasks =>
+              setStudentTestStates(prev => ({
                 ...prev,
                 [selectedStudent!.id]: {
                   ...prev[selectedStudent!.id],
@@ -299,8 +312,8 @@ const ExaminerDashboardScreen = () => {
                 },
               }))
             }
-            onChangeComments={(newComments) =>
-              setStudentTestStates((prev) => ({
+            onChangeComments={newComments =>
+              setStudentTestStates(prev => ({
                 ...prev,
                 [selectedStudent!.id]: {
                   ...prev[selectedStudent!.id],
@@ -317,7 +330,9 @@ const ExaminerDashboardScreen = () => {
           dashboardStyles.sidebar,
           {
             width: sidebarVisible ? sidebarWidthValue : 0,
-            transform: [{ translateX: sidebarVisible ? 0 : -sidebarWidthValue }],
+            transform: [
+              { translateX: sidebarVisible ? 0 : -sidebarWidthValue },
+            ],
           },
         ]}
       >
@@ -325,10 +340,15 @@ const ExaminerDashboardScreen = () => {
           <Text style={dashboardStyles.sidebarTitle}>Aktywne Sesje</Text>
 
           {activeSessions.length === 0 ? (
-            <Text style={dashboardStyles.sidebarEmpty}>Brak aktywnych sesji</Text>
+            <Text style={dashboardStyles.sidebarEmpty}>
+              Brak aktywnych sesji
+            </Text>
           ) : (
-            activeSessions.map((session) => (
-              <View key={session.sessionCode} style={dashboardStyles.sessionItem}>
+            activeSessions.map(session => (
+              <View
+                key={session.sessionCode}
+                style={dashboardStyles.sessionItem}
+              >
                 <TouchableOpacity
                   onPress={() => toggleSession(session.sessionCode)}
                   style={dashboardStyles.sessionHeader}
@@ -337,18 +357,22 @@ const ExaminerDashboardScreen = () => {
                     {session.sessionCode}
                   </Text>
                   <IconButton
-                    icon={expandedSessions[session.sessionCode] ? "chevron-up" : "chevron-down"}
+                    icon={
+                      expandedSessions[session.sessionCode]
+                        ? 'chevron-up'
+                        : 'chevron-down'
+                    }
                     size={20}
                   />
                 </TouchableOpacity>
 
                 {expandedSessions[session.sessionCode] && (
                   <View style={dashboardStyles.studentsList}>
-                    {sessionStudents[session.sessionCode]?.map((student) => (
+                    {sessionStudents[session.sessionCode]?.map(student => (
                       <View
                         key={student.id}
                         style={dashboardStyles.studentItem}
-                        ref={(el) => {
+                        ref={el => {
                           studentRefs.current[student.id] = el;
                         }}
                       >
@@ -362,7 +386,7 @@ const ExaminerDashboardScreen = () => {
                             });
                             setCurrentSession(session);
                           }}
-                          style={{ flexDirection: "row", alignItems: "center" }}
+                          style={{ flexDirection: 'row', alignItems: 'center' }}
                         >
                           <Avatar.Icon
                             size={30}
@@ -375,7 +399,7 @@ const ExaminerDashboardScreen = () => {
                         </TouchableOpacity>
                       </View>
                     ))}
-                    
+
                     <View style={dashboardStyles.sessionActions}>
                       <Button
                         mode="outlined"
@@ -394,10 +418,10 @@ const ExaminerDashboardScreen = () => {
             ))
           )}
 
-          {/* Przycisk “Historia testów”— toggle */}
+          {}
           <Button
             mode="outlined"
-            onPress={() => setHistoryVisible((v) => !v)}
+            onPress={() => setHistoryVisible(v => !v)}
             style={[dashboardStyles.historyButton, { marginTop: 16 }]}
             contentStyle={{ backgroundColor: theme.colors.surface }}
             icon="history"
@@ -410,333 +434,365 @@ const ExaminerDashboardScreen = () => {
       <SafeAreaView style={[dashboardStyles.container, { flex: 1 }]}>
         <Appbar.Header>
           <Appbar.Action
-            icon={sidebarVisible ? "menu-open" : "menu"}
+            icon={sidebarVisible ? 'menu-open' : 'menu'}
             onPress={toggleSidebar}
           />
           <Appbar.Content
             title="Panel Egzaminatora"
-            subtitle={user ? `Zalogowany jako: ${user.username}` : ""}
+            subtitle={user ? `Zalogowany jako: ${user.username}` : ''}
           />
           <Appbar.Action icon="logout" onPress={handleLogout} />
         </Appbar.Header>
 
-      <SegmentedButtons
-        value={activeTab}
-        onValueChange={(value) => setActiveTab(value as "sessions" | "audio" | "color-config")}
-        buttons={[
-          {
-            value: 'sessions',
-            label: 'Sesje',
-            icon: 'account-group',
-          },
-          {
-            value: 'audio',
-            label: 'Audio',
-            icon: 'music',
-          },
-        ]}
-        style={{ margin: 16 }}
-      />
+        <SegmentedButtons
+          value={activeTab}
+          onValueChange={value =>
+            setActiveTab(value as 'sessions' | 'audio' | 'color-config')
+          }
+          buttons={[
+            {
+              value: 'sessions',
+              label: 'Sesje',
+              icon: 'account-group',
+            },
+            {
+              value: 'audio',
+              label: 'Audio',
+              icon: 'music',
+            },
+          ]}
+          style={{ margin: 16 }}
+        />
 
         <View style={dashboardStyles.contentContainer}>
-          {activeTab === "sessions" && (
+          {activeTab === 'sessions' && (
             <>
-              {Platform.OS !== "android" && (
+              {Platform.OS !== 'android' && (
                 <Card
-                  style={{ backgroundColor: theme.colors.surface, borderRadius: 4 }}
+                  style={{
+                    backgroundColor: theme.colors.surface,
+                    borderRadius: 4,
+                  }}
                 >
                   <Card.Content>
                     <View
                       style={{
-                        flexDirection: "row",
-                        justifyContent: "center",
-                        alignItems: "center",
+                        flexDirection: 'row',
+                        justifyContent: 'center',
+                        alignItems: 'center',
                         padding: 10,
                       }}
                     >
-                      <StatItem value={sessions?.length} label="Wszystkie sesje" />
+                      <StatItem
+                        value={sessions?.length}
+                        label="Wszystkie sesje"
+                      />
                     </View>
                   </Card.Content>
                 </Card>
               )}
 
-            {loading && !refreshing ? (
-              <View style={dashboardStyles.loadingContainer}>
-                <ActivityIndicator size="large" />
-                <Text style={dashboardStyles.loadingText}>
-                  Ładowanie sesji...
-                </Text>
-              </View>
-            ) : (
-              <ScrollView
-                style={dashboardStyles.tableContainer}
-                refreshControl={
-                  <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-                }
-                onScroll={Platform.OS === "android" ? handleScroll : undefined}
-                scrollEventThrottle={16}
-              >
-                {sessions?.length === 0 ? (
-                  <View style={dashboardStyles.emptyState}>
-                    <Text variant="bodyLarge">Brak aktywnych sesji</Text>
-                    <Text
-                      variant="bodyMedium"
-                      style={dashboardStyles.emptyStateText}
-                    >
-                      Kliknij przycisk "+" aby utworzyć nową sesję
-                    </Text>
-                    <Button
-                      mode="contained"
-                      onPress={openCreateDialog}
-                      style={dashboardStyles.emptyStateButton}
-                    >
-                      Utwórz pierwszą sesję
-                    </Button>
-                  </View>
-                ) : (
-                  <View>
-                    {sessions.map((session) => (
-                      <Card
-                        key={session.sessionId}
-                        style={dashboardStyles.mobileCard}
-                        onPress={() => openViewDialog(session)}
+              {loading && !refreshing ? (
+                <View style={dashboardStyles.loadingContainer}>
+                  <ActivityIndicator size="large" />
+                  <Text style={dashboardStyles.loadingText}>
+                    Ładowanie sesji...
+                  </Text>
+                </View>
+              ) : (
+                <ScrollView
+                  style={dashboardStyles.tableContainer}
+                  refreshControl={
+                    <RefreshControl
+                      refreshing={refreshing}
+                      onRefresh={onRefresh}
+                    />
+                  }
+                  onScroll={
+                    Platform.OS === 'android' ? handleScroll : undefined
+                  }
+                  scrollEventThrottle={16}
+                >
+                  {sessions?.length === 0 ? (
+                    <View style={dashboardStyles.emptyState}>
+                      <Text variant="bodyLarge">Brak aktywnych sesji</Text>
+                      <Text
+                        variant="bodyMedium"
+                        style={dashboardStyles.emptyStateText}
                       >
-                        <Card.Title
-                          title={`Kod: ${session.sessionCode}`}
-                          titleStyle={dashboardStyles.mobileCardTitle}
-                          subtitle={
-                            `${getRhythmTypeName(session.rhythmType).slice(
-                              0,
-                              30
-                            )}` +
-                            `${
-                              getRhythmTypeName(session.rhythmType).length > 30
-                                ? "..."
-                                : ""
-                            }`
-                          }
-                          subtitleStyle={dashboardStyles.mobileCardSubtitle}
-                        />
-                        <Card.Content style={dashboardStyles.mobileCardContent}>
-                          <View style={dashboardStyles.mobileCardRow}>
-                            <Text style={dashboardStyles.mobileCardText}>
-                              Temperatura: {session.temperature}°C
-                            </Text>
-                            <Text style={dashboardStyles.mobileCardText}>
-                              BPM: {session.beatsPerMinute}
-                            </Text>
-                          </View>
-                          <View style={dashboardStyles.mobileCardActions}>
-                            <IconButton
-                              icon="pencil"
-                              size={24}
-                              onPress={(e) => {
-                                e.stopPropagation();
-                                openEditDialog(session);
-                              }}
-                              iconColor={theme.colors.primary}
-                            />
-                            <IconButton
-                              icon="delete"
-                              size={24}
-                              onPress={(e) => {
-                                e.stopPropagation();
-                                openDeleteDialog(session);
-                              }}
-                              iconColor={theme.colors.error}
-                            />
-                            <IconButton
-                              icon="volume-high"
-                              size={24}
-                              onPress={(e) => {
-                                e.stopPropagation();
-                                openSoundDialog(session);
-                              }}
-                              iconColor={theme.colors.secondary}
-                            />
-                            <View style={dashboardStyles.mobileIconContainer}>
-                              <IconButton
-                                icon="account-group"
-                                size={24}
-                                onPress={(e) => {
-                                  e.stopPropagation();
-                                  openStudentsDialog(session);
-                                }}
-                                iconColor={theme.colors.tertiary || "#9c27b0"}
-                              />
-                              {sessionStudents[session.sessionCode] &&
-                                sessionStudents[session.sessionCode].length > 0 && (
-                                  <View style={dashboardStyles.studentCountBadge}>
-                                    <Text style={dashboardStyles.studentCountText}>
-                                      {
-                                        sessionStudents[session.sessionCode]
-                                          .length
-                                      }
-                                    </Text>
-                                  </View>
-                                )}
-                            </View>
-                            <IconButton
-                              icon="palette"
-                              size={24}
-                              onPress={(e) => {
-                                e.stopPropagation();
-                                openColorConfigForSession(session);
-                              }}
-                              iconColor={theme.colors.onSurface}
-                            />
-                          </View>
-                        </Card.Content>
-                      </Card>
-                    ))}
-                  </View>
-                )}
-              </ScrollView>
-            )}
-          </>
-        )}
-
-        {activeTab === "audio" && <AudioTab />}
-        
-        {activeTab === "color-config" && (
-          <ColorConfigTab
-            sessionId={currentSession?.sessionId || null}
-            sessionCode={currentSession?.sessionCode || null}
-            onGoBack={() => setActiveTab("sessions")}
-          />
-        )}
-      </View>
-
-          <Modal visible={historyVisible} transparent animationType="slide">
-            <View style={styles.historyOverlay}>
-              <View
-                style={[styles.historyContainer, { backgroundColor: theme.colors.surface }]}
-              >
-                <View style={styles.historyHeader}>
-                  <Text variant="titleMedium">Historia testów</Text>
-                  <IconButton
-                    icon="close"
-                    size={24}
-                    onPress={() => setHistoryVisible(false)}
-                    iconColor={theme.colors.onSurface}
-                  />
-                </View>
-
-                {/* Filtry */}
-                <View style={styles.filtersRow}>
-                  <TextInput
-                    label="Filtruj po nazwisku"
-                    value={filterName}
-                    onChangeText={setFilterName}
-                    mode="outlined"
-                    style={styles.filterInput}
-                    theme={{ colors: { primary: theme.colors.primary } }}
-                  />
-                  <TextInput
-                    label="Filtruj po dacie (DD.MM.YYYY)"
-                    value={filterDate}
-                    onChangeText={setFilterDate}
-                    mode="outlined"
-                    style={styles.filterInput}
-                    theme={{ colors: { primary: theme.colors.primary } }}
-                  />
-                </View>
-
-                {/* Zawartość */}
-                <View style={styles.historyContent}>
-                  {loadingResults ? (
-                    <View style={dashboardStyles.loadingContainer}>
-                      <ActivityIndicator size="large" />
-                      <Text style={dashboardStyles.loadingText}>
-                        Ładowanie historii...
+                        Kliknij przycisk "+" aby utworzyć nową sesję
                       </Text>
-                    </View>
-                  ) : resultsError ? (
-                    <View style={dashboardStyles.emptyState}>
-                      <Text variant="bodyLarge">{resultsError}</Text>
-                    </View>
-                  ) : filteredResults.length === 0 ? (
-                    <View style={dashboardStyles.emptyState}>
-                      <Text variant="bodyLarge">Brak wyników spełniających kryteria</Text>
+                      <Button
+                        mode="contained"
+                        onPress={openCreateDialog}
+                        style={dashboardStyles.emptyStateButton}
+                      >
+                        Utwórz pierwszą sesję
+                      </Button>
                     </View>
                   ) : (
-                    <ScrollView style={styles.historyScroll}>
-                      {filteredResults.map((result) => (
+                    <View>
+                      {sessions.map(session => (
                         <Card
-                          key={result.id}
-                          style={[dashboardStyles.mobileCard, { marginBottom: 12 }]}
+                          key={session.sessionId}
+                          style={dashboardStyles.mobileCard}
+                          onPress={() => openViewDialog(session)}
                         >
                           <Card.Title
-                            title={`${result.student.name} ${result.student.surname}`}
+                            title={`Kod: ${session.sessionCode}`}
                             titleStyle={dashboardStyles.mobileCardTitle}
-                            subtitle={`Data: ${new Date(result.createdAt).toLocaleString()}`}
+                            subtitle={
+                              `${getRhythmTypeName(session.rhythmType).slice(
+                                0,
+                                30
+                              )}` +
+                              `${
+                                getRhythmTypeName(session.rhythmType).length >
+                                30
+                                  ? '...'
+                                  : ''
+                              }`
+                            }
                             subtitleStyle={dashboardStyles.mobileCardSubtitle}
                           />
-                          <Card.Content>
-                            <Text style={{ marginBottom: 4, fontWeight: "bold" }}>
-                              Zadania:
-                            </Text>
-                            {result.tasks.map((t, idx) => (
-                              <View
-                                key={idx}
-                                style={{
-                                  flexDirection: "row",
-                                  alignItems: "center",
-                                  marginBottom: 2,
+                          <Card.Content
+                            style={dashboardStyles.mobileCardContent}
+                          >
+                            <View style={dashboardStyles.mobileCardRow}>
+                              <Text style={dashboardStyles.mobileCardText}>
+                                Temperatura: {session.temperature}°C
+                              </Text>
+                              <Text style={dashboardStyles.mobileCardText}>
+                                BPM: {session.beatsPerMinute}
+                              </Text>
+                            </View>
+                            <View style={dashboardStyles.mobileCardActions}>
+                              <IconButton
+                                icon="pencil"
+                                size={24}
+                                onPress={e => {
+                                  e.stopPropagation();
+                                  openEditDialog(session);
                                 }}
-                              >
-                                <Checkbox
-                                  status={t.completed ? "checked" : "unchecked"}
-                                  disabled
+                                iconColor={theme.colors.primary}
+                              />
+                              <IconButton
+                                icon="delete"
+                                size={24}
+                                onPress={e => {
+                                  e.stopPropagation();
+                                  openDeleteDialog(session);
+                                }}
+                                iconColor={theme.colors.error}
+                              />
+                              <IconButton
+                                icon="volume-high"
+                                size={24}
+                                onPress={e => {
+                                  e.stopPropagation();
+                                  openSoundDialog(session);
+                                }}
+                                iconColor={theme.colors.secondary}
+                              />
+                              <View style={dashboardStyles.mobileIconContainer}>
+                                <IconButton
+                                  icon="account-group"
+                                  size={24}
+                                  onPress={e => {
+                                    e.stopPropagation();
+                                    openStudentsDialog(session);
+                                  }}
+                                  iconColor={theme.colors.tertiary || '#9c27b0'}
                                 />
-                                <Text style={{ marginLeft: 8 }}>{t.text}</Text>
-                              </View>
-                            ))}
-
-                            {result.comments.length > 0 && (
-                              <>
-                                <Text style={{ marginTop: 8, fontWeight: "bold" }}>
-                                  Komentarze:
-                                </Text>
-                                {result.comments.map((c, idx) => (
-                                  <View
-                                    key={idx}
-                                    style={{ marginVertical: 2, paddingLeft: 8 }}
-                                  >
-                                    <Text>- {c.text}</Text>
-                                    <Text
-                                      style={{
-                                        fontSize: 12,
-                                        color: theme.colors.onSurfaceVariant,
-                                      }}
+                                {sessionStudents[session.sessionCode] &&
+                                  sessionStudents[session.sessionCode].length >
+                                    0 && (
+                                    <View
+                                      style={dashboardStyles.studentCountBadge}
                                     >
-                                      {new Date(c.timestamp).toLocaleString()}
-                                    </Text>
-                                  </View>
-                                ))}
-                              </>
-                            )}
+                                      <Text
+                                        style={dashboardStyles.studentCountText}
+                                      >
+                                        {
+                                          sessionStudents[session.sessionCode]
+                                            .length
+                                        }
+                                      </Text>
+                                    </View>
+                                  )}
+                              </View>
+                              <IconButton
+                                icon="palette"
+                                size={24}
+                                onPress={e => {
+                                  e.stopPropagation();
+                                  openColorConfigForSession(session);
+                                }}
+                                iconColor={theme.colors.onSurface}
+                              />
+                            </View>
                           </Card.Content>
                         </Card>
                       ))}
-                    </ScrollView>
+                    </View>
                   )}
-                </View>
+                </ScrollView>
+              )}
+            </>
+          )}
+
+          {activeTab === 'audio' && <AudioTab />}
+
+          {activeTab === 'color-config' && (
+            <ColorConfigTab
+              sessionId={currentSession?.sessionId || null}
+              sessionCode={currentSession?.sessionCode || null}
+              onGoBack={() => setActiveTab('sessions')}
+            />
+          )}
+        </View>
+
+        <Modal visible={historyVisible} transparent animationType="slide">
+          <View style={styles.historyOverlay}>
+            <View
+              style={[
+                styles.historyContainer,
+                { backgroundColor: theme.colors.surface },
+              ]}
+            >
+              <View style={styles.historyHeader}>
+                <Text variant="titleMedium">Historia testów</Text>
+                <IconButton
+                  icon="close"
+                  size={24}
+                  onPress={() => setHistoryVisible(false)}
+                  iconColor={theme.colors.onSurface}
+                />
+              </View>
+
+              {}
+              <View style={styles.filtersRow}>
+                <TextInput
+                  label="Filtruj po nazwisku"
+                  value={filterName}
+                  onChangeText={setFilterName}
+                  mode="outlined"
+                  style={styles.filterInput}
+                  theme={{ colors: { primary: theme.colors.primary } }}
+                />
+                <TextInput
+                  label="Filtruj po dacie (DD.MM.YYYY)"
+                  value={filterDate}
+                  onChangeText={setFilterDate}
+                  mode="outlined"
+                  style={styles.filterInput}
+                  theme={{ colors: { primary: theme.colors.primary } }}
+                />
+              </View>
+
+              {}
+              <View style={styles.historyContent}>
+                {loadingResults ? (
+                  <View style={dashboardStyles.loadingContainer}>
+                    <ActivityIndicator size="large" />
+                    <Text style={dashboardStyles.loadingText}>
+                      Ładowanie historii...
+                    </Text>
+                  </View>
+                ) : resultsError ? (
+                  <View style={dashboardStyles.emptyState}>
+                    <Text variant="bodyLarge">{resultsError}</Text>
+                  </View>
+                ) : filteredResults.length === 0 ? (
+                  <View style={dashboardStyles.emptyState}>
+                    <Text variant="bodyLarge">
+                      Brak wyników spełniających kryteria
+                    </Text>
+                  </View>
+                ) : (
+                  <ScrollView style={styles.historyScroll}>
+                    {filteredResults.map(result => (
+                      <Card
+                        key={result.id}
+                        style={[
+                          dashboardStyles.mobileCard,
+                          { marginBottom: 12 },
+                        ]}
+                      >
+                        <Card.Title
+                          title={`${result.student.name} ${result.student.surname}`}
+                          titleStyle={dashboardStyles.mobileCardTitle}
+                          subtitle={`Data: ${new Date(
+                            result.createdAt
+                          ).toLocaleString()}`}
+                          subtitleStyle={dashboardStyles.mobileCardSubtitle}
+                        />
+                        <Card.Content>
+                          <Text style={{ marginBottom: 4, fontWeight: 'bold' }}>
+                            Zadania:
+                          </Text>
+                          {result.tasks.map((t, idx) => (
+                            <View
+                              key={idx}
+                              style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                marginBottom: 2,
+                              }}
+                            >
+                              <Checkbox
+                                status={t.completed ? 'checked' : 'unchecked'}
+                                disabled
+                              />
+                              <Text style={{ marginLeft: 8 }}>{t.text}</Text>
+                            </View>
+                          ))}
+
+                          {result.comments.length > 0 && (
+                            <>
+                              <Text
+                                style={{ marginTop: 8, fontWeight: 'bold' }}
+                              >
+                                Komentarze:
+                              </Text>
+                              {result.comments.map((c, idx) => (
+                                <View
+                                  key={idx}
+                                  style={{ marginVertical: 2, paddingLeft: 8 }}
+                                >
+                                  <Text>- {c.text}</Text>
+                                  <Text
+                                    style={{
+                                      fontSize: 12,
+                                      color: theme.colors.onSurfaceVariant,
+                                    }}
+                                  >
+                                    {new Date(c.timestamp).toLocaleString()}
+                                  </Text>
+                                </View>
+                              ))}
+                            </>
+                          )}
+                        </Card.Content>
+                      </Card>
+                    ))}
+                  </ScrollView>
+                )}
               </View>
             </View>
-          </Modal>
-
+          </View>
+        </Modal>
 
         <Portal>
           <CreateSessionDialog
             visible={createDialogVisible}
             onDismiss={() => setCreateDialogVisible(false)}
             initialData={formData}
-            onCreateSession={async (data) => {
+            onCreateSession={async data => {
               const success = await handleCreateSession(data);
               if (success) setCreateDialogVisible(false);
             }}
-            onOpenSavePresetDialog={(d) => {
+            onOpenSavePresetDialog={d => {
               setFormData(d);
               setSavePresetDialogVisible(true);
             }}
@@ -747,7 +803,7 @@ const ExaminerDashboardScreen = () => {
             visible={editDialogVisible}
             onDismiss={() => setEditDialogVisible(false)}
             session={currentSession}
-            onUpdateSession={async (d) => {
+            onUpdateSession={async d => {
               const success = await handleUpdateSession(d);
               if (success) setEditDialogVisible(false);
             }}
@@ -809,7 +865,7 @@ const ExaminerDashboardScreen = () => {
             visible={loadPresetDialogVisible}
             onDismiss={() => setLoadPresetDialogVisible(false)}
             presets={presets}
-            onLoadPreset={(p) => {
+            onLoadPreset={p => {
               setFormData(p.data);
               setLoadPresetDialogVisible(false);
             }}
@@ -828,10 +884,13 @@ const ExaminerDashboardScreen = () => {
           />
         </Portal>
 
-        {activeTab === "sessions" && (
+        {activeTab === 'sessions' && (
           <FAB
             icon="plus"
-            style={[dashboardStyles.fab, { backgroundColor: theme.colors.primary }]}
+            style={[
+              dashboardStyles.fab,
+              { backgroundColor: theme.colors.primary },
+            ]}
             onPress={openCreateDialog}
             color="#fff"
             label="Utwórz sesję"
@@ -844,7 +903,7 @@ const ExaminerDashboardScreen = () => {
           duration={3000}
           style={[
             dashboardStyles.snackbar,
-            snackbarType === "success"
+            snackbarType === 'success'
               ? dashboardStyles.successSnackbar
               : dashboardStyles.errorSnackbar,
           ]}
@@ -861,27 +920,27 @@ export default ExaminerDashboardScreen;
 const styles = StyleSheet.create({
   historyOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   historyContainer: {
-    width: "90%",
-    height: "85%",
+    width: '90%',
+    height: '85%',
     borderRadius: 8,
-    overflow: "hidden",
+    overflow: 'hidden',
   },
   historyHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#ccc",
+    borderBottomColor: '#ccc',
   },
   filtersRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     marginTop: 8,
   },

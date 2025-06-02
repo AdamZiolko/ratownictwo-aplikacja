@@ -4,8 +4,8 @@ import React, {
   useCallback,
   useMemo,
   useEffect,
-} from "react";
-import { StyleSheet, View, Keyboard, ScrollView, Platform } from "react-native";
+} from 'react';
+import { StyleSheet, View, Keyboard, ScrollView, Platform } from 'react-native';
 import {
   Text,
   TextInput,
@@ -14,12 +14,12 @@ import {
   Appbar,
   useTheme,
   Card,
-} from "react-native-paper";
-import { router } from "expo-router";
-import { sessionService } from "@/services/SessionService";
-import { StudentStorageService } from "@/services/StudentStorageService";
-import BackgroundGradient from "@/components/BackgroundGradient";
-import { useOrientation } from "@/hooks/useOrientation";
+} from 'react-native-paper';
+import { router } from 'expo-router';
+import { sessionService } from '@/services/SessionService';
+import { StudentStorageService } from '@/services/StudentStorageService';
+import BackgroundGradient from '@/components/BackgroundGradient';
+import { useOrientation } from '@/hooks/useOrientation';
 
 const MemoizedHelpSection = React.memo(() => (
   <View style={styles.helpSection}>
@@ -33,11 +33,11 @@ const StudentAccessScreen = () => {
   const theme = useTheme();
   const { orientation } = useOrientation();
   const isLandscape = orientation === 'landscape';
-  const [accessCode, setAccessCode] = useState("");
+  const [accessCode, setAccessCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({
-    accessCode: "",
+    accessCode: '',
   });
   const [studentData, setStudentData] = useState<{
     firstName: string;
@@ -55,7 +55,7 @@ const StudentAccessScreen = () => {
           setStudentData(studentProfile);
         }
       } catch (error) {
-        console.error("Failed to load student profile:", error);
+        console.error('Failed to load student profile:', error);
       }
     }
 
@@ -64,12 +64,12 @@ const StudentAccessScreen = () => {
 
   const validateFields = useCallback(() => {
     const errors = {
-      accessCode: "",
+      accessCode: '',
     };
     let isValid = true;
 
     if (!accessCode.trim()) {
-      errors.accessCode = "Kod dostępu jest wymagany";
+      errors.accessCode = 'Kod dostępu jest wymagany';
       isValid = false;
     }
 
@@ -80,32 +80,30 @@ const StudentAccessScreen = () => {
   const handleSubmit = useCallback(async () => {
     Keyboard.dismiss();
 
-    setError("");
+    setError('');
 
     if (!validateFields()) {
       return;
     }
 
-    setIsLoading(true);    try {
-      const session = await sessionService.getSessionByCode(
-        accessCode.trim()
-      );
+    setIsLoading(true);
+    try {
+      const session = await sessionService.getSessionByCode(accessCode.trim());
 
       if (!session) {
-        setError("Nieprawidłowy kod dostępu");
+        setError('Nieprawidłowy kod dostępu');
         setIsLoading(false);
         return;
       }
-      
-      
+
       if (session.isActive === false) {
-        setError("Ta sesja jest obecnie nieaktywna");
+        setError('Ta sesja jest obecnie nieaktywna');
         setIsLoading(false);
         return;
       }
       if (studentData) {
         router.push({
-          pathname: "/routes/student-session",
+          pathname: '/routes/student-session',
           params: {
             accessCode: accessCode.trim(),
             firstName: studentData.firstName,
@@ -115,14 +113,14 @@ const StudentAccessScreen = () => {
         });
       } else {
         router.push({
-          pathname: "/routes/student-profile",
+          pathname: '/routes/student-profile',
           params: {
             accessCode: accessCode.trim(),
           },
         });
       }
     } catch (err) {
-      setError("Wystąpił błąd. Sprawdź wprowadzone dane i spróbuj ponownie.");
+      setError('Wystąpił błąd. Sprawdź wprowadzone dane i spróbuj ponownie.');
     } finally {
       setIsLoading(false);
     }
@@ -132,8 +130,8 @@ const StudentAccessScreen = () => {
     (text: string) => {
       setAccessCode(text);
       if (fieldErrors.accessCode || error) {
-        setFieldErrors((prev) => ({ ...prev, accessCode: "" }));
-        setError("");
+        setFieldErrors(prev => ({ ...prev, accessCode: '' }));
+        setError('');
       }
     },
     [fieldErrors.accessCode, error]
@@ -162,44 +160,44 @@ const StudentAccessScreen = () => {
 
   return (
     <BackgroundGradient>
-      <Appbar.Header style={{ backgroundColor: "#8B0000" }}>
+      <Appbar.Header style={{ backgroundColor: '#8B0000' }}>
         <Appbar.BackAction onPress={handleBackPress} color="#fff" />
         <Appbar.Content
           title="Dołącz do sesji"
-          titleStyle={{ color: "#fff", fontWeight: "bold" }}
+          titleStyle={{ color: '#fff', fontWeight: 'bold' }}
         />
       </Appbar.Header>
       <ScrollView
         contentContainerStyle={[
           styles.scrollContainer,
-          isLandscape && styles.landscapeScrollContainer
+          isLandscape && styles.landscapeScrollContainer,
         ]}
         keyboardShouldPersistTaps="handled"
       >
         <Text
-          variant={isLandscape ? "titleSmall" : "titleMedium"}
+          variant={isLandscape ? 'titleSmall' : 'titleMedium'}
           style={[
-            styles.subtitle, 
-            { 
+            styles.subtitle,
+            {
               color: theme.colors.onBackground,
-              backgroundColor: theme.colors.elevation.level1
+              backgroundColor: theme.colors.elevation.level1,
             },
-            isLandscape && styles.landscapeSubtitle
+            isLandscape && styles.landscapeSubtitle,
           ]}
         >
           Podaj kod dostępu otrzymany od nauczyciela
         </Text>
-        <Card 
+        <Card
           style={[
-            styles.card, 
+            styles.card,
             { backgroundColor: theme.colors.surface },
-            isLandscape && styles.landscapeCard
+            isLandscape && styles.landscapeCard,
           ]}
         >
           <Card.Title
             title="Wprowadź kod dostępu"
             titleStyle={{ color: theme.colors.onSurface }}
-            titleVariant={isLandscape ? "titleSmall" : "titleMedium"}
+            titleVariant={isLandscape ? 'titleSmall' : 'titleMedium'}
           />
           <Card.Content>
             <View style={styles.form}>
@@ -212,9 +210,9 @@ const StudentAccessScreen = () => {
                 autoCapitalize="characters"
                 autoCorrect={false}
                 style={[
-                  styles.input, 
-                  { backgroundColor: "transparent" },
-                  isLandscape && styles.landscapeInput
+                  styles.input,
+                  { backgroundColor: 'transparent' },
+                  isLandscape && styles.landscapeInput,
                 ]}
                 disabled={isLoading}
                 error={!!fieldErrors.accessCode || !!error}
@@ -228,7 +226,10 @@ const StudentAccessScreen = () => {
             <Button
               mode="contained"
               onPress={handleSubmit}
-              style={[styles.submitButton, isLandscape && styles.landscapeSubmitButton]}
+              style={[
+                styles.submitButton,
+                isLandscape && styles.landscapeSubmitButton,
+              ]}
               loading={isLoading}
               disabled={isLoading}
               buttonColor={theme.colors.primary}
@@ -239,13 +240,16 @@ const StudentAccessScreen = () => {
         </Card>
         {!isLandscape && <MemoizedHelpSection />}
         {isLandscape && (
-          <Text variant="bodySmall" style={[
-            styles.landscapeHelpText, 
-            { 
-              color: theme.colors.onBackground,
-              backgroundColor: theme.colors.elevation.level1 
-            }
-          ]}>
+          <Text
+            variant="bodySmall"
+            style={[
+              styles.landscapeHelpText,
+              {
+                color: theme.colors.onBackground,
+                backgroundColor: theme.colors.elevation.level1,
+              },
+            ]}
+          >
             Potrzebujesz pomocy? Skontaktuj się z prowadzącym.
           </Text>
         )}
@@ -257,32 +261,32 @@ const StudentAccessScreen = () => {
 const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
-    paddingHorizontal: Platform.OS === "web" ? 16 : 16,
+    paddingHorizontal: Platform.OS === 'web' ? 16 : 16,
     paddingVertical: 24,
-    alignItems: "center",
-    justifyContent: "center", 
+    alignItems: 'center',
+    justifyContent: 'center',
     minHeight: '100%',
   },
   landscapeScrollContainer: {
     paddingVertical: 10,
-    flexDirection: Platform.OS === "web" ? "column" : "row",
-    alignItems: "center",
-    justifyContent: "space-around",
-    paddingHorizontal: Platform.OS === "web" ? 16 : 8,
+    flexDirection: Platform.OS === 'web' ? 'column' : 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    paddingHorizontal: Platform.OS === 'web' ? 16 : 8,
   },
   backButton: {
     marginBottom: 20,
-    alignSelf: "flex-start",
+    alignSelf: 'flex-start',
   },
   title: {
     marginBottom: 16,
-    fontWeight: "bold",
-    textAlign: "center",
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
   subtitle: {
     marginBottom: 40,
-    textAlign: "center",
-    textAlignVertical: "center",
+    textAlign: 'center',
+    textAlignVertical: 'center',
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
@@ -307,9 +311,9 @@ const styles = StyleSheet.create({
     marginTop: 5,
     fontSize: 16,
     lineHeight: 20,
-    flex: Platform.OS === "web" ? 0 : 1,
-    maxWidth: Platform.OS === "web" ? "100%" : "30%",
-    alignSelf: "center",
+    flex: Platform.OS === 'web' ? 0 : 1,
+    maxWidth: Platform.OS === 'web' ? '100%' : '30%',
+    alignSelf: 'center',
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
@@ -329,22 +333,22 @@ const styles = StyleSheet.create({
     }),
   },
   card: {
-    width: "100%",
+    width: '100%',
     maxWidth: 400,
-    alignSelf: "center",
+    alignSelf: 'center',
     marginBottom: 20,
     borderRadius: 12,
   },
   landscapeCard: {
-    maxWidth: Platform.OS === "web" ? 400 : 350,
-    flex: Platform.OS === "web" ? 0 : 2,
+    maxWidth: Platform.OS === 'web' ? 400 : 350,
+    flex: Platform.OS === 'web' ? 0 : 2,
     marginBottom: 10,
     marginHorizontal: 10,
   },
   form: {
-    width: "100%",
+    width: '100%',
     maxWidth: 400,
-    alignSelf: "center",
+    alignSelf: 'center',
     ...Platform.select({
       web: {
         maxWidth: 600,
@@ -361,7 +365,7 @@ const styles = StyleSheet.create({
     height: 45,
   },
   submitButton: {
-    marginLeft: "auto",
+    marginLeft: 'auto',
     marginTop: 8,
     paddingVertical: 6,
   },
@@ -372,10 +376,10 @@ const styles = StyleSheet.create({
   },
   helpSection: {
     marginTop: 36,
-    alignItems: "center",
+    alignItems: 'center',
   },
   helpText: {
-    textAlign: "center",
+    textAlign: 'center',
     opacity: 0.7,
     paddingVertical: 8,
     paddingHorizontal: 12,
@@ -396,13 +400,13 @@ const styles = StyleSheet.create({
     }),
   },
   landscapeHelpText: {
-    textAlign: "center",
+    textAlign: 'center',
     opacity: 0.8,
     fontSize: 10,
     marginTop: 5,
-    flex: Platform.OS === "web" ? 0 : 1,
-    maxWidth: Platform.OS === "web" ? "100%" : "30%",
-    alignSelf: "center",
+    flex: Platform.OS === 'web' ? 0 : 1,
+    maxWidth: Platform.OS === 'web' ? '100%' : '30%',
+    alignSelf: 'center',
     includeFontPadding: false,
     paddingVertical: 8,
     paddingHorizontal: 12,

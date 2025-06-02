@@ -48,13 +48,16 @@ export const useAudioFileOperations = (onFileChange: () => void) => {
     }
 
     setDialogState(prev => ({ ...prev, uploading: true }));
-    try {      const base64Data = await audioApiService.fileToBase64(dialogState.selectedFile.uri);
-        await audioApiService.uploadAudio({
+    try {
+      const base64Data = await audioApiService.fileToBase64(
+        dialogState.selectedFile.uri
+      );
+      await audioApiService.uploadAudio({
         name: dialogState.audioName.trim(),
         audioData: base64Data,
         mimeType: dialogState.selectedFile.mimeType || 'audio/mp3',
       });
-      
+
       Alert.alert('Sukces', 'Plik audio został pomyślnie przesłany');
       setDialogState(prev => ({
         ...prev,
@@ -80,16 +83,21 @@ export const useAudioFileOperations = (onFileChange: () => void) => {
     setDialogState(prev => ({ ...prev, uploading: true }));
     try {
       const updateData: any = {
-        name: dialogState.audioName.trim()
+        name: dialogState.audioName.trim(),
       };
-        if (dialogState.selectedFile) {
-        const base64Data = await audioApiService.fileToBase64(dialogState.selectedFile.uri);
+      if (dialogState.selectedFile) {
+        const base64Data = await audioApiService.fileToBase64(
+          dialogState.selectedFile.uri
+        );
         updateData.audioData = base64Data;
         updateData.mimeType = dialogState.selectedFile.mimeType || 'audio/mp3';
       }
-      
-      await audioApiService.updateAudio(dialogState.currentAudio.id, updateData);
-      
+
+      await audioApiService.updateAudio(
+        dialogState.currentAudio.id,
+        updateData
+      );
+
       Alert.alert('Sukces', 'Plik audio został pomyślnie zaktualizowany');
       setDialogState(prev => ({
         ...prev,

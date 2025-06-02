@@ -1,7 +1,6 @@
 import { NativeModules, Platform, NativeEventEmitter } from 'react-native';
 import { socketService } from './SocketService';
 
-
 interface NetworkUtilsInterface {
   getNetworkInfo(): Promise<{
     isConnected: boolean;
@@ -11,30 +10,33 @@ interface NetworkUtilsInterface {
   stopNetworkMonitoring(): void;
 }
 
-
-const NativeNetworkUtils: NetworkUtilsInterface = Platform.OS === 'android'
-  ? (NativeModules.NetworkUtils || {
-      getNetworkInfo: async () => {
-        console.warn('NetworkUtils module not found');
-        return { isConnected: true, connectionType: 'unknown' };
-      },
-      startNetworkMonitoring: () => {
-        console.warn('NetworkUtils module not found');
-      },
-      stopNetworkMonitoring: () => {
-        console.warn('NetworkUtils module not found');
-      },
-    })
-  : {
-      getNetworkInfo: async () => ({ isConnected: true, connectionType: 'unknown' }),
-      startNetworkMonitoring: () => {},
-      stopNetworkMonitoring: () => {},
-    };
+const NativeNetworkUtils: NetworkUtilsInterface =
+  Platform.OS === 'android'
+    ? NativeModules.NetworkUtils || {
+        getNetworkInfo: async () => {
+          console.warn('NetworkUtils module not found');
+          return { isConnected: true, connectionType: 'unknown' };
+        },
+        startNetworkMonitoring: () => {
+          console.warn('NetworkUtils module not found');
+        },
+        stopNetworkMonitoring: () => {
+          console.warn('NetworkUtils module not found');
+        },
+      }
+    : {
+        getNetworkInfo: async () => ({
+          isConnected: true,
+          connectionType: 'unknown',
+        }),
+        startNetworkMonitoring: () => {},
+        stopNetworkMonitoring: () => {},
+      };
 
 class NetworkMonitorService {
   private eventEmitter: NativeEventEmitter | null = null;
   private listeners: Array<() => void> = [];
-    constructor() {
+  constructor() {
     if (Platform.OS === 'android' && NativeModules.NetworkUtils) {
       try {
         this.eventEmitter = new NativeEventEmitter(NativeModules.NetworkUtils);
@@ -45,66 +47,55 @@ class NetworkMonitorService {
     }
   }
 
-  
   startMonitoring() {
     if (Platform.OS !== 'android') {
-      console.log('Network monitoring is only implemented for Android');
       return;
     }
 
     try {
-      
       NativeNetworkUtils.startNetworkMonitoring();
-      
-      
-      const subscription = this.eventEmitter?.addListener('networkChanged', async (event) => {
-        console.log('Network changed:', event);
-        
-        if (event.isConnected) {
-          
-          try {
-            const status = socketService.getConnectionStatus();
-            if (!status.connected) {
-              console.log('Network is back, reconnecting WebSocket...');
-              await socketService.connect();
+
+      const subscription = this.eventEmitter?.addListener(
+        'networkChanged',
+        async event => {
+          if (event.isConnected) {
+            try {
+              const status = socketService.getConnectionStatus();
+              if (!status.connected) {
+                await socketService.connect();
+              }
+            } catch (error) {
+              console.error(
+                'Error reconnecting socket after network change:',
+                error
+              );
             }
-          } catch (error) {
-            console.error('Error reconnecting socket after network change:', error);
+          } else {
           }
-        } else {
-          console.log('Network connection lost');
         }
-      });
-      
+      );
+
       if (subscription) {
         this.listeners.push(() => subscription.remove());
       }
-      
-      console.log('Network monitoring started');
     } catch (error) {
       console.error('Error starting network monitoring:', error);
     }
   }
 
-  
   stopMonitoring() {
     if (Platform.OS !== 'android') return;
-    
+
     try {
-      
       this.listeners.forEach(remove => remove());
       this.listeners = [];
-      
-      
+
       NativeNetworkUtils.stopNetworkMonitoring();
-      
-      console.log('Network monitoring stopped');
     } catch (error) {
       console.error('Error stopping network monitoring:', error);
     }
   }
 
-  
   async getNetworkInfo(): Promise<{
     isConnected: boolean;
     connectionType: string;
@@ -117,6 +108,5 @@ class NetworkMonitorService {
     }
   }
 }
-
 
 export const networkMonitorService = new NetworkMonitorService();

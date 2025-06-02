@@ -1,5 +1,4 @@
-// app/student-session.tsx
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   View,
   Platform,
@@ -7,7 +6,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   Pressable,
-} from "react-native";
+} from 'react-native';
 import {
   useTheme,
   Text,
@@ -15,25 +14,25 @@ import {
   Button,
   Appbar,
   IconButton,
-} from "react-native-paper";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
-import BackgroundGradient from "@/components/BackgroundGradient";
-import ColorSensor from "@/components/ColorSensor";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import EkgCardDisplay from "@/components/ekg/EkgCardDisplay";
-import SocketConnectionStatus from "@/components/SocketConnectionStatus";
-import SessionInfo from "./components/SessionInfo";
-import VitalSignsDisplay from "./components/VitalSignsDisplay";
-import { useSessionManager } from "./hooks/useSessionManager";
-import { useVitalSigns } from "./hooks/useVitalSigns";
-import { useAudioManager } from "./hooks/useAudioManager";
-import { useNetworkMonitoring } from "./hooks/useNetworkMonitoring";
-import { useColorConfigs } from "./hooks/useColorConfigs";
-import { useColorSounds } from "./hooks/useColorSounds";
-import { useSessionDeletion } from "./hooks/useSessionDeletion";
-import ColorConfigDisplay from "./components/ColorConfigDisplay";
-import { NoiseType } from "@/services/EkgFactory";
+} from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import BackgroundGradient from '@/components/BackgroundGradient';
+import ColorSensor from '@/components/ColorSensor';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import EkgCardDisplay from '@/components/ekg/EkgCardDisplay';
+import SocketConnectionStatus from '@/components/SocketConnectionStatus';
+import SessionInfo from './components/SessionInfo';
+import VitalSignsDisplay from './components/VitalSignsDisplay';
+import { useSessionManager } from './hooks/useSessionManager';
+import { useVitalSigns } from './hooks/useVitalSigns';
+import { useAudioManager } from './hooks/useAudioManager';
+import { useNetworkMonitoring } from './hooks/useNetworkMonitoring';
+import { useColorConfigs } from './hooks/useColorConfigs';
+import { useColorSounds } from './hooks/useColorSounds';
+import { useSessionDeletion } from './hooks/useSessionDeletion';
+import ColorConfigDisplay from './components/ColorConfigDisplay';
+import { NoiseType } from '@/services/EkgFactory';
 const StudentSessionScreen = () => {
   const theme = useTheme();
   const router = useRouter();
@@ -45,21 +44,18 @@ const StudentSessionScreen = () => {
       accessCode: string;
     }>();
 
-  // Czy to Web, czy urządzenie mobilne
-  const isWeb = Platform.OS === "web";
+  const isWeb = Platform.OS === 'web';
   const [isSessionPanelExpanded, setIsSessionPanelExpanded] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Podpinamy się pod manager sesji, podając te same dane co przy dołączaniu
   const { sessionData, isLoading, error, sessionJoined, handleRetry } =
     useSessionManager({
       accessCode: accessCode?.toString(),
-      firstName: firstName || "",
-      lastName: lastName || "",
-      albumNumber: albumNumber || "",
+      firstName: firstName || '',
+      lastName: lastName || '',
+      albumNumber: albumNumber || '',
     });
 
-  // Główne wartości, które wyświetlamy w panelu „Normalnym”
   const {
     temperature,
     bloodPressure,
@@ -69,13 +65,11 @@ const StudentSessionScreen = () => {
     formatBloodPressure,
   } = useVitalSigns(sessionData);
 
-  // Audio dolekcji
   const { audioReady, isPlayingServerAudio } = useAudioManager(
     accessCode?.toString(),
     sessionJoined
   );
 
-  // Kolorowe konfiguracje
   const {
     colorConfigs,
     isLoading: colorConfigsLoading,
@@ -90,37 +84,33 @@ const StudentSessionScreen = () => {
     stopAllColorSounds,
     isLoadingAudio: isLoadingColorAudio,
   } = useColorSounds();
-  // Monitorowanie stanu sieciowego
+
   useNetworkMonitoring();
-  // Handle session deletion
+
   useSessionDeletion({
     accessCode: accessCode?.toString(),
-    firstName: firstName || "",
-    lastName: lastName || "",
-    albumNumber: albumNumber || "",
+    firstName: firstName || '',
+    lastName: lastName || '',
+    albumNumber: albumNumber || '',
     sessionJoined,
   });
   const noiseTypeEnumValue = sessionData?.noiseLevel as NoiseType | undefined;
 
-  // Funkcje do ColorSensor
   const handleColorDetected = async (detectedColor: string, config: any) => {
-    console.log(`Color detected: ${detectedColor}`);
     await playColorSound(config);
   };
 
   const handleColorLost = async () => {
-    console.log(`Color lost - stopping all color sounds`);
     await stopAllColorSounds();
   };
 
-  // Powrót do ekranu wyboru studenta
   const handleGoBack = () => {
     router.replace({
-      pathname: "/routes/student-access",
+      pathname: '/routes/student-access',
       params: {
-        firstName: firstName || "",
-        lastName: lastName || "",
-        albumNumber: albumNumber || "",
+        firstName: firstName || '',
+        lastName: lastName || '',
+        albumNumber: albumNumber || '',
       },
     });
   };
@@ -128,7 +118,6 @@ const StudentSessionScreen = () => {
     setIsSessionPanelExpanded(!isSessionPanelExpanded);
   };
 
-  // Jeśli ciągle ładuje sesję
   if (isLoading) {
     return (
       <BackgroundGradient>
@@ -146,7 +135,6 @@ const StudentSessionScreen = () => {
     );
   }
 
-  // Jeśli wystąpił błąd
   if (error) {
     return (
       <BackgroundGradient>
@@ -180,7 +168,6 @@ const StudentSessionScreen = () => {
     );
   }
 
-  // Jeśli brak danych sesji
   if (!sessionData) {
     return (
       <BackgroundGradient>
@@ -207,7 +194,6 @@ const StudentSessionScreen = () => {
     );
   }
 
-  // Gdy wszystko jest OK – wyświetlamy główny UI
   return (
     <BackgroundGradient>
       <SafeAreaView style={styles.container}>
@@ -215,44 +201,45 @@ const StudentSessionScreen = () => {
           <Appbar.BackAction onPress={handleGoBack} />
           <Appbar.Content title="Sesja Studenta" />
           <IconButton
-            icon={isSessionPanelExpanded ? "chevron-up" : "chevron-down"}
+            icon={isSessionPanelExpanded ? 'chevron-up' : 'chevron-down'}
             onPress={toggleSessionPanel}
           />
         </Appbar.Header>
         <ScrollView style={styles.scrollContainer}>
           <SessionInfo
-            accessCode={accessCode?.toString() || ""}
-            firstName={firstName || ""}
-            lastName={lastName || ""}
-            albumNumber={albumNumber || ""}
+            accessCode={accessCode?.toString() || ''}
+            firstName={firstName || ''}
+            lastName={lastName || ''}
+            albumNumber={albumNumber || ''}
             sessionData={sessionData}
             isSessionPanelExpanded={isSessionPanelExpanded}
             setIsSessionPanelExpanded={setIsSessionPanelExpanded}
             isMobile={!isWeb}
           />
-          {sessionData.rhythmType !== undefined && !sessionData.isEkdDisplayHidden && (
-            <Pressable
-              style={styles.cardContainer}
-              onPress={() => {
-                router.push({
-                  pathname: "/screens/student/ekg-fullscreen",
-                  params: {
-                    accessCode: accessCode?.toString() || "",
-                    firstName: firstName || "",
-                    lastName: lastName || "",
-                    albumNumber: albumNumber || "",
-                  },
-                });
-              }}
-            >
-          <EkgCardDisplay
-      ekgType={sessionData.rhythmType}
-      bpm={sessionData.beatsPerMinute}
-      noiseType={noiseTypeEnumValue}    
-      isRunning={true}
-    />
-            </Pressable>
-          )}
+          {sessionData.rhythmType !== undefined &&
+            !sessionData.isEkdDisplayHidden && (
+              <Pressable
+                style={styles.cardContainer}
+                onPress={() => {
+                  router.push({
+                    pathname: '/screens/student/ekg-fullscreen',
+                    params: {
+                      accessCode: accessCode?.toString() || '',
+                      firstName: firstName || '',
+                      lastName: lastName || '',
+                      albumNumber: albumNumber || '',
+                    },
+                  });
+                }}
+              >
+                <EkgCardDisplay
+                  ekgType={sessionData.rhythmType}
+                  bpm={sessionData.beatsPerMinute}
+                  noiseType={noiseTypeEnumValue}
+                  isRunning={true}
+                />
+              </Pressable>
+            )}
           <VitalSignsDisplay
             temperature={temperature}
             bloodPressure={bloodPressure}
@@ -279,10 +266,10 @@ const StudentSessionScreen = () => {
               <MaterialCommunityIcons
                 name={
                   isPlayingServerAudio
-                    ? "volume-high"
+                    ? 'volume-high'
                     : audioReady
-                    ? "volume-medium"
-                    : "volume-off"
+                    ? 'volume-medium'
+                    : 'volume-off'
                 }
                 size={24}
                 color={
@@ -301,10 +288,10 @@ const StudentSessionScreen = () => {
               >
                 Audio:
                 {isPlayingServerAudio
-                  ? " Odtwarzanie..."
+                  ? ' Odtwarzanie...'
                   : audioReady
-                  ? " Gotowe"
-                  : " Niedostępne"}
+                  ? ' Gotowe'
+                  : ' Niedostępne'}
               </Text>
               {isPlayingServerAudio && (
                 <ActivityIndicator
@@ -327,7 +314,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    backgroundColor: "transparent",
+    backgroundColor: 'transparent',
   },
   scrollContainer: {
     flex: 1,
@@ -335,8 +322,8 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
   },
   loadingText: {
@@ -345,13 +332,13 @@ const styles = StyleSheet.create({
   },
   errorContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
   },
   errorText: {
     fontSize: 16,
-    textAlign: "center",
+    textAlign: 'center',
     marginVertical: 10,
   },
   retryButton: {
@@ -365,11 +352,11 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderRadius: 12,
     elevation: 2,
-    overflow: "hidden",
+    overflow: 'hidden',
   },
   audioStatusContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: 16,
   },
   audioStatusText: {

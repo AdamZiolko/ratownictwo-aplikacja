@@ -18,7 +18,7 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
   onCancel,
 }) => {
   const theme = useTheme();
-  
+
   const styles = StyleSheet.create({
     dialog: {
       backgroundColor: theme.colors.surface,
@@ -41,7 +41,7 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
       lineHeight: 24,
     },
     modalActions: {
-      justifyContent: "space-between",
+      justifyContent: 'space-between',
       paddingHorizontal: 24,
       paddingVertical: 16,
       borderTopWidth: 1,
@@ -58,19 +58,14 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
   });
 
   return (
-    <Dialog 
-      visible={visible} 
-      onDismiss={onCancel}
-      style={styles.dialog}
-    >
-      <Dialog.Title style={styles.title}>
-        Usuń konfigurację
-      </Dialog.Title>
+    <Dialog visible={visible} onDismiss={onCancel} style={styles.dialog}>
+      <Dialog.Title style={styles.title}>Usuń konfigurację</Dialog.Title>
       <Dialog.Content style={styles.content}>
         <Dialog.ScrollArea>
           <View>
             <Dialog.Title style={styles.contentText}>
-              Czy na pewno chcesz usunąć tę konfigurację? Tej operacji nie można cofnąć.
+              Czy na pewno chcesz usunąć tę konfigurację? Tej operacji nie można
+              cofnąć.
             </Dialog.Title>
           </View>
         </Dialog.ScrollArea>

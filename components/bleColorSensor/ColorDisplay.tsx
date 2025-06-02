@@ -8,19 +8,22 @@ interface ColorDisplayProps {
   currentSound: string | null;
 }
 
-export const ColorDisplay: React.FC<ColorDisplayProps> = ({ color, currentSound }) => {
+export const ColorDisplay: React.FC<ColorDisplayProps> = ({
+  color,
+  currentSound,
+}) => {
   const theme = useTheme();
 
   const getColorName = (sound: string | null): string => {
     switch (sound) {
-      case "red":
-        return "Czerwony";
-      case "green":
-        return "Zielony";
-      case "blue":
-        return "Niebieski";
+      case 'red':
+        return 'Czerwony';
+      case 'green':
+        return 'Zielony';
+      case 'blue':
+        return 'Niebieski';
       default:
-        return "Nieznany";
+        return 'Nieznany';
     }
   };
   return (
@@ -29,13 +32,20 @@ export const ColorDisplay: React.FC<ColorDisplayProps> = ({ color, currentSound 
         style={[
           styles.colorBox,
           {
-            backgroundColor: `rgb(${Math.min(255, Math.max(0, Math.floor(color.r)))}, ${Math.min(255, Math.max(0, Math.floor(color.g)))}, ${Math.min(255, Math.max(0, Math.floor(color.b)))})`,
+            backgroundColor: `rgb(${Math.min(
+              255,
+              Math.max(0, Math.floor(color.r))
+            )}, ${Math.min(255, Math.max(0, Math.floor(color.g)))}, ${Math.min(
+              255,
+              Math.max(0, Math.floor(color.b))
+            )})`,
             borderColor: theme.colors.outline,
           },
         ]}
       />
       <Text style={[styles.colorValues, { color: theme.colors.onSurface }]}>
-        R: {Math.floor(color.r)}, G: {Math.floor(color.g)}, B: {Math.floor(color.b)}
+        R: {Math.floor(color.r)}, G: {Math.floor(color.g)}, B:
+        {Math.floor(color.b)}
       </Text>
 
       {currentSound && (
@@ -55,7 +65,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderRadius: 8,
     alignSelf: 'center',
-    // borderColor will be set dynamically with theme
   },
   colorValues: {
     textAlign: 'center',
@@ -63,10 +72,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'monospace',
   },
-  soundInfo: { 
-    fontSize: 16, 
-    marginVertical: 8, 
-    fontWeight: "bold",
+  soundInfo: {
+    fontSize: 16,
+    marginVertical: 8,
+    fontWeight: 'bold',
     textAlign: 'center',
   },
 });

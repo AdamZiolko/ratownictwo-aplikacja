@@ -3,10 +3,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const FIRST_LAUNCH_KEY = '@app_first_launch';
 
 export class FirstLaunchService {
-  /**
-   * Sprawdza czy to pierwszym uruchomienie aplikacji
-   * @returns Promise<boolean> - true jeśli to pierwszy raz, false w przeciwnym przypadku
-   */
   static async isFirstLaunch(): Promise<boolean> {
     try {
       const hasLaunchedBefore = await AsyncStorage.getItem(FIRST_LAUNCH_KEY);
@@ -17,9 +13,6 @@ export class FirstLaunchService {
     }
   }
 
-  /**
-   * Oznacza aplikację jako uruchomioną (zapisuje flagę w AsyncStorage)
-   */
   static async markAsLaunched(): Promise<void> {
     try {
       await AsyncStorage.setItem(FIRST_LAUNCH_KEY, 'launched');
@@ -28,9 +21,6 @@ export class FirstLaunchService {
     }
   }
 
-  /**
-   * Resetuje flagę pierwszego uruchomienia (przydatne do testowania)
-   */
   static async resetFirstLaunchFlag(): Promise<void> {
     try {
       await AsyncStorage.removeItem(FIRST_LAUNCH_KEY);

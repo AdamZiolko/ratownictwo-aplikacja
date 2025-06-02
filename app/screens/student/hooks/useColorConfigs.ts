@@ -7,7 +7,10 @@ interface UseColorConfigsProps {
   sessionJoined: boolean;
 }
 
-export const useColorConfigs = ({ sessionId, sessionJoined }: UseColorConfigsProps) => {
+export const useColorConfigs = ({
+  sessionId,
+  sessionJoined,
+}: UseColorConfigsProps) => {
   const [colorConfigs, setColorConfigs] = useState<ColorConfig[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -18,8 +21,11 @@ export const useColorConfigs = ({ sessionId, sessionJoined }: UseColorConfigsPro
     }
 
     setIsLoading(true);
-    setError(null);    try {
-      const configs = await colorConfigService.getColorConfigsForStudent(sessionId);
+    setError(null);
+    try {
+      const configs = await colorConfigService.getColorConfigsForStudent(
+        sessionId
+      );
       setColorConfigs(configs);
     } catch (err) {
       console.error('Error fetching color configs:', err);
@@ -33,16 +39,20 @@ export const useColorConfigs = ({ sessionId, sessionJoined }: UseColorConfigsPro
     fetchColorConfigs();
   }, [sessionId, sessionJoined]);
 
-  // WebSocket listener for real-time updates
   useEffect(() => {
     if (!sessionJoined) return;
 
-    const handleColorConfigListUpdate = (data: { sessionId: string; colorConfigs: ColorConfig[] }) => {
-      console.log('🔄 Color config list updated via WebSocket:', data);
+    const handleColorConfigListUpdate = (data: {
+      sessionId: string;
+      colorConfigs: ColorConfig[];
+    }) => {
       setColorConfigs(data.colorConfigs);
     };
 
-    const cleanup = socketService.on('color-config-list-update', handleColorConfigListUpdate);
+    const cleanup = socketService.on(
+      'color-config-list-update',
+      handleColorConfigListUpdate
+    );
 
     return cleanup;
   }, [sessionJoined]);

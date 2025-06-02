@@ -1,3 +1,3 @@
-import StudentProfileScreen from "../screens/student/StudentProfile";
+import StudentProfileScreen from '../screens/student/StudentProfile';
 
 export default StudentProfileScreen;

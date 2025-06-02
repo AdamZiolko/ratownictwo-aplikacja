@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
   Platform,
   ActivityIndicator,
   ScrollView,
-} from "react-native";
-import { Surface, Text, useTheme, Chip, IconButton } from "react-native-paper";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { ColorConfig } from "@/services/ColorConfigService";
-import { Audio } from "expo-av";
-import { loadAudioFromLocal, loadAudioFromServer } from "../utils/audioUtils";
+} from 'react-native';
+import { Surface, Text, useTheme, Chip, IconButton } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { ColorConfig } from '@/services/ColorConfigService';
+import { Audio } from 'expo-av';
+import { loadAudioFromLocal, loadAudioFromServer } from '../utils/audioUtils';
 
 interface ColorConfigDisplayProps {
   colorConfigs: ColorConfig[];
@@ -29,7 +29,6 @@ const ColorConfigDisplay: React.FC<ColorConfigDisplayProps> = ({
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const [loadingAudioKey, setLoadingAudioKey] = useState<string | null>(null);
 
-  // Initialize audio system
   useEffect(() => {
     async function initAudio() {
       try {
@@ -39,61 +38,60 @@ const ColorConfigDisplay: React.FC<ColorConfigDisplayProps> = ({
           shouldDuckAndroid: true,
           playThroughEarpieceAndroid: false,
         });
-        console.log("🎵 Audio system initialized for ColorConfigDisplay");
       } catch (err) {
-        console.error("Failed to configure audio in ColorConfigDisplay:", err);
+        console.error('Failed to configure audio in ColorConfigDisplay:', err);
       }
     }
     initAudio();
   }, []);
-  // Cleanup audio on unmount
+
   useEffect(() => {
     return () => {
       if (currentSound) {
         currentSound.unloadAsync();
       }
-      // Reset loading states
+
       setIsLoadingAudio(false);
       setLoadingAudioKey(null);
       setPlayingSound(null);
     };
   }, []);
   const getColorValue = (config: ColorConfig): string => {
-    if (config.color === "custom" && config.customColorRgb) {
+    if (config.color === 'custom' && config.customColorRgb) {
       const { r, g, b } = config.customColorRgb;
       return `rgb(${r}, ${g}, ${b})`;
     }
 
     const colorMap: Record<string, string> = {
-      red: "#F44336",
-      green: "#4CAF50",
-      blue: "#2196F3",
-      yellow: "#FFEB3B",
-      orange: "#FF9800",
-      purple: "#9C27B0",
+      red: '#F44336',
+      green: '#4CAF50',
+      blue: '#2196F3',
+      yellow: '#FFEB3B',
+      orange: '#FF9800',
+      purple: '#9C27B0',
     };
-    return colorMap[config.color] || "#666666";
+    return colorMap[config.color] || '#666666';
   };
 
   const getColorValueWithAlpha = (
     config: ColorConfig,
     alpha: number = 0.2
   ): string => {
-    if (config.color === "custom" && config.customColorRgb) {
+    if (config.color === 'custom' && config.customColorRgb) {
       const { r, g, b } = config.customColorRgb;
       return `rgba(${r}, ${g}, ${b}, ${alpha})`;
     }
 
     const colorMap: Record<string, string> = {
-      red: "#F44336",
-      green: "#4CAF50",
-      blue: "#2196F3",
-      yellow: "#FFEB3B",
-      orange: "#FF9800",
-      purple: "#9C27B0",
+      red: '#F44336',
+      green: '#4CAF50',
+      blue: '#2196F3',
+      yellow: '#FFEB3B',
+      orange: '#FF9800',
+      purple: '#9C27B0',
     };
-    const hexColor = colorMap[config.color] || "#666666";
-    // Convert hex to rgba
+    const hexColor = colorMap[config.color] || '#666666';
+
     const r = parseInt(hexColor.slice(1, 3), 16);
     const g = parseInt(hexColor.slice(3, 5), 16);
     const b = parseInt(hexColor.slice(5, 7), 16);
@@ -102,7 +100,7 @@ const ColorConfigDisplay: React.FC<ColorConfigDisplayProps> = ({
   const getColorIcon = (
     color: string
   ): keyof typeof MaterialCommunityIcons.glyphMap => {
-    return "circle";
+    return 'circle';
   };
   const stopAllAudio = async () => {
     try {
@@ -113,7 +111,7 @@ const ColorConfigDisplay: React.FC<ColorConfigDisplayProps> = ({
         setPlayingSound(null);
       }
     } catch (error) {
-      console.error("Error stopping audio:", error);
+      console.error('Error stopping audio:', error);
     }
   };
 
@@ -121,19 +119,16 @@ const ColorConfigDisplay: React.FC<ColorConfigDisplayProps> = ({
     try {
       const soundKey = config.serverAudioId
         ? `server_${config.serverAudioId}`
-        : config.soundName || "";
+        : config.soundName || '';
 
       setIsLoadingAudio(true);
       setLoadingAudioKey(soundKey);
 
-      // Stop any currently playing audio first
       await stopAllAudio();
 
       let sound: Audio.Sound | null = null;
 
       if (config.serverAudioId) {
-        // Handle server audio
-        console.log(`🔊 Playing server audio: ${config.serverAudioId}`);
         sound = await loadAudioFromServer(config.serverAudioId);
         if (sound) {
           setCurrentSound(sound);
@@ -147,13 +142,10 @@ const ColorConfigDisplay: React.FC<ColorConfigDisplayProps> = ({
           });
 
           await sound.playAsync();
-          console.log(`✅ Server audio playing: ${soundKey}`);
         } else {
           console.warn(`Failed to load server audio: ${config.serverAudioId}`);
         }
       } else if (config.soundName) {
-        // Handle local sound
-        console.log(`🔊 Playing local sound: ${config.soundName}`);
         sound = await loadAudioFromLocal(config.soundName);
         if (sound) {
           setCurrentSound(sound);
@@ -167,13 +159,12 @@ const ColorConfigDisplay: React.FC<ColorConfigDisplayProps> = ({
           });
 
           await sound.playAsync();
-          console.log(`✅ Local audio playing: ${soundKey}`);
         } else {
           console.warn(`Failed to load local sound: ${config.soundName}`);
         }
       }
     } catch (error) {
-      console.error("Error playing sound:", error);
+      console.error('Error playing sound:', error);
       setPlayingSound(null);
       setCurrentSound(null);
     } finally {
@@ -187,7 +178,7 @@ const ColorConfigDisplay: React.FC<ColorConfigDisplayProps> = ({
       setIsLoadingAudio(true);
       await stopAllAudio();
     } catch (error) {
-      console.error("Error stopping sound:", error);
+      console.error('Error stopping sound:', error);
     } finally {
       setIsLoadingAudio(false);
       setLoadingAudioKey(null);
@@ -195,20 +186,17 @@ const ColorConfigDisplay: React.FC<ColorConfigDisplayProps> = ({
   };
 
   const handlePlaySound = async (config: ColorConfig) => {
-    // Prevent multiple simultaneous operations
     if (isLoadingAudio) {
       return;
     }
 
     const soundKey = config.serverAudioId
       ? `server_${config.serverAudioId}`
-      : config.soundName || "";
+      : config.soundName || '';
 
     if (playingSound === soundKey) {
-      // Stop current sound
       await stopSound();
     } else {
-      // Play sound
       await playSound(config);
     }
   };
@@ -290,7 +278,7 @@ const ColorConfigDisplay: React.FC<ColorConfigDisplayProps> = ({
         showsVerticalScrollIndicator={true}
         nestedScrollEnabled={true}
       >
-        {colorConfigs.map((config) => (
+        {colorConfigs.map(config => (
           <View key={`color-${config.id}`} style={styles.colorItem}>
             <Chip
               icon={() => (
@@ -300,13 +288,13 @@ const ColorConfigDisplay: React.FC<ColorConfigDisplayProps> = ({
                   color={getColorValue(config)}
                 />
               )}
-              mode={config.isEnabled ? "flat" : "outlined"}
+              mode={config.isEnabled ? 'flat' : 'outlined'}
               style={[
                 styles.colorChip,
                 {
                   backgroundColor: config.isEnabled
                     ? getColorValueWithAlpha(config, 0.2)
-                    : "transparent",
+                    : 'transparent',
                   borderColor: getColorValue(config),
                 },
               ]}
@@ -328,7 +316,7 @@ const ColorConfigDisplay: React.FC<ColorConfigDisplayProps> = ({
                   numberOfLines={1}
                 >
                   Local:
-                  {config.soundName.split("/").pop()?.replace(".wav", "")}
+                  {config.soundName.split('/').pop()?.replace('.wav', '')}
                 </Text>
               )}
               {config.serverAudio && (
@@ -350,7 +338,7 @@ const ColorConfigDisplay: React.FC<ColorConfigDisplayProps> = ({
                     },
                   ]}
                 >
-                  {config.isEnabled ? "Włączony" : "Wyłączony"}
+                  {config.isEnabled ? 'Włączony' : 'Wyłączony'}
                 </Text>
 
                 {config.isEnabled && (
@@ -381,8 +369,8 @@ const ColorConfigDisplay: React.FC<ColorConfigDisplayProps> = ({
                     (config.serverAudioId
                       ? `server_${config.serverAudioId}`
                       : config.soundName)
-                    ? "stop"
-                    : "play"
+                    ? 'stop'
+                    : 'play'
                 }
                 size={24}
                 iconColor={
@@ -440,36 +428,36 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 12,
   },
   title: {
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: '600',
     marginLeft: 8,
   },
   loadingText: {
-    textAlign: "center",
+    textAlign: 'center',
     fontSize: 14,
-    fontStyle: "italic",
+    fontStyle: 'italic',
   },
   errorText: {
-    textAlign: "center",
+    textAlign: 'center',
     fontSize: 14,
   },
   emptyText: {
-    textAlign: "center",
+    textAlign: 'center',
     fontSize: 14,
-    fontStyle: "italic",
+    fontStyle: 'italic',
   },
   colorsContainer: {
     gap: 12,
     maxHeight: 300,
   },
   colorItem: {
-    flexDirection: "row",
-    alignItems: "flex-start",
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     gap: 12,
   },
   colorChip: {
@@ -482,20 +470,20 @@ const styles = StyleSheet.create({
   },
   soundName: {
     fontSize: 12,
-    fontWeight: "500",
+    fontWeight: '500',
   },
   serverAudio: {
     fontSize: 12,
-    fontWeight: "500",
+    fontWeight: '500',
   },
   statusRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
   },
   status: {
     fontSize: 12,
-    fontWeight: "500",
+    fontWeight: '500',
   },
   volume: {
     fontSize: 11,
@@ -507,21 +495,21 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     minWidth: 48,
     minHeight: 48,
-    justifyContent: "center",
-    alignItems: "center",
-    position: "relative",
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
   },
   playButton: {
     margin: 0,
   },
   loadingOverlay: {
-    position: "absolute",
+    position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     borderRadius: 24,
   },
 });

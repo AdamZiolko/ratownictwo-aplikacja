@@ -1,26 +1,19 @@
-import React from "react";
+import React from 'react';
 import {
   View,
   StyleSheet,
   ScrollView,
   Platform,
   Dimensions,
-} from "react-native";
-import {
-  Dialog,
-  TextInput,
-  Button,
-  Text,
-  useTheme,
-} from "react-native-paper";
+} from 'react-native';
+import { Dialog, TextInput, Button, Text, useTheme } from 'react-native-paper';
 
-// Get screen dimensions for web responsive design
-const screenHeight = Dimensions.get("window").height;
+const screenHeight = Dimensions.get('window').height;
 
 export interface ColorConfigModalData {
   id?: number;
   name: string;
-  color: "custom";
+  color: 'custom';
   colorIdentifier?: string;
   soundName: string;
   displayName?: string;
@@ -39,8 +32,8 @@ interface ColorConfigModalProps {
   onSave: () => void;
   onSoundSelection: () => void;
   onModalDataChange: (data: Partial<ColorConfigModalData>) => void;
-  // Color sensor integration
-  sensorStatus?: "idle" | "scanning" | "connected" | "monitoring" | "error";
+
+  sensorStatus?: 'idle' | 'scanning' | 'connected' | 'monitoring' | 'error';
   sensorColor?: { r: number; g: number; b: number };
   onConnectSensor?: () => void;
   onDisconnectSensor?: () => void;
@@ -57,8 +50,8 @@ const ColorConfigModal: React.FC<ColorConfigModalProps> = ({
   onSave,
   onSoundSelection,
   onModalDataChange,
-  // Color sensor props
-  sensorStatus = "idle",
+
+  sensorStatus = 'idle',
   sensorColor = { r: 0, g: 0, b: 0 },
   onConnectSensor,
   onDisconnectSensor,
@@ -76,24 +69,24 @@ const ColorConfigModal: React.FC<ColorConfigModalProps> = ({
     <Dialog
       visible={visible}
       onDismiss={onDismiss}
-      style={Platform.OS === "web" ? styles.webDialog : styles.dialog}
+      style={Platform.OS === 'web' ? styles.webDialog : styles.dialog}
       dismissable={!modalLoading && !isLoadingAudio}
     >
       <Dialog.Title>
-        {isEditMode ? "Edytuj konfigurację" : "Dodaj konfigurację"}
+        {isEditMode ? 'Edytuj konfigurację' : 'Dodaj konfigurację'}
       </Dialog.Title>
       <Dialog.Content
         style={
-          Platform.OS === "web" ? styles.webDialogContent : styles.dialogContent
+          Platform.OS === 'web' ? styles.webDialogContent : styles.dialogContent
         }
       >
         <ScrollView
           style={
-            Platform.OS === "web"
+            Platform.OS === 'web'
               ? styles.webModalScrollContainer
               : styles.modalScrollContainer
           }
-          showsVerticalScrollIndicator={Platform.OS !== "web"}
+          showsVerticalScrollIndicator={Platform.OS !== 'web'}
           contentContainerStyle={{
             paddingHorizontal: 24,
             paddingTop: 8,
@@ -103,7 +96,7 @@ const ColorConfigModal: React.FC<ColorConfigModalProps> = ({
           <TextInput
             label="Nazwa wyświetlana"
             value={modalData.name}
-            onChangeText={(text) =>
+            onChangeText={text =>
               onModalDataChange({
                 name: text,
                 displayName: text,
@@ -114,32 +107,18 @@ const ColorConfigModal: React.FC<ColorConfigModalProps> = ({
             right={
               <TextInput.Icon
                 icon="music"
-                size={Platform.OS === "web" ? 20 : 24}
+                size={Platform.OS === 'web' ? 20 : 24}
                 onPress={() => {
-                  console.log(
-                    "Sound selection icon pressed, modalLoading:",
-                    modalLoading,
-                    "isLoadingAudio:",
-                    isLoadingAudio
-                  );
-                  console.log("Platform:", Platform.OS);
                   if (!modalLoading && !isLoadingAudio) {
                     try {
-                      console.log("Calling onSoundSelection from icon...");
                       onSoundSelection();
                     } catch (error) {
                       console.error(
-                        "Error opening sound selection from icon:",
+                        'Error opening sound selection from icon:',
                         error
                       );
                     }
                   } else {
-                    console.log(
-                      "Icon disabled - modalLoading:",
-                      modalLoading,
-                      "isLoadingAudio:",
-                      isLoadingAudio
-                    );
                   }
                 }}
                 disabled={modalLoading || isLoadingAudio}
@@ -149,27 +128,13 @@ const ColorConfigModal: React.FC<ColorConfigModalProps> = ({
           <Button
             mode="outlined"
             onPress={() => {
-              console.log(
-                "Sound selection button pressed, modalLoading:",
-                modalLoading,
-                "isLoadingAudio:",
-                isLoadingAudio
-              );
-              console.log("Platform:", Platform.OS);
               if (!modalLoading && !isLoadingAudio) {
                 try {
-                  console.log("Calling onSoundSelection...");
                   onSoundSelection();
                 } catch (error) {
-                  console.error("Error opening sound selection:", error);
+                  console.error('Error opening sound selection:', error);
                 }
               } else {
-                console.log(
-                  "Button disabled - modalLoading:",
-                  modalLoading,
-                  "isLoadingAudio:",
-                  isLoadingAudio
-                );
               }
             }}
             style={styles.soundSelectionButton}
@@ -186,7 +151,7 @@ const ColorConfigModal: React.FC<ColorConfigModalProps> = ({
             >
               Konfiguracja koloru RGB:
             </Text>
-            {Platform.OS === "web" && (
+            {Platform.OS === 'web' && (
               <View style={styles.webCustomColorSection}>
                 <Text
                   style={[
@@ -199,8 +164,8 @@ const ColorConfigModal: React.FC<ColorConfigModalProps> = ({
                 <View style={styles.rgbInputContainer}>
                   <TextInput
                     label="R (0-255)"
-                    value={modalData.customColorRgb?.r?.toString() || "255"}
-                    onChangeText={(text) => {
+                    value={modalData.customColorRgb?.r?.toString() || '255'}
+                    onChangeText={text => {
                       const r = parseInt(text) || 0;
                       const clampedR = Math.max(0, Math.min(255, r));
                       onModalDataChange({
@@ -210,7 +175,7 @@ const ColorConfigModal: React.FC<ColorConfigModalProps> = ({
                           g: modalData.customColorRgb?.g || 0,
                           b: modalData.customColorRgb?.b || 0,
                         },
-                        color: "custom",
+                        color: 'custom',
                       });
                     }}
                     style={[styles.input, styles.rgbInput]}
@@ -219,8 +184,8 @@ const ColorConfigModal: React.FC<ColorConfigModalProps> = ({
                   />
                   <TextInput
                     label="G (0-255)"
-                    value={modalData.customColorRgb?.g?.toString() || "0"}
-                    onChangeText={(text) => {
+                    value={modalData.customColorRgb?.g?.toString() || '0'}
+                    onChangeText={text => {
                       const g = parseInt(text) || 0;
                       const clampedG = Math.max(0, Math.min(255, g));
                       onModalDataChange({
@@ -229,7 +194,7 @@ const ColorConfigModal: React.FC<ColorConfigModalProps> = ({
                           g: clampedG,
                           b: modalData.customColorRgb?.b || 0,
                         },
-                        color: "custom",
+                        color: 'custom',
                       });
                     }}
                     style={[styles.input, styles.rgbInput]}
@@ -238,8 +203,8 @@ const ColorConfigModal: React.FC<ColorConfigModalProps> = ({
                   />
                   <TextInput
                     label="B (0-255)"
-                    value={modalData.customColorRgb?.b?.toString() || "0"}
-                    onChangeText={(text) => {
+                    value={modalData.customColorRgb?.b?.toString() || '0'}
+                    onChangeText={text => {
                       const b = parseInt(text) || 0;
                       const clampedB = Math.max(0, Math.min(255, b));
                       onModalDataChange({
@@ -248,7 +213,7 @@ const ColorConfigModal: React.FC<ColorConfigModalProps> = ({
                           g: modalData.customColorRgb?.g || 0,
                           b: clampedB,
                         },
-                        color: "custom",
+                        color: 'custom',
                       });
                     }}
                     style={[styles.input, styles.rgbInput]}
@@ -282,7 +247,7 @@ const ColorConfigModal: React.FC<ColorConfigModalProps> = ({
                 </View>
               </View>
             )}
-            {Platform.OS !== "web" && (
+            {Platform.OS !== 'web' && (
               <View style={styles.sensorSection}>
                 <Text
                   style={[
@@ -293,7 +258,7 @@ const ColorConfigModal: React.FC<ColorConfigModalProps> = ({
                   Czujnik kolorów
                 </Text>
                 <View style={styles.sensorControls}>
-                  {sensorStatus === "idle" || sensorStatus === "error" ? (
+                  {sensorStatus === 'idle' || sensorStatus === 'error' ? (
                     <Button
                       mode="outlined"
                       onPress={onConnectSensor}
@@ -303,8 +268,8 @@ const ColorConfigModal: React.FC<ColorConfigModalProps> = ({
                     >
                       <Text>Połącz czujnik</Text>
                     </Button>
-                  ) : sensorStatus === "scanning" ||
-                    sensorStatus === "connected" ? (
+                  ) : sensorStatus === 'scanning' ||
+                    sensorStatus === 'connected' ? (
                     <Button
                       mode="outlined"
                       disabled
@@ -325,7 +290,7 @@ const ColorConfigModal: React.FC<ColorConfigModalProps> = ({
                     </Button>
                   )}
                 </View>
-                {sensorStatus === "monitoring" && (
+                {sensorStatus === 'monitoring' && (
                   <View style={styles.sensorDataSection}>
                     <Text
                       style={[
@@ -351,7 +316,7 @@ const ColorConfigModal: React.FC<ColorConfigModalProps> = ({
                           { color: theme.colors.onSurface },
                         ]}
                       >
-                        R: {sensorColor.r}, G: {sensorColor.g}, B:{" "}
+                        R: {sensorColor.r}, G: {sensorColor.g}, B:
                         {sensorColor.b}
                       </Text>
                     </View>
@@ -396,16 +361,16 @@ const ColorConfigModal: React.FC<ColorConfigModalProps> = ({
 
 const styles = StyleSheet.create({
   dialog: {
-    width: "80%",
-    alignSelf: "center",
+    width: '80%',
+    alignSelf: 'center',
     zIndex: 9999,
     elevation: 24,
   },
   webDialog: {
-    width: "90%",
+    width: '90%',
     maxWidth: 600,
     maxHeight: screenHeight * 0.9,
-    alignSelf: "center",
+    alignSelf: 'center',
     zIndex: 9999,
     elevation: 24,
   },
@@ -417,7 +382,7 @@ const styles = StyleSheet.create({
     maxHeight: screenHeight * 0.75,
   },
   modalScrollContainer: {
-    maxHeight: "90%",
+    maxHeight: '90%',
   },
   webModalScrollContainer: {
     maxHeight: screenHeight * 0.7,
@@ -431,22 +396,22 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   soundSelectionButtonLabel: {
-    fontSize: Platform.OS === "web" ? 14 : 16,
-    fontWeight: "500",
+    fontSize: Platform.OS === 'web' ? 14 : 16,
+    fontWeight: '500',
   },
   soundSelectionButtonContent: {
-    height: Platform.OS === "web" ? 40 : 48,
+    height: Platform.OS === 'web' ? 40 : 48,
     paddingHorizontal: 16,
   },
   sectionLabel: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
     marginBottom: 12,
     marginTop: 16,
   },
   colorOption: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginVertical: 8,
     paddingVertical: 4,
   },
@@ -459,12 +424,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     elevation: 1,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.1)",
+    borderColor: 'rgba(0,0,0,0.1)',
   },
   switchContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginTop: 20,
     paddingVertical: 8,
     paddingHorizontal: 4,
@@ -474,8 +439,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   buttonContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginTop: 30,
     marginBottom: 16,
     gap: 16,
@@ -484,11 +449,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   rgbContainer: {
-    flexDirection: "column",
+    flexDirection: 'column',
     marginBottom: 16,
   },
   colorPreviewContainer: {
-    alignItems: "center",
+    alignItems: 'center',
     marginBottom: 20,
     paddingVertical: 16,
   },
@@ -499,7 +464,7 @@ const styles = StyleSheet.create({
     elevation: 3,
     marginTop: 12,
     borderWidth: 2,
-    borderColor: "rgba(0,0,0,0.1)",
+    borderColor: 'rgba(0,0,0,0.1)',
   },
   toleranceContainer: {
     marginTop: 16,
@@ -508,17 +473,17 @@ const styles = StyleSheet.create({
   toleranceInput: {
     marginTop: 8,
   },
-  // New sensor-related styles
+
   sensorSection: {
     marginBottom: 20,
     padding: 16,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.1)",
+    borderColor: 'rgba(0,0,0,0.1)',
   },
   sensorSectionTitle: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
     marginBottom: 12,
   },
   sensorControls: {
@@ -532,16 +497,16 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.05)",
-    backgroundColor: "rgba(0,0,0,0.02)",
+    borderColor: 'rgba(0,0,0,0.05)',
+    backgroundColor: 'rgba(0,0,0,0.02)',
   },
   sensorDataTitle: {
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: '500',
     marginBottom: 12,
   },
   liveColorDisplay: {
-    alignItems: "center",
+    alignItems: 'center',
     marginBottom: 16,
   },
   liveColorBox: {
@@ -553,23 +518,23 @@ const styles = StyleSheet.create({
   },
   liveColorValues: {
     fontSize: 14,
-    fontFamily: "monospace",
-    textAlign: "center",
+    fontFamily: 'monospace',
+    textAlign: 'center',
   },
   acceptColorButton: {
     marginTop: 8,
   },
-  // Web custom color styles
+
   webCustomColorSection: {
     marginVertical: 16,
     padding: 16,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.1)",
+    borderColor: 'rgba(0,0,0,0.1)',
   },
   rgbInputContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     gap: 8,
     marginBottom: 16,
   },

@@ -9,8 +9,9 @@ import { AudioDialogs } from './AudioDialogs';
 
 const AudioTab = () => {
   const theme = useTheme();
+
   const dashboardStyles = createDashboardStyles(theme);
-  
+
   const {
     audioFiles,
     loading,
@@ -23,7 +24,6 @@ const AudioTab = () => {
   } = useAudioOperations();
 
   const fileOperations = useAudioFileOperations(() => {
-    // Refresh the audio files list when any file operation completes
     onRefresh();
   });
 
@@ -51,7 +51,7 @@ const AudioTab = () => {
             margin: 16,
             right: 0,
             bottom: 0,
-            backgroundColor: theme.colors.primary
+            backgroundColor: theme.colors.primary,
           }}
           onPress={fileOperations.openUploadDialog}
         />

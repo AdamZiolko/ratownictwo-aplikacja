@@ -1,50 +1,45 @@
-import React, {
-  useRef,
-  useEffect,
-  useLayoutEffect,
-  useState,
-} from "react";
-import { View, StyleSheet, Platform } from "react-native";
-import { useTheme } from "react-native-paper";
+import React, { useRef, useEffect, useLayoutEffect, useState } from 'react';
+import { View, StyleSheet, Platform } from 'react-native';
+import { useTheme } from 'react-native-paper';
 import Svg, {
   Rect,
   G,
   Path,
   Path as SvgPath,
   Text as SvgText,
-} from "react-native-svg";
+} from 'react-native-svg';
 
 interface Spo2ChartProps {
-  value: number;         
-  frameRate?: number;    
-  svgHeight?: number;   
+  value: number;
+  frameRate?: number;
+  svgHeight?: number;
   viewBoxHeight?: number;
 }
 
-const FLASH_STEP = 4;      
-const BASELINE = 5;       
-const PEAK_DURATION_MS = 250; 
+const FLASH_STEP = 4;
+const BASELINE = 5;
+const PEAK_DURATION_MS = 250;
 
 const MIN_SPO2 = 70;
 const MAX_SPO2 = 100;
-const MAX_INTERVAL = 1500;  
-const MIN_INTERVAL = 500;  
+const MAX_INTERVAL = 1500;
+const MIN_INTERVAL = 500;
 
 const Spo2Chart: React.FC<Spo2ChartProps> = ({
   value,
   frameRate = 30,
-  svgHeight = Platform.OS === "web" ? 200 : 200,
-  viewBoxHeight = Platform.OS === "web" ? 150 : 150,
+  svgHeight = Platform.OS === 'web' ? 200 : 200,
+  viewBoxHeight = Platform.OS === 'web' ? 150 : 150,
 }) => {
   const theme = useTheme();
   const [containerWidth, setContainerWidth] = useState(0);
-  const [pathData, setPathData] = useState("");
+  const [pathData, setPathData] = useState('');
   const [lastPoints, setLastPoints] = useState<{ x: number; y: number }[]>([]);
 
   const containerRef = useRef<View>(null);
   const animationRef = useRef<number>();
-  const dataRef = useRef<number[]>([]);       
-  const pathRef = useRef<string>("");
+  const dataRef = useRef<number[]>([]);
+  const pathRef = useRef<string>('');
 
   const timeSinceLastPeakRef = useRef<number>(0);
   const peakElapsedRef = useRef<number>(0);
@@ -53,7 +48,7 @@ const Spo2Chart: React.FC<Spo2ChartProps> = ({
 
   const computeIntervalMs = (spo2: number) => {
     const clamped = Math.max(MIN_SPO2, Math.min(MAX_SPO2, spo2));
-    const t = (clamped - MIN_SPO2) / (MAX_SPO2 - MIN_SPO2); 
+    const t = (clamped - MIN_SPO2) / (MAX_SPO2 - MIN_SPO2);
     return MAX_INTERVAL - (MAX_INTERVAL - MIN_INTERVAL) * t;
   };
 
@@ -63,14 +58,14 @@ const Spo2Chart: React.FC<Spo2ChartProps> = ({
     } else if (phase < 0.25) {
       return 1.0;
     } else if (phase < 0.5) {
-      const t = (phase - 0.25) / 0.25; 
-      return 1.0 - t * 0.8;           
+      const t = (phase - 0.25) / 0.25;
+      return 1.0 - t * 0.8;
     } else if (phase < 0.7) {
-      const t = (phase - 0.5) / 0.2; 
-      return 0.2 + t * 0.15;        
+      const t = (phase - 0.5) / 0.2;
+      return 0.2 + t * 0.15;
     } else {
-      const t = (phase - 0.7) / 0.3; 
-      return 0.35 * (1 - t);        
+      const t = (phase - 0.7) / 0.3;
+      return 0.35 * (1 - t);
     }
   };
 
@@ -82,7 +77,7 @@ const Spo2Chart: React.FC<Spo2ChartProps> = ({
     containerRef.current?.measure((_, __, w) => {
       if (w > 0) {
         setContainerWidth(w);
-        dataRef.current = []; 
+        dataRef.current = [];
         buildPathFromData();
       }
     });
@@ -112,7 +107,7 @@ const Spo2Chart: React.FC<Spo2ChartProps> = ({
     if (!lastTimestampRef.current) {
       lastTimestampRef.current = timestamp;
     }
-    const δt = timestamp - lastTimestampRef.current; 
+    const δt = timestamp - lastTimestampRef.current;
     lastTimestampRef.current = timestamp;
 
     const intervalMs = computeIntervalMs(value);
@@ -157,15 +152,15 @@ const Spo2Chart: React.FC<Spo2ChartProps> = ({
 
   const buildPathFromData = () => {
     if (containerWidth === 0) {
-      setPathData("");
+      setPathData('');
       return;
     }
 
-    let path = "";
+    let path = '';
     const points: { x: number; y: number }[] = [];
 
     dataRef.current.forEach((v, i) => {
-      const x = i * FLASH_STEP;               
+      const x = i * FLASH_STEP;
       const y = computeY(v);
 
       if (i === 0) {
@@ -195,8 +190,8 @@ const Spo2Chart: React.FC<Spo2ChartProps> = ({
   const renderGrid = () => {
     if (containerWidth === 0) return null;
     const lines: JSX.Element[] = [];
-    const majorColor = "rgba(0,255,0,0.15)";
-    const minorColor = "rgba(0,255,0,0.05)";
+    const majorColor = 'rgba(0,255,0,0.15)';
+    const minorColor = 'rgba(0,255,0,0.05)';
 
     for (let y = 0; y <= viewBoxHeight; y += 50) {
       lines.push(
@@ -273,8 +268,6 @@ const Spo2Chart: React.FC<Spo2ChartProps> = ({
             strokeLinejoin="round"
           />
 
-       
-
           <SvgText
             x={containerWidth - 10}
             y={20}
@@ -303,9 +296,9 @@ const Spo2Chart: React.FC<Spo2ChartProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    width: "100%",
-    backgroundColor: "transparent",
-    overflow: "hidden",
+    width: '100%',
+    backgroundColor: 'transparent',
+    overflow: 'hidden',
   },
 });
 
