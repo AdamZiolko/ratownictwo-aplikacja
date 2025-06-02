@@ -14,7 +14,6 @@ class ApiService {
         token = user.accessToken;
 
         if (this.isTokenExpired(token)) {
-          console.log('Token is expired, refreshing...');
           const refreshResult = await AuthService.refreshToken();
           if (refreshResult && refreshResult.accessToken) {
             token = refreshResult.accessToken;

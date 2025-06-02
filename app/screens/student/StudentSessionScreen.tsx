@@ -97,12 +97,10 @@ const StudentSessionScreen = () => {
   const noiseTypeEnumValue = sessionData?.noiseLevel as NoiseType | undefined;
 
   const handleColorDetected = async (detectedColor: string, config: any) => {
-    console.log(`Color detected: ${detectedColor}`);
     await playColorSound(config);
   };
 
   const handleColorLost = async () => {
-    console.log(`Color lost - stopping all color sounds`);
     await stopAllColorSounds();
   };
 

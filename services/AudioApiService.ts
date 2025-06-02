@@ -43,8 +43,6 @@ class AudioApiService {
   }
   async streamAudio(id: string): Promise<Response> {
     try {
-      console.log(`🌐 Streaming audio from server: ${id}`);
-
       const response = await fetch(`${API_URL}/api/audio/${id}/stream`, {
         method: 'GET',
         headers: {
@@ -59,11 +57,6 @@ class AudioApiService {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      console.log(
-        `✅ Audio stream response received: ${id} (${response.headers.get(
-          'content-type'
-        )})`
-      );
       return response;
     } catch (error) {
       console.error('❌ Error streaming audio:', error);

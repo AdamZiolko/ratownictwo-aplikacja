@@ -25,13 +25,9 @@ export const useBleManagerWeb = (
   const [color] = useState<ColorValue>({ r: 0, g: 0, b: 0 });
   const [lastColorUpdate] = useState<number>(0);
 
-  const startConnection = useCallback(() => {
-    console.log('[BLE-Web] BLE not available on web platform');
-  }, []);
+  const startConnection = useCallback(() => {}, []);
 
-  const disconnectDevice = useCallback(async () => {
-    console.log('[BLE-Web] BLE not available on web platform');
-  }, []);
+  const disconnectDevice = useCallback(async () => {}, []);
 
   return {
     bleState,

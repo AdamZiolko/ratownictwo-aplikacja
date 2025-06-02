@@ -141,31 +141,11 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
   useEffect(() => {
     if (visible) {
       try {
-        console.log('Students data count:', students?.length || 0);
-        console.log('Session students count:', session?.students?.length || 0);
-
         if (students && students.length > 0) {
           const studentSample = students[0];
-          console.log('Sample student structure:', {
-            id: studentSample.id,
-            userId: studentSample.userId,
-            name: studentSample.name,
-            user: studentSample.user,
-            student_sessions: studentSample.student_sessions,
-          });
         } else if (session?.students && session.students.length > 0) {
           const studentSample = session.students[0];
-          console.log('Sample session student structure:', {
-            id: studentSample.id,
-            name: studentSample.name,
-            surname: studentSample.surname,
-            albumNumber: studentSample.albumNumber,
-            student_sessions: studentSample.student_sessions,
-          });
         } else {
-          console.log(
-            'No student data available in either students or session.students'
-          );
         }
       } catch (error) {
         console.error('Error processing student data:', error);
@@ -196,8 +176,6 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
   const normalizeStudent = (
     student: StudentData
   ): StudentInSession & { id: number } => {
-    console.log('Normalizing student:', student);
-
     const id = student.id || student.userId || student.studentId || 0;
 
     const name =
@@ -228,20 +206,12 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
       student_sessions,
     };
   };
-  console.log('Processing student data sources');
-
   let sourceStudents: any[] = [];
   if (students && students.length > 0) {
-    console.log(
-      'Using directly provided students array, count:',
-      students.length
-    );
     sourceStudents = students;
   } else if (session && session.students && session.students.length > 0) {
-    console.log('Using students from session, count:', session.students.length);
     sourceStudents = session.students;
   } else {
-    console.log('No students available in any source');
     sourceStudents = [];
   }
 
@@ -276,8 +246,6 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
       };
     }
   });
-
-  console.log('Normalized students list, count:', studentsList.length);
 
   const hasStudents = studentsList.length > 0;
 
@@ -565,12 +533,8 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
 
     const sound = selectedSounds[studentId];
     if (command === 'PLAY' && sound) {
-      console.log(
-        `Sending PLAY command to student ${studentId} with sound: ${sound}`
-      );
       socketService.emitStudentAudioCommand(studentId, 'PLAY', sound);
     } else {
-      console.log(`Sending STOP command to student ${studentId}`);
       socketService.emitStudentAudioCommand(studentId, 'STOP', '');
     }
   };

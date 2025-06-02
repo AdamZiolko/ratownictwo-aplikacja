@@ -13,8 +13,6 @@ class NetworkDiagnosticsService {
   private lastCheck: NetworkDiagnostics | null = null;
 
   async performDiagnostics(): Promise<NetworkDiagnostics> {
-    console.log('🔍 Performing network diagnostics...');
-
     const diagnostics: NetworkDiagnostics = {
       isConnected: false,
       latency: null,
@@ -43,7 +41,6 @@ class NetworkDiagnosticsService {
       if (response.ok) {
         diagnostics.isConnected = true;
         diagnostics.serverReachable = true;
-        console.log(`✅ Network OK - Latency: ${diagnostics.latency}ms`);
       } else {
         diagnostics.error = `Server returned status: ${response.status}`;
         console.warn(`⚠️ Server issue: ${diagnostics.error}`);
@@ -90,27 +87,14 @@ class NetworkDiagnosticsService {
   }
 
   logNetworkInfo(): void {
-    console.log('📱 Network Configuration:');
-    console.log(`- Platform: ${Platform.OS}`);
-    console.log(`- API URL: ${API_URL}`);
-
     if (this.lastCheck) {
-      console.log(`- Last Check: ${this.lastCheck.timestamp.toISOString()}`);
-      console.log(`- Connected: ${this.lastCheck.isConnected ? '✅' : '❌'}`);
-      console.log(
-        `- Server Reachable: ${this.lastCheck.serverReachable ? '✅' : '❌'}`
-      );
-      console.log(`- Latency: ${this.lastCheck.latency || 'N/A'}ms`);
       if (this.lastCheck.error) {
-        console.log(`- Error: ${this.lastCheck.error}`);
       }
     }
   }
 
   async testAudioStreaming(): Promise<boolean> {
     try {
-      console.log('🎵 Testing audio streaming endpoint...');
-
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
 
@@ -122,7 +106,6 @@ class NetworkDiagnosticsService {
       clearTimeout(timeoutId);
 
       if (response.ok) {
-        console.log('✅ API health endpoint accessible');
         return true;
       } else {
         console.warn(`⚠️ Audio streaming failed: ${response.status}`);

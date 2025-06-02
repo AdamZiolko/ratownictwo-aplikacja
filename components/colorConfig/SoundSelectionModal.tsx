@@ -30,14 +30,7 @@ const SoundSelectionModal: React.FC<SoundSelectionModalProps> = ({
   onSoundPreview,
   onClose,
 }) => {
-  React.useEffect(() => {
-    console.log('SoundSelectionModal: Visibility changed to:', visible);
-    console.log('SoundSelectionModal: Platform:', Platform.OS);
-    console.log('SoundSelectionModal: Screen dimensions:', {
-      height: screenHeight,
-      width: screenWidth,
-    });
-  }, [visible]);
+  React.useEffect(() => {}, [visible]);
   return (
     <Dialog
       visible={visible}

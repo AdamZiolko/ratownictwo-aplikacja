@@ -35,7 +35,6 @@ export class EkgDataAdapter {
 
   public static initialize(): void {
     EkgDataAdapter.getInstance();
-    console.log('EKG data adapter initialized');
   }
 
   public static getDataForType(ekgType: EkgType): EkgData {

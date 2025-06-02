@@ -107,7 +107,6 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
   const loadTemplates = async () => {
     try {
       const response = await apiService.get('checklist/templates');
-      console.log('Odpowiedź z /checklist/templates:', response);
       setTemplates(response);
     } catch (error) {
       console.error('Błąd ładowania szablonów:', error);
@@ -145,7 +144,6 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
         name: name.trim(),
         tasks: testState.tasks.map(t => ({ text: t.text })),
       });
-      console.log('Odpowiedź createOrUpdateTemplate:', response);
       Alert.alert('Sukces', 'Szablon został zapisany lub nadpisany');
       setTemplateNameInput('');
       setShowTemplateNameDialog(false);
@@ -178,7 +176,6 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
         })),
         sessionId: sessionId,
       });
-      console.log('Odpowiedź z test-results:', response);
       Alert.alert('Sukces', 'Wyniki testu zostały zapisane');
     } catch (error) {
       console.error('Pełny błąd zapisu:', error);

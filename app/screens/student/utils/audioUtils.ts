@@ -20,7 +20,6 @@ export const checkNetworkConnectivity = async (): Promise<boolean> => {
     clearTimeout(timeoutId);
 
     if (response.ok) {
-      console.log('✅ Network connectivity confirmed');
       return true;
     } else {
       console.warn(`⚠️ Server responded with status: ${response.status}`);
@@ -42,11 +41,8 @@ export const loadAudioFromServer = async (
   let serverAudioId: string;
 
   try {
-    console.log(`🌐 Loading audio from server: ${audioIdOrName}`);
-
     if (isAudioId) {
       serverAudioId = audioIdOrName;
-      console.log(`📋 Using direct audio ID: ${serverAudioId}`);
     } else {
       serverAudioId = audioFileMap[audioIdOrName];
       if (!serverAudioId) {
@@ -55,15 +51,10 @@ export const loadAudioFromServer = async (
         );
         return await loadAudioFromLocal(audioIdOrName);
       }
-      console.log(
-        `🗺️ Mapped sound name "${audioIdOrName}" to server ID: ${serverAudioId}`
-      );
     }
 
     const cacheKey = `server_${serverAudioId}`;
     if (audioCache[cacheKey]) {
-      console.log(`🔄 Using cached Audio.Sound object for: ${audioIdOrName}`);
-
       try {
         const status = await audioCache[cacheKey].getStatusAsync();
         if (status.isLoaded) {
@@ -88,7 +79,6 @@ export const loadAudioFromServer = async (
 
     let response;
     try {
-      console.log(`🌐 Attempting to stream audio ID: ${serverAudioId}`);
       response = await audioApiService.streamAudio(serverAudioId);
     } catch (networkError) {
       console.warn(`⚠️ Network error for ${audioIdOrName}:`, networkError);
@@ -108,9 +98,7 @@ export const loadAudioFromServer = async (
 
         const fileInfo = await FileSystem.getInfoAsync(localPath);
         if (fileInfo.exists) {
-          console.log(`📁 Using cached audio: ${audioIdOrName}`);
         } else {
-          console.log(`⬇️ Downloading audio ${serverAudioId} for playback...`);
           const downloadResponse = await audioApiService.streamAudio(
             serverAudioId
           );
@@ -120,10 +108,6 @@ export const loadAudioFromServer = async (
           }
 
           const arrayBuffer = await downloadResponse.arrayBuffer();
-          console.log(
-            `📦 Downloaded ${arrayBuffer.byteLength} bytes for audio: ${serverAudioId}`
-          );
-
           const uint8Array = new Uint8Array(arrayBuffer);
           let binaryString = '';
           for (let i = 0; i < uint8Array.length; i++) {
@@ -134,8 +118,6 @@ export const loadAudioFromServer = async (
           await FileSystem.writeAsStringAsync(localPath, base64String, {
             encoding: FileSystem.EncodingType.Base64,
           });
-
-          console.log(`💾 Audio cached to: ${localPath}`);
         }
 
         const { sound } = await Audio.Sound.createAsync(
@@ -150,7 +132,6 @@ export const loadAudioFromServer = async (
         const cacheKey = `server_${serverAudioId}`;
         audioCache[cacheKey] = sound;
 
-        console.log(`✅ Server audio downloaded and loaded: ${audioIdOrName}`);
         return sound;
       } catch (error) {
         console.warn(`❌ Mobile download failed for ${audioIdOrName}:`, error);
@@ -169,7 +150,6 @@ export const loadAudioFromServer = async (
         const cacheKey = `server_${serverAudioId}`;
         audioCache[cacheKey] = sound;
 
-        console.log(`✅ Server audio loaded (web): ${audioIdOrName}`);
         return sound;
       } catch (error) {
         console.warn(
@@ -191,8 +171,6 @@ export const loadAudioFromLocal = async (
   try {
     const cacheKey = `local_${soundName}`;
     if (audioCache[cacheKey]) {
-      console.log(`🔄 Using cached Audio.Sound object for local: ${soundName}`);
-
       try {
         const status = await audioCache[cacheKey].getStatusAsync();
         if (status.isLoaded) {
@@ -235,7 +213,6 @@ export const loadAudioFromLocal = async (
 
     audioCache[cacheKey] = sound;
 
-    console.log(`✅ Local audio loaded: ${soundName}`);
     return sound;
   } catch (error) {
     console.error(`❌ Local audio loading failed for ${soundName}:`, error);
@@ -249,10 +226,6 @@ export const loadAudioWithRetry = async (
 ): Promise<Audio.Sound | null> => {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      console.log(
-        `🔄 Audio loading attempt ${attempt}/${maxRetries} for: ${soundName}`
-      );
-
       const sound = await loadAudioFromLocal(soundName);
       if (sound) {
         return sound;
@@ -264,7 +237,6 @@ export const loadAudioWithRetry = async (
       }
 
       const delay = Math.pow(2, attempt - 1) * 1000;
-      console.log(`⏳ Waiting ${delay}ms before retry...`);
       await new Promise(resolve => setTimeout(resolve, delay));
     } catch (error) {
       console.warn(`⚠️ Attempt ${attempt} failed for ${soundName}:`, error);
@@ -280,8 +252,6 @@ export const loadAudioWithRetry = async (
 };
 
 export const clearAudioCache = async () => {
-  console.log('🧹 Clearing audio cache...');
-
   for (const key in audioCache) {
     try {
       const sound = audioCache[key];
@@ -298,54 +268,30 @@ export const clearAudioCache = async () => {
   Object.keys(audioCache).forEach(key => {
     delete audioCache[key];
   });
-
-  console.log('✅ Audio cache cleared');
 };
 
 export const debugMobileAudio = async () => {
   if (Platform.OS === 'web') return;
 
-  console.log('🔍 Mobile Audio Diagnostics:');
-  console.log(`📱 Platform: ${Platform.OS} ${Platform.Version}`);
-  console.log(`🌐 API URL: ${API_URL}`);
-  console.log(`🔊 Audio cache size: ${Object.keys(audioCache).length} sounds`);
-
   try {
-    console.log('🌐 Testing network connectivity...');
     const networkOk = await checkNetworkConnectivity();
-    console.log(
-      `🌐 Network Status: ${networkOk ? 'Connected ✅' : 'Failed ❌'}`
-    );
-
     const { status } = await Audio.requestPermissionsAsync();
-    console.log(`📱 Audio Permission Status: ${status}`);
-
     const isEnabled = await Audio.setIsEnabledAsync(true);
-    console.log(`🔊 Audio Enabled: ${isEnabled}`);
-
     const testSoundName = 'Adult/Male/Moaning.wav';
     if (soundFiles[testSoundName]) {
-      console.log('🎵 Testing local audio loading...');
       try {
         const { sound: testSound } = await Audio.Sound.createAsync(
           soundFiles[testSoundName],
           { shouldPlay: false }
         );
-        console.log('✅ Local audio test successful');
         await testSound.unloadAsync();
       } catch (testError) {
         console.error('❌ Local audio test failed:', testError);
       }
     }
 
-    console.log(
-      '🌐 Server audio testing skipped - using local audio files only'
-    );
-
     if (Platform.OS === 'android') {
-      console.log('🤖 Android Audio Check Complete');
     } else if (Platform.OS === 'ios') {
-      console.log('🍎 iOS Audio Check Complete');
     }
   } catch (error) {
     console.error('❌ Mobile Audio Diagnostics Failed:', error);

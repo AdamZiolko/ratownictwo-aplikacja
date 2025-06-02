@@ -23,7 +23,6 @@ export const useAudioPlayer = () => {
             playThroughEarpieceAndroid: false,
           });
         }
-        console.log('🎵 Audio system initialized for examiner dashboard');
       } catch (err) {
         console.error('Failed to configure audio:', err);
       }
@@ -68,10 +67,8 @@ export const useAudioPlayer = () => {
       let sound: Audio.Sound | null = null;
 
       if (isServerAudio && audioId) {
-        console.log(`🔊 Playing server audio: ${audioId}`);
         sound = await loadAudioFromServer(audioId);
       } else {
-        console.log(`🔊 Playing local sound: ${soundName}`);
         sound = await loadAudioFromLocal(soundName);
       }
 
@@ -87,7 +84,6 @@ export const useAudioPlayer = () => {
         });
 
         await sound.playAsync();
-        console.log(`✅ Audio playing: ${soundKey}`);
       } else {
         console.warn(`Failed to load audio: ${soundKey}`);
         throw new Error('Nie udało się załadować pliku audio');

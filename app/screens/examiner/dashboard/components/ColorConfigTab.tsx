@@ -104,10 +104,6 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
       colorConfigs: ColorConfig[];
     }) => {
       if (data.sessionId === sessionId) {
-        console.log(
-          '🔄 Color config list updated in examiner dashboard:',
-          data
-        );
         setColorConfigs(data.colorConfigs);
       }
     };
@@ -526,14 +522,7 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
           }}
           onSave={handleSaveConfig}
           onSoundSelection={() => {
-            console.log('ColorConfigTab: Sound selection triggered');
-            console.log(
-              'Current soundSelectionVisible state:',
-              soundSelectionVisible
-            );
-            console.log('Platform:', Platform.OS);
             setSoundSelectionVisible(true);
-            console.log('Sound selection modal visibility set to true');
           }}
           onModalDataChange={data =>
             setModalData(prev => ({ ...prev, ...data }))

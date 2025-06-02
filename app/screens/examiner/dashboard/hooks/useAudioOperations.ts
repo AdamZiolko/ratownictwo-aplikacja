@@ -262,7 +262,6 @@ export const useAudioOperations = () => {
             if (fileInfo.exists) {
               soundUri = localPath;
             } else {
-              console.log(`Downloading audio ${audio.id} for playback...`);
               const streamResponse = await audioApiService.streamAudio(
                 audio.id
               );
@@ -284,7 +283,6 @@ export const useAudioOperations = () => {
               });
 
               soundUri = localPath;
-              console.log(`Audio ${audio.id} downloaded and cached locally`);
             }
           }
 

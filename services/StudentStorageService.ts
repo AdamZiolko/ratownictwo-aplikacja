@@ -13,7 +13,6 @@ export class StudentStorageService {
     try {
       const jsonValue = JSON.stringify(student);
       await AsyncStorage.setItem(STUDENT_DATA_KEY, jsonValue);
-      console.log('Student data saved successfully');
     } catch (error) {
       console.error('Error saving student data:', error);
       throw error;
@@ -33,7 +32,6 @@ export class StudentStorageService {
   static async clearStudent(): Promise<void> {
     try {
       await AsyncStorage.removeItem(STUDENT_DATA_KEY);
-      console.log('Student data cleared successfully');
     } catch (error) {
       console.error('Error clearing student data:', error);
       throw error;

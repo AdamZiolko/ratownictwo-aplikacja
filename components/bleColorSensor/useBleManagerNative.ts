@@ -50,7 +50,6 @@ export const useBleManager = (
       return;
     }
     const stateSub = manager.onStateChange(state => {
-      console.log('[BLE] State changed:', state);
       setBleState(state);
     }, true);
     return () => stateSub.remove();
@@ -61,14 +60,8 @@ export const useBleManager = (
       return;
     }
 
-    console.log(`[BLE] React autoReconnect state changed to: ${autoReconnect}`);
-
     if (!autoReconnect) {
       GLOBAL_AUTO_RECONNECT_ENABLED = false;
-      console.log(
-        '[BLE] Global auto-reconnect flag disabled due to React state change'
-      );
-
       try {
         manager.stopDeviceScan();
       } catch (e) {
@@ -76,21 +69,13 @@ export const useBleManager = (
       }
 
       setIsReconnecting(true);
-      console.log(
-        '[BLE] Setting reconnection flag to true to prevent auto-reconnect'
-      );
     } else {
       GLOBAL_AUTO_RECONNECT_ENABLED = true;
-      console.log(
-        '[BLE] Global auto-reconnect flag enabled due to React state change'
-      );
     }
   }, [autoReconnect, manager]);
 
   useEffect(() => {
     return () => {
-      console.log('[BLE] Cleanup on unmount');
-
       if (colorTimeoutRef.current) {
         clearTimeout(colorTimeoutRef.current);
         colorTimeoutRef.current = null;
@@ -105,8 +90,6 @@ export const useBleManager = (
       return;
     }
 
-    console.log('[BLE] Cleaning up BLE connection');
-
     try {
       if (colorTimeoutRef.current) {
         clearTimeout(colorTimeoutRef.current);
@@ -114,7 +97,6 @@ export const useBleManager = (
       }
 
       try {
-        console.log('[BLE] Stopping device scan...');
         manager.stopDeviceScan();
       } catch (e) {
         console.warn('[BLE] Error stopping device scan:', e);
@@ -122,7 +104,6 @@ export const useBleManager = (
 
       if (sub) {
         try {
-          console.log('[BLE] Removing subscription...');
           sub.remove();
         } catch (e) {
           console.warn('[BLE] Error removing subscription:', e);
@@ -132,7 +113,6 @@ export const useBleManager = (
 
       if (device) {
         try {
-          console.log(`[BLE] Checking if device ${device.id} is connected...`);
           const isConnected = await manager
             .isDeviceConnected(device.id)
             .catch(e => {
@@ -141,9 +121,6 @@ export const useBleManager = (
             });
 
           if (isConnected) {
-            console.log(
-              `[BLE] Cancelling connection to device ${device.id}...`
-            );
             await manager.cancelDeviceConnection(device.id).catch(e => {
               if (
                 !e.message ||
@@ -152,11 +129,7 @@ export const useBleManager = (
                 console.warn('[BLE] Error cancelling device connection:', e);
               }
             });
-            console.log(
-              `[BLE] Successfully disconnected from device ${device.id}`
-            );
           } else {
-            console.log(`[BLE] Device ${device.id} is already disconnected`);
           }
         } catch (e) {
           if (
@@ -170,8 +143,6 @@ export const useBleManager = (
       }
 
       setColor({ r: 0, g: 0, b: 0 });
-
-      console.log('[BLE] Connection cleanup completed successfully');
     } catch (error) {
       console.error('[BLE] Error during cleanup:', error);
     }
@@ -196,21 +167,12 @@ export const useBleManager = (
 
   const scanAndMonitor = async () => {
     if (!manager || Platform.OS === 'web') {
-      console.log('[BLE] BLE not available on this platform');
       setStatus('error');
       setError('BLE not available on this platform');
       return;
     }
 
-    console.log(
-      '[BLE] scanAndMonitor called, global autoReconnect:',
-      GLOBAL_AUTO_RECONNECT_ENABLED,
-      'React autoReconnect:',
-      autoReconnect
-    );
-
     if (isReconnecting) {
-      console.log('[BLE] Reconnection already in progress, skipping');
       return;
     }
 
@@ -220,16 +182,12 @@ export const useBleManager = (
     setIsReconnecting(true);
 
     try {
-      console.log('[BLE] Cleaning up previous connection...');
       await cleanupBleConnection();
 
       setError(null);
       setStatus('scanning');
 
-      console.log('[BLE] Requesting permissions...');
       await requestPermissions();
-
-      console.log('[BLE] Starting scan for devices...');
 
       manager.startDeviceScan(
         null,
@@ -241,7 +199,6 @@ export const useBleManager = (
             setStatus('error');
 
             try {
-              console.log('[BLE] Stopping device scan due to error...');
               manager.stopDeviceScan();
             } catch (e) {
               console.warn('[BLE] Error stopping device scan:', e);
@@ -249,7 +206,6 @@ export const useBleManager = (
 
             setTimeout(() => {
               if (autoReconnect) {
-                console.log('[BLE] Attempting to scan again after error...');
                 setStatus('idle');
                 setIsReconnecting(false);
                 scanAndMonitor();
@@ -260,7 +216,6 @@ export const useBleManager = (
           }
 
           if (!dev) {
-            console.log('[BLE] No device found in scan callback');
             return;
           }
 
@@ -272,16 +227,7 @@ export const useBleManager = (
           );
 
           if (nameMatches || hasService) {
-            console.log(
-              `[BLE] Found matching device: ${
-                dev.name || dev.localName || 'unnamed'
-              } (${dev.id})`
-            );
-
             try {
-              console.log(
-                '[BLE] Stopping device scan after finding target device...'
-              );
               manager.stopDeviceScan();
             } catch (e) {
               console.warn('[BLE] Error stopping device scan:', e);
@@ -290,27 +236,15 @@ export const useBleManager = (
             const connectWithRetry = async (device: Device, maxRetries = 3) => {
               for (let retries = 0; retries < maxRetries; retries++) {
                 try {
-                  console.log(
-                    `[BLE] Connecting to device, attempt ${
-                      retries + 1
-                    }/${maxRetries}...`
-                  );
-
                   const isConnected = await manager
                     .isDeviceConnected(device.id)
                     .catch(() => false);
 
                   if (isConnected) {
-                    console.log(
-                      `[BLE] Device ${device.id} is already connected`
-                    );
                     return device;
                   } else {
                     const connectedDevice = await manager.connectToDevice(
                       device.id
-                    );
-                    console.log(
-                      `[BLE] Connection successful on attempt ${retries + 1}`
                     );
                     return connectedDevice;
                   }
@@ -328,7 +262,6 @@ export const useBleManager = (
 
             connectWithRetry(dev)
               .then(d => {
-                console.log('[BLE] Successfully connected to device');
                 setDevice(d);
                 setStatus('connected');
 
@@ -341,10 +274,6 @@ export const useBleManager = (
                     !error.message ||
                     !error.message.includes('Operation was cancelled')
                   ) {
-                    console.log(
-                      `Device ${disconnectedDevice.id} was disconnected`,
-                      error
-                    );
                   }
 
                   if (disconnectedDevice.id === d.id) {
@@ -359,15 +288,8 @@ export const useBleManager = (
                     }
 
                     if (GLOBAL_AUTO_RECONNECT_ENABLED) {
-                      console.log(
-                        '[BLE] Global auto-reconnect flag is enabled, scheduling reconnect'
-                      );
-
                       setTimeout(() => {
                         if (GLOBAL_AUTO_RECONNECT_ENABLED && !isReconnecting) {
-                          console.log(
-                            '[BLE] Global auto-reconnect flag is still enabled, attempting to reconnect...'
-                          );
                           setIsReconnecting(false);
                           scanAndMonitor();
                         }
@@ -382,8 +304,6 @@ export const useBleManager = (
               })
               .then(d => {
                 if (!d) return;
-                console.log('[BLE] Discovered services, start monitoring');
-
                 const subscription = d.monitorCharacteristicForService(
                   BLE_CONFIG.SERVICE_UUID,
                   BLE_CONFIG.CHARACTERISTIC_UUID,
@@ -406,19 +326,10 @@ export const useBleManager = (
                     try {
                       const rawData = atob(characteristic.value);
 
-                      console.log('[BLE] 📦 Raw data received:');
-                      console.log(
-                        `[BLE]   - Base64 value: ${characteristic.value}`
-                      );
-                      console.log(
-                        `[BLE]   - Raw data length: ${rawData.length} bytes`
-                      );
                       const bytes = [];
                       for (let i = 0; i < rawData.length; i++) {
                         bytes.push(rawData.charCodeAt(i));
                       }
-                      console.log(`[BLE]   - Raw bytes: [${bytes.join(', ')}]`);
-
                       if (rawData.length >= 6) {
                         const r =
                           (rawData.charCodeAt(0) << 8) + rawData.charCodeAt(1);
@@ -427,28 +338,7 @@ export const useBleManager = (
                         const b =
                           (rawData.charCodeAt(4) << 8) + rawData.charCodeAt(5);
 
-                        console.log('[BLE] 🎨 Raw RGB values parsed:');
-                        console.log(
-                          `[BLE]   - R: ${r} (bytes: ${rawData.charCodeAt(
-                            0
-                          )}, ${rawData.charCodeAt(1)})`
-                        );
-                        console.log(
-                          `[BLE]   - G: ${g} (bytes: ${rawData.charCodeAt(
-                            2
-                          )}, ${rawData.charCodeAt(3)})`
-                        );
-                        console.log(
-                          `[BLE]   - B: ${b} (bytes: ${rawData.charCodeAt(
-                            4
-                          )}, ${rawData.charCodeAt(5)})`
-                        );
-
                         if (r === 1000 && g === 1000 && b === 1000) {
-                          console.log(
-                            '[BLE] ⚠️ Warning: All RGB values are exactly 1000 - possible sensor issue'
-                          );
-
                           return;
                         }
 
@@ -457,13 +347,6 @@ export const useBleManager = (
                           Math.abs(r - b) < 10 &&
                           Math.abs(g - b) < 10;
                         if (isAllSimilar && r > 400 && r < 600) {
-                          console.log(
-                            '[BLE] ⚠️ Warning: All RGB values are similar and in mid-range - possible sensor issue'
-                          );
-                          console.log(
-                            `[BLE]   - Values: R:${r}, G:${g}, B:${b}`
-                          );
-
                           return;
                         }
 
@@ -471,53 +354,22 @@ export const useBleManager = (
                         const filteredG = g < 2 ? 0 : g;
                         const filteredB = b < 2 ? 0 : b;
 
-                        console.log('[BLE] 🔧 After noise filtering:');
-                        console.log(
-                          `[BLE]   - R: ${r} -> ${filteredR} ${
-                            r !== filteredR ? '(filtered)' : ''
-                          }`
-                        );
-                        console.log(
-                          `[BLE]   - G: ${g} -> ${filteredG} ${
-                            g !== filteredG ? '(filtered)' : ''
-                          }`
-                        );
-                        console.log(
-                          `[BLE]   - B: ${b} -> ${filteredB} ${
-                            b !== filteredB ? '(filtered)' : ''
-                          }`
-                        );
-
                         const newColor = {
                           r: filteredR,
                           g: filteredG,
                           b: filteredB,
                         };
-                        console.log(
-                          '[BLE] ✅ Final parsed RGB color:',
-                          newColor
-                        );
-
                         const maxValidValue = 65535;
                         if (
                           filteredR > maxValidValue ||
                           filteredG > maxValidValue ||
                           filteredB > maxValidValue
                         ) {
-                          console.log(
-                            '[BLE] ❌ Invalid color values detected, ignoring'
-                          );
-                          console.log(
-                            `[BLE]   - Max valid: ${maxValidValue}, Got: R:${filteredR}, G:${filteredG}, B:${filteredB}`
-                          );
                           return;
                         }
 
                         const sumRGB = filteredR + filteredG + filteredB;
                         if (sumRGB < COLOR_RATIO_THRESHOLDS.MIN_BRIGHTNESS) {
-                          console.log(
-                            '[BLE] Color brightness too low, ignoring'
-                          );
                           return;
                         }
 
@@ -530,21 +382,11 @@ export const useBleManager = (
 
                         colorTimeoutRef.current = setTimeout(async () => {
                           if (Date.now() - lastColorUpdate > 1000) {
-                            console.log(
-                              '[BLE] No color updates for 1 second, resetting'
-                            );
                             setColor({ r: 0, g: 0, b: 0 });
                           }
                         }, 1000);
-                        console.log(
-                          '[BLE] 🚀 Calling onColorUpdate callback with color:',
-                          newColor
-                        );
                         await onColorUpdate(newColor);
                       } else {
-                        console.log(
-                          `[BLE] ❌ Insufficient data received: ${rawData.length} bytes (expected at least 6)`
-                        );
                       }
                     } catch (error) {
                       console.error(
@@ -566,9 +408,6 @@ export const useBleManager = (
                 if (autoReconnect) {
                   setTimeout(() => {
                     if (autoReconnect && !isReconnecting) {
-                      console.log(
-                        '[BLE] Attempting to reconnect after error...'
-                      );
                       setStatus('idle');
                       setIsReconnecting(false);
                       scanAndMonitor();
@@ -586,7 +425,6 @@ export const useBleManager = (
     } finally {
       setTimeout(() => {
         if (GLOBAL_AUTO_RECONNECT_ENABLED) {
-          console.log('[BLE] Resetting reconnection flag after timeout');
           setIsReconnecting(false);
         }
       }, 2000);
@@ -595,7 +433,6 @@ export const useBleManager = (
 
   const disconnectDevice = async () => {
     if (!manager || Platform.OS === 'web') {
-      console.log('[BLE] BLE not available on this platform');
       return;
     }
 
@@ -605,7 +442,6 @@ export const useBleManager = (
       setIsReconnecting(true);
 
       try {
-        console.log('[BLE] Stopping device scan...');
         manager.stopDeviceScan();
       } catch (e) {
         console.warn('[BLE] Error stopping device scan:', e);
@@ -613,7 +449,6 @@ export const useBleManager = (
 
       if (sub) {
         try {
-          console.log('[BLE] Removing subscription...');
           sub.remove();
         } catch (e) {
           console.warn('[BLE] Error removing subscription:', e);
@@ -623,7 +458,6 @@ export const useBleManager = (
 
       if (device) {
         try {
-          console.log(`[BLE] Checking if device ${device.id} is connected...`);
           const isConnected = await manager
             .isDeviceConnected(device.id)
             .catch(() => false);
@@ -636,9 +470,6 @@ export const useBleManager = (
                 console.warn('[BLE] Error cancelling device connection:', e);
               }
             });
-            console.log(
-              `[BLE] Successfully disconnected from device ${device.id}`
-            );
           }
         } catch (e) {
           if (
@@ -653,8 +484,6 @@ export const useBleManager = (
 
       setStatus('idle');
       setError(null);
-
-      console.log('[BLE] Manual disconnect complete');
 
       setTimeout(() => {
         setIsReconnecting(false);
@@ -676,7 +505,6 @@ export const useBleManager = (
 
   const startConnection = () => {
     if (!manager || Platform.OS === 'web') {
-      console.log('[BLE] BLE not available on this platform');
       setStatus('error');
       setError('BLE not available on this platform');
       return;

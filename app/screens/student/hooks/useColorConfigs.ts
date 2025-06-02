@@ -46,7 +46,6 @@ export const useColorConfigs = ({
       sessionId: string;
       colorConfigs: ColorConfig[];
     }) => {
-      console.log('🔄 Color config list updated via WebSocket:', data);
       setColorConfigs(data.colorConfigs);
     };
 

@@ -40,7 +40,6 @@ export const useColorSounds = (): UseColorSoundsReturn => {
           shouldDuckAndroid: true,
           playThroughEarpieceAndroid: false,
         });
-        console.log('🎵 Audio system initialized for color sounds');
       } catch (err) {
         console.error('Failed to configure audio for color sounds:', err);
       }
@@ -65,8 +64,6 @@ export const useColorSounds = (): UseColorSoundsReturn => {
   }, [playingSound]);
   const stopAllAudio = async () => {
     const stopId = Date.now().toString();
-    console.log(`🛑 [${stopId}] Stopping all audio`);
-
     const soundToStop = currentSoundRef.current || currentSound;
     const soundName = currentSoundKeyRef.current || playingSound;
     const colorName = playingColor;
@@ -82,18 +79,10 @@ export const useColorSounds = (): UseColorSoundsReturn => {
 
     try {
       if (soundToStop) {
-        console.log(
-          `🛑 [${stopId}] Stopping sound: ${soundName} for color: ${colorName}`
-        );
-
         try {
           const status = await soundToStop.getStatusAsync();
 
           if ('isLoaded' in status && status.isLoaded) {
-            console.log(
-              `🔄 [${stopId}] Sound is loaded, proceeding with stop sequence`
-            );
-
             await soundToStop
               .setIsLoopingAsync(false)
               .catch(e =>
@@ -111,15 +100,7 @@ export const useColorSounds = (): UseColorSoundsReturn => {
               .catch(e =>
                 console.warn(`⚠️ [${stopId}] Error unloading sound:`, e)
               );
-
-            console.log(
-              `✅ [${stopId}] Successfully stopped and unloaded sound: ${soundName}`
-            );
           } else {
-            console.log(
-              `⚠️ [${stopId}] Sound was not loaded, skipping stop operations`
-            );
-
             await soundToStop.unloadAsync().catch(() => {});
           }
         } catch (stopError) {
@@ -139,12 +120,7 @@ export const useColorSounds = (): UseColorSoundsReturn => {
           } catch {}
         }
       } else {
-        console.log(
-          `ℹ️ [${stopId}] No sound currently playing, nothing to stop`
-        );
       }
-
-      console.log(`✅ [${stopId}] Audio stop operation completed`);
     } catch (error) {
       console.error(`❌ [${stopId}] Unexpected error in stopAllAudio:`, error);
     } finally {
@@ -156,8 +132,6 @@ export const useColorSounds = (): UseColorSoundsReturn => {
 
   const playSound = async (config: ColorConfig) => {
     const playId = Date.now().toString();
-    console.log(`🎯 [${playId}] Starting playSound for ${config.color}`);
-
     try {
       const soundKey = config.serverAudioId
         ? `server_${config.serverAudioId}`
@@ -177,9 +151,6 @@ export const useColorSounds = (): UseColorSoundsReturn => {
         try {
           const status = await currentSoundInstance.getStatusAsync();
           if (status.isLoaded && 'isPlaying' in status && status.isPlaying) {
-            console.log(
-              `🔊 [${playId}] A sound (${currentSoundKeyRef.current}) is already playing, updating color reference to ${config.color}`
-            );
             setPlayingColor(config.color);
             setIsLoadingAudio(false);
             return;
@@ -193,25 +164,14 @@ export const useColorSounds = (): UseColorSoundsReturn => {
           await stopAllAudio();
         }
       } else if (playingSound || currentSound) {
-        console.log(`🧹 [${playId}] Cleaning up inconsistent audio state`);
         await stopAllAudio();
       }
-
-      console.log(
-        `🔍 [${playId}] Verified no sounds are currently playing, proceeding with ${soundKey}`
-      );
 
       let sound: Audio.Sound | null = null;
 
       if (config.serverAudioId) {
-        console.log(
-          `🔊 [${playId}] Loading server audio for color: ${config.color} (looping: ${config.isLooping})`
-        );
         sound = await loadAudioFromServer(config.serverAudioId);
       } else if (config.soundName) {
-        console.log(
-          `🔊 [${playId}] Loading local sound for color: ${config.color} (looping: ${config.isLooping})`
-        );
         sound = await loadAudioFromLocal(config.soundName);
       }
 
@@ -224,9 +184,6 @@ export const useColorSounds = (): UseColorSoundsReturn => {
       }
 
       if (currentSoundRef.current || currentSoundKeyRef.current) {
-        console.log(
-          `⚠️ [${playId}] Another sound started playing while loading, aborting`
-        );
         await sound
           .unloadAsync()
           .catch(e => console.warn('Error unloading aborted sound:', e));
@@ -235,9 +192,6 @@ export const useColorSounds = (): UseColorSoundsReturn => {
       }
 
       if (playingSound === soundKey) {
-        console.log(
-          `⚠️ [${playId}] This sound is already in state as playing, updating color reference only`
-        );
         setPlayingColor(config.color);
         await sound.unloadAsync().catch(() => {});
         setIsLoadingAudio(false);
@@ -265,17 +219,10 @@ export const useColorSounds = (): UseColorSoundsReturn => {
           const now = Date.now();
           const soundPlayTime = now - soundStartTimeRef.current;
           if (soundPlayTime >= 500 && isPlayingToCompletionRef.current) {
-            console.log(
-              `⏱️ [${playId}] Sound has been playing for ${soundPlayTime}ms, allowing new sounds`
-            );
             isPlayingToCompletionRef.current = false;
           }
 
           if (status.didJustFinish && !config.isLooping) {
-            console.log(
-              `✅ [${playId}] Audio finished for color: ${config.color}`
-            );
-
             if (currentSoundKeyRef.current === soundKey) {
               setPlayingSound(null);
               setPlayingColor(null);
@@ -305,7 +252,6 @@ export const useColorSounds = (): UseColorSoundsReturn => {
       });
 
       await sound.playAsync();
-      console.log(`✅ [${playId}] Audio playing for color: ${config.color}`);
     } catch (error) {
       console.error(`❌ [${playId}] Error playing sound for color:`, error);
 
@@ -318,16 +264,11 @@ export const useColorSounds = (): UseColorSoundsReturn => {
       soundStartTimeRef.current = 0;
     } finally {
       setIsLoadingAudio(false);
-      console.log(
-        `🏁 [${playId}] Completed playSound process for ${config.color}`
-      );
     }
   };
 
   const playColorSound = useCallback(
     async (config: ColorConfig) => {
-      console.log(`🎨 Request to play sound for color: ${config.color}`);
-
       const soundKey = config.serverAudioId
         ? `server_${config.serverAudioId}`
         : config.soundName || '';
@@ -340,14 +281,7 @@ export const useColorSounds = (): UseColorSoundsReturn => {
       const now = Date.now();
       const timeSinceLastPlay = now - lastPlayTimeRef.current;
       if (timeSinceLastPlay < 300) {
-        console.log(
-          `🛑 Debouncing sound request for ${config.color}, too soon after last request (${timeSinceLastPlay}ms)`
-        );
-
         if (playingColor !== config.color) {
-          console.log(
-            `🔄 Updating playing color from ${playingColor} to ${config.color} during debounce`
-          );
           setPlayingColor(config.color);
         }
         return;
@@ -356,14 +290,8 @@ export const useColorSounds = (): UseColorSoundsReturn => {
       if (isPlayingRef.current) {
         const timeSinceLastPlayStart = now - lastPlayTimeRef.current;
         if (timeSinceLastPlayStart > 3000) {
-          console.log(
-            `🔄 Safety check: isPlayingRef has been true for ${timeSinceLastPlayStart}ms, resetting it`
-          );
           isPlayingRef.current = false;
         } else {
-          console.log(
-            `🛑 Already in process of playing a sound, ignoring request for ${config.color}`
-          );
           return;
         }
       }
@@ -371,14 +299,8 @@ export const useColorSounds = (): UseColorSoundsReturn => {
       if (isPlayingToCompletionRef.current) {
         const timeSinceSoundStart = now - soundStartTimeRef.current;
         if (timeSinceSoundStart > 5000) {
-          console.log(
-            `🔄 Safety check: Sound has been playing for ${timeSinceSoundStart}ms, resetting completion flag`
-          );
           isPlayingToCompletionRef.current = false;
         } else {
-          console.log(
-            `🛑 A sound is currently playing to completion, ignoring request for ${config.color}`
-          );
           return;
         }
       }
@@ -389,10 +311,6 @@ export const useColorSounds = (): UseColorSoundsReturn => {
 
           if (status.isLoaded) {
             if (!('isPlaying' in status) || !status.isPlaying) {
-              console.log(
-                `🔄 Safety check: Sound not playing but flags still set, resetting flags`
-              );
-
               await currentSoundRef.current.unloadAsync().catch(() => {});
               currentSoundRef.current = null;
               currentSoundKeyRef.current = null;
@@ -401,9 +319,6 @@ export const useColorSounds = (): UseColorSoundsReturn => {
               isPlayingToCompletionRef.current = false;
             }
           } else {
-            console.log(
-              `🔄 Safety check: Sound status is an error, resetting flags`
-            );
             await currentSoundRef.current.unloadAsync().catch(() => {});
             currentSoundRef.current = null;
             currentSoundKeyRef.current = null;
@@ -425,10 +340,6 @@ export const useColorSounds = (): UseColorSoundsReturn => {
       }
 
       if (playingColor === config.color) {
-        console.log(
-          `🎵 Sound already playing for color: ${config.color}, skipping`
-        );
-
         const currentSoundInstance = currentSoundRef.current;
         if (currentSoundInstance) {
           try {
@@ -439,14 +350,8 @@ export const useColorSounds = (): UseColorSoundsReturn => {
               'isPlaying' in status &&
               status.isPlaying
             ) {
-              console.log(
-                `✅ Verified sound is actually playing for color: ${config.color}`
-              );
               return;
             } else {
-              console.log(
-                `⚠️ Sound for ${config.color} is in state but not playing, will restart it`
-              );
             }
           } catch (error) {
             console.warn(
@@ -455,9 +360,6 @@ export const useColorSounds = (): UseColorSoundsReturn => {
             );
           }
         } else {
-          console.log(
-            `⚠️ Sound for ${config.color} is marked as playing but no sound instance found, will restart it`
-          );
         }
       }
 
@@ -467,20 +369,14 @@ export const useColorSounds = (): UseColorSoundsReturn => {
           const status = await currentSoundInstance.getStatusAsync();
           if (status.isLoaded) {
             if ('isPlaying' in status && status.isPlaying) {
-              console.log(
-                `🎵 Sound ${soundKey} already playing, updating playingColor to: ${config.color}`
-              );
-
               setPlayingColor(config.color);
               return;
             } else {
-              console.log(`🔄 Found non-playing sound in state, replacing it`);
               await currentSoundInstance.unloadAsync().catch(() => {});
               currentSoundRef.current = null;
               currentSoundKeyRef.current = null;
             }
           } else {
-            console.log(`🔄 Sound status is an error, cleaning up`);
             await currentSoundInstance.unloadAsync().catch(() => {});
             currentSoundRef.current = null;
             currentSoundKeyRef.current = null;
@@ -508,8 +404,6 @@ export const useColorSounds = (): UseColorSoundsReturn => {
   );
 
   const stopAllColorSounds = useCallback(async () => {
-    console.log(`🛑 Stopping all color sounds (external call)`);
-
     isPlayingRef.current = false;
     isPlayingToCompletionRef.current = false;
     soundStartTimeRef.current = 0;

@@ -109,16 +109,8 @@ const ColorConfigModal: React.FC<ColorConfigModalProps> = ({
                 icon="music"
                 size={Platform.OS === 'web' ? 20 : 24}
                 onPress={() => {
-                  console.log(
-                    'Sound selection icon pressed, modalLoading:',
-                    modalLoading,
-                    'isLoadingAudio:',
-                    isLoadingAudio
-                  );
-                  console.log('Platform:', Platform.OS);
                   if (!modalLoading && !isLoadingAudio) {
                     try {
-                      console.log('Calling onSoundSelection from icon...');
                       onSoundSelection();
                     } catch (error) {
                       console.error(
@@ -127,12 +119,6 @@ const ColorConfigModal: React.FC<ColorConfigModalProps> = ({
                       );
                     }
                   } else {
-                    console.log(
-                      'Icon disabled - modalLoading:',
-                      modalLoading,
-                      'isLoadingAudio:',
-                      isLoadingAudio
-                    );
                   }
                 }}
                 disabled={modalLoading || isLoadingAudio}
@@ -142,27 +128,13 @@ const ColorConfigModal: React.FC<ColorConfigModalProps> = ({
           <Button
             mode="outlined"
             onPress={() => {
-              console.log(
-                'Sound selection button pressed, modalLoading:',
-                modalLoading,
-                'isLoadingAudio:',
-                isLoadingAudio
-              );
-              console.log('Platform:', Platform.OS);
               if (!modalLoading && !isLoadingAudio) {
                 try {
-                  console.log('Calling onSoundSelection...');
                   onSoundSelection();
                 } catch (error) {
                   console.error('Error opening sound selection:', error);
                 }
               } else {
-                console.log(
-                  'Button disabled - modalLoading:',
-                  modalLoading,
-                  'isLoadingAudio:',
-                  isLoadingAudio
-                );
               }
             }}
             style={styles.soundSelectionButton}

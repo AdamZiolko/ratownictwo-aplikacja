@@ -112,11 +112,6 @@ export const BluetoothComponent = forwardRef<BluetoothComponentRef>(
                 : d
             )
           );
-          console.log(
-            `Rozłączono urządzenie: ${
-              disconnectedDevice.name || disconnectedDevice.address
-            }`
-          );
         }
       );
 
@@ -152,7 +147,6 @@ export const BluetoothComponent = forwardRef<BluetoothComponentRef>(
     };
     const prepareSounds = async () => {
       if (Platform && Platform.OS === 'web') {
-        console.log('Odtwarzanie dźwięku na Web może nie być wspierane');
         return;
       }
 
@@ -182,7 +176,6 @@ export const BluetoothComponent = forwardRef<BluetoothComponentRef>(
             });
             loadedSounds[soundItem.name] = sound;
             successCount++;
-            console.log(`✅ Loaded sound: ${soundItem.name}`);
           } catch (soundError) {
             failureCount++;
             console.warn(
@@ -193,10 +186,6 @@ export const BluetoothComponent = forwardRef<BluetoothComponentRef>(
         }
 
         setSoundObjects(loadedSounds);
-        console.log(
-          `🎵 Audio preparation complete: ${successCount} loaded, ${failureCount} failed`
-        );
-
         if (failureCount > 0) {
           setError(
             `Załadowano ${successCount}/${sounds.length} dźwięków. ${failureCount} nie udało się załadować.`
@@ -224,17 +213,13 @@ export const BluetoothComponent = forwardRef<BluetoothComponentRef>(
         }
         return [];
       } catch (error) {
-        console.log('Błąd sprawdzania profili:', error);
         return [];
       }
     };
 
     const handlePlaySound = async (soundItem: (typeof sounds)[0]) => {
       try {
-        console.log(`[DEBUG] Rozpoczynam odtwarzanie '${soundItem.name}'`);
-
         if (!soundObjects[soundItem.name]) {
-          console.log('[ERROR] Dźwięk nie został załadowany');
           return;
         }
 
@@ -243,9 +228,6 @@ export const BluetoothComponent = forwardRef<BluetoothComponentRef>(
         );
 
         if (audioDevices.length > 0) {
-          console.log(
-            `[AUDIO] Odtwarzam lokalnie dla ${audioDevices.length} urządzeń`
-          );
           await soundObjects[soundItem.name].replayAsync();
         }
 
@@ -254,20 +236,16 @@ export const BluetoothComponent = forwardRef<BluetoothComponentRef>(
         );
 
         if (sppDevices.length > 0) {
-          console.log(`[SPP] Wysyłam 'PLAY' do ${sppDevices.length} urządzeń`);
           await Promise.all(
             sppDevices.map(async device => {
               try {
                 await BluetoothSerial.writeToDevice(device.address, 'PLAY\n');
-                console.log(`[SPP] Wysłano do ${device.address}`);
               } catch (err) {
                 console.error(`[SPP] Błąd dla ${device.address}:`, err);
               }
             })
           );
         }
-
-        console.log('[SUKCES] Kompletne wykonanie');
       } catch (err) {
         console.error('[KRYTYCZNY BŁĄD]', err);
       }
@@ -281,9 +259,7 @@ export const BluetoothComponent = forwardRef<BluetoothComponentRef>(
 
       try {
         await soundObjects[soundName].replayAsync();
-        console.log(`Dźwięk ${soundName} odtworzony`);
       } catch (err) {
-        console.log(`Błąd odtwarzania dźwięku ${soundName}:`, err);
         setError(`Błąd podczas odtwarzania dźwięku ${soundName}`);
         setShowConnectionStatus(true);
       }
@@ -307,28 +283,15 @@ export const BluetoothComponent = forwardRef<BluetoothComponentRef>(
               device.profiles?.includes('A2DP') ||
               device.profiles?.includes('HFP')
             ) {
-              console.log(
-                `Pominięto wysyłanie PLAY do urządzenia audio: ${device.name}`
-              );
               return;
             } else {
               await BluetoothSerial.writeToDevice(device.address, 'PLAY\n');
-              console.log(
-                `Komenda PLAY wysłana do ${device.name || device.address}`
-              );
             }
-          } catch (err) {
-            console.log(
-              `Błąd wysyłania do ${device.name || device.address}:`,
-              err
-            );
-          }
+          } catch (err) {}
         });
 
         await Promise.all(sendPromises);
-        console.log('Komendy wysłane do wszystkich urządzeń');
       } catch (err) {
-        console.log('Błąd wysyłania komendy PLAY:', err);
         setError('Błąd podczas wysyłania komendy PLAY');
         setShowConnectionStatus(true);
       }
@@ -336,8 +299,6 @@ export const BluetoothComponent = forwardRef<BluetoothComponentRef>(
 
     const disconnectDevice = async (device: Device) => {
       try {
-        console.log('Rozpoczynanie pełnego rozłączania:', device.name);
-
         for (const sound of Object.values(soundObjects)) {
           if (sound) {
             await sound.pauseAsync();
@@ -363,8 +324,6 @@ export const BluetoothComponent = forwardRef<BluetoothComponentRef>(
             d.address === device.address ? { ...d, connected: false } : d
           )
         );
-
-        console.log('Pełne rozłączenie zakończone:', device.name);
       } catch (err) {
         console.error('Błąd rozłączania:', err);
         setError('Rozłączenie nie powiodło się. Sprawdź ustawienia Bluetooth.');
@@ -533,17 +492,13 @@ export const BluetoothComponent = forwardRef<BluetoothComponentRef>(
         }
 
         const profiles = await checkDeviceProfiles(device.address);
-        console.log('Dostępne profile:', profiles);
-
         let connection;
         if (profiles.includes('A2DP') || profiles.includes('HFP')) {
-          console.log('Próba połączenia przez natywny moduł...');
           const result = await nativeBluetoothModule.connectToDevice(
             device.address
           );
           connection = result === 'SUCCESS';
         } else {
-          console.log('Próba standardowego połączenia SPP...');
           connection = await BluetoothSerial.connectToDevice(device.address);
         }
 
@@ -593,7 +548,6 @@ export const BluetoothComponent = forwardRef<BluetoothComponentRef>(
           error.message.includes('timeout')
         ) {
           try {
-            console.log('Próba alternatywnej metody połączenia...');
             await nativeBluetoothModule.connectToDevice(device.address);
             await Audio.setIsEnabledAsync(true);
 

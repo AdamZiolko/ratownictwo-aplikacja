@@ -65,8 +65,6 @@ export class SessionService {
       const headers = this.createHeaders(authToken);
       const response = await this.api.get('sessions', headers);
 
-      console.log(response);
-
       return response;
     } catch (error) {
       console.error('Error fetching all sessions:', error);
@@ -104,12 +102,6 @@ export class SessionService {
       await socketService.connect();
 
       const joinResult = await socketService.joinSessionCode(code, studentInfo);
-      console.log(
-        `Socket joined code ${code}: ${
-          joinResult.success ? 'Success' : 'Failed'
-        }`
-      );
-
       if (!joinResult.success) {
         console.error(`Failed to join session room for code ${code}`);
       }
@@ -117,17 +109,12 @@ export class SessionService {
       const unsubscribe = await socketService.onSessionUpdate(
         code,
         updatedSession => {
-          console.log(
-            `Session update received for code ${code}:`,
-            updatedSession
-          );
           onUpdate(updatedSession);
         },
         studentInfo
       );
 
       return () => {
-        console.log(`Unsubscribing from session updates for code ${code}`);
         unsubscribe();
       };
     } catch (error) {
@@ -171,7 +158,6 @@ export class SessionService {
   leaveSession(code: string): void {
     try {
       socketService.leaveSession(code);
-      console.log(`Left session with code ${code}`);
     } catch (error) {
       console.error(`Error leaving session with code ${code}:`, error);
     }
@@ -195,9 +181,6 @@ export class SessionService {
       const codeToUse = sessionCode || (response && response.sessionCode);
 
       if (codeToUse) {
-        console.log(
-          `Notifying clients about deletion of session with code ${codeToUse}`
-        );
       } else {
         console.warn(
           `Could not notify about session ${id} deletion: session code not available`
@@ -239,7 +222,6 @@ export class SessionService {
       const codeToUse = sessionCode || (response && response.sessionCode);
 
       if (codeToUse) {
-        console.log(`Notified clients about deletion of session ${codeToUse}`);
       } else {
         console.warn(
           `Could not notify about session ${id} deletion: session code not available`

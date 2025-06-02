@@ -85,9 +85,6 @@ const ExaminerLoginScreen = () => {
         setSnackbarVisible(true);
       }
     } catch (err: any) {
-      console.log('Login error caught:', err);
-      console.log('Error message:', err.message);
-
       let errorMessage =
         'Logowanie nie powiodło się. Sprawdź swoje dane i spróbuj ponownie.';
 
@@ -201,16 +198,11 @@ const ExaminerLoginScreen = () => {
       setConfirmPassword('');
       setActiveTab('login');
     } catch (err: any) {
-      console.log('Register error caught:', err);
-      console.log('Error message:', err.message);
-
       let errorMessage = 'Rejestracja nie powiodła się';
 
       if (err.message && typeof err.message === 'string') {
         try {
           const errorData = JSON.parse(err.message);
-          console.log('Parsed register error data:', errorData);
-
           if (errorData.success === false) {
             if (errorData.errors && Array.isArray(errorData.errors)) {
               const validationErrors = errorData.errors
@@ -226,7 +218,6 @@ const ExaminerLoginScreen = () => {
             errorMessage = errorData.message;
           }
         } catch (parseError) {
-          console.log('Failed to parse register error message:', parseError);
           errorMessage = err.message;
         }
       }
@@ -258,8 +249,6 @@ const ExaminerLoginScreen = () => {
         errorMessage =
           'Błąd połączenia z serwerem. Sprawdź połączenie internetowe';
       }
-
-      console.log('Final register error message:', errorMessage);
 
       setRegisterError(errorMessage);
       setSnackbarMessage(errorMessage);

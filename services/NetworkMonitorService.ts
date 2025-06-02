@@ -49,7 +49,6 @@ class NetworkMonitorService {
 
   startMonitoring() {
     if (Platform.OS !== 'android') {
-      console.log('Network monitoring is only implemented for Android');
       return;
     }
 
@@ -59,13 +58,10 @@ class NetworkMonitorService {
       const subscription = this.eventEmitter?.addListener(
         'networkChanged',
         async event => {
-          console.log('Network changed:', event);
-
           if (event.isConnected) {
             try {
               const status = socketService.getConnectionStatus();
               if (!status.connected) {
-                console.log('Network is back, reconnecting WebSocket...');
                 await socketService.connect();
               }
             } catch (error) {
@@ -75,7 +71,6 @@ class NetworkMonitorService {
               );
             }
           } else {
-            console.log('Network connection lost');
           }
         }
       );
@@ -83,8 +78,6 @@ class NetworkMonitorService {
       if (subscription) {
         this.listeners.push(() => subscription.remove());
       }
-
-      console.log('Network monitoring started');
     } catch (error) {
       console.error('Error starting network monitoring:', error);
     }
@@ -98,8 +91,6 @@ class NetworkMonitorService {
       this.listeners = [];
 
       NativeNetworkUtils.stopNetworkMonitoring();
-
-      console.log('Network monitoring stopped');
     } catch (error) {
       console.error('Error stopping network monitoring:', error);
     }

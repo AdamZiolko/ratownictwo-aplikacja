@@ -98,9 +98,6 @@ export const useSessionManager = ({
         .then(fn => {
           unsub = fn;
 
-          console.log(
-            '✅ Session subscription successful, setting sessionJoined = true'
-          );
           setSessionJoined(true);
         })
         .catch(console.error);
@@ -113,7 +110,6 @@ export const useSessionManager = ({
 
       if (accessCode) {
         sessionService.leaveSession(accessCode.toString());
-        console.log(`Left session ${accessCode}`);
       }
     };
   }, [accessCode, firstName, lastName, albumNumber, router]);

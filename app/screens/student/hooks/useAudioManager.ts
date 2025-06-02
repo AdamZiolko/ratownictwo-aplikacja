@@ -47,11 +47,6 @@ export const useAudioManager = (
           playThroughEarpieceAndroid: false,
         });
         await Audio.setIsEnabledAsync(true);
-        console.log(
-          '✅ Audio poprawnie zainicjalizowane (platforma:',
-          Platform.OS,
-          ')'
-        );
         setAudioReady(true);
         if (Platform.OS !== 'web') {
           debugMobileAudio();
@@ -75,7 +70,6 @@ export const useAudioManager = (
         await sound.stopAsync();
         await sound.unloadAsync();
       }, 200);
-      console.log('🔓 Web audio unlocked');
       didUnlockWebAudio.current = true;
     } catch (e) {
       console.warn('⚠️ Nie udało się odblokować Web Audio:', e);
@@ -91,14 +85,12 @@ export const useAudioManager = (
       'Adult/Male/Screaming.wav',
       'Adult/Female/Screaming.wav',
     ];
-    console.log('🎵 Preloading critical sounds for mobile...');
     for (const soundName of criticalSounds) {
       if (!soundInstances.current[soundName]) {
         try {
           const sound = await loadAudioWithRetry(soundName);
           if (sound) {
             soundInstances.current[soundName] = sound;
-            console.log(`✅ Preloaded via streaming: ${soundName}`);
           } else {
             console.warn(
               `⚠️ Failed to preload ${soundName}: no audio source available`
@@ -147,7 +139,6 @@ export const useAudioManager = (
         await sound.setIsLoopingAsync(loop);
         await sound.setPositionAsync(0);
         await sound.playAsync();
-        console.log(`▶️ Rozpoczęto odtwarzanie: ${soundName} (loop=${loop})`);
         setCurrentLocalSound(soundName);
       } catch {
         if (soundInstances.current[soundName]) {
@@ -200,9 +191,6 @@ export const useAudioManager = (
   const handleServerAudioPlayback = useCallback(
     async (audioId: string, loop: boolean) => {
       try {
-        console.log(
-          `🔊 Starting server audio playback: ${audioId} (loop: ${loop})`
-        );
         setIsPlayingServerAudio(true);
         const sound = await loadAudioFromServer(audioId);
         if (!sound) {
@@ -222,9 +210,6 @@ export const useAudioManager = (
         await sound.setIsLoopingAsync(loop);
         await sound.setPositionAsync(0);
         await sound.playAsync();
-        console.log(
-          `▶️ Successfully started playing server audio: ${audioId} (loop=${loop})`
-        );
       } catch (error) {
         console.error(`❌ Error playing server audio ${audioId}:`, error);
         setIsPlayingServerAudio(false);

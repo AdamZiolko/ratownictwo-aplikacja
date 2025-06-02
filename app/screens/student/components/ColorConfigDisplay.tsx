@@ -38,7 +38,6 @@ const ColorConfigDisplay: React.FC<ColorConfigDisplayProps> = ({
           shouldDuckAndroid: true,
           playThroughEarpieceAndroid: false,
         });
-        console.log('🎵 Audio system initialized for ColorConfigDisplay');
       } catch (err) {
         console.error('Failed to configure audio in ColorConfigDisplay:', err);
       }
@@ -130,7 +129,6 @@ const ColorConfigDisplay: React.FC<ColorConfigDisplayProps> = ({
       let sound: Audio.Sound | null = null;
 
       if (config.serverAudioId) {
-        console.log(`🔊 Playing server audio: ${config.serverAudioId}`);
         sound = await loadAudioFromServer(config.serverAudioId);
         if (sound) {
           setCurrentSound(sound);
@@ -144,12 +142,10 @@ const ColorConfigDisplay: React.FC<ColorConfigDisplayProps> = ({
           });
 
           await sound.playAsync();
-          console.log(`✅ Server audio playing: ${soundKey}`);
         } else {
           console.warn(`Failed to load server audio: ${config.serverAudioId}`);
         }
       } else if (config.soundName) {
-        console.log(`🔊 Playing local sound: ${config.soundName}`);
         sound = await loadAudioFromLocal(config.soundName);
         if (sound) {
           setCurrentSound(sound);
@@ -163,7 +159,6 @@ const ColorConfigDisplay: React.FC<ColorConfigDisplayProps> = ({
           });
 
           await sound.playAsync();
-          console.log(`✅ Local audio playing: ${soundKey}`);
         } else {
           console.warn(`Failed to load local sound: ${config.soundName}`);
         }

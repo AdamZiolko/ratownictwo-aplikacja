@@ -30,12 +30,10 @@ class WifiKeepAliveService {
 
   async enableWebSocketKeepAlive(): Promise<boolean> {
     if (Platform.OS !== 'android') {
-      console.log('WebSocket keep-alive is only needed on Android');
       return true;
     }
 
     try {
-      console.log('Enabling WebSocket keep-alive mode');
       await NativeWifiKeepAlive.acquireWifiLock();
       this.isActive = true;
       return true;
@@ -51,7 +49,6 @@ class WifiKeepAliveService {
     }
 
     try {
-      console.log('Disabling WebSocket keep-alive mode');
       await NativeWifiKeepAlive.releaseWifiLock();
       this.isActive = false;
       return true;

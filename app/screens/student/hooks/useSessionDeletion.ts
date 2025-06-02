@@ -22,27 +22,13 @@ export const useSessionDeletion = ({
 
   useEffect(() => {
     if (!sessionJoined || !accessCode) {
-      console.log(
-        '🔌 Session deletion listener: waiting for session to be joined'
-      );
       return;
     }
 
-    console.log(
-      '🔌 Setting up session-deleted listener for session:',
-      accessCode
-    );
-
     const handleSessionDeleted = (data: any) => {
-      console.log('❌ SESSION-DELETED event received:', data);
-      console.log(
-        '🚨 Session has been deleted by the examiner - redirecting student'
-      );
-
       if (accessCode) {
         try {
           sessionService.leaveSession(accessCode.toString());
-          console.log(`✅ Left session ${accessCode} after deletion`);
         } catch (e) {
           console.warn('Error leaving session on deletion:', e);
         }
@@ -62,10 +48,7 @@ export const useSessionDeletion = ({
       'session-deleted',
       handleSessionDeleted
     );
-    console.log('✅ Session deletion listener set up successfully');
-
     return () => {
-      console.log('🧹 Cleaning up session-deleted listener');
       unsubscribe();
     };
   }, [sessionJoined, accessCode, router, firstName, lastName, albumNumber]);

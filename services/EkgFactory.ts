@@ -80,8 +80,6 @@ export class EkgFactory {
 
       await EkgJsonDataLoader.initialize();
       EkgDataAdapter.initialize();
-
-      console.log('EkgFactory initialized with JSON data');
     } catch (e) {
       console.error('Failed to initialize EkgFactory with JSON data:', e);
       throw e;
@@ -645,8 +643,6 @@ export class EkgFactory {
     }
   }
   static async resetAllCaches(): Promise<void> {
-    console.log('Resetting all EKG caches...');
-
     this.noiseCache = {};
     this.lastBaselineWander = 0;
     this.irregularityCache = {};
@@ -662,9 +658,6 @@ export class EkgFactory {
       (global as any).EkgCacheObject = null;
 
       await EkgJsonDataLoader.initialize();
-
-      console.log('All EKG caches have been reset successfully');
-      console.log(`Memory cleanup timestamp: ${Date.now()}`);
     } catch (e) {
       console.error('Error while resetting caches:', e);
       throw e;
@@ -672,14 +665,11 @@ export class EkgFactory {
   }
 
   static async refreshEkgDisplay(): Promise<void> {
-    console.log('Forcing EKG display refresh...');
-
     await this.resetAllCaches();
 
     try {
       const { EkgJsonDataLoader } = require('./EkgJsonDataLoader');
       await EkgJsonDataLoader.initialize();
-      console.log('EKG display refresh completed');
     } catch (e) {
       console.error('Error refreshing EKG display:', e);
       throw e;

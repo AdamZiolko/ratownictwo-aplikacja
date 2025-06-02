@@ -122,9 +122,6 @@ export const useSessionManager = (user: any) => {
   ) => {
     const subscriptionKey = `${sessionCode}-${userId}`;
     if (subscribedSessions.current.has(subscriptionKey)) {
-      console.log(
-        `Already subscribed to session ${sessionCode}, skipping duplicate subscription`
-      );
       return;
     }
 
@@ -133,23 +130,17 @@ export const useSessionManager = (user: any) => {
     try {
       socketService.connect();
 
-      console.log(
-        `Attempting to subscribe to session updates for ${sessionCode}`
-      );
-
       const { success } = await socketService.subscribeAsExaminer(
         sessionCode,
         userId,
         undefined,
         data => {
-          console.log('Received student list update:', data);
           setSessionStudents(prev => ({
             ...prev,
             [data.sessionCode]: data.students,
           }));
         },
         data => {
-          console.log('Received student session update:', data);
           setSessionStudents(prev => {
             const currentStudents = prev[data.sessionCode] || [];
 
@@ -178,9 +169,6 @@ export const useSessionManager = (user: any) => {
       );
 
       if (success) {
-        console.log(
-          `Successfully subscribed to student updates for session ${sessionCode}`
-        );
       } else {
         console.warn(
           `Failed to subscribe to student updates for session ${sessionCode} - will retry once`
@@ -189,10 +177,6 @@ export const useSessionManager = (user: any) => {
         if (!subscribedSessions.current.has(`${subscriptionKey}-retry`)) {
           subscribedSessions.current.add(`${subscriptionKey}-retry`);
           setTimeout(() => {
-            console.log(
-              `Retrying subscription once for session ${sessionCode}`
-            );
-
             subscribedSessions.current.delete(subscriptionKey);
             subscribeToStudentUpdates(sessionCode, userId);
           }, 2000);

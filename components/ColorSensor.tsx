@@ -30,10 +30,6 @@ export const ColorSensor: React.FC<ColorSensorProps> = ({
 
   const processDetectedColor = useCallback(
     (detectedColor: string) => {
-      console.log(
-        `🎨 ColorSensor: processDetectedColor STARTED for ${detectedColor}`
-      );
-
       const config = colorConfigs.find(cfg => {
         if (cfg.color === 'custom') {
           return `custom-${cfg.id}` === detectedColor && cfg.isEnabled;
@@ -45,27 +41,9 @@ export const ColorSensor: React.FC<ColorSensorProps> = ({
         }
       });
 
-      console.log(`🎨 ColorSensor: Looking for config for '${detectedColor}'`);
-      console.log(
-        `🎨 ColorSensor: Available configs:`,
-        colorConfigs.map(cfg => `${cfg.color}:${cfg.isEnabled}`)
-      );
-
       if (config && onColorDetected) {
-        console.log(`🎨 ColorSensor: Found config for ${detectedColor}:`, {
-          soundName: config.soundName,
-          serverAudioId: config.serverAudioId,
-          volume: config.volume,
-          isLooping: config.isLooping,
-        });
-        console.log(
-          `🎨 ColorSensor: Calling onColorDetected for NEW color detection`
-        );
         onColorDetected(detectedColor, config);
       } else if (!config) {
-        console.log(
-          `🎨 ColorSensor: Detected color ${detectedColor}, but no enabled configuration found`
-        );
       }
     },
     [colorConfigs, onColorDetected]
@@ -73,98 +51,35 @@ export const ColorSensor: React.FC<ColorSensorProps> = ({
 
   const handleColorUpdate = useCallback(
     async (color: ColorValue) => {
-      console.log(`🎨 ColorSensor: ===== NEW COLOR UPDATE CYCLE =====`);
-      console.log(
-        `🎨 ColorSensor: Raw RGB input - R:${color.r} G:${color.g} B:${color.b}`
-      );
-      console.log(
-        `🎨 ColorSensor: Current detected color: ${lastDetectedColor}`
-      );
-      console.log(
-        `🎨 ColorSensor: Number of color configs: ${colorConfigs.length}`
-      );
-
       const enabledConfigs = colorConfigs.filter(cfg => cfg.isEnabled);
-      console.log(
-        `🎨 ColorSensor: Enabled color configs:`,
-        enabledConfigs.map(cfg =>
-          cfg.color === 'custom'
-            ? `custom-${cfg.id}(${cfg.customColorRgb?.r},${cfg.customColorRgb?.g},${cfg.customColorRgb?.b})`
-            : cfg.color
-        )
-      );
-
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current);
       }
 
       const detectedConfig = detectConfiguredColor(color);
-      console.log(
-        `🎨 ColorSensor: Detection result: ${
-          detectedConfig ? detectedConfig : 'NO_COLOR'
-        }`
-      );
-
       if (detectedConfig !== lastDetectedColor) {
-        console.log(
-          `🎨 ColorSensor: Color changed from '${lastDetectedColor}' to '${detectedConfig}'`
-        );
-
-        console.log(
-          `🎨 ColorSensor: Setting up debounce timeout for color change`
-        );
         debounceTimeoutRef.current = setTimeout(() => {
-          console.log(
-            `🎨 ColorSensor: Debounce timeout triggered for color change to ${detectedConfig}`
-          );
-
           if (lastDetectedColor && onColorLost) {
-            console.log(
-              `🎨 ColorSensor: Lost color ${lastDetectedColor}, stopping all sounds`
-            );
             onColorLost();
 
-            console.log(
-              `🎨 ColorSensor: Setting up delay for new sound after stopping previous`
-            );
             setTimeout(() => {
-              console.log(
-                `🎨 ColorSensor: Delay completed, updating state and playing new sound`
-              );
-
               setLastDetectedColor(detectedConfig);
 
               if (detectedConfig) {
-                console.log(
-                  `🎨 ColorSensor: Calling processDetectedColor for ${detectedConfig}`
-                );
                 processDetectedColor(detectedConfig);
               }
             }, 20);
           } else {
-            console.log(
-              `🎨 ColorSensor: No previous color to stop, directly playing new sound`
-            );
-
             setLastDetectedColor(detectedConfig);
 
             if (detectedConfig) {
-              console.log(
-                `🎨 ColorSensor: Calling processDetectedColor for ${detectedConfig}`
-              );
               processDetectedColor(detectedConfig);
             }
           }
         }, 50);
       } else if (detectedConfig) {
-        console.log(
-          `🎨 ColorSensor: Same color '${detectedConfig}' still detected - not triggering callbacks again`
-        );
       } else {
-        console.log(`🎨 ColorSensor: Still no color detected`);
       }
-
-      console.log(`🎨 ColorSensor: ===== END COLOR UPDATE CYCLE =====`);
     },
     [
       colorConfigs,
@@ -206,30 +121,12 @@ export const ColorSensor: React.FC<ColorSensorProps> = ({
     const { r, g, b } = currentColor;
     const totalBrightness = r + g + b;
 
-    console.log(
-      `🔍 ColorSensor: Starting color detection for RGB(${r}, ${g}, ${b}), brightness: ${totalBrightness}`
-    );
-
     if (totalBrightness < 100) {
-      console.log(
-        `🔍 ColorSensor: Color too dark (brightness ${totalBrightness} < 100), ignoring`
-      );
       return null;
     }
 
-    console.log(
-      `🔍 ColorSensor: Checking ${colorConfigs.length} color configurations`
-    );
-
     for (const config of colorConfigs) {
-      console.log(
-        `🔍 ColorSensor: Checking config ${config.id}: ${config.color}, enabled: ${config.isEnabled}`
-      );
-
       if (!config.isEnabled) {
-        console.log(
-          `🔍 ColorSensor: Config ${config.id} (${config.color}) is disabled, skipping`
-        );
         continue;
       }
 
@@ -237,30 +134,18 @@ export const ColorSensor: React.FC<ColorSensorProps> = ({
         const { r: targetR, g: targetG, b: targetB } = config.customColorRgb;
         const tolerance = config.colorTolerance || 0.15;
 
-        console.log(
-          `🔍 ColorSensor: Checking custom color config ${config.id}:`
-        );
-        console.log(`  Target RGB: (${targetR}, ${targetG}, ${targetB})`);
-        console.log(`  Tolerance: ${tolerance}`);
-
         const isMatch = isColorMatch(
           currentColor,
           { r: targetR, g: targetG, b: targetB },
           tolerance
         );
-        console.log(`  Match result: ${isMatch}`);
-
         if (isMatch) {
           const result = `custom-${config.id}`;
-          console.log(
-            `🎯 ColorSensor: CUSTOM COLOR MATCH! Returning: ${result}`
-          );
           return result;
         }
       }
     }
 
-    console.log(`🔍 ColorSensor: No matching color configuration found`);
     return null;
   };
 
@@ -272,34 +157,15 @@ export const ColorSensor: React.FC<ColorSensorProps> = ({
     const { r: r1, g: g1, b: b1 } = color1;
     const { r: r2, g: g2, b: b2 } = color2;
 
-    console.log(`🔍 ColorSensor: Color matching:`);
-    console.log(`  Color1 RGB: (${r1}, ${g1}, ${b1})`);
-    console.log(`  Color2 RGB: (${r2}, ${g2}, ${b2})`);
-    console.log(`  Tolerance: ${tolerance}`);
-
     const total1 = r1 + g1 + b1;
     const total2 = r2 + g2 + b2;
 
-    console.log(`  Total brightness - Color1: ${total1}, Color2: ${total2}`);
-
     if (total1 === 0 || total2 === 0) {
-      console.log(`  One of the colors has zero brightness, no match`);
       return false;
     }
 
     const ratio1 = { r: r1 / total1, g: g1 / total1, b: b1 / total1 };
     const ratio2 = { r: r2 / total2, g: g2 / total2, b: b2 / total2 };
-
-    console.log(
-      `  Ratio1: (${ratio1.r.toFixed(3)}, ${ratio1.g.toFixed(
-        3
-      )}, ${ratio1.b.toFixed(3)})`
-    );
-    console.log(
-      `  Ratio2: (${ratio2.r.toFixed(3)}, ${ratio2.g.toFixed(
-        3
-      )}, ${ratio2.b.toFixed(3)})`
-    );
 
     const distance = Math.sqrt(
       Math.pow(ratio1.r - ratio2.r, 2) +
@@ -307,46 +173,27 @@ export const ColorSensor: React.FC<ColorSensorProps> = ({
         Math.pow(ratio1.b - ratio2.b, 2)
     );
 
-    console.log(`  Distance: ${distance.toFixed(4)}, Tolerance: ${tolerance}`);
-
     const isMatch = distance <= tolerance;
-    console.log(`  Match result: ${isMatch}`);
-
     return isMatch;
   };
 
   const determineColor = (rgbColor: ColorValue): string | null => {
     const { r, g, b } = rgbColor;
 
-    console.log(`🎨 ColorSensor: Determining color for RGB(${r}, ${g}, ${b})`);
-
     const normalizedR = Math.min(255, Math.max(0, r));
     const normalizedG = Math.min(255, Math.max(0, g));
     const normalizedB = Math.min(255, Math.max(0, b));
 
-    console.log(
-      `🎨 ColorSensor: Normalized RGB(${normalizedR}, ${normalizedG}, ${normalizedB})`
-    );
-
     const totalBrightness = normalizedR + normalizedG + normalizedB;
 
-    console.log(`🎨 ColorSensor: Total brightness: ${totalBrightness}`);
-
     if (totalBrightness < 100) {
-      console.log(
-        `🎨 ColorSensor: Too dark (brightness ${totalBrightness} < 100), returning null`
-      );
       return null;
     }
 
-    console.log(
-      `🎨 ColorSensor: Predefiniowane kolory zostały usunięte, używaj tylko niestandardowych kolorów`
-    );
     return null;
   };
 
   const testColor = useCallback((testColorValue: ColorValue) => {
-    console.log(`🧪 DEBUG: Testing color ${JSON.stringify(testColorValue)}`);
     handleColorUpdate(testColorValue);
   }, []);
 

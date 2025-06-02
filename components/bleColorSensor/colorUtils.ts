@@ -53,26 +53,14 @@ export const detectComplexColor = (color: ColorValue): string => {
   const sum = r + g + b;
 
   if (sum === 0 || sum <= MIN_BRIGHTNESS) {
-    console.log('[COLOR] Insufficient brightness or zero values');
     return 'none';
   }
-
-  console.log('[COLOR] Raw values - R:', r, 'G:', g, 'B:', b);
 
   const distances = {
     red: calculateDistance(color, COLOR_PROTOTYPES.RED),
     green: calculateDistance(color, COLOR_PROTOTYPES.GREEN),
     blue: calculateDistance(color, COLOR_PROTOTYPES.BLUE),
   };
-
-  console.log(
-    '[COLOR] Distances - Red:',
-    distances.red.toFixed(2),
-    'Green:',
-    distances.green.toFixed(2),
-    'Blue:',
-    distances.blue.toFixed(2)
-  );
 
   let minDistance = Number.MAX_VALUE;
   let detectedColor = 'none';
@@ -84,11 +72,6 @@ export const detectComplexColor = (color: ColorValue): string => {
     }
   }
 
-  console.log(
-    `[COLOR] Detected ${detectedColor.toUpperCase()} with distance ${minDistance.toFixed(
-      2
-    )}`
-  );
   return detectedColor;
 };
 
@@ -97,23 +80,12 @@ export const detectColorAdvanced = (color: ColorValue): string => {
   const sum = r + g + b;
 
   if (sum === 0 || sum <= MIN_BRIGHTNESS) {
-    console.log('[COLOR] Insufficient brightness or zero values');
     return 'none';
   }
 
   const rRatio = r / sum;
   const gRatio = g / sum;
   const bRatio = b / sum;
-
-  console.log('[COLOR] Raw values - R:', r, 'G:', g, 'B:', b);
-  console.log(
-    '[COLOR] Ratios - R:',
-    rRatio.toFixed(3),
-    'G:',
-    gRatio.toFixed(3),
-    'B:',
-    bRatio.toFixed(3)
-  );
 
   const isWhite =
     Math.abs(rRatio - gRatio) < COLOR_RATIO_THRESHOLDS.WHITE_THRESHOLD &&
@@ -124,31 +96,19 @@ export const detectColorAdvanced = (color: ColorValue): string => {
     Math.abs(r - g) < 10 && Math.abs(r - b) < 10 && Math.abs(g - b) < 10;
 
   if (isAllSimilar && r > 400 && r < 600) {
-    console.log(
-      '[COLOR] All RGB values are similar and in mid-range, likely sensor error'
-    );
     return 'none';
   }
 
   if (isWhite) {
-    console.log('[COLOR] Detected white/gray (equal RGB values)');
-
     if (rRatio > gRatio && rRatio > bRatio) {
-      console.log('[COLOR] White with slight red tint');
       return 'red';
     } else if (gRatio > rRatio && gRatio > bRatio) {
-      console.log('[COLOR] White with slight green tint');
       return 'green';
     } else if (bRatio > rRatio && bRatio > gRatio) {
-      console.log('[COLOR] White with slight blue tint');
       return 'blue';
     } else {
       const colors = ['red', 'green', 'blue'];
       const randomIndex = Math.floor(Math.random() * colors.length);
-      console.log(
-        '[COLOR] Pure white, randomly selected:',
-        colors[randomIndex]
-      );
       return colors[randomIndex];
     }
   }
@@ -162,22 +122,6 @@ export const detectColorAdvanced = (color: ColorValue): string => {
     purple: calculateSimilarity(color, COLOR_CALIBRATION.TYPICAL_PURPLE),
   };
 
-  console.log(
-    '[COLOR] Similarities:',
-    'R:',
-    similarities.red.toFixed(2),
-    'G:',
-    similarities.green.toFixed(2),
-    'B:',
-    similarities.blue.toFixed(2),
-    'Y:',
-    similarities.yellow.toFixed(2),
-    'O:',
-    similarities.orange.toFixed(2),
-    'P:',
-    similarities.purple.toFixed(2)
-  );
-
   let maxSimilarity = 0;
   let dominantColor = 'none';
 
@@ -189,11 +133,6 @@ export const detectColorAdvanced = (color: ColorValue): string => {
   }
 
   if (maxSimilarity > 0.45) {
-    console.log(
-      `[COLOR] Detected ${dominantColor.toUpperCase()} based on similarity (${maxSimilarity.toFixed(
-        2
-      )})`
-    );
     return dominantColor;
   }
 
@@ -202,7 +141,6 @@ export const detectColorAdvanced = (color: ColorValue): string => {
     rRatio > gRatio * 1.1 &&
     rRatio > bRatio * 1.1
   ) {
-    console.log('[COLOR] Detected RED based on ratio threshold');
     return 'red';
   }
 
@@ -211,7 +149,6 @@ export const detectColorAdvanced = (color: ColorValue): string => {
     gRatio > rRatio * 1.1 &&
     gRatio > bRatio * 1.1
   ) {
-    console.log('[COLOR] Detected GREEN based on ratio threshold');
     return 'green';
   }
 
@@ -220,7 +157,6 @@ export const detectColorAdvanced = (color: ColorValue): string => {
     bRatio > rRatio * 1.1 &&
     bRatio > gRatio * 1.1
   ) {
-    console.log('[COLOR] Detected BLUE based on ratio threshold');
     return 'blue';
   }
 
@@ -230,7 +166,6 @@ export const detectColorAdvanced = (color: ColorValue): string => {
     bRatio < 0.25 &&
     Math.abs(rRatio - gRatio) < 0.15
   ) {
-    console.log('[COLOR] Detected YELLOW based on R+G combination');
     return 'yellow';
   }
 
@@ -241,7 +176,6 @@ export const detectColorAdvanced = (color: ColorValue): string => {
     bRatio < 0.25 &&
     rRatio > gRatio * 1.1
   ) {
-    console.log('[COLOR] Detected ORANGE based on R>G combination');
     return 'orange';
   }
 
@@ -251,7 +185,6 @@ export const detectColorAdvanced = (color: ColorValue): string => {
     gRatio < 0.25 &&
     Math.abs(rRatio - bRatio) < 0.15
   ) {
-    console.log('[COLOR] Detected PURPLE based on R+B combination');
     return 'purple';
   }
 
@@ -263,34 +196,27 @@ export const detectColorAdvanced = (color: ColorValue): string => {
 
   if (maxDiff > COLOR_RATIO_THRESHOLDS.COLOR_DIFF_THRESHOLD) {
     if (maxDiff === rDiff) {
-      console.log('[COLOR] Selected RED based on maximum difference');
       return 'red';
     }
     if (maxDiff === gDiff) {
-      console.log('[COLOR] Selected GREEN based on maximum difference');
       return 'green';
     }
     if (maxDiff === bDiff) {
-      console.log('[COLOR] Selected BLUE based on maximum difference');
       return 'blue';
     }
   }
 
   if (r > g && r > b) {
-    console.log('[COLOR] Last resort fallback to RED based on highest value');
     return 'red';
   }
   if (g > r && g > b) {
-    console.log('[COLOR] Last resort fallback to GREEN based on highest value');
     return 'green';
   }
   if (b > r && b > g) {
-    console.log('[COLOR] Last resort fallback to BLUE based on highest value');
     return 'blue';
   }
 
   const colors = ['red', 'green', 'blue'];
   const randomIndex = Math.floor(Math.random() * colors.length);
-  console.log('[COLOR] Final random fallback:', colors[randomIndex]);
   return colors[randomIndex];
 };

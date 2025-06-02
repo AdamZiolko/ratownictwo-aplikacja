@@ -50,7 +50,6 @@ export const useAudioManager = () => {
         }
 
         setAudioReady(true);
-        console.log('✅ Audio poprawnie zainicjalizowane');
       } catch (error) {
         console.error('❌ Błąd inicjalizacji audio:', error);
         setTimeout(initAudio, 2000);
@@ -65,15 +64,12 @@ export const useAudioManager = () => {
 
     async function loadSounds() {
       try {
-        console.log('[AUDIO] Starting to load all sounds');
-
         for (const [color, sound] of Object.entries(soundRefs.current)) {
           if (sound) {
             try {
               await sound.stopAsync().catch(() => {});
               await sound.unloadAsync().catch(() => {});
               soundRefs.current[color] = null;
-              console.log(`[AUDIO] Unloaded previous sound for ${color}`);
             } catch (unloadError) {
               console.warn(
                 `[AUDIO] Error unloading previous sound for ${color}:`,
@@ -113,8 +109,6 @@ export const useAudioManager = () => {
             }
           })
         );
-
-        console.log('[AUDIO] All sounds loaded successfully');
       } catch (error) {
         console.error('[AUDIO] Error during sound loading process:', error);
       }
@@ -123,12 +117,9 @@ export const useAudioManager = () => {
     loadSounds();
 
     return () => {
-      console.log('[AUDIO] Cleaning up sounds on unmount');
-
       Object.entries(soundRefs.current).forEach(([color, sound]) => {
         if (sound) {
           try {
-            console.log(`[AUDIO] Unloading sound for ${color} on cleanup`);
             sound
               .stopAsync()
               .catch(() => {})
@@ -158,8 +149,6 @@ export const useAudioManager = () => {
   const playSound = async (colorName: string) => {
     if (!audioReady) return;
 
-    console.log(`[AUDIO] Attempting to play sound for ${colorName}`);
-
     if (currentSound && currentSound !== colorName) {
       await stopCurrentSound();
     }
@@ -178,14 +167,10 @@ export const useAudioManager = () => {
           const isPlaying = status.isPlaying;
 
           if (isPlaying) {
-            console.log(`[AUDIO] Sound for ${colorName} is already playing`);
             if (currentSound !== colorName) setCurrentSound(colorName);
             return;
           }
 
-          console.log(
-            `[AUDIO] Sound for ${colorName} is loaded but not playing, starting playback`
-          );
           await sound.setStatusAsync({
             isLooping: loopSound,
             shouldPlay: true,
@@ -197,7 +182,6 @@ export const useAudioManager = () => {
         }
       }
 
-      console.log(`[AUDIO] Creating new sound for ${colorName}`);
       sound = new Audio.Sound();
       await sound.loadAsync(soundFile);
 
@@ -210,7 +194,6 @@ export const useAudioManager = () => {
 
       sound.setOnPlaybackStatusUpdate(status => {
         if ('didJustFinish' in status && status.didJustFinish && !loopSound) {
-          console.log(`[AUDIO] Sound for ${colorName} finished playing`);
           setCurrentSound(null);
         }
       });
@@ -252,8 +235,6 @@ export const useAudioManager = () => {
     if (!currentSound || !soundRefs.current[currentSound]) return;
 
     try {
-      console.log(`[AUDIO] Stopping sound for ${currentSound}`);
-
       const sound = soundRefs.current[currentSound];
 
       const status = await sound
@@ -270,12 +251,7 @@ export const useAudioManager = () => {
           .catch(() => {});
 
         await sound.stopAsync().catch(() => {});
-
-        console.log(`[AUDIO] Successfully stopped sound for ${currentSound}`);
       } else {
-        console.log(
-          `[AUDIO] Sound for ${currentSound} is not loaded, no need to stop`
-        );
       }
 
       setCurrentSound(null);
@@ -301,19 +277,9 @@ export const useAudioManager = () => {
     const sumRGB = color.r + color.g + color.b;
 
     if (sumRGB === 0 || sumRGB <= 20) {
-      console.log('[AUDIO] Insufficient brightness, stopping sound');
       await stopCurrentSound();
       return;
     }
-
-    console.log(
-      '[AUDIO] RGB values for sound:',
-      color.r,
-      color.g,
-      color.b,
-      'Sum:',
-      sumRGB
-    );
 
     const isAllSimilar =
       Math.abs(color.r - color.g) < 10 &&
@@ -324,12 +290,7 @@ export const useAudioManager = () => {
       color.r === 1000 && color.g === 1000 && color.b === 1000;
 
     if (isAllExactlyEqual || (isAllSimilar && color.r > 400 && color.r < 600)) {
-      console.log(
-        '[AUDIO] Detected potential sensor error - values are too similar or exactly 1000'
-      );
-
       if (currentSound) {
-        console.log(`[AUDIO] Stopping sound due to potential sensor error`);
         await stopCurrentSound();
       }
 
@@ -337,14 +298,9 @@ export const useAudioManager = () => {
     }
 
     let dominantColor = detectColorAdvanced(color);
-    console.log(`[AUDIO] Detected color: ${dominantColor}`);
-
     lastColorUpdate.current = Date.now();
 
     if (dominantColor === 'none') {
-      console.log(
-        '[AUDIO] No dominant color detected, stopping any playing sound'
-      );
       await stopCurrentSound();
       return;
     }
@@ -363,9 +319,6 @@ export const useAudioManager = () => {
       const isRecentChange = timeSinceLastChange < 500;
 
       if (isSimilarColor || isRecentChange) {
-        console.log(
-          `[AUDIO] Continuing current sound ${currentSound} (new: ${dominantColor}, similar: ${isSimilarColor}, recent change: ${isRecentChange})`
-        );
         return;
       }
     }

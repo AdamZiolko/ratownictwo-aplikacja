@@ -58,7 +58,6 @@ export class EkgJsonDataLoader {
       await this.preloadEkgData(EkgType.ATRIAL_FIBRILLATION);
 
       this.isInitialized = true;
-      console.log('EKG data loader initialized successfully');
     } catch (error) {
       console.error('Failed to initialize EKG data loader:', error);
       throw error;
@@ -113,7 +112,6 @@ export class EkgJsonDataLoader {
       ekgType === EkgType.VENTRICULAR_TACHYCARDIA;
 
     if (!skipCache && this.ekgDataCache[cacheKey]) {
-      console.log(`Using cached EKG data for type ${ekgType} (${filename})`);
       return { ...this.ekgDataCache[cacheKey] };
     }
 
@@ -124,14 +122,11 @@ export class EkgJsonDataLoader {
       return this.loadEkgDataSync(EkgType.NORMAL_SINUS_RHYTHM);
     }
 
-    console.log(`Loading EKG data for type ${ekgType} (${filename})`);
-
     if (!this.ekgDataCache[cacheKey]) {
       try {
         if (EkgDataFiles[filename]) {
           this.ekgDataCache[cacheKey] = EkgDataFiles[filename];
           this.loadedDataTypes.add(ekgType);
-          console.log(`Successfully loaded EKG data for ${filename}`);
         } else {
           console.error(`File not found in static map: ${filename}`);
           throw new Error(`File not found in static map: ${filename}`);
@@ -140,7 +135,6 @@ export class EkgJsonDataLoader {
         console.error(`Failed to load EKG data for type ${ekgType}:`, error);
 
         if (ekgType === EkgType.ASYSTOLE) {
-          console.log('Creating asystole pattern (flat line)');
           return {
             sample_rate: 100,
             period_count: 1,
@@ -148,7 +142,6 @@ export class EkgJsonDataLoader {
             values: [150, 150],
           };
         } else if (ekgType === EkgType.VENTRICULAR_FIBRILLATION) {
-          console.log('Creating VFib fallback pattern');
           return {
             sample_rate: 100,
             period_count: 10,
@@ -159,7 +152,6 @@ export class EkgJsonDataLoader {
             ),
           };
         } else if (ekgType !== EkgType.NORMAL_SINUS_RHYTHM) {
-          console.log(`No fallback for ${ekgType}, trying normal rhythm`);
           return this.loadEkgDataSync(EkgType.NORMAL_SINUS_RHYTHM);
         } else {
           console.warn('Creating minimal normal sinus rhythm data');
@@ -242,10 +234,6 @@ export class EkgJsonDataLoader {
         );
         this.loadEkgDataSync(EkgType.NORMAL_SINUS_RHYTHM);
       }
-
-      console.log(
-        `Getting EKG value for type ${ekgType}, bpm ${bpm}, at x=${x}`
-      );
 
       const ekgData = this.loadEkgDataSync(ekgType);
       const defaultBpm = ekgType === EkgType.ASYSTOLE ? 1 : 72;
@@ -333,15 +321,12 @@ export class EkgJsonDataLoader {
     return value + noise + wander;
   }
   static resetCache(): void {
-    console.log('EKG JSON Data Loader: resetting all caches');
     this.valueCache = {};
     this.loadedDataTypes.clear();
     this.ekgDataCache = {};
     this.isInitialized = false;
 
-    setTimeout(() => {
-      console.log('EKG JSON Data Loader: cache reset complete');
-    }, 0);
+    setTimeout(() => {}, 0);
   }
 
   static getAvailableTypes(): EkgType[] {

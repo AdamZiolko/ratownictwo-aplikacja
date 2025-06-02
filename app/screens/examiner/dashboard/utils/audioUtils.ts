@@ -9,17 +9,14 @@ export const getLocalAudioPath = (id: string) => `${CACHE_DIR_URI}${id}.mp3`;
 
 export const ensureCacheDirExists = async () => {
   if (Platform.OS === 'web') {
-    console.log('Cache directory operations skipped on web.');
     return;
   }
   const dirInfo = await FileSystem.getInfoAsync(CACHE_DIR_URI);
   if (!dirInfo.exists) {
-    console.log('Creating cache directory:', CACHE_DIR_URI);
     await FileSystem.makeDirectoryAsync(CACHE_DIR_URI, { intermediates: true });
     if (Platform.OS === 'android') {
       try {
         await FileSystem.writeAsStringAsync(CACHE_DIR_URI + '.nomedia', '');
-        console.log('.nomedia file created in cache directory');
       } catch (e) {
         console.error('Failed to create .nomedia file', e);
       }
