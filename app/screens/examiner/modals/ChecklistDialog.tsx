@@ -1,5 +1,5 @@
-import apiService from "@/services/ApiService";
-import React from "react";
+import apiService from '@/services/ApiService';
+import React from 'react';
 import {
   View,
   Pressable,
@@ -10,7 +10,7 @@ import {
   Platform,
   Modal,
   Alert,
-} from "react-native";
+} from 'react-native';
 import {
   Text,
   IconButton,
@@ -21,7 +21,7 @@ import {
   useTheme,
   Menu,
   Card,
-} from "react-native-paper";
+} from 'react-native-paper';
 
 interface Task {
   id: number;
@@ -48,10 +48,6 @@ interface StudentTestState {
   comments: Comment[];
 }
 
-/**
- * Props przekazywane z rodzica (ExaminerDashboardScreen), 
- * w tym stan testu konkretnego studenta oraz callbacki do aktualizacji.
- */
 interface ChecklistDialogProps {
   visible: boolean;
   top?: number;
@@ -86,36 +82,35 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
 }) => {
   const theme = useTheme();
 
-
-
-  const [newTaskText, setNewTaskText] = React.useState("");
-  const [newComment, setNewComment] = React.useState("");
+  const [newTaskText, setNewTaskText] = React.useState('');
+  const [newComment, setNewComment] = React.useState('');
   const [commentsExpanded, setCommentsExpanded] = React.useState(false);
-  const [showTemplateNameDialog, setShowTemplateNameDialog] = React.useState(false);
-  const [templateNameInput, setTemplateNameInput] = React.useState("");
+  const [showTemplateNameDialog, setShowTemplateNameDialog] =
+    React.useState(false);
+  const [templateNameInput, setTemplateNameInput] = React.useState('');
 
   const [templates, setTemplates] = React.useState<Template[]>([]);
   const [selectMenuVisible, setSelectMenuVisible] = React.useState(false);
   const [deleteMenuVisible, setDeleteMenuVisible] = React.useState(false);
 
   const handleAddTask = () => {
-    if (newTaskText.trim() === "") return;
+    if (newTaskText.trim() === '') return;
     const newTask: Task = {
       id: Date.now(),
       text: newTaskText.trim(),
       completed: false,
     };
     onChangeTasks([...testState.tasks, newTask]);
-    setNewTaskText("");
+    setNewTaskText('');
   };
 
   const loadTemplates = async () => {
     try {
-      const response = await apiService.get("checklist/templates");
-      console.log("Odpowiedź z /checklist/templates:", response);
+      const response = await apiService.get('checklist/templates');
+      console.log('Odpowiedź z /checklist/templates:', response);
       setTemplates(response);
     } catch (error) {
-      console.error("Błąd ładowania szablonów:", error);
+      console.error('Błąd ładowania szablonów:', error);
     }
   };
 
@@ -125,73 +120,73 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
     } else {
       setSelectMenuVisible(false);
       setDeleteMenuVisible(false);
-      setTemplateNameInput("");
+      setTemplateNameInput('');
     }
   }, [visible]);
 
   const handleSaveComment = () => {
-    if (newComment.trim() === "") return;
+    if (newComment.trim() === '') return;
     const newC: Comment = {
       id: Date.now(),
       text: newComment.trim(),
       timestamp: new Date(),
     };
     onChangeComments([...testState.comments, newC]);
-    setNewComment("");
+    setNewComment('');
   };
 
   const handleSaveTemplate = async (name: string) => {
     try {
       if (!name.trim()) {
-        Alert.alert("Błąd", "Nazwa szablonu nie może być pusta");
+        Alert.alert('Błąd', 'Nazwa szablonu nie może być pusta');
         return;
       }
-      const response = await apiService.post("checklist/templates", {
+      const response = await apiService.post('checklist/templates', {
         name: name.trim(),
-        tasks: testState.tasks.map((t) => ({ text: t.text })),
+        tasks: testState.tasks.map(t => ({ text: t.text })),
       });
-      console.log("Odpowiedź createOrUpdateTemplate:", response);
-      Alert.alert("Sukces", "Szablon został zapisany lub nadpisany");
-      setTemplateNameInput("");
+      console.log('Odpowiedź createOrUpdateTemplate:', response);
+      Alert.alert('Sukces', 'Szablon został zapisany lub nadpisany');
+      setTemplateNameInput('');
       setShowTemplateNameDialog(false);
       loadTemplates();
     } catch (error) {
-      console.error("Błąd zapisu szablonu:", error);
-      Alert.alert("Błąd", "Nie udało się zapisać szablonu");
+      console.error('Błąd zapisu szablonu:', error);
+      Alert.alert('Błąd', 'Nie udało się zapisać szablonu');
     }
   };
 
   const handleSaveResults = async () => {
     try {
       if (!student || !sessionId) {
-        Alert.alert("Błąd", "Brak wymaganych danych: student lub sesja");
+        Alert.alert('Błąd', 'Brak wymaganych danych: student lub sesja');
         return;
       }
-      const response = await apiService.post("checklist/test-results", {
+      const response = await apiService.post('checklist/test-results', {
         student: {
           name: student.name,
           surname: student.surname,
-          albumNumber: student.albumNumber || "",
+          albumNumber: student.albumNumber || '',
         },
-        tasks: testState.tasks.map((t) => ({
+        tasks: testState.tasks.map(t => ({
           text: t.text,
           completed: t.completed,
         })),
-        comments: testState.comments.map((c) => ({
+        comments: testState.comments.map(c => ({
           text: c.text,
           timestamp: c.timestamp.toISOString(),
         })),
         sessionId: sessionId,
       });
-      console.log("Odpowiedź z test-results:", response);
-      Alert.alert("Sukces", "Wyniki testu zostały zapisane");
+      console.log('Odpowiedź z test-results:', response);
+      Alert.alert('Sukces', 'Wyniki testu zostały zapisane');
     } catch (error) {
-      console.error("Pełny błąd zapisu:", error);
-      let errorMessage = "Nie udało się zapisać wyników testu";
+      console.error('Pełny błąd zapisu:', error);
+      let errorMessage = 'Nie udało się zapisać wyników testu';
       if (error instanceof Error) {
         errorMessage = `${error.message} (${error.stack})`;
       }
-      Alert.alert("Błąd", errorMessage);
+      Alert.alert('Błąd', errorMessage);
     }
   };
 
@@ -206,58 +201,64 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
   };
 
   const toggleTaskCompleted = (taskId: number) => {
-    const updated = testState.tasks.map((t) =>
+    const updated = testState.tasks.map(t =>
       t.id === taskId ? { ...t, completed: !t.completed } : t
     );
     onChangeTasks(updated);
   };
 
   const handleDeleteTask = (taskId: number) => {
-    const updated = testState.tasks.filter((t) => t.id !== taskId);
+    const updated = testState.tasks.filter(t => t.id !== taskId);
     onChangeTasks(updated);
   };
 
   const openSaveTemplateModal = () => {
-    setTemplateNameInput(testState.loadedTestName || "");
+    setTemplateNameInput(testState.loadedTestName || '');
     setShowTemplateNameDialog(true);
   };
 
   const handleDeleteTemplate = async (templateId: number) => {
     try {
       await apiService.delete(`checklist/templates/${templateId}`);
-      Alert.alert("Usunięto", "Szablon został usunięty");
+      Alert.alert('Usunięto', 'Szablon został usunięty');
       loadTemplates();
-      const wasLoaded = templates.find((t) => t.id === templateId);
+      const wasLoaded = templates.find(t => t.id === templateId);
       if (wasLoaded && wasLoaded.name === testState.loadedTestName) {
-        onLoadTemplate("", []); 
+        onLoadTemplate('', []);
       }
       setDeleteMenuVisible(false);
     } catch (error) {
-      console.error("Błąd usuwania szablonu:", error);
-      Alert.alert("Błąd", "Nie udało się usunąć szablonu");
+      console.error('Błąd usuwania szablonu:', error);
+      Alert.alert('Błąd', 'Nie udało się usunąć szablonu');
     }
   };
 
-React.useEffect(() => {
-  if (
-    testState.loadedTestName && 
-    !templates.some(t => t.name === testState.loadedTestName)
-  ) {
-    onLoadTemplate("", []);
-  }
-}, [templates, testState.loadedTestName, onLoadTemplate]);
+  React.useEffect(() => {
+    if (
+      testState.loadedTestName &&
+      !templates.some(t => t.name === testState.loadedTestName)
+    ) {
+      onLoadTemplate('', []);
+    }
+  }, [templates, testState.loadedTestName, onLoadTemplate]);
 
   const moveTaskUp = (index: number) => {
     if (index === 0) return;
     const newTasks = [...testState.tasks];
-    [newTasks[index - 1], newTasks[index]] = [newTasks[index], newTasks[index - 1]];
+    [newTasks[index - 1], newTasks[index]] = [
+      newTasks[index],
+      newTasks[index - 1],
+    ];
     onChangeTasks(newTasks);
   };
 
   const moveTaskDown = (index: number) => {
     if (index === testState.tasks.length - 1) return;
     const newTasks = [...testState.tasks];
-    [newTasks[index + 1], newTasks[index]] = [newTasks[index], newTasks[index + 1]];
+    [newTasks[index + 1], newTasks[index]] = [
+      newTasks[index],
+      newTasks[index + 1],
+    ];
     onChangeTasks(newTasks);
   };
 
@@ -286,7 +287,7 @@ React.useEffect(() => {
           <List.Section style={styles.section}>
             <List.Subheader>1. Wczytaj gotowy test</List.Subheader>
             <View style={styles.templateRow}>
-              {/* Menu wyboru szablonu */}
+              {}
               <Menu
                 visible={selectMenuVisible}
                 onDismiss={() => setSelectMenuVisible(false)}
@@ -298,14 +299,14 @@ React.useEffect(() => {
                     contentStyle={{ backgroundColor: theme.colors.surface }}
                     labelStyle={{ color: theme.colors.onSurface }}
                   >
-                    {testState.loadedTestName || "Wybierz szablon"}
+                    {testState.loadedTestName || 'Wybierz szablon'}
                   </Button>
                 }
               >
                 {templates.length === 0 ? (
                   <Menu.Item title="Brak szablonów" disabled />
                 ) : (
-                  templates.map((template) => (
+                  templates.map(template => (
                     <Menu.Item
                       key={template.id}
                       onPress={() => loadTemplate(template)}
@@ -315,7 +316,7 @@ React.useEffect(() => {
                 )}
               </Menu>
 
-              {/* Przycisk odświeżenia */}
+              {}
               <IconButton
                 icon="refresh"
                 size={24}
@@ -324,7 +325,7 @@ React.useEffect(() => {
                 iconColor={theme.colors.primary}
               />
 
-              {/* Menu usuwania szablonu */}
+              {}
               <Menu
                 visible={deleteMenuVisible}
                 onDismiss={() => setDeleteMenuVisible(false)}
@@ -340,7 +341,7 @@ React.useEffect(() => {
                 {templates.length === 0 ? (
                   <Menu.Item title="Brak szablonów do usunięcia" disabled />
                 ) : (
-                  templates.map((template) => (
+                  templates.map(template => (
                     <Menu.Item
                       key={template.id}
                       onPress={() => handleDeleteTemplate(template.id)}
@@ -370,7 +371,7 @@ React.useEffect(() => {
                 icon="plus"
                 size={24}
                 onPress={handleAddTask}
-                disabled={newTaskText.trim() === ""}
+                disabled={newTaskText.trim() === ''}
                 iconColor={theme.colors.primary}
               />
             </View>
@@ -383,7 +384,7 @@ React.useEffect(() => {
               testState.tasks.map((task, idx) => (
                 <View key={task.id} style={styles.taskRow}>
                   <Checkbox
-                    status={task.completed ? "checked" : "unchecked"}
+                    status={task.completed ? 'checked' : 'unchecked'}
                     onPress={() => toggleTaskCompleted(task.id)}
                     color={theme.colors.primary}
                   />
@@ -394,7 +395,7 @@ React.useEffect(() => {
                       size={20}
                       onPress={() => moveTaskUp(idx)}
                       disabled={idx === 0}
-                      iconColor={idx === 0 ? "#BDBDBD" : theme.colors.primary}
+                      iconColor={idx === 0 ? '#BDBDBD' : theme.colors.primary}
                     />
                     <IconButton
                       icon="arrow-down"
@@ -403,7 +404,7 @@ React.useEffect(() => {
                       disabled={idx === testState.tasks.length - 1}
                       iconColor={
                         idx === testState.tasks.length - 1
-                          ? "#BDBDBD"
+                          ? '#BDBDBD'
                           : theme.colors.primary
                       }
                     />
@@ -423,7 +424,7 @@ React.useEffect(() => {
             <List.Subheader>
               3. Komentarze ({testState.comments.length})
               <IconButton
-                icon={commentsExpanded ? "chevron-up" : "chevron-down"}
+                icon={commentsExpanded ? 'chevron-up' : 'chevron-down'}
                 size={20}
                 onPress={() => setCommentsExpanded(!commentsExpanded)}
                 style={styles.commentToggle}
@@ -433,7 +434,10 @@ React.useEffect(() => {
             <RNTextInput
               style={[
                 styles.commentsInput,
-                { backgroundColor: theme.colors.surface,  color: theme.colors.onSurface,  },
+                {
+                  backgroundColor: theme.colors.surface,
+                  color: theme.colors.onSurface,
+                },
               ]}
               placeholder="Wpisz komentarz..."
               placeholderTextColor="#888"
@@ -445,7 +449,7 @@ React.useEffect(() => {
             <Button
               mode="outlined"
               onPress={handleSaveComment}
-              disabled={newComment.trim() === ""}
+              disabled={newComment.trim() === ''}
               style={styles.actionButton}
               contentStyle={{ backgroundColor: theme.colors.surface }}
             >
@@ -453,7 +457,7 @@ React.useEffect(() => {
             </Button>
 
             {commentsExpanded &&
-              testState.comments.map((comment) => (
+              testState.comments.map(comment => (
                 <View key={comment.id} style={styles.commentItem}>
                   <Text style={styles.commentText}>{comment.text}</Text>
                   <Text style={styles.commentTime}>
@@ -479,10 +483,15 @@ React.useEffect(() => {
               <View
                 style={[
                   styles.modalContainer,
-                  { backgroundColor: "rgba(0,0,0,0.4)" },
+                  { backgroundColor: 'rgba(0,0,0,0.4)' },
                 ]}
               >
-                <Card style={{ width: "80%", backgroundColor: theme.colors.surface }}>
+                <Card
+                  style={{
+                    width: '80%',
+                    backgroundColor: theme.colors.surface,
+                  }}
+                >
                   <Card.Content>
                     <Text variant="titleMedium" style={{ marginBottom: 8 }}>
                       Podaj nazwę szablonu
@@ -524,7 +533,7 @@ React.useEffect(() => {
               Zapisz wyniki
             </Button>
 
-            {/* Przycisk Wyczyść formularz */}
+            {}
             <Button
               mode="outlined"
               onPress={handleClearForm}
@@ -541,8 +550,8 @@ React.useEffect(() => {
 
   if (!visible) return null;
 
-  if (Platform.OS === "web") {
-    const windowHeight = Dimensions.get("window").height;
+  if (Platform.OS === 'web') {
+    const windowHeight = Dimensions.get('window').height;
     const popupHeight = 600;
     const margin = 16;
     const calculatedTop =
@@ -579,9 +588,19 @@ React.useEffect(() => {
   }
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onDismiss}
+    >
       <Pressable style={styles.mobileOverlay} onPress={onDismiss}>
-        <View style={[styles.mobilePopup, { backgroundColor: theme.colors.surface }]}>
+        <View
+          style={[
+            styles.mobilePopup,
+            { backgroundColor: theme.colors.surface },
+          ]}
+        >
           <ScrollView
             style={styles.scrollView}
             contentContainerStyle={styles.scrollContent}
@@ -602,16 +621,16 @@ React.useEffect(() => {
 
 const styles = StyleSheet.create({
   webOverlay: {
-    position: "absolute",
+    position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.2)",
+    backgroundColor: 'rgba(0,0,0,0.2)',
     zIndex: 1000,
   },
   webPopup: {
-    position: "absolute",
+    position: 'absolute',
     width: 580,
     height: 600,
     borderRadius: 8,
@@ -620,36 +639,36 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     zIndex: 1001,
-    overflow: "hidden",
+    overflow: 'hidden',
   },
   fullHeight: {
-    height: "100%",
+    height: '100%',
   },
   mobileOverlay: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.2)",
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.2)',
   },
   mobilePopup: {
-    width: "90%",
+    width: '90%',
     maxWidth: 580,
-    height: "80%",
+    height: '80%',
     borderRadius: 8,
-    overflow: "hidden",
+    overflow: 'hidden',
   },
   popupHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 16,
     paddingHorizontal: 16,
     paddingTop: 16,
   },
   centeredStart: {
     height: 200,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingBottom: 16,
   },
@@ -666,7 +685,7 @@ const styles = StyleSheet.create({
   },
   touchArea: {
     flex: 1,
-    minHeight: "100%",
+    minHeight: '100%',
   },
   section: {
     marginBottom: 24,
@@ -676,23 +695,23 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
   },
   newTaskRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginHorizontal: 8,
   },
   newTaskInput: {
     flex: 1,
-    height: Platform.OS === "web" ? undefined : 40,
+    height: Platform.OS === 'web' ? undefined : 40,
   },
   noTasksText: {
-    fontStyle: "italic",
+    fontStyle: 'italic',
     opacity: 0.7,
     marginTop: 8,
     marginLeft: 8,
   },
   taskRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginTop: 8,
     marginHorizontal: 8,
   },
@@ -701,11 +720,11 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   reorderButtons: {
-    flexDirection: "column",
+    flexDirection: 'column',
   },
   commentsInput: {
     borderWidth: 1,
-    borderColor: "#888",
+    borderColor: '#888',
     borderRadius: 4,
     padding: 8,
     minHeight: 100,
@@ -715,8 +734,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   templateRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginHorizontal: 8,
   },
   templateButton: {
@@ -727,17 +746,17 @@ const styles = StyleSheet.create({
   },
   webTouchArea: {
     flex: 1,
-    minHeight: "100%",
+    minHeight: '100%',
   },
   commentToggle: {
-    position: "absolute",
+    position: 'absolute',
     right: 0,
     top: -8,
   },
   commentItem: {
     marginTop: 8,
     padding: 8,
-    backgroundColor: "rgba(0,0,0,0.05)",
+    backgroundColor: 'rgba(0,0,0,0.05)',
     borderRadius: 4,
   },
   commentText: {
@@ -745,18 +764,18 @@ const styles = StyleSheet.create({
   },
   commentTime: {
     fontSize: 12,
-    color: "#666",
+    color: '#666',
     marginTop: 4,
   },
   modalContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalButtons: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
     marginTop: 10,
     gap: 10,
   },

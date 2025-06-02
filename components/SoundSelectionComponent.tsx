@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { View, StyleSheet, ScrollView, Platform } from "react-native";
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, ScrollView, Platform } from 'react-native';
 import {
   Text,
   List,
@@ -8,101 +8,100 @@ import {
   useTheme,
   RadioButton,
   ActivityIndicator,
-} from "react-native-paper";
-import { Audio } from "expo-av";
-import { audioApiService } from "@/services/AudioApiService";
-import { loadAudioFromLocal } from "@/app/screens/student/utils/audioUtils";
+} from 'react-native-paper';
+import { Audio } from 'expo-av';
+import { audioApiService } from '@/services/AudioApiService';
+import { loadAudioFromLocal } from '@/app/screens/student/utils/audioUtils';
 
-// Sound structure matching SoundSelectionDialog.tsx
 const soundStructure = {
   Adult: {
     Female: [
-      "Breathing through contractions",
-      "Coughing",
-      "Distressed",
-      "Hawk",
-      "Moaning",
-      "No",
-      "Ok",
-      "Pain",
-      "Pushing - long double",
-      "Pushing - long",
-      "Pushing - single",
-      "Screaming",
-      "Sob breathing (type 2)",
-      "Sob breathing",
-      "Vomiting",
-      "Yes",
+      'Breathing through contractions',
+      'Coughing',
+      'Distressed',
+      'Hawk',
+      'Moaning',
+      'No',
+      'Ok',
+      'Pain',
+      'Pushing - long double',
+      'Pushing - long',
+      'Pushing - single',
+      'Screaming',
+      'Sob breathing (type 2)',
+      'Sob breathing',
+      'Vomiting',
+      'Yes',
     ],
     Male: [
-      "Coughing (long)",
-      "Coughing",
-      "Difficult breathing",
-      "Hawk",
-      "Moaning (long)",
-      "Moaning",
-      "No",
-      "Ok",
-      "Screaming (type 2)",
-      "Screaming",
-      "Sob breathing",
-      "Vomiting (type 2)",
-      "Vomiting (type 3)",
-      "Vomiting",
-      "Yes",
+      'Coughing (long)',
+      'Coughing',
+      'Difficult breathing',
+      'Hawk',
+      'Moaning (long)',
+      'Moaning',
+      'No',
+      'Ok',
+      'Screaming (type 2)',
+      'Screaming',
+      'Sob breathing',
+      'Vomiting (type 2)',
+      'Vomiting (type 3)',
+      'Vomiting',
+      'Yes',
     ],
   },
   Child: [
-    "Coughing",
-    "Hawk",
-    "Moaning",
-    "No",
-    "Ok",
-    "Screaming",
-    "Sob breathing",
-    "Vomiting (type 2)",
-    "Vomiting",
-    "Yes",
+    'Coughing',
+    'Hawk',
+    'Moaning',
+    'No',
+    'Ok',
+    'Screaming',
+    'Sob breathing',
+    'Vomiting (type 2)',
+    'Vomiting',
+    'Yes',
   ],
   Geriatric: {
-    Female: ["Coughing", "Moaning", "No", "Screaming", "Vomiting", "Yes"],
-    Male: ["Coughing", "Moaning", "No", "Screaming", "Vomiting", "Yes"],
+    Female: ['Coughing', 'Moaning', 'No', 'Screaming', 'Vomiting', 'Yes'],
+    Male: ['Coughing', 'Moaning', 'No', 'Screaming', 'Vomiting', 'Yes'],
   },
   Infant: [
-    "Content",
-    "Cough",
-    "Grunt",
-    "Hawk",
-    "Hiccup",
-    "Screaming",
-    "Strongcry (type 2)",
-    "Strongcry",
-    "Weakcry",
+    'Content',
+    'Cough',
+    'Grunt',
+    'Hawk',
+    'Hiccup',
+    'Screaming',
+    'Strongcry (type 2)',
+    'Strongcry',
+    'Weakcry',
   ],
   Speech: [
-    "Chest hurts",
-    "Doc I feel I could die",
-    "Go away",
+    'Chest hurts',
+    'Doc I feel I could die',
+    'Go away',
     "I don't feel dizzy",
     "I don't feel well",
-    "I feel better now",
-    "I feel really bad",
+    'I feel better now',
+    'I feel really bad',
     "I'm feeling very dizzy",
     "I'm fine",
     "I'm quite nauseous",
     "I'm really hungry",
     "I'm really thirsty",
     "I'm so sick",
-    "Never had pain like this before",
-    "No allergies",
-    "No diabetes",
-    "No lung or cardiac problems",
-    "No",
-    "Pain for 2 hours",
-    "Something for this pain",
-    "Thank you",
-    "That helped",
-    "Yes",
+    'Never had pain like this before',
+    'No allergies',
+    'No diabetes',
+    'No lung or cardiac problems',
+    'No',
+    'Pain for 2 hours',
+    'Something for this pain',
+    'Thank you',
+    'That helped',
+    'Yes',
   ],
 };
 
@@ -138,7 +137,7 @@ const SoundSelectionComponent: React.FC<SoundSelectionComponentProps> = ({
   maxHeight,
 }) => {
   const theme = useTheme();
-  const [activeTab, setActiveTab] = useState<"local" | "server">("local");
+  const [activeTab, setActiveTab] = useState<'local' | 'server'>('local');
   const [currentPath, setCurrentPath] = useState<string[]>([]);
   const [serverAudioFiles, setServerAudioFiles] = useState<ServerAudioFile[]>(
     []
@@ -148,14 +147,12 @@ const SoundSelectionComponent: React.FC<SoundSelectionComponentProps> = ({
   const [currentAudioSound, setCurrentAudioSound] =
     useState<Audio.Sound | null>(null);
 
-  // Initialize audio system for mobile
   useEffect(() => {
-    if (Platform.OS !== "web") {
+    if (Platform.OS !== 'web') {
       initializeAudioSystem();
     }
 
     return () => {
-      // Cleanup audio on unmount
       if (currentAudioSound) {
         currentAudioSound.unloadAsync().catch(console.error);
       }
@@ -171,13 +168,12 @@ const SoundSelectionComponent: React.FC<SoundSelectionComponentProps> = ({
         playThroughEarpieceAndroid: false,
       });
     } catch (error) {
-      console.error("Failed to initialize audio system:", error);
+      console.error('Failed to initialize audio system:', error);
     }
   };
 
-  // Load server audio files when the server tab is selected
   useEffect(() => {
-    if (activeTab === "server") {
+    if (activeTab === 'server') {
       loadServerAudioFiles();
     }
   }, [activeTab]);
@@ -188,7 +184,7 @@ const SoundSelectionComponent: React.FC<SoundSelectionComponentProps> = ({
       const response = await audioApiService.getAudioList();
       setServerAudioFiles(response);
     } catch (error) {
-      console.error("Error loading server audio files:", error);
+      console.error('Error loading server audio files:', error);
     } finally {
       setLoadingServerAudio(false);
     }
@@ -221,20 +217,17 @@ const SoundSelectionComponent: React.FC<SoundSelectionComponentProps> = ({
   };
   const playLocalSound = async (soundPath: string) => {
     try {
-      // Stop any currently playing sound
       await stopSound();
 
       setPlayingSound(soundPath);
 
-      if (Platform.OS === "web") {
-        // On web, just call the preview handler
+      if (Platform.OS === 'web') {
         if (onSoundPreview) {
           onSoundPreview(soundPath, null);
         }
         return;
       }
 
-      // On mobile, use the proper audio loading utility
       try {
         const sound = await loadAudioFromLocal(soundPath);
 
@@ -244,8 +237,7 @@ const SoundSelectionComponent: React.FC<SoundSelectionComponentProps> = ({
           return;
         }
 
-        // Set up playback status listener
-        sound.setOnPlaybackStatusUpdate((status) => {
+        sound.setOnPlaybackStatusUpdate(status => {
           if (status.isLoaded && status.didJustFinish) {
             setPlayingSound(null);
             setCurrentAudioSound(null);
@@ -260,7 +252,7 @@ const SoundSelectionComponent: React.FC<SoundSelectionComponentProps> = ({
         }
       } catch (audioError) {
         console.warn(
-          "Failed to play local audio, falling back to preview handler:",
+          'Failed to play local audio, falling back to preview handler:',
           audioError
         );
         setPlayingSound(null);
@@ -269,14 +261,13 @@ const SoundSelectionComponent: React.FC<SoundSelectionComponentProps> = ({
         }
       }
     } catch (error) {
-      console.error("Error playing local sound:", error);
+      console.error('Error playing local sound:', error);
       setPlayingSound(null);
     }
   };
 
   const playServerAudio = async (audioId: string) => {
     try {
-      // Stop any currently playing sound
       await stopSound();
 
       setPlayingSound(`server_${audioId}`);
@@ -285,7 +276,7 @@ const SoundSelectionComponent: React.FC<SoundSelectionComponentProps> = ({
         onSoundPreview(null, audioId);
       }
     } catch (error) {
-      console.error("Error playing server audio:", error);
+      console.error('Error playing server audio:', error);
       setPlayingSound(null);
     }
   };
@@ -299,7 +290,7 @@ const SoundSelectionComponent: React.FC<SoundSelectionComponentProps> = ({
       }
       setPlayingSound(null);
     } catch (error) {
-      console.error("Error stopping sound:", error);
+      console.error('Error stopping sound:', error);
       setPlayingSound(null);
       setCurrentAudioSound(null);
     }
@@ -309,15 +300,14 @@ const SoundSelectionComponent: React.FC<SoundSelectionComponentProps> = ({
     const currentLevel = getCurrentLevel();
 
     if (Array.isArray(currentLevel)) {
-      // We're at a leaf level, show sound files
       return (
         <View style={styles.soundListContainer}>
           <RadioButton.Group
             onValueChange={handleSoundSelect}
-            value={selectedSound || ""}
+            value={selectedSound || ''}
           >
-            {currentLevel.map((item) => {
-              const soundPath = `${currentPath.join("/")}/${item}.wav`;
+            {currentLevel.map(item => {
+              const soundPath = `${currentPath.join('/')}/${item}.wav`;
               return (
                 <List.Item
                   key={item}
@@ -328,13 +318,13 @@ const SoundSelectionComponent: React.FC<SoundSelectionComponentProps> = ({
                     <RadioButton
                       value={soundPath}
                       status={
-                        selectedSound === soundPath ? "checked" : "unchecked"
+                        selectedSound === soundPath ? 'checked' : 'unchecked'
                       }
                     />
                   )}
                   right={() => (
                     <IconButton
-                      icon={playingSound === soundPath ? "stop" : "play"}
+                      icon={playingSound === soundPath ? 'stop' : 'play'}
                       size={20}
                       onPress={async () => {
                         if (playingSound === soundPath) {
@@ -355,7 +345,7 @@ const SoundSelectionComponent: React.FC<SoundSelectionComponentProps> = ({
     } else {
       return (
         <View style={styles.soundListContainer}>
-          {Object.keys(currentLevel).map((key) => (
+          {Object.keys(currentLevel).map(key => (
             <List.Item
               key={key}
               title={key}
@@ -394,9 +384,9 @@ const SoundSelectionComponent: React.FC<SoundSelectionComponentProps> = ({
       <View style={styles.soundListContainer}>
         <RadioButton.Group
           onValueChange={handleServerAudioSelect}
-          value={selectedServerAudioId || ""}
+          value={selectedServerAudioId || ''}
         >
-          {serverAudioFiles.map((file) => (
+          {serverAudioFiles.map(file => (
             <List.Item
               key={file.id}
               title={file.name}
@@ -407,13 +397,13 @@ const SoundSelectionComponent: React.FC<SoundSelectionComponentProps> = ({
                 <RadioButton
                   value={file.id}
                   status={
-                    selectedServerAudioId === file.id ? "checked" : "unchecked"
+                    selectedServerAudioId === file.id ? 'checked' : 'unchecked'
                   }
                 />
               )}
               right={() => (
                 <IconButton
-                  icon={playingSound === `server_${file.id}` ? "stop" : "play"}
+                  icon={playingSound === `server_${file.id}` ? 'stop' : 'play'}
                   size={20}
                   onPress={async () => {
                     if (playingSound === `server_${file.id}`) {
@@ -434,19 +424,19 @@ const SoundSelectionComponent: React.FC<SoundSelectionComponentProps> = ({
 
   return (
     <View style={[styles.container, style]}>
-      {/* Tab buttons */}
+      {}
       <View style={styles.tabsContainer}>
         <Button
-          mode={activeTab === "local" ? "contained" : "outlined"}
-          onPress={() => setActiveTab("local")}
+          mode={activeTab === 'local' ? 'contained' : 'outlined'}
+          onPress={() => setActiveTab('local')}
           style={styles.tabButton}
           labelStyle={styles.tabLabel}
         >
           Lokalne
         </Button>
         <Button
-          mode={activeTab === "server" ? "contained" : "outlined"}
-          onPress={() => setActiveTab("server")}
+          mode={activeTab === 'server' ? 'contained' : 'outlined'}
+          onPress={() => setActiveTab('server')}
           style={styles.tabButton}
           labelStyle={styles.tabLabel}
         >
@@ -455,7 +445,7 @@ const SoundSelectionComponent: React.FC<SoundSelectionComponentProps> = ({
       </View>
 
       <ScrollView style={styles.scrollContainer}>
-        {activeTab === "local" && (
+        {activeTab === 'local' && (
           <>
             <Text style={styles.sectionHeader}>Wybierz dźwięk:</Text>
 
@@ -475,7 +465,7 @@ const SoundSelectionComponent: React.FC<SoundSelectionComponentProps> = ({
           </>
         )}
 
-        {activeTab === "server" && (
+        {activeTab === 'server' && (
           <>
             <View style={styles.serverControlsHeader}>
               <Text style={styles.sectionHeader}>Pliki audio serwera:</Text>
@@ -499,10 +489,10 @@ const SoundSelectionComponent: React.FC<SoundSelectionComponentProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: Platform.OS === "web" ? 16 : 8,
+    padding: Platform.OS === 'web' ? 16 : 8,
   },
   tabsContainer: {
-    flexDirection: "row",
+    flexDirection: 'row',
     marginBottom: 16,
     gap: 8,
   },
@@ -511,21 +501,21 @@ const styles = StyleSheet.create({
     minHeight: 40,
   },
   tabLabel: {
-    fontSize: Platform.OS === "web" ? 12 : 14,
-    fontWeight: "500",
+    fontSize: Platform.OS === 'web' ? 12 : 14,
+    fontWeight: '500',
   },
   scrollContainer: {
     flex: 1,
-    minHeight: Platform.OS === "web" ? 200 : 500,
+    minHeight: Platform.OS === 'web' ? 200 : 500,
   },
   sectionHeader: {
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     marginBottom: 12,
     marginTop: 8,
   },
   backButton: {
-    alignSelf: "flex-start",
+    alignSelf: 'flex-start',
     marginBottom: 8,
   },
   backLabel: {
@@ -536,26 +526,26 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   serverControlsHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 12,
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
     minHeight: 150,
   },
   loadingText: {
     marginTop: 8,
-    textAlign: "center",
+    textAlign: 'center',
   },
   emptyContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
     minHeight: 150,
   },

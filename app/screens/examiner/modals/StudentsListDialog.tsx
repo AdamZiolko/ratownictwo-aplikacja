@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { StyleSheet, View, ScrollView, Dimensions } from "react-native";
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, ScrollView, Dimensions } from 'react-native';
 import {
   Dialog,
   Button,
@@ -13,101 +13,101 @@ import {
   Surface,
   useTheme,
   ActivityIndicator,
-} from "react-native-paper";
-import { Session, StudentInSession } from "../types/types";
-import { socketService } from "@/services/SocketService";
+} from 'react-native-paper';
+import { Session, StudentInSession } from '../types/types';
+import { socketService } from '@/services/SocketService';
 
-type SoundCategory = "Adult" | "Child" | "Geriatric" | "Infant" | "Speech";
+type SoundCategory = 'Adult' | 'Child' | 'Geriatric' | 'Infant' | 'Speech';
 
 const soundStructure: Record<SoundCategory, any> = {
   Adult: {
     Female: [
-      "Breathing through contractions",
-      "Coughing",
-      "Distressed",
-      "Hawk",
-      "Moaning",
-      "No",
-      "Ok",
-      "Pain",
-      "Pushing - long double",
-      "Pushing - long",
-      "Pushing - single",
-      "Screaming",
-      "Sob breathing (type 2)",
-      "Sob breathing",
-      "Vomiting",
-      "Yes",
+      'Breathing through contractions',
+      'Coughing',
+      'Distressed',
+      'Hawk',
+      'Moaning',
+      'No',
+      'Ok',
+      'Pain',
+      'Pushing - long double',
+      'Pushing - long',
+      'Pushing - single',
+      'Screaming',
+      'Sob breathing (type 2)',
+      'Sob breathing',
+      'Vomiting',
+      'Yes',
     ],
     Male: [
-      "Coughing (long)",
-      "Coughing",
-      "Difficult breathing",
-      "Hawk",
-      "Moaning (long)",
-      "Moaning",
-      "No",
-      "Ok",
-      "Screaming (type 2)",
-      "Screaming",
-      "Sob breathing",
-      "Vomiting (type 2)",
-      "Vomiting (type 3)",
-      "Vomiting",
-      "Yes",
+      'Coughing (long)',
+      'Coughing',
+      'Difficult breathing',
+      'Hawk',
+      'Moaning (long)',
+      'Moaning',
+      'No',
+      'Ok',
+      'Screaming (type 2)',
+      'Screaming',
+      'Sob breathing',
+      'Vomiting (type 2)',
+      'Vomiting (type 3)',
+      'Vomiting',
+      'Yes',
     ],
   },
   Child: [
-    "Coughing",
-    "Hawk",
-    "Moaning",
-    "No",
-    "Ok",
-    "Screaming",
-    "Sob breathing",
-    "Vomiting (type 2)",
-    "Vomiting",
-    "Yes",
+    'Coughing',
+    'Hawk',
+    'Moaning',
+    'No',
+    'Ok',
+    'Screaming',
+    'Sob breathing',
+    'Vomiting (type 2)',
+    'Vomiting',
+    'Yes',
   ],
   Geriatric: {
-    Female: ["Coughing", "Moaning", "No", "Screaming", "Vomiting", "Yes"],
-    Male: ["Coughing", "Moaning", "No", "Screaming", "Vomiting", "Yes"],
+    Female: ['Coughing', 'Moaning', 'No', 'Screaming', 'Vomiting', 'Yes'],
+    Male: ['Coughing', 'Moaning', 'No', 'Screaming', 'Vomiting', 'Yes'],
   },
   Infant: [
-    "Content",
-    "Cough",
-    "Grunt",
-    "Hawk",
-    "Hiccup",
-    "Screaming",
-    "Strongcry (type 2)",
-    "Strongcry",
-    "Weakcry",
+    'Content',
+    'Cough',
+    'Grunt',
+    'Hawk',
+    'Hiccup',
+    'Screaming',
+    'Strongcry (type 2)',
+    'Strongcry',
+    'Weakcry',
   ],
   Speech: [
-    "Chest hurts",
-    "Doc I feel I could die",
-    "Go away",
+    'Chest hurts',
+    'Doc I feel I could die',
+    'Go away',
     "I don't feel dizzy",
     "I don't feel well",
-    "I feel better now",
-    "I feel really bad",
+    'I feel better now',
+    'I feel really bad',
     "I'm feeling very dizzy",
     "I'm fine",
     "I'm quite nauseous",
     "I'm really hungry",
     "I'm really thirsty",
     "I'm so sick",
-    "Never had pain like this before",
-    "No allergies",
-    "No diabetes",
-    "No lung or cardiac problems",
-    "No",
-    "Pain for 2 hours",
-    "Something for this pain",
-    "Thank you",
-    "That helped",
-    "Yes",
+    'Never had pain like this before',
+    'No allergies',
+    'No diabetes',
+    'No lung or cardiac problems',
+    'No',
+    'Pain for 2 hours',
+    'Something for this pain',
+    'Thank you',
+    'That helped',
+    'Yes',
   ],
 };
 
@@ -141,13 +141,12 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
   useEffect(() => {
     if (visible) {
       try {
-        console.log("Students data count:", students?.length || 0);
-        console.log("Session students count:", session?.students?.length || 0);
+        console.log('Students data count:', students?.length || 0);
+        console.log('Session students count:', session?.students?.length || 0);
 
-        
         if (students && students.length > 0) {
           const studentSample = students[0];
-          console.log("Sample student structure:", {
+          console.log('Sample student structure:', {
             id: studentSample.id,
             userId: studentSample.userId,
             name: studentSample.name,
@@ -156,7 +155,7 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
           });
         } else if (session?.students && session.students.length > 0) {
           const studentSample = session.students[0];
-          console.log("Sample session student structure:", {
+          console.log('Sample session student structure:', {
             id: studentSample.id,
             name: studentSample.name,
             surname: studentSample.surname,
@@ -165,16 +164,16 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
           });
         } else {
           console.log(
-            "No student data available in either students or session.students",
+            'No student data available in either students or session.students'
           );
         }
       } catch (error) {
-        console.error("Error processing student data:", error);
+        console.error('Error processing student data:', error);
       }
     }
   }, [visible, students, session]);
 
-  if (!session) return null; 
+  if (!session) return null;
   interface StudentData {
     id?: number;
     userId?: number;
@@ -193,26 +192,23 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
       surname?: string;
       albumNumber?: string;
     };
-  } 
+  }
   const normalizeStudent = (
-    student: StudentData,
+    student: StudentData
   ): StudentInSession & { id: number } => {
-    console.log("Normalizing student:", student);
+    console.log('Normalizing student:', student);
 
-    
     const id = student.id || student.userId || student.studentId || 0;
 
-    
     const name =
-      student.name || (student.user && student.user.name) || "Nieznany";
+      student.name || (student.user && student.user.name) || 'Nieznany';
     const surname =
-      student.surname || (student.user && student.user.surname) || "Student";
+      student.surname || (student.user && student.user.surname) || 'Student';
     const albumNumber =
       student.albumNumber ||
       (student.user && student.user.albumNumber) ||
-      "brak numeru";
+      'brak numeru';
 
-    
     const student_sessions = {
       active:
         student.active ||
@@ -231,34 +227,32 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
       albumNumber,
       student_sessions,
     };
-  }; 
-  console.log("Processing student data sources");
+  };
+  console.log('Processing student data sources');
 
-  
   let sourceStudents: any[] = [];
   if (students && students.length > 0) {
     console.log(
-      "Using directly provided students array, count:",
-      students.length,
+      'Using directly provided students array, count:',
+      students.length
     );
     sourceStudents = students;
   } else if (session && session.students && session.students.length > 0) {
-    console.log("Using students from session, count:", session.students.length);
+    console.log('Using students from session, count:', session.students.length);
     sourceStudents = session.students;
   } else {
-    console.log("No students available in any source");
+    console.log('No students available in any source');
     sourceStudents = [];
   }
 
-  
   const studentsList = sourceStudents.map((student, index) => {
     if (!student) {
       console.error(`Invalid student at index ${index}`);
       return {
         id: index,
-        name: "Błąd",
-        surname: "Danych",
-        albumNumber: "brak numeru",
+        name: 'Błąd',
+        surname: 'Danych',
+        albumNumber: 'brak numeru',
         student_sessions: {
           active: false,
           joinedAt: new Date().toISOString(),
@@ -272,9 +266,9 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
       console.error(`Failed to normalize student at index ${index}:`, error);
       return {
         id: student.id || student.userId || index,
-        name: student.name || "Error",
-        surname: student.surname || "",
-        albumNumber: student.albumNumber || "brak numeru",
+        name: student.name || 'Error',
+        surname: student.surname || '',
+        albumNumber: student.albumNumber || 'brak numeru',
         student_sessions: {
           active: false,
           joinedAt: new Date().toISOString(),
@@ -283,10 +277,10 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
     }
   });
 
-  console.log("Normalized students list, count:", studentsList.length);
+  console.log('Normalized students list, count:', studentsList.length);
 
   const hasStudents = studentsList.length > 0;
-  
+
   const StudentRow = ({
     student,
     index,
@@ -336,7 +330,7 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
               ]}
             />
             <View style={styles.nameContainer}>
-              <Text variant="titleMedium" style={{ fontWeight: "700" }}>
+              <Text variant="titleMedium" style={{ fontWeight: '700' }}>
                 {`${student.name} ${student.surname}`}
               </Text>
               <Text
@@ -350,13 +344,13 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
         </View>
 
         <Text variant="bodySmall" style={styles.joinTime}>
-          Dołączył:{" "}
+          Dołączył:
           {student.student_sessions?.joinedAt
             ? new Date(student.student_sessions.joinedAt).toLocaleTimeString(
-                "pl-PL",
-                { hour: "2-digit", minute: "2-digit" },
+                'pl-PL',
+                { hour: '2-digit', minute: '2-digit' }
               )
-            : "-"}
+            : '-'}
         </Text>
 
         <Divider style={styles.divider} />
@@ -366,7 +360,7 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
             <Menu
               visible={menuVisibleState.category}
               onDismiss={() =>
-                setMenuVisible((prev) => ({
+                setMenuVisible(prev => ({
                   ...prev,
                   [studentId]: { ...(prev[studentId] || {}), category: false },
                 }))
@@ -375,7 +369,7 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
                 <Button
                   mode="outlined"
                   onPress={() =>
-                    setMenuVisible((prev) => ({
+                    setMenuVisible(prev => ({
                       ...prev,
                       [studentId]: {
                         ...(prev[studentId] || {}),
@@ -387,11 +381,11 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
                   icon="folder"
                   contentStyle={styles.buttonContent}
                 >
-                  {selectedCategory || "Kategoria"}
+                  {selectedCategory || 'Kategoria'}
                 </Button>
               }
             >
-              {Object.keys(soundStructure).map((category) => (
+              {Object.keys(soundStructure).map(category => (
                 <Menu.Item
                   key={category}
                   title={category}
@@ -405,7 +399,7 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
               <Menu
                 visible={menuVisibleState.subcategory}
                 onDismiss={() =>
-                  setMenuVisible((prev) => ({
+                  setMenuVisible(prev => ({
                     ...prev,
                     [studentId]: {
                       ...(prev[studentId] || {}),
@@ -417,7 +411,7 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
                   <Button
                     mode="outlined"
                     onPress={() =>
-                      setMenuVisible((prev) => ({
+                      setMenuVisible(prev => ({
                         ...prev,
                         [studentId]: {
                           ...(prev[studentId] || {}),
@@ -430,11 +424,11 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
                     disabled={!selectedCategory}
                     contentStyle={styles.buttonContent}
                   >
-                    {selectedSubcategory || "Podkategoria"}
+                    {selectedSubcategory || 'Podkategoria'}
                   </Button>
                 }
               >
-                {getAvailableSubcategories(studentId).map((subcategory) => (
+                {getAvailableSubcategories(studentId).map(subcategory => (
                   <Menu.Item
                     key={subcategory}
                     title={subcategory}
@@ -450,7 +444,7 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
             <Menu
               visible={menuVisibleState.sound}
               onDismiss={() =>
-                setMenuVisible((prev) => ({
+                setMenuVisible(prev => ({
                   ...prev,
                   [studentId]: { ...(prev[studentId] || {}), sound: false },
                 }))
@@ -459,7 +453,7 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
                 <Button
                   mode="outlined"
                   onPress={() =>
-                    setMenuVisible((prev) => ({
+                    setMenuVisible(prev => ({
                       ...prev,
                       [studentId]: { ...(prev[studentId] || {}), sound: true },
                     }))
@@ -472,8 +466,8 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
                   }
                   contentStyle={styles.buttonContent}
                 >
-                  {selectedSound?.split("/").pop()?.replace(".wav", "") ||
-                    "Dźwięk"}
+                  {selectedSound?.split('/').pop()?.replace('.wav', '') ||
+                    'Dźwięk'}
                 </Button>
               }
             >
@@ -496,10 +490,10 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
                 mode="contained"
                 disabled={!selectedSound || isLoading}
                 onPress={() => {
-                  setLoading((prev) => ({ ...prev, [studentId]: true }));
-                  handleSendToStudent(studentId, "PLAY");
+                  setLoading(prev => ({ ...prev, [studentId]: true }));
+                  handleSendToStudent(studentId, 'PLAY');
                   setTimeout(() => {
-                    setLoading((prev) => ({ ...prev, [studentId]: false }));
+                    setLoading(prev => ({ ...prev, [studentId]: false }));
                   }, 800);
                 }}
                 style={{ backgroundColor: theme.colors.primary }}
@@ -516,7 +510,7 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
                   icon="stop"
                   size={28}
                   mode="contained"
-                  onPress={() => handleSendToStudent(studentId, "STOP")}
+                  onPress={() => handleSendToStudent(studentId, 'STOP')}
                   style={{ backgroundColor: theme.colors.error }}
                   iconColor={theme.colors.onError}
                 />
@@ -534,7 +528,7 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
               Wybrany dźwięk:
             </Text>
             <Chip icon="music-note" style={styles.soundChip}>
-              {selectedSound.split("/").pop()?.replace(".wav", "")}
+              {selectedSound.split('/').pop()?.replace('.wav', '')}
             </Chip>
           </View>
         )}
@@ -546,7 +540,7 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
     const category = selectedCategories[studentId] as SoundCategory;
     if (!category) return [];
     const categoryData = soundStructure[category];
-    return typeof categoryData === "object" && !Array.isArray(categoryData)
+    return typeof categoryData === 'object' && !Array.isArray(categoryData)
       ? Object.keys(categoryData)
       : [];
   };
@@ -557,35 +551,35 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
     if (!category) return [];
 
     const categoryData = soundStructure[category];
-    if (typeof categoryData === "object" && subcategory) {
+    if (typeof categoryData === 'object' && subcategory) {
       return categoryData[subcategory] || [];
     }
     return Array.isArray(categoryData) ? categoryData : [];
   };
 
-  const handleSendToStudent = (studentId: number, command: "PLAY" | "STOP") => {
+  const handleSendToStudent = (studentId: number, command: 'PLAY' | 'STOP') => {
     if (!studentId) {
-      console.error("Attempted to send command to student with invalid ID");
+      console.error('Attempted to send command to student with invalid ID');
       return;
     }
 
     const sound = selectedSounds[studentId];
-    if (command === "PLAY" && sound) {
+    if (command === 'PLAY' && sound) {
       console.log(
-        `Sending PLAY command to student ${studentId} with sound: ${sound}`,
+        `Sending PLAY command to student ${studentId} with sound: ${sound}`
       );
-      socketService.emitStudentAudioCommand(studentId, "PLAY", sound);
+      socketService.emitStudentAudioCommand(studentId, 'PLAY', sound);
     } else {
       console.log(`Sending STOP command to student ${studentId}`);
-      socketService.emitStudentAudioCommand(studentId, "STOP", "");
+      socketService.emitStudentAudioCommand(studentId, 'STOP', '');
     }
   };
 
   const handleCategorySelect = (studentId: number, category: string) => {
-    setSelectedCategories((prev) => ({ ...prev, [studentId]: category }));
-    setSelectedSubcategories((prev) => ({ ...prev, [studentId]: "" }));
-    setSelectedSounds((prev) => ({ ...prev, [studentId]: "" }));
-    setMenuVisible((prev) => ({
+    setSelectedCategories(prev => ({ ...prev, [studentId]: category }));
+    setSelectedSubcategories(prev => ({ ...prev, [studentId]: '' }));
+    setSelectedSounds(prev => ({ ...prev, [studentId]: '' }));
+    setMenuVisible(prev => ({
       ...prev,
       [studentId]: {
         category: false,
@@ -596,9 +590,9 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
   };
 
   const handleSubcategorySelect = (studentId: number, subcategory: string) => {
-    setSelectedSubcategories((prev) => ({ ...prev, [studentId]: subcategory }));
-    setSelectedSounds((prev) => ({ ...prev, [studentId]: "" }));
-    setMenuVisible((prev) => ({
+    setSelectedSubcategories(prev => ({ ...prev, [studentId]: subcategory }));
+    setSelectedSounds(prev => ({ ...prev, [studentId]: '' }));
+    setMenuVisible(prev => ({
       ...prev,
       [studentId]: {
         category: false,
@@ -615,8 +609,8 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
       ? `${category}/${subcategory}/${sound}.wav`
       : `${category}/${sound}.wav`;
 
-    setSelectedSounds((prev) => ({ ...prev, [studentId]: soundPath }));
-    setMenuVisible((prev) => ({
+    setSelectedSounds(prev => ({ ...prev, [studentId]: soundPath }));
+    setMenuVisible(prev => ({
       ...prev,
       [studentId]: {
         ...prev[studentId],
@@ -630,7 +624,7 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
       onDismiss={onDismiss}
       style={{
         ...styles.dialog,
-        maxHeight: Dimensions.get("window").height * 0.9,
+        maxHeight: Dimensions.get('window').height * 0.9,
         backgroundColor: theme.dark
           ? theme.colors.elevation.level2
           : theme.colors.surface,
@@ -660,7 +654,7 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
           </View>
 
           <Chip
-            icon={session.isActive ? "check-circle" : "cancel"}
+            icon={session.isActive ? 'check-circle' : 'cancel'}
             style={[
               styles.sessionStatus,
               {
@@ -670,7 +664,7 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
               },
             ]}
           >
-            {session.isActive ? "Aktywna" : "Nieaktywna"}
+            {session.isActive ? 'Aktywna' : 'Nieaktywna'}
           </Chip>
         </Surface>
 
@@ -728,13 +722,13 @@ const StudentsListDialog: React.FC<StudentsListDialogProps> = ({
 const styles = StyleSheet.create({
   dialog: {
     maxWidth: 600,
-    width: "95%",
-    alignSelf: "center",
+    width: '95%',
+    alignSelf: 'center',
     borderRadius: 16,
   },
   dialogTitle: {
-    textAlign: "center",
-    fontWeight: "bold",
+    textAlign: 'center',
+    fontWeight: 'bold',
     fontSize: 22,
   },
   dialogContent: {
@@ -742,14 +736,14 @@ const styles = StyleSheet.create({
     paddingTop: 0,
   },
   dialogActions: {
-    justifyContent: "center",
+    justifyContent: 'center',
     paddingBottom: 16,
     paddingTop: 8,
   },
   sessionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginHorizontal: 0,
     marginVertical: 0,
     padding: 16,
@@ -759,14 +753,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   sessionName: {
-    fontWeight: "bold",
+    fontWeight: 'bold',
     marginBottom: 4,
   },
   sessionCode: {
     opacity: 0.7,
   },
   sessionStatus: {
-    alignSelf: "flex-start",
+    alignSelf: 'flex-start',
     marginBottom: 8,
   },
   sessionHeaderText: {
@@ -777,7 +771,7 @@ const styles = StyleSheet.create({
     height: 1,
   },
   studentsList: {
-    maxHeight: Dimensions.get("window").height * 0.6,
+    maxHeight: Dimensions.get('window').height * 0.6,
   },
   studentsListContent: {
     paddingHorizontal: 16,
@@ -790,14 +784,14 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
   studentHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 8,
   },
   studentInfo: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
   },
   nameContainer: {
@@ -805,22 +799,22 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   avatar: {
-    backgroundColor: "#3498db",
+    backgroundColor: '#3498db',
     borderRadius: 20,
   },
   controlsContainer: {
-    flexDirection: "column",
-    alignItems: "flex-end",
+    flexDirection: 'column',
+    alignItems: 'flex-end',
     gap: 8,
-    minWidth: Dimensions.get("window").width < 400 ? 150 : 280,
+    minWidth: Dimensions.get('window').width < 400 ? 150 : 280,
     marginLeft: 10,
   },
   statusContainer: {
-    alignItems: "flex-end",
+    alignItems: 'flex-end',
     marginRight: 16,
   },
   statusChip: {
-    backgroundColor: "transparent",
+    backgroundColor: 'transparent',
     height: 28,
   },
   joinTime: {
@@ -831,40 +825,40 @@ const styles = StyleSheet.create({
   },
   itemDivider: {
     marginVertical: 8,
-    backgroundColor: "#eee",
+    backgroundColor: '#eee',
   },
   emptyState: {
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     padding: 32,
     marginHorizontal: 16,
     borderRadius: 12,
   },
   emptyStateTitle: {
     marginTop: 16,
-    fontWeight: "bold",
+    fontWeight: 'bold',
   },
   emptyStateText: {
-    textAlign: "center",
+    textAlign: 'center',
     marginTop: 8,
     opacity: 0.7,
-    color: "#666",
+    color: '#666',
   },
   emptyStateButton: {
     marginTop: 24,
   },
   soundControls: {
-    flexDirection: "column",
+    flexDirection: 'column',
     gap: 6,
-    width: "100%",
+    width: '100%',
   },
   soundControlsContainer: {
     marginTop: 12,
   },
   selectionRow: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: 8,
-    flexWrap: "wrap",
+    flexWrap: 'wrap',
     marginBottom: 12,
   },
   categoryButton: {
@@ -881,14 +875,14 @@ const styles = StyleSheet.create({
   },
   buttonContent: {
     height: 36,
-    flexDirection: "row-reverse",
+    flexDirection: 'row-reverse',
   },
   controlButtonsContainer: {
-    alignItems: "flex-end",
+    alignItems: 'flex-end',
   },
   controlButtons: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
     gap: 4,
     marginTop: 4,
     borderRadius: 28,
@@ -897,8 +891,8 @@ const styles = StyleSheet.create({
     margin: 6,
   },
   selectedSoundIndicator: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginTop: 12,
     gap: 8,
   },

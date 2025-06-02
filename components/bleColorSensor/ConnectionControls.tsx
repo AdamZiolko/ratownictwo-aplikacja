@@ -3,7 +3,7 @@ import { View, StyleSheet } from 'react-native';
 import { Text, Button, ActivityIndicator, useTheme } from 'react-native-paper';
 
 interface ConnectionControlsProps {
-  status: "idle" | "scanning" | "connected" | "monitoring" | "error";
+  status: 'idle' | 'scanning' | 'connected' | 'monitoring' | 'error';
   isReconnecting: boolean;
   error: string | null;
   onConnect: () => void;
@@ -21,27 +21,26 @@ export const ConnectionControls: React.FC<ConnectionControlsProps> = ({
 
   return (
     <View style={styles.container}>
-      {status === "idle" && (
+      {status === 'idle' && (
         <View style={styles.connectButtonContainer}>
-          <Button
-            mode="contained"
-            onPress={onConnect}
-          >
+          <Button mode="contained" onPress={onConnect}>
             Skanuj i połącz
           </Button>
         </View>
       )}
 
-      {status === "scanning" && !isReconnecting && (
+      {status === 'scanning' && !isReconnecting && (
         <View style={styles.scanningContainer}>
           <ActivityIndicator size="large" animating={true} />
-          <Text style={[styles.scanningText, { color: theme.colors.onSurface }]}>
+          <Text
+            style={[styles.scanningText, { color: theme.colors.onSurface }]}
+          >
             Skanowanie i łączenie...
           </Text>
         </View>
       )}
 
-      {status === "monitoring" && (
+      {status === 'monitoring' && (
         <View>
           <Text style={[styles.statusOk, { color: theme.colors.primary }]}>
             Połączono z czujnikiem
@@ -84,17 +83,17 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontSize: 14,
   },
-  statusOk: { 
-    fontWeight: "bold",
+  statusOk: {
+    fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 8,
     fontSize: 16,
   },
-  disconnectButton: { 
+  disconnectButton: {
     marginTop: 16,
     width: '100%',
   },
-  error: { 
+  error: {
     marginTop: 8,
     textAlign: 'center',
     fontSize: 14,

@@ -1,10 +1,16 @@
-import React from "react";
-import { View, Text } from "react-native";
-import { EkgType, NoiseType } from "@/services/EkgFactory";
-import { useTheme } from "react-native-paper";
-import { createDashboardStyles } from "../DashboardStyles";
+import React from 'react';
+import { View, Text } from 'react-native';
+import { EkgType, NoiseType } from '@/services/EkgFactory';
+import { useTheme } from 'react-native-paper';
+import { createDashboardStyles } from '../DashboardStyles';
 
-export const StatItem = ({ value, label }: { value: number, label: string }) => {
+export const StatItem = ({
+  value,
+  label,
+}: {
+  value: number;
+  label: string;
+}) => {
   const theme = useTheme();
   const styles = createDashboardStyles(theme);
 
@@ -19,77 +25,77 @@ export const StatItem = ({ value, label }: { value: number, label: string }) => 
 export const getRhythmTypeName = (type: number): string => {
   switch (type as EkgType) {
     case EkgType.NORMAL_SINUS_RHYTHM:
-      return "Prawidłowy rytm zatokowy";
+      return 'Prawidłowy rytm zatokowy';
     case EkgType.SINUS_TACHYCARDIA:
-      return "Tachykardia zatokowa";
+      return 'Tachykardia zatokowa';
     case EkgType.SINUS_BRADYCARDIA:
-      return "Bradykardia zatokowa";
+      return 'Bradykardia zatokowa';
     case EkgType.ATRIAL_FIBRILLATION:
-      return "Migotanie przedsionków";
+      return 'Migotanie przedsionków';
     case EkgType.VENTRICULAR_FIBRILLATION:
-      return "Migotanie komór";
+      return 'Migotanie komór';
     case EkgType.VENTRICULAR_TACHYCARDIA:
-      return "Częstoskurcz komorowy";
+      return 'Częstoskurcz komorowy';
     case EkgType.TORSADE_DE_POINTES:
-      return "Torsade de pointes";
+      return 'Torsade de pointes';
     case EkgType.ASYSTOLE:
-      return "Asystolia";
+      return 'Asystolia';
     case EkgType.FIRST_DEGREE_AV_BLOCK:
-      return "Blok przedsionkowo-komorowy 1 stopnia";
+      return 'Blok przedsionkowo-komorowy 1 stopnia';
     case EkgType.SECOND_DEGREE_AV_BLOCK:
-      return "Blok przedsionkowo-komorowy 2 stopnia";
+      return 'Blok przedsionkowo-komorowy 2 stopnia';
     case EkgType.MOBITZ_TYPE_AV_BLOCK:
-      return "Blok przedsionkowo-komorowy 2 stopnia typu Mobitza";
+      return 'Blok przedsionkowo-komorowy 2 stopnia typu Mobitza';
     case EkgType.SA_BLOCK:
-      return "Blok zatokowo-przedsionkowy";
+      return 'Blok zatokowo-przedsionkowy';
     case EkgType.WANDERING_ATRIAL_PACEMAKER:
-      return "Nadkomorowe wędrowanie rozrusznika";
+      return 'Nadkomorowe wędrowanie rozrusznika';
     case EkgType.SINUS_ARRHYTHMIA:
-      return "Nadmiarowość zatokowa";
+      return 'Nadmiarowość zatokowa';
     case EkgType.PREMATURE_VENTRICULAR_CONTRACTION:
-      return "Przedwczesne pobudzenie komorowe";
+      return 'Przedwczesne pobudzenie komorowe';
     case EkgType.PREMATURE_ATRIAL_CONTRACTION:
-      return "Przedwczesne pobudzenie przedsionkowe";
+      return 'Przedwczesne pobudzenie przedsionkowe';
     case EkgType.PREMATURE_JUNCTIONAL_CONTRACTION:
-      return "Przedwczesne pobudzenie węzłowe";
+      return 'Przedwczesne pobudzenie węzłowe';
     case EkgType.ACCELERATED_VENTRICULAR_RHYTHM:
-      return "Przyspieszony rytm komorowy";
+      return 'Przyspieszony rytm komorowy';
     case EkgType.ACCELERATED_JUNCTIONAL_RHYTHM:
-      return "Przyspieszony rytm węzłowy";
+      return 'Przyspieszony rytm węzłowy';
     case EkgType.IDIOVENTRICULAR_RHYTHM:
-      return "Rytm komorowy idowentrykularny";
+      return 'Rytm komorowy idowentrykularny';
     case EkgType.VENTRICULAR_FLUTTER:
-      return "Trzepotanie komór";
+      return 'Trzepotanie komór';
     case EkgType.ATRIAL_FLUTTER_A:
-      return "Trzepotanie przedsionków typu A";
+      return 'Trzepotanie przedsionków typu A';
     case EkgType.ATRIAL_FLUTTER_B:
-      return "Trzepotanie przedsionków typu B";
+      return 'Trzepotanie przedsionków typu B';
     case EkgType.MULTIFOCAL_ATRIAL_TACHYCARDIA:
-      return "Wieloogniskowy częstoskurcz przedsionkowy";
+      return 'Wieloogniskowy częstoskurcz przedsionkowy';
     case EkgType.SINUS_ARREST:
-      return "Zahamowanie zatokowe";
+      return 'Zahamowanie zatokowe';
     case EkgType.VENTRICULAR_ESCAPE_BEAT:
-      return "Zastępcze pobudzenie komorowe";
+      return 'Zastępcze pobudzenie komorowe';
     case EkgType.JUNCTIONAL_ESCAPE_BEAT:
-      return "Zastępcze pobudzenie węzłowe";
+      return 'Zastępcze pobudzenie węzłowe';
     case EkgType.CUSTOM:
-      return "Niestandardowy";
+      return 'Niestandardowy';
     default:
-      return "Nieznany";
+      return 'Nieznany';
   }
 };
 
 export const getNoiseLevelName = (type: number): string => {
   switch (type as NoiseType) {
     case NoiseType.NONE:
-      return "Brak";
+      return 'Brak';
     case NoiseType.MILD:
-      return "Łagodne";
+      return 'Łagodne';
     case NoiseType.MODERATE:
-      return "Umiarkowane";
+      return 'Umiarkowane';
     case NoiseType.SEVERE:
-      return "Silne";
+      return 'Silne';
     default:
-      return "Nieznane";
+      return 'Nieznane';
   }
 };

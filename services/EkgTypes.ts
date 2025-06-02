@@ -1,16 +1,12 @@
-
-
 import { EkgType, NoiseType } from './EkgFactory';
-
 
 export interface EkgJsonData {
   sample_rate: number;
   period_count: number;
   timestamps: number[];
   values: number[];
-  midpoint?: number; 
+  midpoint?: number;
 }
-
 
 export interface EkgTimeSeriesData {
   type: EkgType;
@@ -18,9 +14,8 @@ export interface EkgTimeSeriesData {
   values: number[];
   bpm: number;
   noiseType: NoiseType;
-  xOffset?: number; 
+  xOffset?: number;
 }
-
 
 export interface EkgRenderConfig {
   lineColor: string;
@@ -31,16 +26,14 @@ export interface EkgRenderConfig {
   timeScale: number;
   amplitudeScale: number;
   showGrid: boolean;
-  xOffset?: number; 
+  xOffset?: number;
 }
-
 
 export enum NoiseApplicationMethod {
   ADDITIVE = 'additive',
   MULTIPLICATIVE = 'multiplicative',
-  COMBINED = 'combined'
+  COMBINED = 'combined',
 }
-
 
 export interface NoiseConfig {
   type: NoiseType;

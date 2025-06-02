@@ -1,10 +1,10 @@
-import AuthService from "./AuthService";
-import { API_URL } from "../constants/Config";
+import AuthService from './AuthService';
+import { API_URL } from '../constants/Config';
 
 class ApiService {
   private async getAuthHeader(): Promise<Headers> {
     const headers = new Headers({
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     });
 
     try {
@@ -14,7 +14,7 @@ class ApiService {
         token = user.accessToken;
 
         if (this.isTokenExpired(token)) {
-          console.log("Token is expired, refreshing...");
+          console.log('Token is expired, refreshing...');
           const refreshResult = await AuthService.refreshToken();
           if (refreshResult && refreshResult.accessToken) {
             token = refreshResult.accessToken;
@@ -23,10 +23,10 @@ class ApiService {
       }
 
       if (token) {
-        headers.append("authorization", `Bearer ${token}`);
+        headers.append('authorization', `Bearer ${token}`);
       }
     } catch (error) {
-      console.error("Error getting auth token:", error);
+      console.error('Error getting auth token:', error);
     }
 
     return headers;
@@ -34,7 +34,7 @@ class ApiService {
 
   private isTokenExpired(token: string): boolean {
     try {
-      const payload = token.split(".")[1];
+      const payload = token.split('.')[1];
 
       const decodedPayload = JSON.parse(atob(payload));
 
@@ -43,7 +43,7 @@ class ApiService {
       }
       return false;
     } catch (error) {
-      console.error("Error checking token expiration:", error);
+      console.error('Error checking token expiration:', error);
 
       return true;
     }
@@ -52,8 +52,8 @@ class ApiService {
   private extractTokenFromHeader(authHeader?: string | null): string | null {
     if (!authHeader) return null;
 
-    const parts = authHeader.split(" ");
-    if (parts.length === 2 && parts[0].toLowerCase() === "bearer") {
+    const parts = authHeader.split(' ');
+    if (parts.length === 2 && parts[0].toLowerCase() === 'bearer') {
       return parts[1];
     }
 
@@ -76,22 +76,22 @@ class ApiService {
           const headers = await this.getAuthHeader();
 
           if (initialRequest.headers) {
-            const authHeader = initialRequest.headers.get("authorization");
+            const authHeader = initialRequest.headers.get('authorization');
             const bearerToken = this.extractTokenFromHeader(authHeader);
             if (!bearerToken && refreshResult.accessToken) {
               headers.set(
-                "authorization",
+                'authorization',
                 `Bearer ${refreshResult.accessToken}`
               );
             }
           }
 
           const retryResponse = await fetch(response.url, {
-            method: initialRequest.method || "GET",
+            method: initialRequest.method || 'GET',
             headers,
             body:
-              initialRequest.method !== "GET" &&
-              initialRequest.method !== "HEAD"
+              initialRequest.method !== 'GET' &&
+              initialRequest.method !== 'HEAD'
                 ? initialRequest.body
                 : undefined,
           });
@@ -100,13 +100,13 @@ class ApiService {
         }
       } catch (error) {
         await AuthService.logout();
-        throw new Error("Session expired. Please login again.");
+        throw new Error('Session expired. Please login again.');
       }
     }
 
     try {
       const errorData = await response.json();
-      throw new Error(errorData.message || "Request failed");
+      throw new Error(errorData.message || 'Request failed');
     } catch (e) {
       throw new Error(`Request failed with status ${response.status}`);
     }
@@ -121,17 +121,17 @@ class ApiService {
           headers.append(key, value);
         });
 
-        const authHeader = customHeaders.get("authorization");
+        const authHeader = customHeaders.get('authorization');
         if (authHeader) {
           const bearerToken = this.extractTokenFromHeader(authHeader);
           if (bearerToken) {
-            headers.set("authorization", `Bearer ${bearerToken}`);
+            headers.set('authorization', `Bearer ${bearerToken}`);
           }
         }
       }
 
       const request = new Request(`${API_URL}/api/${endpoint}`, {
-        method: "GET",
+        method: 'GET',
         headers,
       });
 
@@ -156,17 +156,17 @@ class ApiService {
           headers.append(key, value);
         });
 
-        const authHeader = customHeaders.get("authorization");
+        const authHeader = customHeaders.get('authorization');
         if (authHeader) {
           const bearerToken = this.extractTokenFromHeader(authHeader);
           if (bearerToken) {
-            headers.set("authorization", `Bearer ${bearerToken}`);
+            headers.set('authorization', `Bearer ${bearerToken}`);
           }
         }
       }
 
       const request = new Request(`${API_URL}/api/${endpoint}`, {
-        method: "POST",
+        method: 'POST',
         headers,
         body: JSON.stringify(data),
       });
@@ -192,17 +192,17 @@ class ApiService {
           headers.append(key, value);
         });
 
-        const authHeader = customHeaders.get("authorization");
+        const authHeader = customHeaders.get('authorization');
         if (authHeader) {
           const bearerToken = this.extractTokenFromHeader(authHeader);
           if (bearerToken) {
-            headers.set("authorization", `Bearer ${bearerToken}`);
+            headers.set('authorization', `Bearer ${bearerToken}`);
           }
         }
       }
 
       const request = new Request(`${API_URL}/api/${endpoint}`, {
-        method: "PUT",
+        method: 'PUT',
         headers,
         body: JSON.stringify(data),
       });
@@ -224,17 +224,17 @@ class ApiService {
           headers.append(key, value);
         });
 
-        const authHeader = customHeaders.get("authorization");
+        const authHeader = customHeaders.get('authorization');
         if (authHeader) {
           const bearerToken = this.extractTokenFromHeader(authHeader);
           if (bearerToken) {
-            headers.set("authorization", `Bearer ${bearerToken}`);
+            headers.set('authorization', `Bearer ${bearerToken}`);
           }
         }
       }
 
       const request = new Request(`${API_URL}/api/${endpoint}`, {
-        method: "DELETE",
+        method: 'DELETE',
         headers,
       });
 

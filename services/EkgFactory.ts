@@ -59,7 +59,7 @@ export interface EkgConfig {
   noiseAmplitude: number;
   baselineWanderAmplitude: number;
   muscleArtifactProbability: number;
-  xOffset?: number; 
+  xOffset?: number;
 
   amplitude?: number;
   irregularity?: number;
@@ -72,21 +72,19 @@ export class EkgFactory {
   private static lastBaselineWander = 0;
   private static irregularityCache: { [key: string]: number } = {};
   private static pvcCounters: { [key: number]: number } = {};
-  
+
   static async initialize(): Promise<void> {
     try {
-      
       const { EkgJsonDataLoader } = require('./EkgJsonDataLoader');
       const { EkgDataAdapter } = require('./EkgDataAdapter');
-      
-      
+
       await EkgJsonDataLoader.initialize();
       EkgDataAdapter.initialize();
-      
+
       console.log('EkgFactory initialized with JSON data');
     } catch (e) {
       console.error('Failed to initialize EkgFactory with JSON data:', e);
-      throw e; 
+      throw e;
     }
   }
 
@@ -141,17 +139,18 @@ export class EkgFactory {
     noiseType: NoiseType = NoiseType.NONE
   ): EkgConfig {
     const noiseConfig = this.getNoiseConfig(noiseType);
-    const safeBpm = Math.max(MIN_BPM, Math.min(MAX_BPM, bpm));    const baseConfig = {
+    const safeBpm = Math.max(MIN_BPM, Math.min(MAX_BPM, bpm));
+    const baseConfig = {
       baseline: DEFAULT_BASELINE,
       bpm: safeBpm,
       period: this.bpmToPeriod(safeBpm),
       phaseShift: DEFAULT_PHASE_SHIFT,
       noiseType,
       ekgType,
-      xOffset: DEFAULT_X_OFFSET, 
+      xOffset: DEFAULT_X_OFFSET,
       ...noiseConfig,
     };
-    
+
     switch (ekgType) {
       case EkgType.SINUS_TACHYCARDIA:
         return {
@@ -184,7 +183,7 @@ export class EkgFactory {
           ...baseConfig,
           oscillationRate: 0.01,
           amplitude: 1.4,
-        };      
+        };
       case EkgType.ASYSTOLE:
         return {
           ...baseConfig,
@@ -209,66 +208,91 @@ export class EkgFactory {
     }
   }
 
-  
- static generateNoise(x: number, amplitude: number): number {
-  return (Math.random() * 2 - 1) * amplitude;
-}
-
-static generateBaselineWander(x: number, amplitude: number): number {
-  if (amplitude <= 0) return 0;
-  const slowFreq = 0.005;
-  return Math.sin(x * slowFreq) * amplitude;
-}
-
-static generateMuscleArtifact(probability: number, amplitude: number): number {
-  if (Math.random() < probability) {
-    return (Math.random() * 2 - 1) * amplitude * 2;
+  static generateNoise(x: number, amplitude: number): number {
+    return (Math.random() * 2 - 1) * amplitude;
   }
-  return 0;
-}
 
-  
-  static generateIrregularity(x: number, cycleCount: number, strength: number): number {
-    return 0; 
-  }  
-  
- static generateEkgValue(
-  x: number,
-  ekgType: EkgType = EkgType.NORMAL_SINUS_RHYTHM,
-  bpm: number = DEFAULT_BPM,
-  noiseType: NoiseType = NoiseType.NONE,
-  xOffset: number = DEFAULT_X_OFFSET
-): number {
-  const { noiseAmplitude, baselineWanderAmplitude, muscleArtifactProbability } =
-    EkgFactory.getNoiseConfig(noiseType);
-
-  try {
-    const { EkgDataAdapter } = require('./EkgDataAdapter');
-    const baseValue = EkgDataAdapter.getValueAtTime(ekgType, x, bpm, noiseType);
-
-    const noiseTerm = EkgFactory.generateNoise(x, noiseAmplitude);
-    const wanderTerm = EkgFactory.generateBaselineWander(x, baselineWanderAmplitude);
-    const muscleTerm = EkgFactory.generateMuscleArtifact(muscleArtifactProbability, noiseAmplitude);
-
-    return baseValue + noiseTerm + wanderTerm + muscleTerm;
-  } catch (e) {
-    console.error('Error loading EKG data, falling back to default:', e);
-
-    const pure = ekgType === EkgType.ASYSTOLE
-      ? 150
-      : ekgType === EkgType.VENTRICULAR_FIBRILLATION
-        ? 150 + (Math.random() - 0.5) * 80
-        : 150 + Math.sin(x * 0.1) * 30;
-
-    const noiseTerm = EkgFactory.generateNoise(x, noiseAmplitude);
-    const wanderTerm = EkgFactory.generateBaselineWander(x, baselineWanderAmplitude);
-    const muscleTerm = EkgFactory.generateMuscleArtifact(muscleArtifactProbability, noiseAmplitude);
-
-    return pure + noiseTerm + wanderTerm + muscleTerm;
+  static generateBaselineWander(x: number, amplitude: number): number {
+    if (amplitude <= 0) return 0;
+    const slowFreq = 0.005;
+    return Math.sin(x * slowFreq) * amplitude;
   }
-}
 
-  
+  static generateMuscleArtifact(
+    probability: number,
+    amplitude: number
+  ): number {
+    if (Math.random() < probability) {
+      return (Math.random() * 2 - 1) * amplitude * 2;
+    }
+    return 0;
+  }
+
+  static generateIrregularity(
+    x: number,
+    cycleCount: number,
+    strength: number
+  ): number {
+    return 0;
+  }
+
+  static generateEkgValue(
+    x: number,
+    ekgType: EkgType = EkgType.NORMAL_SINUS_RHYTHM,
+    bpm: number = DEFAULT_BPM,
+    noiseType: NoiseType = NoiseType.NONE,
+    xOffset: number = DEFAULT_X_OFFSET
+  ): number {
+    const {
+      noiseAmplitude,
+      baselineWanderAmplitude,
+      muscleArtifactProbability,
+    } = EkgFactory.getNoiseConfig(noiseType);
+
+    try {
+      const { EkgDataAdapter } = require('./EkgDataAdapter');
+      const baseValue = EkgDataAdapter.getValueAtTime(
+        ekgType,
+        x,
+        bpm,
+        noiseType
+      );
+
+      const noiseTerm = EkgFactory.generateNoise(x, noiseAmplitude);
+      const wanderTerm = EkgFactory.generateBaselineWander(
+        x,
+        baselineWanderAmplitude
+      );
+      const muscleTerm = EkgFactory.generateMuscleArtifact(
+        muscleArtifactProbability,
+        noiseAmplitude
+      );
+
+      return baseValue + noiseTerm + wanderTerm + muscleTerm;
+    } catch (e) {
+      console.error('Error loading EKG data, falling back to default:', e);
+
+      const pure =
+        ekgType === EkgType.ASYSTOLE
+          ? 150
+          : ekgType === EkgType.VENTRICULAR_FIBRILLATION
+          ? 150 + (Math.random() - 0.5) * 80
+          : 150 + Math.sin(x * 0.1) * 30;
+
+      const noiseTerm = EkgFactory.generateNoise(x, noiseAmplitude);
+      const wanderTerm = EkgFactory.generateBaselineWander(
+        x,
+        baselineWanderAmplitude
+      );
+      const muscleTerm = EkgFactory.generateMuscleArtifact(
+        muscleArtifactProbability,
+        noiseAmplitude
+      );
+
+      return pure + noiseTerm + wanderTerm + muscleTerm;
+    }
+  }
+
   static getEkgValueWithOffset(
     x: number,
     ekgType: EkgType = EkgType.NORMAL_SINUS_RHYTHM,
@@ -279,72 +303,136 @@ static generateMuscleArtifact(probability: number, amplitude: number): number {
     return this.generateEkgValue(x, ekgType, bpm, noiseType, xOffset);
   }
 
-  
   static resetNoiseCache(): void {
     this.noiseCache = {};
     this.lastBaselineWander = 0;
     this.irregularityCache = {};
     this.pvcCounters = {};
-    
-    
+
     try {
       const { EkgJsonDataLoader } = require('./EkgJsonDataLoader');
       EkgJsonDataLoader.resetCache();
-    } catch (e) {
-      
-    }
+    } catch (e) {}
   }
 
-  
-  
-    static generateNormalSinusEkg(x: number, config: EkgConfig): number {
-    return this.generateEkgValue(x, EkgType.NORMAL_SINUS_RHYTHM, config.bpm, config.noiseType, config.xOffset);
+  static generateNormalSinusEkg(x: number, config: EkgConfig): number {
+    return this.generateEkgValue(
+      x,
+      EkgType.NORMAL_SINUS_RHYTHM,
+      config.bpm,
+      config.noiseType,
+      config.xOffset
+    );
   }
 
   static generateTachycardiaEkg(x: number, config: EkgConfig): number {
-    return this.generateEkgValue(x, EkgType.SINUS_TACHYCARDIA, config.bpm, config.noiseType, config.xOffset);
+    return this.generateEkgValue(
+      x,
+      EkgType.SINUS_TACHYCARDIA,
+      config.bpm,
+      config.noiseType,
+      config.xOffset
+    );
   }
 
   static generateBradycardiaEkg(x: number, config: EkgConfig): number {
-    return this.generateEkgValue(x, EkgType.SINUS_BRADYCARDIA, config.bpm, config.noiseType, config.xOffset);
+    return this.generateEkgValue(
+      x,
+      EkgType.SINUS_BRADYCARDIA,
+      config.bpm,
+      config.noiseType,
+      config.xOffset
+    );
   }
 
   static generateAFibEkg(x: number, config: EkgConfig): number {
-    return this.generateEkgValue(x, EkgType.ATRIAL_FIBRILLATION, config.bpm, config.noiseType, config.xOffset);
+    return this.generateEkgValue(
+      x,
+      EkgType.ATRIAL_FIBRILLATION,
+      config.bpm,
+      config.noiseType,
+      config.xOffset
+    );
   }
 
   static generateVFibEkg(x: number, config: EkgConfig): number {
-    return this.generateEkgValue(x, EkgType.VENTRICULAR_FIBRILLATION, config.bpm, config.noiseType, config.xOffset);
+    return this.generateEkgValue(
+      x,
+      EkgType.VENTRICULAR_FIBRILLATION,
+      config.bpm,
+      config.noiseType,
+      config.xOffset
+    );
   }
 
   static generateVTachEkg(x: number, config: EkgConfig): number {
-    return this.generateEkgValue(x, EkgType.VENTRICULAR_TACHYCARDIA, config.bpm, config.noiseType, config.xOffset);
+    return this.generateEkgValue(
+      x,
+      EkgType.VENTRICULAR_TACHYCARDIA,
+      config.bpm,
+      config.noiseType,
+      config.xOffset
+    );
   }
   static generateTorsadeEkg(x: number, config: EkgConfig): number {
-    return this.generateEkgValue(x, EkgType.TORSADE_DE_POINTES, config.bpm, config.noiseType, config.xOffset);
+    return this.generateEkgValue(
+      x,
+      EkgType.TORSADE_DE_POINTES,
+      config.bpm,
+      config.noiseType,
+      config.xOffset
+    );
   }
 
   static generateAsystoleEkg(x: number, config: EkgConfig): number {
-    return this.generateEkgValue(x, EkgType.ASYSTOLE, config.bpm, config.noiseType, config.xOffset);
+    return this.generateEkgValue(
+      x,
+      EkgType.ASYSTOLE,
+      config.bpm,
+      config.noiseType,
+      config.xOffset
+    );
   }
 
   static generateHeartBlockEkg(x: number, config: EkgConfig): number {
-    
-    switch(config.ekgType) {
+    switch (config.ekgType) {
       case EkgType.SECOND_DEGREE_AV_BLOCK:
-        return this.generateEkgValue(x, EkgType.SECOND_DEGREE_AV_BLOCK, config.bpm, config.noiseType, config.xOffset);
+        return this.generateEkgValue(
+          x,
+          EkgType.SECOND_DEGREE_AV_BLOCK,
+          config.bpm,
+          config.noiseType,
+          config.xOffset
+        );
       case EkgType.MOBITZ_TYPE_AV_BLOCK:
-        return this.generateEkgValue(x, EkgType.MOBITZ_TYPE_AV_BLOCK, config.bpm, config.noiseType, config.xOffset);
+        return this.generateEkgValue(
+          x,
+          EkgType.MOBITZ_TYPE_AV_BLOCK,
+          config.bpm,
+          config.noiseType,
+          config.xOffset
+        );
       case EkgType.FIRST_DEGREE_AV_BLOCK:
       default:
-        return this.generateEkgValue(x, EkgType.FIRST_DEGREE_AV_BLOCK, config.bpm, config.noiseType, config.xOffset);
+        return this.generateEkgValue(
+          x,
+          EkgType.FIRST_DEGREE_AV_BLOCK,
+          config.bpm,
+          config.noiseType,
+          config.xOffset
+        );
     }
   }
   static generatePVCEkg(x: number, config: EkgConfig): number {
-    return this.generateEkgValue(x, EkgType.PREMATURE_VENTRICULAR_CONTRACTION, config.bpm, config.noiseType, config.xOffset);
+    return this.generateEkgValue(
+      x,
+      EkgType.PREMATURE_VENTRICULAR_CONTRACTION,
+      config.bpm,
+      config.noiseType,
+      config.xOffset
+    );
   }
 
-  
   private static addNoiseToSignal(
     x: number,
     y: number,
@@ -352,7 +440,6 @@ static generateMuscleArtifact(probability: number, amplitude: number): number {
     baselineWanderAmplitude: number,
     muscleArtifactProbability: number
   ): number {
-    
     return y;
   }
 
@@ -361,7 +448,6 @@ static generateMuscleArtifact(probability: number, amplitude: number): number {
       const { EkgJsonDataLoader } = require('./EkgJsonDataLoader');
       return EkgJsonDataLoader.getBpmForType(type);
     } catch (e) {
-      
       switch (type) {
         case EkgType.NORMAL_SINUS_RHYTHM:
           return 72;
@@ -422,136 +508,134 @@ static generateMuscleArtifact(probability: number, amplitude: number): number {
   static getNameForType(type: EkgType): string {
     switch (type) {
       case EkgType.NORMAL_SINUS_RHYTHM:
-        return "Prawidłowy rytm zatokowy";
+        return 'Prawidłowy rytm zatokowy';
       case EkgType.SINUS_TACHYCARDIA:
-        return "Tachykardia zatokowa";
+        return 'Tachykardia zatokowa';
       case EkgType.SINUS_BRADYCARDIA:
-        return "Bradykardia zatokowa";
+        return 'Bradykardia zatokowa';
       case EkgType.ATRIAL_FIBRILLATION:
-        return "Migotanie przedsionków";
+        return 'Migotanie przedsionków';
       case EkgType.VENTRICULAR_FIBRILLATION:
-        return "Migotanie komór";
+        return 'Migotanie komór';
       case EkgType.VENTRICULAR_TACHYCARDIA:
-        return "Częstoskurcz komorowy";
+        return 'Częstoskurcz komorowy';
       case EkgType.TORSADE_DE_POINTES:
-        return "Torsade de Pointes";
+        return 'Torsade de Pointes';
       case EkgType.ASYSTOLE:
-        return "Asystolia";
+        return 'Asystolia';
       case EkgType.FIRST_DEGREE_AV_BLOCK:
-        return "Blok przedsionkowo-komorowy 1 stopnia";
+        return 'Blok przedsionkowo-komorowy 1 stopnia';
       case EkgType.SECOND_DEGREE_AV_BLOCK:
-        return "Blok przedsionkowo-komorowy 2 stopnia";
+        return 'Blok przedsionkowo-komorowy 2 stopnia';
       case EkgType.MOBITZ_TYPE_AV_BLOCK:
-        return "Blok przedsionkowo-komorowy 2 stopnia typu Mobitza";
+        return 'Blok przedsionkowo-komorowy 2 stopnia typu Mobitza';
       case EkgType.SA_BLOCK:
-        return "Blok zatokowo-przedsionkowy";
+        return 'Blok zatokowo-przedsionkowy';
       case EkgType.WANDERING_ATRIAL_PACEMAKER:
-        return "Nadkomorowe wędrowanie rozrusznika";
+        return 'Nadkomorowe wędrowanie rozrusznika';
       case EkgType.SINUS_ARRHYTHMIA:
-        return "Nadmiarowość zatokowa";
+        return 'Nadmiarowość zatokowa';
       case EkgType.PREMATURE_VENTRICULAR_CONTRACTION:
-        return "Przedwczesne pobudzenie komorowe";
+        return 'Przedwczesne pobudzenie komorowe';
       case EkgType.PREMATURE_ATRIAL_CONTRACTION:
-        return "Przedwczesne pobudzenie przedsionkowe";
+        return 'Przedwczesne pobudzenie przedsionkowe';
       case EkgType.PREMATURE_JUNCTIONAL_CONTRACTION:
-        return "Przedwczesne pobudzenie węzłowe";
+        return 'Przedwczesne pobudzenie węzłowe';
       case EkgType.ACCELERATED_VENTRICULAR_RHYTHM:
-        return "Przyspieszony rytm komorowy";
+        return 'Przyspieszony rytm komorowy';
       case EkgType.ACCELERATED_JUNCTIONAL_RHYTHM:
-        return "Przyspieszony rytm węzłowy";
+        return 'Przyspieszony rytm węzłowy';
       case EkgType.IDIOVENTRICULAR_RHYTHM:
-        return "Rytm komorowy idowentrykularny";
+        return 'Rytm komorowy idowentrykularny';
       case EkgType.VENTRICULAR_FLUTTER:
-        return "Trzepotanie komór";
+        return 'Trzepotanie komór';
       case EkgType.ATRIAL_FLUTTER_A:
-        return "Trzepotanie przedsionków typu A";
+        return 'Trzepotanie przedsionków typu A';
       case EkgType.ATRIAL_FLUTTER_B:
-        return "Trzepotanie przedsionków typu B";
+        return 'Trzepotanie przedsionków typu B';
       case EkgType.MULTIFOCAL_ATRIAL_TACHYCARDIA:
-        return "Wieloogniskowy częstoskurcz przedsionkowy";
+        return 'Wieloogniskowy częstoskurcz przedsionkowy';
       case EkgType.SINUS_ARREST:
-        return "Zahamowanie zatokowe";
+        return 'Zahamowanie zatokowe';
       case EkgType.VENTRICULAR_ESCAPE_BEAT:
-        return "Zastępcze pobudzenie komorowe";
+        return 'Zastępcze pobudzenie komorowe';
       case EkgType.JUNCTIONAL_ESCAPE_BEAT:
-        return "Zastępcze pobudzenie węzłowe";
+        return 'Zastępcze pobudzenie węzłowe';
       case EkgType.CUSTOM:
-        return "Rytm niestandardowy";
+        return 'Rytm niestandardowy';
       default:
-        return "Nieznany rytm";
+        return 'Nieznany rytm';
     }
   }
 
   static getDescriptionForType(type: EkgType): string {
     switch (type) {
       case EkgType.NORMAL_SINUS_RHYTHM:
-        return "Regularny rytm z prawidłową falą P, zespołem QRS i falą T. Częstość 60-100 uderzeń na minutę.";
+        return 'Regularny rytm z prawidłową falą P, zespołem QRS i falą T. Częstość 60-100 uderzeń na minutę.';
       case EkgType.SINUS_TACHYCARDIA:
-        return "Regularny rytm o prawidłowej morfologii, ale przyspieszonej częstości powyżej 100 uderzeń na minutę.";
+        return 'Regularny rytm o prawidłowej morfologii, ale przyspieszonej częstości powyżej 100 uderzeń na minutę.';
       case EkgType.SINUS_BRADYCARDIA:
-        return "Regularny rytm o prawidłowej morfologii, ale obniżonej częstości poniżej 60 uderzeń na minutę.";
+        return 'Regularny rytm o prawidłowej morfologii, ale obniżonej częstości poniżej 60 uderzeń na minutę.';
       case EkgType.ATRIAL_FIBRILLATION:
-        return "Nieregularny rytm z brakiem fal P, zastąpionych przez chaotyczną linię podstawową. Zmienne odstępy R-R.";
+        return 'Nieregularny rytm z brakiem fal P, zastąpionych przez chaotyczną linię podstawową. Zmienne odstępy R-R.';
       case EkgType.VENTRICULAR_FIBRILLATION:
-        return "Chaotyczny, nieregularny rytm bez wyraźnych załamków. Bezpośrednie zagrożenie życia.";
+        return 'Chaotyczny, nieregularny rytm bez wyraźnych załamków. Bezpośrednie zagrożenie życia.';
       case EkgType.VENTRICULAR_TACHYCARDIA:
-        return "Regularny, szeroki zespół QRS o szybkiej częstości z dysocjacją przedsionkowo-komorową. Zagrożenie życia.";
+        return 'Regularny, szeroki zespół QRS o szybkiej częstości z dysocjacją przedsionkowo-komorową. Zagrożenie życia.';
       case EkgType.TORSADE_DE_POINTES:
-        return "Polimorficzny częstoskurcz komorowy z zespołami QRS, które wydają się skręcać wokół linii podstawowej. Zagrożenie życia.";
+        return 'Polimorficzny częstoskurcz komorowy z zespołami QRS, które wydają się skręcać wokół linii podstawowej. Zagrożenie życia.';
       case EkgType.ASYSTOLE:
-        return "Płaska linia z minimalną aktywnością elektryczną. Zatrzymanie akcji serca wymagające natychmiastowej resuscytacji.";
+        return 'Płaska linia z minimalną aktywnością elektryczną. Zatrzymanie akcji serca wymagające natychmiastowej resuscytacji.';
       case EkgType.FIRST_DEGREE_AV_BLOCK:
-        return "Wydłużony odstęp PR powyżej 200ms, wszystkie impulsy przedsionkowe są przewodzone do komór, ale z opóźnieniem.";
+        return 'Wydłużony odstęp PR powyżej 200ms, wszystkie impulsy przedsionkowe są przewodzone do komór, ale z opóźnieniem.';
       case EkgType.SECOND_DEGREE_AV_BLOCK:
-        return "Niektóre impulsy przedsionkowe nie są przewodzone do komór, powodując wypadnięcie zespołów QRS.";
+        return 'Niektóre impulsy przedsionkowe nie są przewodzone do komór, powodując wypadnięcie zespołów QRS.';
       case EkgType.MOBITZ_TYPE_AV_BLOCK:
-        return "Blok typu Mobitz II z nagłym wypadnięciem zespołu QRS bez poprzedzającego wydłużenia odstępu PR.";
+        return 'Blok typu Mobitz II z nagłym wypadnięciem zespołu QRS bez poprzedzającego wydłużenia odstępu PR.';
       case EkgType.SA_BLOCK:
-        return "Zaburzenie generacji lub przewodzenia impulsów w węźle zatokowo-przedsionkowym.";
+        return 'Zaburzenie generacji lub przewodzenia impulsów w węźle zatokowo-przedsionkowym.';
       case EkgType.WANDERING_ATRIAL_PACEMAKER:
-        return "Zmienne miejsce pochodzenia pobudzenia w przedsionkach, co widoczne jest jako zmienne morfologie załamka P.";
+        return 'Zmienne miejsce pochodzenia pobudzenia w przedsionkach, co widoczne jest jako zmienne morfologie załamka P.';
       case EkgType.SINUS_ARRHYTHMIA:
-        return "Rytm zatokowy z cyklicznymi zmianami częstości, często związany z oddychaniem.";
+        return 'Rytm zatokowy z cyklicznymi zmianami częstości, często związany z oddychaniem.';
       case EkgType.PREMATURE_VENTRICULAR_CONTRACTION:
-        return "Przedwczesne pobudzenie komór, widoczne jako szeroki, dziwaczny zespół QRS bez poprzedzającego załamka P.";
+        return 'Przedwczesne pobudzenie komór, widoczne jako szeroki, dziwaczny zespół QRS bez poprzedzającego załamka P.';
       case EkgType.PREMATURE_ATRIAL_CONTRACTION:
-        return "Przedwczesne pobudzenie przedsionków, widoczne jako przedwczesny załamek P o odmiennej morfologii.";
+        return 'Przedwczesne pobudzenie przedsionków, widoczne jako przedwczesny załamek P o odmiennej morfologii.';
       case EkgType.PREMATURE_JUNCTIONAL_CONTRACTION:
-        return "Przedwczesne pobudzenie z łącza przedsionkowo-komorowego, często z krótkim lub niewidocznym załamkiem P.";
+        return 'Przedwczesne pobudzenie z łącza przedsionkowo-komorowego, często z krótkim lub niewidocznym załamkiem P.';
       case EkgType.ACCELERATED_VENTRICULAR_RHYTHM:
-        return "Seria trzech lub więcej pobudzeń komorowych o częstości 50-100/min.";
+        return 'Seria trzech lub więcej pobudzeń komorowych o częstości 50-100/min.';
       case EkgType.ACCELERATED_JUNCTIONAL_RHYTHM:
-        return "Rytm z łącza przedsionkowo-komorowego o częstości 60-100/min, szybszy niż właściwy rytm zastępczy.";
+        return 'Rytm z łącza przedsionkowo-komorowego o częstości 60-100/min, szybszy niż właściwy rytm zastępczy.';
       case EkgType.IDIOVENTRICULAR_RHYTHM:
-        return "Powolny rytm pochodzenia komorowego, zwykle o częstości 20-40/min.";
+        return 'Powolny rytm pochodzenia komorowego, zwykle o częstości 20-40/min.';
       case EkgType.VENTRICULAR_FLUTTER:
-        return "Bardzo szybki, regularny rytm komorowy (250-350/min) dający obraz fal podobnych do sinusoidy.";
+        return 'Bardzo szybki, regularny rytm komorowy (250-350/min) dający obraz fal podobnych do sinusoidy.';
       case EkgType.ATRIAL_FLUTTER_A:
-        return "Regularne, szybkie załamki trzepotania przedsionków typu A, przypominające ząbki piły.";
+        return 'Regularne, szybkie załamki trzepotania przedsionków typu A, przypominające ząbki piły.';
       case EkgType.ATRIAL_FLUTTER_B:
-        return "Regularne, szybkie załamki trzepotania przedsionków typu B, o morfologii nieco różniącej się od typu A.";
+        return 'Regularne, szybkie załamki trzepotania przedsionków typu B, o morfologii nieco różniącej się od typu A.';
       case EkgType.MULTIFOCAL_ATRIAL_TACHYCARDIA:
-        return "Częstoskurcz przedsionkowy z co najmniej trzema różnymi morfologiami załamka P.";
+        return 'Częstoskurcz przedsionkowy z co najmniej trzema różnymi morfologiami załamka P.';
       case EkgType.SINUS_ARREST:
-        return "Czasowe zatrzymanie aktywności węzła zatokowego, powodujące pauzę w rytmie serca.";
+        return 'Czasowe zatrzymanie aktywności węzła zatokowego, powodujące pauzę w rytmie serca.';
       case EkgType.VENTRICULAR_ESCAPE_BEAT:
-        return "Pobudzenie komorowe pojawiające się po pauzie, zabezpieczające przed asystolią.";
+        return 'Pobudzenie komorowe pojawiające się po pauzie, zabezpieczające przed asystolią.';
       case EkgType.JUNCTIONAL_ESCAPE_BEAT:
-        return "Pobudzenie z łącza przedsionkowo-komorowego pojawiające się po pauzie.";
+        return 'Pobudzenie z łącza przedsionkowo-komorowego pojawiające się po pauzie.';
       case EkgType.CUSTOM:
-        return "Niestandardowy rytm z parametrami zdefiniowanymi przez użytkownika.";
+        return 'Niestandardowy rytm z parametrami zdefiniowanymi przez użytkownika.';
       default:
-        return "Nieokreślony rytm serca.";
+        return 'Nieokreślony rytm serca.';
     }
   }
 
-  
   static getAvailableTypes(): EkgType[] {
     try {
       const { EkgJsonDataLoader } = require('./EkgJsonDataLoader');
       return EkgJsonDataLoader.getAvailableTypes();
     } catch (e) {
-      
       return [
         EkgType.NORMAL_SINUS_RHYTHM,
         EkgType.SINUS_TACHYCARDIA,
@@ -559,32 +643,26 @@ static generateMuscleArtifact(probability: number, amplitude: number): number {
         EkgType.ATRIAL_FIBRILLATION,
       ];
     }
-  }  
+  }
   static async resetAllCaches(): Promise<void> {
     console.log('Resetting all EKG caches...');
-    
-    
+
     this.noiseCache = {};
     this.lastBaselineWander = 0;
     this.irregularityCache = {};
     this.pvcCounters = {};
-    
+
     try {
-      
       const { EkgJsonDataLoader } = require('./EkgJsonDataLoader');
       EkgJsonDataLoader.resetCache();
-      
-      
+
       const { EkgDataAdapter } = require('./EkgDataAdapter');
       EkgDataAdapter.resetCache();
-      
-      
+
       (global as any).EkgCacheObject = null;
-      
-      
+
       await EkgJsonDataLoader.initialize();
-      
-      
+
       console.log('All EKG caches have been reset successfully');
       console.log(`Memory cleanup timestamp: ${Date.now()}`);
     } catch (e) {
@@ -592,15 +670,13 @@ static generateMuscleArtifact(probability: number, amplitude: number): number {
       throw e;
     }
   }
-  
+
   static async refreshEkgDisplay(): Promise<void> {
     console.log('Forcing EKG display refresh...');
-    
-    
+
     await this.resetAllCaches();
-    
+
     try {
-      
       const { EkgJsonDataLoader } = require('./EkgJsonDataLoader');
       await EkgJsonDataLoader.initialize();
       console.log('EKG display refresh completed');
@@ -610,7 +686,6 @@ static generateMuscleArtifact(probability: number, amplitude: number): number {
     }
   }
 
-  
   static setDefaultXOffset(offset: number): number {
     return (DEFAULT_X_OFFSET = offset);
   }

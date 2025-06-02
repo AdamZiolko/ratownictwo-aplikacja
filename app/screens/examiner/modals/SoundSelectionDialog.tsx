@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { StyleSheet, View, ScrollView, Dimensions } from "react-native";
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, ScrollView, Dimensions } from 'react-native';
 import {
   Dialog,
   Button,
@@ -11,9 +11,9 @@ import {
   Checkbox,
   useTheme,
   ActivityIndicator,
-} from "react-native-paper";
-import { Session, SoundQueueItem } from "../types/types";
-import { audioApiService } from "@/services/AudioApiService";
+} from 'react-native-paper';
+import { Session, SoundQueueItem } from '../types/types';
+import { audioApiService } from '@/services/AudioApiService';
 
 interface SoundSelectionDialogProps {
   visible: boolean;
@@ -30,8 +30,8 @@ interface SoundSelectionDialogProps {
   onServerAudioPauseCommand?: (audioId: string) => void;
   onServerAudioResumeCommand?: (audioId: string) => void;
   onServerAudioStopCommand?: (audioId: string) => void;
-  lastLoopedSound: string | null; 
-  // New props for color assignment mode
+  lastLoopedSound: string | null;
+
   isColorAssignmentMode?: boolean;
   onSoundAssign?: (
     soundName: string | null,
@@ -40,7 +40,6 @@ interface SoundSelectionDialogProps {
   ) => void;
 }
 
-// Type definition for server audio files
 interface ServerAudioFile {
   id: string;
   name: string;
@@ -52,92 +51,92 @@ interface ServerAudioFile {
 const soundStructure = {
   Adult: {
     Female: [
-      "Breathing through contractions",
-      "Coughing",
-      "Distressed",
-      "Hawk",
-      "Moaning",
-      "No",
-      "Ok",
-      "Pain",
-      "Pushing - long double",
-      "Pushing - long",
-      "Pushing - single",
-      "Screaming",
-      "Sob breathing (type 2)",
-      "Sob breathing",
-      "Vomiting",
-      "Yes",
+      'Breathing through contractions',
+      'Coughing',
+      'Distressed',
+      'Hawk',
+      'Moaning',
+      'No',
+      'Ok',
+      'Pain',
+      'Pushing - long double',
+      'Pushing - long',
+      'Pushing - single',
+      'Screaming',
+      'Sob breathing (type 2)',
+      'Sob breathing',
+      'Vomiting',
+      'Yes',
     ],
     Male: [
-      "Coughing (long)",
-      "Coughing",
-      "Difficult breathing",
-      "Hawk",
-      "Moaning (long)",
-      "Moaning",
-      "No",
-      "Ok",
-      "Screaming (type 2)",
-      "Screaming",
-      "Sob breathing",
-      "Vomiting (type 2)",
-      "Vomiting (type 3)",
-      "Vomiting",
-      "Yes",
+      'Coughing (long)',
+      'Coughing',
+      'Difficult breathing',
+      'Hawk',
+      'Moaning (long)',
+      'Moaning',
+      'No',
+      'Ok',
+      'Screaming (type 2)',
+      'Screaming',
+      'Sob breathing',
+      'Vomiting (type 2)',
+      'Vomiting (type 3)',
+      'Vomiting',
+      'Yes',
     ],
   },
   Child: [
-    "Coughing",
-    "Hawk",
-    "Moaning",
-    "No",
-    "Ok",
-    "Screaming",
-    "Sob breathing",
-    "Vomiting (type 2)",
-    "Vomiting",
-    "Yes",
+    'Coughing',
+    'Hawk',
+    'Moaning',
+    'No',
+    'Ok',
+    'Screaming',
+    'Sob breathing',
+    'Vomiting (type 2)',
+    'Vomiting',
+    'Yes',
   ],
   Geriatric: {
-    Female: ["Coughing", "Moaning", "No", "Screaming", "Vomiting", "Yes"],
-    Male: ["Coughing", "Moaning", "No", "Screaming", "Vomiting", "Yes"],
+    Female: ['Coughing', 'Moaning', 'No', 'Screaming', 'Vomiting', 'Yes'],
+    Male: ['Coughing', 'Moaning', 'No', 'Screaming', 'Vomiting', 'Yes'],
   },
   Infant: [
-    "Content",
-    "Cough",
-    "Grunt",
-    "Hawk",
-    "Hiccup",
-    "Screaming",
-    "Strongcry (type 2)",
-    "Strongcry",
-    "Weakcry",
+    'Content',
+    'Cough',
+    'Grunt',
+    'Hawk',
+    'Hiccup',
+    'Screaming',
+    'Strongcry (type 2)',
+    'Strongcry',
+    'Weakcry',
   ],
   Speech: [
-    "Chest hurts",
-    "Doc I feel I could die",
-    "Go away",
+    'Chest hurts',
+    'Doc I feel I could die',
+    'Go away',
     "I don't feel dizzy",
     "I don't feel well",
-    "I feel better now",
-    "I feel really bad",
+    'I feel better now',
+    'I feel really bad',
     "I'm feeling very dizzy",
     "I'm fine",
     "I'm quite nauseous",
     "I'm really hungry",
     "I'm really thirsty",
     "I'm so sick",
-    "Never had pain like this before",
-    "No allergies",
-    "No diabetes",
-    "No lung or cardiac problems",
-    "No",
-    "Pain for 2 hours",
-    "Something for this pain",
-    "Thank you",
-    "That helped",
-    "Yes",
+    'Never had pain like this before',
+    'No allergies',
+    'No diabetes',
+    'No lung or cardiac problems',
+    'No',
+    'Pain for 2 hours',
+    'Something for this pain',
+    'Thank you',
+    'That helped',
+    'Yes',
   ],
 };
 
@@ -158,16 +157,16 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
   onServerAudioStopCommand,
   isColorAssignmentMode = false,
   onSoundAssign,
-   lastLoopedSound, 
+  lastLoopedSound,
 }) => {
   const theme = useTheme();
-  const [activeTab, setActiveTab] = useState<"single" | "queue" | "server">(
-    "single"
+  const [activeTab, setActiveTab] = useState<'single' | 'queue' | 'server'>(
+    'single'
   );
   const [currentPath, setCurrentPath] = useState<string[]>([]);
   const [isLooping, setIsLooping] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [delay, setDelay] = useState("0");
+  const [delay, setDelay] = useState('0');
   const [queue, setQueue] = useState<SoundQueueItem[]>([]);
   const [serverAudioFiles, setServerAudioFiles] = useState<ServerAudioFile[]>(
     []
@@ -179,8 +178,7 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
   const [serverIsLooping, setServerIsLooping] = useState(false);
   const [serverIsPlaying, setServerIsPlaying] = useState(false);
 
-
- useEffect(() => {
+  useEffect(() => {
     if (lastLoopedSound) {
       setSelectedSound(lastLoopedSound);
       setIsPlaying(true);
@@ -188,9 +186,8 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
     }
   }, [visible, lastLoopedSound]);
 
-  // Load server audio files when the server tab is selected
   useEffect(() => {
-    if (activeTab === "server" && visible) {
+    if (activeTab === 'server' && visible) {
       loadServerAudioFiles();
     }
   }, [activeTab, visible]);
@@ -201,7 +198,7 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
       const response = await audioApiService.getAudioList();
       setServerAudioFiles(response);
     } catch (error) {
-      console.error("Error loading server audio files:", error);
+      console.error('Error loading server audio files:', error);
     } finally {
       setLoadingServerAudio(false);
     }
@@ -216,12 +213,12 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
   };
 
   const handleNavigate = (item: string) => {
-    setCurrentPath((prev) => [...prev, item]);
+    setCurrentPath(prev => [...prev, item]);
   };
 
   const handleGoBack = () => {
     if (currentPath.length === 0) return;
-    setCurrentPath((prev) => prev.slice(0, -1));
+    setCurrentPath(prev => prev.slice(0, -1));
   };
 
   const renderNavigationItems = () => {
@@ -232,21 +229,19 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
         <View style={styles.listWrapper}>
           <RadioButton.Group
             onValueChange={setSelectedSound}
-            value={selectedSound || ""}
+            value={selectedSound || ''}
           >
-            {currentLevel.map((item) => (
+            {currentLevel.map(item => (
               <List.Item
                 key={item}
                 title={item}
                 style={styles.listItem}
                 titleStyle={styles.listItemText}
                 left={() => (
-                  <RadioButton
-                    value={`${currentPath.join("/")}/${item}`}
-                  />
+                  <RadioButton value={`${currentPath.join('/')}/${item}`} />
                 )}
                 onPress={() =>
-                  setSelectedSound(`${currentPath.join("/")}/${item}`)
+                  setSelectedSound(`${currentPath.join('/')}/${item}`)
                 }
               />
             ))}
@@ -256,7 +251,7 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
     } else {
       return (
         <View style={styles.listWrapper}>
-          {Object.keys(currentLevel).map((key) => (
+          {Object.keys(currentLevel).map(key => (
             <List.Item
               key={key}
               title={key}
@@ -294,10 +289,10 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
     return (
       <View style={styles.listWrapper}>
         <RadioButton.Group
-          onValueChange={(value) => setSelectedServerAudioId(value)}
-          value={selectedServerAudioId || ""}
+          onValueChange={value => setSelectedServerAudioId(value)}
+          value={selectedServerAudioId || ''}
         >
-          {serverAudioFiles.map((file) => (
+          {serverAudioFiles.map(file => (
             <List.Item
               key={file.id}
               title={file.name}
@@ -308,7 +303,7 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
                 <RadioButton
                   value={file.id}
                   status={
-                    selectedServerAudioId === file.id ? "checked" : "unchecked"
+                    selectedServerAudioId === file.id ? 'checked' : 'unchecked'
                   }
                 />
               )}
@@ -326,14 +321,14 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
         soundName: selectedSound,
         delay: parseInt(delay) || 0,
       };
-      setQueue((prev) => [...prev, newItem]);
+      setQueue(prev => [...prev, newItem]);
       setSelectedSound(null);
-      setDelay("0");
+      setDelay('0');
     }
   };
 
   const removeFromQueue = (index: number) => {
-    setQueue((prev) => prev.filter((_, i) => i !== index));
+    setQueue(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSendQueueInternal = () => {
@@ -370,7 +365,6 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
     }
   };
 
-  // New handlers for color assignment mode
   const handleAssignSound = () => {
     if (onSoundAssign && selectedSound) {
       onSoundAssign(selectedSound, null, isLooping);
@@ -388,32 +382,30 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
   return (
     <Dialog visible={visible} onDismiss={onDismiss} style={styles.dialog}>
       <Dialog.Title style={styles.title}>
-        {isColorAssignmentMode
-          ? "Wybierz dźwięk dla koloru"
-          : "Odtwórz dźwięk"}
+        {isColorAssignmentMode ? 'Wybierz dźwięk dla koloru' : 'Odtwórz dźwięk'}
       </Dialog.Title>
 
-      {/* Tabs */}
+      {}
       <View style={styles.tabsContainer}>
         <Button
-          mode={activeTab === "single" ? "contained" : "outlined"}
-          onPress={() => setActiveTab("single")}
+          mode={activeTab === 'single' ? 'contained' : 'outlined'}
+          onPress={() => setActiveTab('single')}
           style={styles.tabButton}
           labelStyle={styles.tabLabel}
         >
           Pojedynczy
         </Button>
         <Button
-          mode={activeTab === "queue" ? "contained" : "outlined"}
-          onPress={() => setActiveTab("queue")}
+          mode={activeTab === 'queue' ? 'contained' : 'outlined'}
+          onPress={() => setActiveTab('queue')}
           style={styles.tabButton}
           labelStyle={styles.tabLabel}
         >
           Kolejka
         </Button>
         <Button
-          mode={activeTab === "server" ? "contained" : "outlined"}
-          onPress={() => setActiveTab("server")}
+          mode={activeTab === 'server' ? 'contained' : 'outlined'}
+          onPress={() => setActiveTab('server')}
           style={styles.tabButton}
           labelStyle={styles.tabLabel}
         >
@@ -421,18 +413,18 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
         </Button>
       </View>
 
-      {/* Content */}
+      {}
       <Dialog.Content style={styles.contentContainer}>
-        {/* Debug Info */}
+        {}
         <View style={styles.debugContainer}>
           <Text style={styles.debugText}>
-            Debug: SelectedSound: {selectedSound || "None"} | Path:{" "}
-            {currentPath.join("/") || "Root"} | ServerAudio:{" "}
-            {selectedServerAudioId || "None"}
+            Debug: SelectedSound: {selectedSound || 'None'} | Path:
+            {currentPath.join('/') || 'Root'} | ServerAudio:
+            {selectedServerAudioId || 'None'}
           </Text>
         </View>
 
-        {(activeTab === "single" || activeTab === "queue") && (
+        {(activeTab === 'single' || activeTab === 'queue') && (
           <>
             <Text style={styles.sectionHeader}>Wybierz dźwięk:</Text>
             {currentPath.length > 0 && (
@@ -447,11 +439,11 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
               </Button>
             )}
 
-            {/* Przewijana lista dźwięków */}
+            {}
             <ScrollView style={styles.listContainer}>
               <RadioButton.Group
                 onValueChange={setSelectedSound}
-                value={selectedSound || ""}
+                value={selectedSound || ''}
               >
                 {renderNavigationItems()}
               </RadioButton.Group>
@@ -459,12 +451,10 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
           </>
         )}
 
-        {activeTab === "server" && (
+        {activeTab === 'server' && (
           <>
             <View style={styles.serverControlsHeader}>
-              <Text style={styles.sectionHeader}>
-                Pliki audio serwera:
-              </Text>
+              <Text style={styles.sectionHeader}>Pliki audio serwera:</Text>
               <Button
                 mode="text"
                 icon="refresh"
@@ -480,13 +470,13 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
           </>
         )}
 
-        {/* Dolne panele zależne od aktywnej zakładki */}
-        {activeTab === "single" && (
+        {}
+        {activeTab === 'single' && (
           <View style={styles.bottomPane}>
             <Text style={styles.sectionHeader}>Opcje odtwarzania:</Text>
             <View style={styles.checkboxRow}>
               <Checkbox
-                status={isLooping ? "checked" : "unchecked"}
+                status={isLooping ? 'checked' : 'unchecked'}
                 onPress={() => setIsLooping(!isLooping)}
                 color={theme.colors.primary}
               />
@@ -502,10 +492,10 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
               mode="contained"
               style={styles.playButton}
             >
-              Odtwórz{" "}
+              Odtwórz
               {selectedSound
-                ? `(${selectedSound.split("/").pop()})`
-                : "(wybierz dźwięk)"}
+                ? `(${selectedSound.split('/').pop()})`
+                : '(wybierz dźwięk)'}
             </Button>
 
             {isColorAssignmentMode && (
@@ -513,20 +503,20 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
                 onPress={handleAssignSound}
                 disabled={!selectedSound}
                 mode="contained"
-                style={[styles.playButton, { backgroundColor: "#4CAF50" }]}
+                style={[styles.playButton, { backgroundColor: '#4CAF50' }]}
                 icon="check"
               >
-                Przypisz dźwięk{" "}
+                Przypisz dźwięk
                 {selectedSound
-                  ? `(${selectedSound.split("/").pop()})`
-                  : "(wybierz dźwięk)"}
+                  ? `(${selectedSound.split('/').pop()})`
+                  : '(wybierz dźwięk)'}
               </Button>
             )}
 
             {isLooping && (
               <View style={styles.controlIcons}>
                 <IconButton
-                  icon={isPlaying ? "pause-circle" : "play-circle"}
+                  icon={isPlaying ? 'pause-circle' : 'play-circle'}
                   size={32}
                   onPress={() => {
                     if (isPlaying) {
@@ -555,12 +545,12 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
           </View>
         )}
 
-        {activeTab === "server" && (
+        {activeTab === 'server' && (
           <View style={styles.bottomPane}>
             <Text style={styles.sectionHeader}>Opcje odtwarzania:</Text>
             <View style={styles.checkboxRow}>
               <Checkbox
-                status={serverIsLooping ? "checked" : "unchecked"}
+                status={serverIsLooping ? 'checked' : 'unchecked'}
                 onPress={() => setServerIsLooping(!serverIsLooping)}
                 color={theme.colors.primary}
               />
@@ -573,12 +563,13 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
               mode="contained"
               style={styles.playButton}
             >
-              Odtwórz dla całej sesji{" "}
+              Odtwórz dla całej sesji
               {selectedServerAudioId
-                ? `(${serverAudioFiles.find(
-                    (f) => f.id === selectedServerAudioId
-                  )?.name})`
-                : "(wybierz plik)"}
+                ? `(${
+                    serverAudioFiles.find(f => f.id === selectedServerAudioId)
+                      ?.name
+                  })`
+                : '(wybierz plik)'}
             </Button>
 
             {isColorAssignmentMode && (
@@ -586,22 +577,23 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
                 onPress={handleAssignServerAudio}
                 disabled={!selectedServerAudioId}
                 mode="contained"
-                style={[styles.playButton, { backgroundColor: "#4CAF50" }]}
+                style={[styles.playButton, { backgroundColor: '#4CAF50' }]}
                 icon="check"
               >
-                Przypisz plik{" "}
+                Przypisz plik
                 {selectedServerAudioId
-                  ? `(${serverAudioFiles.find(
-                      (f) => f.id === selectedServerAudioId
-                    )?.name})`
-                  : "(wybierz plik)"}
+                  ? `(${
+                      serverAudioFiles.find(f => f.id === selectedServerAudioId)
+                        ?.name
+                    })`
+                  : '(wybierz plik)'}
               </Button>
             )}
 
             {serverIsLooping && (
               <View style={styles.controlIcons}>
                 <IconButton
-                  icon={serverIsPlaying ? "pause-circle" : "play-circle"}
+                  icon={serverIsPlaying ? 'pause-circle' : 'play-circle'}
                   size={32}
                   onPress={() => {
                     if (serverIsPlaying) {
@@ -629,7 +621,7 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
           </View>
         )}
 
-        {activeTab === "queue" && (
+        {activeTab === 'queue' && (
           <View style={styles.bottomPane}>
             <Text style={styles.sectionHeader}>Opóźnienie (ms):</Text>
             <TextInput
@@ -657,9 +649,10 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
                 <View key={index} style={styles.queueItem}>
                   <Text style={styles.queueText}>
                     {item.soundName
-                      .split("/")
+                      .split('/')
                       .pop()
-                      ?.replace(/\.wav$/, "") || item.soundName.replace(/\.wav$/, "")}{" "}
+                      ?.replace(/\.wav$/, '') ||
+                      item.soundName.replace(/\.wav$/, '')}
                     (+{item.delay}ms)
                   </Text>
                   <IconButton
@@ -678,7 +671,7 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
 
       <Dialog.Actions style={styles.actions}>
         <Button onPress={onDismiss}>Anuluj</Button>
-        {activeTab === "queue" && (
+        {activeTab === 'queue' && (
           <Button
             onPress={handleSendQueueInternal}
             disabled={queue.length === 0}
@@ -696,18 +689,18 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
 const styles = StyleSheet.create({
   dialog: {
     maxWidth: 550,
-    width: "90%",
+    width: '90%',
     borderRadius: 12,
-    alignSelf: "center",
+    alignSelf: 'center',
   },
   title: {
     fontSize: 20,
-    fontWeight: "700",
+    fontWeight: '700',
     paddingHorizontal: 16,
   },
   tabsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     marginTop: 8,
     marginBottom: 16,
@@ -719,43 +712,43 @@ const styles = StyleSheet.create({
   },
   tabLabel: {
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: '500',
   },
   contentContainer: {
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
   debugContainer: {
-    backgroundColor: "#f0f0f0",
+    backgroundColor: '#f0f0f0',
     padding: 8,
     marginBottom: 12,
     borderRadius: 4,
   },
   debugText: {
     fontSize: 12,
-    fontFamily: "monospace",
-    color: "#666",
+    fontFamily: 'monospace',
+    color: '#666',
   },
   sectionHeader: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
     marginTop: 12,
     marginBottom: 8,
   },
   backButton: {
-    alignSelf: "flex-start",
+    alignSelf: 'flex-start',
     marginBottom: 8,
     paddingVertical: 4,
   },
   backLabel: {
-    fontWeight: "500",
+    fontWeight: '500',
   },
   listContainer: {
-    maxHeight: 260, 
+    maxHeight: 260,
     marginBottom: 12,
   },
   listWrapper: {
-    paddingRight: 8, 
+    paddingRight: 8,
   },
   listItem: {
     paddingVertical: 2,
@@ -767,8 +760,8 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   checkboxRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginVertical: 12,
   },
   checkboxLabel: {
@@ -782,8 +775,8 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   controlIcons: {
-    flexDirection: "row",
-    justifyContent: "center",
+    flexDirection: 'row',
+    justifyContent: 'center',
     marginTop: 16,
     marginBottom: 8,
     gap: 20,
@@ -808,16 +801,16 @@ const styles = StyleSheet.create({
     marginTop: 8,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.1)",
+    borderColor: 'rgba(0, 0, 0, 0.1)',
   },
   queueItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(0, 0, 0, 0.1)",
+    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
   },
   queueText: {
     fontSize: 14,
@@ -827,29 +820,29 @@ const styles = StyleSheet.create({
     margin: 0,
   },
   serverControlsHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   loadingContainer: {
     padding: 20,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   loadingText: {
     marginTop: 12,
-    textAlign: "center",
+    textAlign: 'center',
   },
   emptyContainer: {
     padding: 20,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   actions: {
     padding: 16,
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
   },
 });
 

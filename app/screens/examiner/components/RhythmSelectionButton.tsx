@@ -1,10 +1,20 @@
-import React, { useState, useEffect } from "react";
-import { View, StyleSheet, TouchableOpacity, Dimensions } from "react-native";
-import { Text, Surface, useTheme, Button, IconButton } from "react-native-paper";
-import Svg, { Path } from "react-native-svg";
-import { EkgType, EkgFactory, NoiseType } from "../../../../services/EkgFactory";
-import { EkgDataAdapter } from "../../../../services/EkgDataAdapter";
-import RhythmSelectionModal from "./RhythmSelectionModal";
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import {
+  Text,
+  Surface,
+  useTheme,
+  Button,
+  IconButton,
+} from 'react-native-paper';
+import Svg, { Path } from 'react-native-svg';
+import {
+  EkgType,
+  EkgFactory,
+  NoiseType,
+} from '../../../../services/EkgFactory';
+import { EkgDataAdapter } from '../../../../services/EkgDataAdapter';
+import RhythmSelectionModal from './RhythmSelectionModal';
 
 interface RhythmSelectionButtonProps {
   selectedType: EkgType;
@@ -15,38 +25,43 @@ interface RhythmSelectionButtonProps {
 const RhythmSelectionButton = ({
   selectedType = EkgType.NORMAL_SINUS_RHYTHM,
   setSelectedType,
-  label = "Wybierz rytm EKG",
+  label = 'Wybierz rytm EKG',
 }: RhythmSelectionButtonProps) => {
   const theme = useTheme();
   const [modalVisible, setModalVisible] = useState(false);
-  const [pathData, setPathData] = useState("");
-  
-  const svgWidth = Dimensions.get("window").width * 0.8;
+  const [pathData, setPathData] = useState('');
+
+  const svgWidth = Dimensions.get('window').width * 0.8;
   const svgHeight = 80;
 
   useEffect(() => {
-    
     EkgDataAdapter.initialize();
-    
-    
+
     const fixedBpm = 60;
     const baseline = svgHeight / 2;
     const pointsCount = 200;
-    let path = "";
-    
+    let path = '';
+
     for (let i = 0; i < pointsCount; i++) {
       const x = (i / pointsCount) * svgWidth;
-      const ekgValue = EkgDataAdapter.getValueAtTime(selectedType, x, fixedBpm, NoiseType.NONE);
-      
+      const ekgValue = EkgDataAdapter.getValueAtTime(
+        selectedType,
+        x,
+        fixedBpm,
+        NoiseType.NONE
+      );
+
       let verticalScale = 0.5;
-      
+
       if (selectedType === EkgType.ASYSTOLE) {
         verticalScale = 0.1;
-      } else if (selectedType === EkgType.VENTRICULAR_FIBRILLATION || 
-                selectedType === EkgType.ATRIAL_FIBRILLATION) {
+      } else if (
+        selectedType === EkgType.VENTRICULAR_FIBRILLATION ||
+        selectedType === EkgType.ATRIAL_FIBRILLATION
+      ) {
         verticalScale = 0.8;
       }
-      
+
       const y = baseline + (ekgValue - 150) * verticalScale;
       path += i === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`;
     }
@@ -54,7 +69,7 @@ const RhythmSelectionButton = ({
   }, [selectedType, svgWidth, svgHeight]);
 
   const rhythmName = EkgFactory.getNameForType(selectedType);
-  
+
   const getSeverityColor = () => {
     switch (selectedType) {
       case EkgType.VENTRICULAR_FIBRILLATION:
@@ -91,7 +106,7 @@ const RhythmSelectionButton = ({
   return (
     <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
-      
+
       <TouchableOpacity
         onPress={openModal}
         activeOpacity={0.8}
@@ -109,24 +124,26 @@ const RhythmSelectionButton = ({
               style={styles.dropdownIcon}
             />
           </View>
-          
+
           <View style={styles.ekgPreviewContainer}>
             <Svg height={svgHeight} width={svgWidth}>
-              <Path 
-                d={pathData} 
-                stroke={getSeverityColor()} 
-                strokeWidth={2} 
-                fill="none" 
+              <Path
+                d={pathData}
+                stroke={getSeverityColor()}
+                strokeWidth={2}
+                fill="none"
               />
             </Svg>
           </View>
-          
-          <View style={[styles.bpmBadge, { backgroundColor: getSeverityColor() }]}>  
+
+          <View
+            style={[styles.bpmBadge, { backgroundColor: getSeverityColor() }]}
+          >
             <Text style={styles.bpmText}>60 uderzeń/min</Text>
           </View>
         </Surface>
       </TouchableOpacity>
-      
+
       <RhythmSelectionModal
         visible={modalVisible}
         onDismiss={closeModal}

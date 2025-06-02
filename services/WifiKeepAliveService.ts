@@ -1,41 +1,39 @@
 import { NativeModules, Platform } from 'react-native';
 
-
 interface WifiKeepAliveInterface {
   acquireWifiLock(): Promise<boolean>;
   releaseWifiLock(): Promise<boolean>;
   getStatus(): Promise<string>;
 }
 
-
-const NativeWifiKeepAlive: WifiKeepAliveInterface = Platform.OS === 'android'
-  ? (NativeModules.WifiKeepAlive || {
-      acquireWifiLock: async () => {
-        console.warn('WifiKeepAlive module not found');
-        return false;
-      },
-      releaseWifiLock: async () => {
-        console.warn('WifiKeepAlive module not found');
-        return false;
-      },
-      getStatus: async () => 'Module not found',
-    })
-  : {
-      acquireWifiLock: async () => true,
-      releaseWifiLock: async () => true,
-      getStatus: async () => 'Not available on this platform',
-    };
+const NativeWifiKeepAlive: WifiKeepAliveInterface =
+  Platform.OS === 'android'
+    ? NativeModules.WifiKeepAlive || {
+        acquireWifiLock: async () => {
+          console.warn('WifiKeepAlive module not found');
+          return false;
+        },
+        releaseWifiLock: async () => {
+          console.warn('WifiKeepAlive module not found');
+          return false;
+        },
+        getStatus: async () => 'Module not found',
+      }
+    : {
+        acquireWifiLock: async () => true,
+        releaseWifiLock: async () => true,
+        getStatus: async () => 'Not available on this platform',
+      };
 
 class WifiKeepAliveService {
   private isActive = false;
 
-  
   async enableWebSocketKeepAlive(): Promise<boolean> {
     if (Platform.OS !== 'android') {
       console.log('WebSocket keep-alive is only needed on Android');
       return true;
     }
-    
+
     try {
       console.log('Enabling WebSocket keep-alive mode');
       await NativeWifiKeepAlive.acquireWifiLock();
@@ -47,12 +45,11 @@ class WifiKeepAliveService {
     }
   }
 
-  
   async disableWebSocketKeepAlive(): Promise<boolean> {
     if (Platform.OS !== 'android' || !this.isActive) {
       return true;
     }
-    
+
     try {
       console.log('Disabling WebSocket keep-alive mode');
       await NativeWifiKeepAlive.releaseWifiLock();
@@ -64,12 +61,11 @@ class WifiKeepAliveService {
     }
   }
 
-  
   async getStatus(): Promise<string> {
     if (Platform.OS !== 'android') {
       return 'Not available on this platform';
     }
-    
+
     try {
       return await NativeWifiKeepAlive.getStatus();
     } catch (error) {
@@ -78,6 +74,5 @@ class WifiKeepAliveService {
     }
   }
 }
-
 
 export const wifiKeepAliveService = new WifiKeepAliveService();

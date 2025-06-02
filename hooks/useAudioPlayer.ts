@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Audio } from 'expo-av';
 import { Platform } from 'react-native';
-import { loadAudioFromServer, loadAudioFromLocal } from '@/app/screens/student/utils/audioUtils';
+import {
+  loadAudioFromServer,
+  loadAudioFromLocal,
+} from '@/app/screens/student/utils/audioUtils';
 
 export const useAudioPlayer = () => {
   const [currentSound, setCurrentSound] = useState<Audio.Sound | null>(null);
@@ -9,11 +12,10 @@ export const useAudioPlayer = () => {
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const [loadingAudioKey, setLoadingAudioKey] = useState<string | null>(null);
 
-  // Initialize audio system
   useEffect(() => {
     async function initAudio() {
       try {
-        if (Platform.OS !== "web") {
+        if (Platform.OS !== 'web') {
           await Audio.setAudioModeAsync({
             allowsRecordingIOS: false,
             playsInSilentModeIOS: true,
@@ -21,15 +23,14 @@ export const useAudioPlayer = () => {
             playThroughEarpieceAndroid: false,
           });
         }
-        console.log("🎵 Audio system initialized for examiner dashboard");
+        console.log('🎵 Audio system initialized for examiner dashboard');
       } catch (err) {
-        console.error("Failed to configure audio:", err);
+        console.error('Failed to configure audio:', err);
       }
     }
     initAudio();
   }, []);
 
-  // Cleanup audio on unmount
   useEffect(() => {
     return () => {
       if (currentSound) {
@@ -47,7 +48,7 @@ export const useAudioPlayer = () => {
         setPlayingSound(null);
       }
     } catch (error) {
-      console.error("Error stopping audio:", error);
+      console.error('Error stopping audio:', error);
     }
   };
 
@@ -62,7 +63,6 @@ export const useAudioPlayer = () => {
       setIsLoadingAudio(true);
       setLoadingAudioKey(soundKey);
 
-      // Stop any currently playing audio first
       await stopAllAudio();
 
       let sound: Audio.Sound | null = null;
@@ -79,7 +79,6 @@ export const useAudioPlayer = () => {
         setCurrentSound(sound);
         setPlayingSound(soundKey);
 
-        // Set up playback status listener
         sound.setOnPlaybackStatusUpdate((status: any) => {
           if (status.isLoaded && status.didJustFinish) {
             setPlayingSound(null);
@@ -91,10 +90,10 @@ export const useAudioPlayer = () => {
         console.log(`✅ Audio playing: ${soundKey}`);
       } else {
         console.warn(`Failed to load audio: ${soundKey}`);
-        throw new Error("Nie udało się załadować pliku audio");
+        throw new Error('Nie udało się załadować pliku audio');
       }
     } catch (error) {
-      console.error("Error playing sound:", error);
+      console.error('Error playing sound:', error);
       setPlayingSound(null);
       setCurrentSound(null);
       throw error;
@@ -109,7 +108,7 @@ export const useAudioPlayer = () => {
       setIsLoadingAudio(true);
       await stopAllAudio();
     } catch (error) {
-      console.error("Error stopping sound:", error);
+      console.error('Error stopping sound:', error);
     } finally {
       setIsLoadingAudio(false);
       setLoadingAudioKey(null);

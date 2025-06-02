@@ -1,7 +1,7 @@
-import React from "react";
-import { StyleSheet, Dimensions } from "react-native";
-import { Dialog, Button, Text } from "react-native-paper";
-import { Session } from "../types/types";
+import React from 'react';
+import { StyleSheet, Dimensions } from 'react-native';
+import { Dialog, Button, Text } from 'react-native-paper';
+import { Session } from '../types/types';
 
 interface DeleteSessionDialogProps {
   visible: boolean;
@@ -24,9 +24,9 @@ const DeleteSessionDialog: React.FC<DeleteSessionDialogProps> = ({
       visible={visible}
       onDismiss={onDismiss}
       style={{
-        maxHeight: Dimensions.get("window").height * 0.8,
-        width: "90%",
-        alignSelf: "center",
+        maxHeight: Dimensions.get('window').height * 0.8,
+        width: '90%',
+        alignSelf: 'center',
       }}
     >
       <Dialog.Title>Usuń sesję</Dialog.Title>
@@ -55,11 +55,11 @@ const DeleteSessionDialog: React.FC<DeleteSessionDialogProps> = ({
 const styles = StyleSheet.create({
   warningText: {
     marginTop: 8,
-    fontWeight: "500",
+    fontWeight: '500',
   },
   infoText: {
     marginTop: 12,
-    fontStyle: "italic",
+    fontStyle: 'italic',
   },
 });
 

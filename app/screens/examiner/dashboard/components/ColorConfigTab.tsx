@@ -11,7 +11,11 @@ import {
   IconButton,
   Appbar,
 } from 'react-native-paper';
-import { ColorConfig, ColorConfigRequest, colorConfigService } from '@/services/ColorConfigService';
+import {
+  ColorConfig,
+  ColorConfigRequest,
+  colorConfigService,
+} from '@/services/ColorConfigService';
 import { socketService } from '@/services/SocketService';
 import ExaminerColorSensor from '@/components/ExaminerColorSensor';
 import {
@@ -46,39 +50,38 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
     stopSound,
   } = useAudioPlayer();
 
-  // State management
   const [colorConfigs, setColorConfigs] = useState<ColorConfig[]>([]);
   const [loading, setLoading] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarMessage, setSnackbarMessage] = useState('');
 
-  // Modal states
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [soundSelectionVisible, setSoundSelectionVisible] = useState(false);
   const [modalLoading, setModalLoading] = useState(false);
-  // Modal form data
+
   const [modalData, setModalData] = useState<ColorConfigModalData>({
-    name: "",
-    color: "custom",
-    soundName: "",
-    displayName: "",
+    name: '',
+    color: 'custom',
+    soundName: '',
+    displayName: '',
     customColorRgb: { r: 255, g: 0, b: 0 },
     colorTolerance: 0.15,
   });
 
   const [selectedConfigId, setSelectedConfigId] = useState<number | null>(null);
 
-  // Color sensor integration
-  const [sensorColor, setSensorColor] = useState<ColorValue>({ r: 0, g: 0, b: 0 });
-  
-  // Handle color updates from BLE manager
+  const [sensorColor, setSensorColor] = useState<ColorValue>({
+    r: 0,
+    g: 0,
+    b: 0,
+  });
+
   const handleSensorColorUpdate = async (color: ColorValue) => {
     setSensorColor(color);
   };
 
-  // Use BLE manager hook for sensor integration
   const {
     status: sensorStatus,
     error: sensorError,
@@ -87,14 +90,12 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
     disconnectDevice: disconnectSensor,
   } = useBleManager(handleSensorColorUpdate);
 
-  // Load color configurations on mount and sessionId change
   useEffect(() => {
     if (sessionId) {
       loadColorConfigs();
     }
   }, [sessionId]);
 
-  // WebSocket events handling
   useEffect(() => {
     if (!sessionId) return;
 
@@ -104,7 +105,7 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
     }) => {
       if (data.sessionId === sessionId) {
         console.log(
-          "🔄 Color config list updated in examiner dashboard:",
+          '🔄 Color config list updated in examiner dashboard:',
           data
         );
         setColorConfigs(data.colorConfigs);
@@ -112,7 +113,7 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
     };
 
     const unsubscribeListUpdate = socketService.on(
-      "color-config-list-update",
+      'color-config-list-update',
       handleColorConfigListUpdate
     );
 
@@ -129,8 +130,8 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
       const configs = await colorConfigService.getColorConfigs(sessionId);
       setColorConfigs(configs);
     } catch (error) {
-      console.error("Error loading color configs:", error);
-      showSnackbar("Błąd podczas ładowania konfiguracji kolorów");
+      console.error('Error loading color configs:', error);
+      showSnackbar('Błąd podczas ładowania konfiguracji kolorów');
     } finally {
       setLoading(false);
     }
@@ -142,17 +143,21 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
   };
   const resetModalData = () => {
     setModalData({
-      name: "",
-      color: "custom",
-      soundName: "",
-      displayName: "",
+      name: '',
+      color: 'custom',
+      soundName: '',
+      displayName: '',
       serverAudioId: undefined,
       customColorRgb: { r: 255, g: 0, b: 0 },
       colorTolerance: 0.15,
     });
   };
 
-  const handleColorCalibrated = (color: string, rgbValues: any, tolerance: number) => {
+  const handleColorCalibrated = (
+    color: string,
+    rgbValues: any,
+    tolerance: number
+  ) => {
     setModalData(prev => ({
       ...prev,
       color: 'custom',
@@ -160,7 +165,9 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
       colorTolerance: tolerance,
     }));
     setAddModalVisible(true);
-    showSnackbar(`Kalibracja koloru zakończona: RGB(${rgbValues.r}, ${rgbValues.g}, ${rgbValues.b})`);
+    showSnackbar(
+      `Kalibracja koloru zakończona: RGB(${rgbValues.r}, ${rgbValues.g}, ${rgbValues.b})`
+    );
   };
 
   const openAddModal = () => {
@@ -170,9 +177,9 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
   const openEditModal = (config: ColorConfig) => {
     setModalData({
       id: config.id,
-      name: config.displayName || config.soundName || "",
+      name: config.displayName || config.soundName || '',
       color: config.color,
-      soundName: config.soundName || "",
+      soundName: config.soundName || '',
       displayName: config.displayName,
       serverAudioId: config.serverAudioId,
       customColorRgb: config.customColorRgb || { r: 255, g: 0, b: 0 },
@@ -188,72 +195,75 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
   };
 
   const handleSaveConfig = async () => {
-    if (!sessionId) return;    // Validation
+    if (!sessionId) return;
     if (!modalData.name.trim()) {
-      showSnackbar("Nazwa dźwięku jest wymagana");
+      showSnackbar('Nazwa dźwięku jest wymagana');
       return;
     }
 
-    // Additional validation for custom color on web platform
     if (modalData.color === 'custom' && Platform.OS === 'web') {
-      if (!modalData.customColorRgb || 
-          modalData.customColorRgb.r < 0 || modalData.customColorRgb.r > 255 ||
-          modalData.customColorRgb.g < 0 || modalData.customColorRgb.g > 255 ||
-          modalData.customColorRgb.b < 0 || modalData.customColorRgb.b > 255) {
-        showSnackbar("Dla koloru niestandardowego wymagane są prawidłowe wartości RGB (0-255)");
+      if (
+        !modalData.customColorRgb ||
+        modalData.customColorRgb.r < 0 ||
+        modalData.customColorRgb.r > 255 ||
+        modalData.customColorRgb.g < 0 ||
+        modalData.customColorRgb.g > 255 ||
+        modalData.customColorRgb.b < 0 ||
+        modalData.customColorRgb.b > 255
+      ) {
+        showSnackbar(
+          'Dla koloru niestandardowego wymagane są prawidłowe wartości RGB (0-255)'
+        );
         return;
       }
-    }    // Check for duplicates
+    }
     if (!modalData.id) {
-      // Add mode - check for duplicates
-      // Tylko dla niestandardowych kolorów, sprawdź wartości RGB
       if (modalData.customColorRgb) {
         const existingCustomConfig = colorConfigs.find(
-          (config) => 
-            config.color === 'custom' && 
+          config =>
+            config.color === 'custom' &&
             config.customColorRgb &&
             config.customColorRgb.r === modalData.customColorRgb!.r &&
             config.customColorRgb.g === modalData.customColorRgb!.g &&
             config.customColorRgb.b === modalData.customColorRgb!.b
         );
         if (existingCustomConfig) {
-          showSnackbar("Konfiguracja z tymi wartościami RGB już istnieje");
+          showSnackbar('Konfiguracja z tymi wartościami RGB już istnieje');
           return;
         }
       }
     } else {
-      // Edit mode - check if changes conflict with other configs
       const currentConfig = colorConfigs.find(
-        (config) => config.id === modalData.id
+        config => config.id === modalData.id
       );
-      
+
       if (currentConfig && modalData.customColorRgb) {
-        // Dla niestandardowych kolorów, sprawdź czy wartości RGB kolidują
         const conflictingCustomConfig = colorConfigs.find(
-          (config) => 
+          config =>
             config.id !== modalData.id &&
-            config.color === 'custom' && 
+            config.color === 'custom' &&
             config.customColorRgb &&
             config.customColorRgb.r === modalData.customColorRgb!.r &&
             config.customColorRgb.g === modalData.customColorRgb!.g &&
             config.customColorRgb.b === modalData.customColorRgb!.b
         );
         if (conflictingCustomConfig) {
-          showSnackbar("Konfiguracja z tymi wartościami RGB już istnieje");
+          showSnackbar('Konfiguracja z tymi wartościami RGB już istnieje');
           return;
         }
       }
     }
 
     setModalLoading(true);
-    try {      const configRequest: ColorConfigRequest = {
+    try {
+      const configRequest: ColorConfigRequest = {
         color: modalData.color as any,
         soundName: modalData.soundName,
         displayName: modalData.displayName || modalData.name,
         serverAudioId: modalData.serverAudioId,
         isEnabled: true,
         volume: 1.0,
-        isLooping: false, // Zawsze ustawione na false, ponieważ usunęliśmy przełącznik
+        isLooping: false,
         customColorRgb: modalData.customColorRgb,
         colorTolerance: modalData.colorTolerance,
         ...(modalData.id && { id: modalData.id }),
@@ -262,20 +272,20 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
       await colorConfigService.saveColorConfig(sessionId, configRequest);
 
       showSnackbar(
-        modalData.id ? "Konfiguracja zaktualizowana" : "Konfiguracja dodana"
+        modalData.id ? 'Konfiguracja zaktualizowana' : 'Konfiguracja dodana'
       );
-      // Rozłącz czujnik RGB po zapisaniu konfiguracji
-      if (sensorStatus === "monitoring") {
+
+      if (sensorStatus === 'monitoring') {
         disconnectSensor();
       }
-      
+
       setAddModalVisible(false);
       setEditModalVisible(false);
       resetModalData();
       await loadColorConfigs();
     } catch (error) {
-      console.error("Error saving config:", error);
-      showSnackbar("Błąd podczas zapisywania konfiguracji");
+      console.error('Error saving config:', error);
+      showSnackbar('Błąd podczas zapisywania konfiguracji');
     } finally {
       setModalLoading(false);
     }
@@ -283,22 +293,19 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
   const handleDeleteConfig = async () => {
     if (!sessionId || !selectedConfigId) return;
 
-    const configToDelete = colorConfigs.find((c) => c.id === selectedConfigId);
+    const configToDelete = colorConfigs.find(c => c.id === selectedConfigId);
     if (!configToDelete) return;
 
     setModalLoading(true);
     try {
-      await colorConfigService.deleteColorConfig(
-        sessionId,
-        configToDelete.id
-      );
-      showSnackbar("Konfiguracja usunięta");
+      await colorConfigService.deleteColorConfig(sessionId, configToDelete.id);
+      showSnackbar('Konfiguracja usunięta');
       setDeleteModalVisible(false);
       setSelectedConfigId(null);
       await loadColorConfigs();
     } catch (error) {
-      console.error("Error deleting config:", error);
-      showSnackbar("Błąd podczas usuwania konfiguracji");
+      console.error('Error deleting config:', error);
+      showSnackbar('Błąd podczas usuwania konfiguracji');
     } finally {
       setModalLoading(false);
     }
@@ -314,12 +321,12 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
     } else {
       try {
         if (config.serverAudioId) {
-          await playSound(config.soundName || "", true, config.serverAudioId);
+          await playSound(config.soundName || '', true, config.serverAudioId);
         } else if (config.soundName) {
           await playSound(config.soundName);
         }
       } catch (error) {
-        showSnackbar("Błąd podczas odtwarzania dźwięku");
+        showSnackbar('Błąd podczas odtwarzania dźwięku');
       }
     }
   };
@@ -328,19 +335,18 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
     serverAudioId: string | null
   ) => {
     if (serverAudioId) {
-      setModalData((prev) => ({
+      setModalData(prev => ({
         ...prev,
-        soundName: "",
-        displayName: "",
+        soundName: '',
+        displayName: '',
         serverAudioId: serverAudioId,
       }));
     } else if (soundName) {
-      // Extract display name from file path
       const pathParts = soundName.split('/');
       const fileName = pathParts[pathParts.length - 1];
-      const displayName = fileName.replace(/\.[^/.]+$/, ""); // Remove file extension
-      
-      setModalData((prev) => ({
+      const displayName = fileName.replace(/\.[^/.]+$/, '');
+
+      setModalData(prev => ({
         ...prev,
         name: displayName,
         soundName: soundName,
@@ -356,19 +362,18 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
   ) => {
     try {
       if (serverAudioId) {
-        await playSound("", true, serverAudioId);
+        await playSound('', true, serverAudioId);
       } else if (soundName) {
         await playSound(soundName);
       }
     } catch (error) {
-      showSnackbar("Błąd podczas odtwarzania podglądu dźwięku");
+      showSnackbar('Błąd podczas odtwarzania podglądu dźwięku');
     }
   };
 
-  // Handle accepting color from sensor
   const handleAcceptSensorColor = () => {
-    if (sensorStatus !== "monitoring") {
-      showSnackbar("Czujnik nie jest połączony");
+    if (sensorStatus !== 'monitoring') {
+      showSnackbar('Czujnik nie jest połączony');
       return;
     }
 
@@ -376,7 +381,9 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
     const totalBrightness = r + g + b;
 
     if (totalBrightness < 100) {
-      showSnackbar("Zbyt niska jasność koloru. Przyłóż czujnik do obiektu o wyraźnym kolorze.");
+      showSnackbar(
+        'Zbyt niska jasność koloru. Przyłóż czujnik do obiektu o wyraźnym kolorze.'
+      );
       return;
     }
 
@@ -418,22 +425,34 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
         <View style={styles.emptyContainer}>
           <Text style={[styles.emptyText, { color: theme.colors.onSurface }]}>
             Brak wybranej sesji
-          </Text>          <Text style={[styles.emptySubtext, { color: theme.colors.onSurfaceVariant }]}>
-            Aby zarządzać konfiguracją kolorów, wróć do karty "Sesje" i kliknij przycisk palety kolorów (🎨) przy wybranej sesji
+          </Text>
+          <Text
+            style={[
+              styles.emptySubtext,
+              { color: theme.colors.onSurfaceVariant },
+            ]}
+          >
+            Aby zarządzać konfiguracją kolorów, wróć do karty "Sesje" i kliknij
+            przycisk palety kolorów (🎨) przy wybranej sesji
           </Text>
           {onGoBack && (
-            <Button mode="contained" onPress={onGoBack} style={{ marginTop: 16 }}>
+            <Button
+              mode="contained"
+              onPress={onGoBack}
+              style={{ marginTop: 16 }}
+            >
               Powrót do sesji
             </Button>
           )}
         </View>
       </View>
     );
-  }return (
+  }
+  return (
     <View
       style={[styles.container, { backgroundColor: theme.colors.background }]}
     >
-      {/* Header with session info and back button */}
+      {}
       {sessionCode && onGoBack && (
         <Appbar.Header>
           <Appbar.BackAction onPress={onGoBack} />
@@ -443,8 +462,7 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
           />
         </Appbar.Header>
       )}
-
-      {/* Simple header for tab view */}
+      {}
       {sessionCode && !onGoBack && (
         <View style={styles.header}>
           <View style={styles.headerContent}>
@@ -452,79 +470,80 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
               <Text style={[styles.title, { color: theme.colors.onSurface }]}>
                 Konfiguracja kolorów
               </Text>
-              <Text style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
+              <Text
+                style={[
+                  styles.subtitle,
+                  { color: theme.colors.onSurfaceVariant },
+                ]}
+              >
                 Sesja: {sessionCode}
               </Text>
             </View>
           </View>
         </View>
       )}
-
-      {/* Loading indicator */}
+      {}
       {loading && <ProgressBar indeterminate style={styles.progressBar} />}
-
-      {/* Color Sensor for Calibration - Only on native platforms */}
-
-      
-      {/* List */}
+      {}
+      {}
       <FlatList
         data={colorConfigs}
         renderItem={renderColorConfigItem}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={item => item.id.toString()}
         ListEmptyComponent={renderEmptyList}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
-      />      {/* Add button */}
+      />
+      {}
       <View style={styles.addButtonContainer}>
         <Button
           mode="outlined"
           icon="plus"
           onPress={isLoadingAudio ? undefined : openAddModal}
           disabled={isLoadingAudio}
-          style={[
-            styles.addButton,
-            isLoadingAudio && { opacity: 0.5 },
-          ]}
+          style={[styles.addButton, isLoadingAudio && { opacity: 0.5 }]}
           contentStyle={styles.addButtonContent}
         >
           Dodaj konfigurację
         </Button>
       </View>
-
-      {/* Modals */}
-      <Portal>        <ColorConfigModal
+      {}
+      <Portal>
+        <ColorConfigModal
           visible={addModalVisible || editModalVisible}
           isEditMode={editModalVisible}
           modalData={modalData}
           modalLoading={modalLoading}
           isLoadingAudio={isLoadingAudio}
           onDismiss={() => {
-            // Rozłącz czujnik RGB po zamknięciu modalu
-            if (sensorStatus === "monitoring") {
+            if (sensorStatus === 'monitoring') {
               disconnectSensor();
             }
-            
+
             setAddModalVisible(false);
             setEditModalVisible(false);
             resetModalData();
           }}
           onSave={handleSaveConfig}
           onSoundSelection={() => {
-            console.log("ColorConfigTab: Sound selection triggered");
-            console.log("Current soundSelectionVisible state:", soundSelectionVisible);
-            console.log("Platform:", Platform.OS);
+            console.log('ColorConfigTab: Sound selection triggered');
+            console.log(
+              'Current soundSelectionVisible state:',
+              soundSelectionVisible
+            );
+            console.log('Platform:', Platform.OS);
             setSoundSelectionVisible(true);
-            console.log("Sound selection modal visibility set to true");
+            console.log('Sound selection modal visibility set to true');
           }}
-          onModalDataChange={(data) => setModalData(prev => ({ ...prev, ...data }))}
-          // Color sensor integration
+          onModalDataChange={data =>
+            setModalData(prev => ({ ...prev, ...data }))
+          }
           sensorStatus={sensorStatus}
           sensorColor={sensorColor}
           onConnectSensor={connectSensor}
           onDisconnectSensor={disconnectSensor}
           onAcceptSensorColor={handleAcceptSensorColor}
         />
-
         <DeleteConfirmationModal
           visible={deleteModalVisible}
           loading={modalLoading}
@@ -535,7 +554,6 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
             setSelectedConfigId(null);
           }}
         />
-
         <SoundSelectionModal
           visible={soundSelectionVisible}
           selectedSound={modalData.soundName}
@@ -546,8 +564,7 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
           onClose={() => setSoundSelectionVisible(false)}
         />
       </Portal>
-
-      {/* Snackbar */}
+      {}
       <Snackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
@@ -565,33 +582,33 @@ const styles = StyleSheet.create({
     zIndex: 0,
     paddingHorizontal: 16,
     paddingTop: 8,
-  },  
+  },
   header: {
     marginBottom: 16,
-    alignItems: "center",
+    alignItems: 'center',
     paddingHorizontal: 8,
   },
   headerContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    width: "100%",
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
   },
   backButton: {
     marginRight: 8,
   },
   titleContainer: {
     flex: 1,
-    alignItems: "center",
+    alignItems: 'center',
   },
   title: {
     fontSize: 22,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     marginBottom: 4,
-    textAlign: "center",
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 14,
-    textAlign: "center",
+    textAlign: 'center',
   },
   progressBar: {
     marginBottom: 16,
@@ -602,29 +619,30 @@ const styles = StyleSheet.create({
   },
   emptyContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     paddingHorizontal: 24,
     paddingVertical: 40,
   },
   emptyText: {
     fontSize: 18,
-    fontWeight: "600",
-    textAlign: "center",
+    fontWeight: '600',
+    textAlign: 'center',
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 14,
-    textAlign: "center",
+    textAlign: 'center',
     lineHeight: 20,
     opacity: 0.7,
   },
   noSessionText: {
     fontSize: 16,
-    textAlign: "center",
+    textAlign: 'center',
     marginTop: 40,
-  },  fab: {
-    position: "absolute",
+  },
+  fab: {
+    position: 'absolute',
     margin: 16,
     right: 0,
     bottom: 20,
@@ -632,11 +650,11 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   addButtonContainer: {
-    position: "absolute",
+    position: 'absolute',
     bottom: 20,
     left: 16,
     right: 16,
-    alignItems: "center",
+    alignItems: 'center',
   },
   addButton: {
     borderRadius: 8,
@@ -653,7 +671,7 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
     marginBottom: 12,
     marginTop: 16,
   },
@@ -662,7 +680,7 @@ const styles = StyleSheet.create({
     marginTop: -12,
     marginBottom: 16,
     opacity: 0.7,
-    textAlign: "center",
+    textAlign: 'center',
   },
 });
 

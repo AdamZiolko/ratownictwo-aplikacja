@@ -1,5 +1,5 @@
-import React from "react";
-import { View, StyleSheet, Platform } from "react-native";
+import React from 'react';
+import { View, StyleSheet, Platform } from 'react-native';
 import {
   Card,
   Text,
@@ -7,9 +7,9 @@ import {
   ActivityIndicator,
   useTheme,
   Icon,
-} from "react-native-paper";
-import { ColorConfig } from "@/services/ColorConfigService";
-import { getColorInfo, getPlayingSoundKey } from "./constants";
+} from 'react-native-paper';
+import { ColorConfig } from '@/services/ColorConfigService';
+import { getColorInfo, getPlayingSoundKey } from './constants';
 
 interface ColorConfigItemProps {
   item: ColorConfig;
@@ -33,10 +33,13 @@ const ColorConfigItem: React.FC<ColorConfigItemProps> = ({
   const theme = useTheme();
 
   const colorInfo = getColorInfo(item.color);
+
   const soundKey = getPlayingSoundKey(item);
+
   const isCurrentlyPlaying = playingSound === soundKey;
+
   const isCurrentlyLoading = isLoadingAudio && loadingAudioKey === soundKey;
-  // Prevent color animation by maintaining consistent theme colors
+
   const buttonStyle = {
     borderColor: theme.colors.outline,
     backgroundColor: theme.colors.surface,
@@ -58,14 +61,14 @@ const ColorConfigItem: React.FC<ColorConfigItemProps> = ({
   return (
     <Card style={[styles.listItem, { backgroundColor: theme.colors.surface }]}>
       <View style={styles.listItemContent}>
-        <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
           <View style={styles.colorIndicatorContainer}>
             <View
               style={[
                 styles.colorIndicator,
                 {
                   backgroundColor:
-                    item.color === "custom" && item.customColorRgb
+                    item.color === 'custom' && item.customColorRgb
                       ? `rgb(${item.customColorRgb.r}, ${item.customColorRgb.g}, ${item.customColorRgb.b})`
                       : colorInfo.color,
                 },
@@ -76,7 +79,7 @@ const ColorConfigItem: React.FC<ColorConfigItemProps> = ({
             <Text
               style={[styles.listItemTitle, { color: theme.colors.onSurface }]}
             >
-              {item.displayName || item.soundName || "Bez nazwy"}
+              {item.displayName || item.soundName || 'Bez nazwy'}
             </Text>
             <Text
               style={[
@@ -84,15 +87,15 @@ const ColorConfigItem: React.FC<ColorConfigItemProps> = ({
                 { color: theme.colors.onSurfaceVariant },
               ]}
             >
-              {item.color === "custom" && item.customColorRgb
+              {item.color === 'custom' && item.customColorRgb
                 ? `RGB(${item.customColorRgb.r}, ${item.customColorRgb.g}, ${item.customColorRgb.b})`
-                : item.color === "custom"
-                ? "Kolor niestandardowy"
+                : item.color === 'custom'
+                ? 'Kolor niestandardowy'
                 : `Kolor: ${colorInfo.name}`}
             </Text>
             <View style={styles.loopingIndicator}>
               <Icon
-                source={item.isLooping ? "repeat" : "play"}
+                source={item.isLooping ? 'repeat' : 'play'}
                 size={16}
                 color={theme.colors.onSurfaceVariant}
               />
@@ -102,7 +105,7 @@ const ColorConfigItem: React.FC<ColorConfigItemProps> = ({
                   { color: theme.colors.onSurfaceVariant, marginLeft: 4 },
                 ]}
               >
-                {item.isLooping ? "Zapętlony" : "Pojedynczy"}
+                {item.isLooping ? 'Zapętlony' : 'Pojedynczy'}
               </Text>
             </View>
           </View>
@@ -110,17 +113,17 @@ const ColorConfigItem: React.FC<ColorConfigItemProps> = ({
             <View style={styles.playButtonContainer}>
               <Button
                 mode="outlined"
-                icon={isCurrentlyPlaying ? "stop" : "play"}
+                icon={isCurrentlyPlaying ? 'stop' : 'play'}
                 compact
                 disabled={isLoadingAudio}
                 onPress={() => onPlay(item)}
                 style={[styles.playButton, buttonStyle]}
                 contentStyle={styles.buttonContent}
-                rippleColor={theme.colors.primary + "20"}
+                rippleColor={theme.colors.primary + '20'}
                 buttonColor={theme.colors.surface}
                 textColor={theme.colors.primary}
               >
-                <Text>{isCurrentlyPlaying ? "Stop" : "Play"}</Text>
+                <Text>{isCurrentlyPlaying ? 'Stop' : 'Play'}</Text>
               </Button>
               {isCurrentlyLoading && (
                 <View style={styles.loadingOverlay}>
@@ -139,7 +142,7 @@ const ColorConfigItem: React.FC<ColorConfigItemProps> = ({
               onPress={() => onEdit(item)}
               style={[styles.actionButton, buttonStyle]}
               contentStyle={styles.buttonContent}
-              rippleColor={theme.colors.primary + "20"}
+              rippleColor={theme.colors.primary + '20'}
               buttonColor={theme.colors.surface}
               textColor={theme.colors.primary}
             >
@@ -154,7 +157,7 @@ const ColorConfigItem: React.FC<ColorConfigItemProps> = ({
               style={[styles.actionButton, deleteButtonStyle]}
               textColor={theme.colors.error}
               contentStyle={styles.buttonContent}
-              rippleColor={theme.colors.error + "20"}
+              rippleColor={theme.colors.error + '20'}
               buttonColor={theme.colors.surface}
             >
               <Text>Usuń</Text>
@@ -176,8 +179,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   colorIndicatorContainer: {
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     marginLeft: 8,
     minWidth: 40,
   },
@@ -187,55 +190,55 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     elevation: 2,
     borderWidth: 2,
-    borderColor: "rgba(0,0,0,0.1)",
+    borderColor: 'rgba(0,0,0,0.1)',
   },
   itemActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-end",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
     gap: 8,
-    flexWrap: "nowrap", // Prevent wrapping to maintain button layout
-    minWidth: 480, // Increased total width for larger buttons
+    flexWrap: 'nowrap',
+    minWidth: 480,
   },
   playButtonContainer: {
-    position: "relative",
-    width: 160, // Doubled width
+    position: 'relative',
+    width: 160,
   },
   playButton: {
     borderRadius: 8,
-    width: 160, // Doubled width
-    height: 36, // Fixed height
+    width: 160,
+    height: 36,
   },
   actionButton: {
     borderRadius: 8,
-    width: 140, // Doubled width  
-    height: 36, // Fixed height
+    width: 140,
+    height: 36,
   },
   buttonContent: {
     paddingHorizontal: 8,
     paddingVertical: 4,
-    height: 36, // Fixed height
-    justifyContent: "center",
-    alignItems: "center",
-    minWidth: "100%", // Ensure button content takes full width
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: '100%',
     ...(Platform.OS === 'web' && {
       transition: 'none',
       animationKeyframes: 'none',
     }),
   },
   loadingOverlay: {
-    position: "absolute",
+    position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     borderRadius: 8,
   },
   listItemTitle: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
     marginBottom: 4,
   },
   listItemDescription: {
@@ -243,8 +246,8 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   loopingIndicator: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginTop: 2,
   },
 });

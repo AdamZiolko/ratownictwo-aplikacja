@@ -1,6 +1,13 @@
 import React from 'react';
 import { View, Alert } from 'react-native';
-import { Text, Card, IconButton, ActivityIndicator, Tooltip, useTheme } from 'react-native-paper';
+import {
+  Text,
+  Card,
+  IconButton,
+  ActivityIndicator,
+  Tooltip,
+  useTheme,
+} from 'react-native-paper';
 import { AudioFile, AudioFileUiStatus } from '../types/AudioTypes';
 import { formatDate, formatDuration } from '../utils/audioUtils';
 import { createDashboardStyles } from '../DashboardStyles';
@@ -46,41 +53,47 @@ export const AudioCard: React.FC<AudioCardProps> = ({
             </Text>
           </View>
           <View style={dashboardStyles.audioActions}>
-            {/* Loading indicator for individual file operations (play/download) */}
+            {}
             {status?.isLoading && playingId !== audio.id && (
               <ActivityIndicator size="small" style={{ marginRight: 8 }} />
             )}
             <IconButton
-              icon={playingId === audio.id && isPlayingInModal ? "pause-circle-outline" : "play-circle-outline"}
+              icon={
+                playingId === audio.id && isPlayingInModal
+                  ? 'pause-circle-outline'
+                  : 'play-circle-outline'
+              }
               size={28}
               onPress={() => onPlay(audio)}
               disabled={status?.isLoading && playingId !== audio.id}
             />
             {status?.isLocallyAvailable ? (
-              <IconButton 
+              <IconButton
                 icon="check-circle"
-                size={24} 
+                size={24}
                 disabled
-                onPress={() => Alert.alert('Informacja', 'Plik jest już dostępny lokalnie.')}
+                onPress={() =>
+                  Alert.alert('Informacja', 'Plik jest już dostępny lokalnie.')
+                }
               />
             ) : (
-              <IconButton 
-                icon="download-circle-outline" 
-                size={24} 
-                onPress={() => onDownload(audio.id, audio.name)} 
+              <IconButton
+                icon="download-circle-outline"
+                size={24}
+                onPress={() => onDownload(audio.id, audio.name)}
                 disabled={status?.isLoading}
               />
             )}
-            {status?.error && 
-              <Tooltip title={status?.error || "Unknown error"}>
-                <IconButton icon="alert-circle-outline" size={20} iconColor={theme.colors.error} />
+            {status?.error && (
+              <Tooltip title={status?.error || 'Unknown error'}>
+                <IconButton
+                  icon="alert-circle-outline"
+                  size={20}
+                  iconColor={theme.colors.error}
+                />
               </Tooltip>
-            }
-            <IconButton
-              icon="pencil"
-              size={20}
-              onPress={() => onEdit(audio)}
-            />
+            )}
+            <IconButton icon="pencil" size={20} onPress={() => onEdit(audio)} />
             <IconButton
               icon="delete"
               size={20}

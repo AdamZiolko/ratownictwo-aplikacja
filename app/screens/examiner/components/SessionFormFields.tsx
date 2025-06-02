@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useRef } from "react";
-import { View, StyleSheet, Platform } from "react-native";
-import Slider from "@react-native-community/slider";
+import React, { useEffect, useState, useRef } from 'react';
+import { View, StyleSheet, Platform } from 'react-native';
+import Slider from '@react-native-community/slider';
 import {
   TextInput,
   HelperText,
@@ -12,11 +12,11 @@ import {
   Portal,
   Modal,
   Switch,
-} from "react-native-paper";
-import { FormData, FormErrors } from "../types/types";
-import { NoiseType } from "@/services/EkgFactory";
-import { sessionService } from "@/services/SessionService";
-import RhythmSelectionButton from "./RhythmSelectionButton";
+} from 'react-native-paper';
+import { FormData, FormErrors } from '../types/types';
+import { NoiseType } from '@/services/EkgFactory';
+import { sessionService } from '@/services/SessionService';
+import RhythmSelectionButton from './RhythmSelectionButton';
 
 interface SessionFormFieldsProps {
   formData: FormData;
@@ -53,7 +53,7 @@ const MedicalSliderInput = ({
   const [modalVisible, setModalVisible] = useState(false);
   const [tempValue, setTempValue] = useState(min);
   const [displayValue, setDisplayValue] = useState(min);
-  const isWeb = Platform.OS === "web";
+  const isWeb = Platform.OS === 'web';
   const timeoutRef = useRef<NodeJS.Timeout>();
   const buttonCooldownRef = useRef(false);
 
@@ -123,7 +123,7 @@ const MedicalSliderInput = ({
           }}
         >
           {`${label}: ${displayValue.toFixed(decimalPlaces)}${
-            suffix ? " " + suffix : ""
+            suffix ? ' ' + suffix : ''
           }`}
         </Text>
         <View style={[styles.webSliderRow, { paddingHorizontal: 5 }]}>
@@ -136,7 +136,7 @@ const MedicalSliderInput = ({
             maximumValue={max}
             step={step}
             value={parseFloat(value) || min}
-            onValueChange={(v) => {
+            onValueChange={v => {
               const roundedValue = Math.round(v / step) * step;
               setDisplayValue(roundedValue);
               onChange(roundedValue.toFixed(decimalPlaces));
@@ -149,14 +149,14 @@ const MedicalSliderInput = ({
             style={{
               color: theme.colors.onSurface,
               width: 35,
-              textAlign: "right",
+              textAlign: 'right',
             }}
           >
             {max}
           </Text>
         </View>
         <View style={[styles.tickLabelContainer, { paddingHorizontal: 5 }]}>
-          {ticks.map((t) => (
+          {ticks.map(t => (
             <Text
               key={t}
               style={[styles.webTickLabel, { color: theme.colors.onSurface }]}
@@ -180,7 +180,7 @@ const MedicalSliderInput = ({
         ]}
         labelStyle={{ color: theme.colors.onSurface }}
       >
-        {`${label}: ${value}${suffix ? " " + suffix : ""}`}
+        {`${label}: ${value}${suffix ? ' ' + suffix : ''}`}
       </Button>
 
       <Portal>
@@ -214,7 +214,7 @@ const MedicalSliderInput = ({
           </View>
 
           <View style={styles.tickContainer}>
-            {ticks.map((t) => (
+            {ticks.map(t => (
               <View
                 key={t}
                 style={[
@@ -225,7 +225,7 @@ const MedicalSliderInput = ({
             ))}
           </View>
           <View style={styles.tickLabelContainer}>
-            {ticks.map((t) => (
+            {ticks.map(t => (
               <Text
                 key={t}
                 style={[styles.tickLabel, { color: theme.colors.onSurface }]}
@@ -249,7 +249,7 @@ const MedicalSliderInput = ({
               style={[styles.displayValue, { color: theme.colors.onSurface }]}
             >
               {displayValue.toFixed(decimalPlaces)}
-              {suffix ? " " + suffix : ""}
+              {suffix ? ' ' + suffix : ''}
             </Text>
 
             <Button
@@ -284,10 +284,8 @@ const SessionFormFields = ({
 }: SessionFormFieldsProps) => {
   const theme = useTheme();
 
-  
   const handleBpmChange = (text: string) => {
-    
-    const numericValue = text.replace(/[^0-9]/g, "");
+    const numericValue = text.replace(/[^0-9]/g, '');
     setFormData({ ...formData, beatsPerMinute: numericValue });
   };
   return (
@@ -295,7 +293,7 @@ const SessionFormFields = ({
       <TextInput
         label="Nazwa sesji"
         value={formData.name}
-        onChangeText={(t) => setFormData({ ...formData, name: t })}
+        onChangeText={t => setFormData({ ...formData, name: t })}
         mode="outlined"
         style={styles.input}
         placeholder="Wprowadź nazwę sesji"
@@ -303,7 +301,7 @@ const SessionFormFields = ({
       <MedicalSliderInput
         label="Temperatura"
         value={formData.temperature}
-        onChange={(v) => setFormData({ ...formData, temperature: v })}
+        onChange={v => setFormData({ ...formData, temperature: v })}
         error={!!formErrors.temperature}
         theme={theme}
         min={30}
@@ -317,9 +315,7 @@ const SessionFormFields = ({
       )}
       <RhythmSelectionButton
         selectedType={formData.rhythmType}
-        setSelectedType={(type) =>
-          setFormData({ ...formData, rhythmType: type })
-        }
+        setSelectedType={type => setFormData({ ...formData, rhythmType: type })}
       />
       <TextInput
         label="Tętno (BPM)"
@@ -330,7 +326,7 @@ const SessionFormFields = ({
         style={styles.input}
         error={!!formErrors.beatsPerMinute}
         placeholder="Wprowadź wartość BPM"
-        maxLength={3} 
+        maxLength={3}
       />
       {formErrors.beatsPerMinute ? (
         <HelperText type="error">{formErrors.beatsPerMinute}</HelperText>
@@ -340,21 +336,21 @@ const SessionFormFields = ({
       <Text variant="titleSmall">Poziom szumów</Text>
       <SegmentedButtons
         value={formData.noiseLevel.toString()}
-        onValueChange={(v) =>
+        onValueChange={v =>
           setFormData({ ...formData, noiseLevel: parseInt(v, 10) })
         }
         buttons={[
-          { value: NoiseType.NONE.toString(), label: "Brak" },
-          { value: NoiseType.MILD.toString(), label: "Łagodne" },
-          { value: NoiseType.MODERATE.toString(), label: "Umiarkowane" },
-          { value: NoiseType.SEVERE.toString(), label: "Silne" },
+          { value: NoiseType.NONE.toString(), label: 'Brak' },
+          { value: NoiseType.MILD.toString(), label: 'Łagodne' },
+          { value: NoiseType.MODERATE.toString(), label: 'Umiarkowane' },
+          { value: NoiseType.SEVERE.toString(), label: 'Silne' },
         ]}
         style={styles.segmentedButtons}
       />
       <TextInput
         label="Kod sesji"
         value={formData.sessionCode}
-        onChangeText={(t) => setFormData({ ...formData, sessionCode: t })}
+        onChangeText={t => setFormData({ ...formData, sessionCode: t })}
         keyboardType="number-pad"
         mode="outlined"
         style={styles.input}
@@ -381,10 +377,10 @@ const SessionFormFields = ({
         >
           Generuj losowy kod
         </Button>
-      )}{" "}
+      )}
       <View
         style={{
-          flexDirection: "column",
+          flexDirection: 'column',
           marginVertical: 8,
           paddingHorizontal: 5,
         }}
@@ -398,11 +394,11 @@ const SessionFormFields = ({
                 : theme.colors.outline,
             }}
           >
-            {formData.isActive ? "Aktywna" : "Nieaktywna"}
+            {formData.isActive ? 'Aktywna' : 'Nieaktywna'}
           </Text>
           <Switch
             value={formData.isActive}
-            onValueChange={(value) =>
+            onValueChange={value =>
               setFormData({ ...formData, isActive: value })
             }
             color={theme.colors.primary}
@@ -416,11 +412,11 @@ const SessionFormFields = ({
                 : theme.colors.outline,
             }}
           >
-            {formData.isEkdDisplayHidden ? "EKG ukryte" : "EKG widoczne"}
+            {formData.isEkdDisplayHidden ? 'EKG ukryte' : 'EKG widoczne'}
           </Text>
           <Switch
             value={formData.isEkdDisplayHidden}
-            onValueChange={(value) =>
+            onValueChange={value =>
               setFormData({ ...formData, isEkdDisplayHidden: value })
             }
             color={theme.colors.primary}
@@ -435,7 +431,7 @@ const SessionFormFields = ({
         <TextInput
           label="Ciśnienie krwi (BP)"
           value={formData.bp}
-          onChangeText={(t) => setFormData({ ...formData, bp: t })}
+          onChangeText={t => setFormData({ ...formData, bp: t })}
           mode="outlined"
           style={styles.inputHalf}
           right={<TextInput.Affix text="mmHg" />}
@@ -444,7 +440,7 @@ const SessionFormFields = ({
       <MedicalSliderInput
         label="SpO₂"
         value={formData.spo2}
-        onChange={(v) => setFormData({ ...formData, spo2: v })}
+        onChange={v => setFormData({ ...formData, spo2: v })}
         error={!!formErrors.spo2}
         theme={theme}
         min={70}
@@ -459,7 +455,7 @@ const SessionFormFields = ({
       <MedicalSliderInput
         label="EtCO₂"
         value={formData.etco2}
-        onChange={(v) => setFormData({ ...formData, etco2: v })}
+        onChange={v => setFormData({ ...formData, etco2: v })}
         error={!!formErrors.etco2}
         theme={theme}
         min={20}
@@ -470,11 +466,11 @@ const SessionFormFields = ({
       />
       {formErrors.etco2 && (
         <HelperText type="error">{formErrors.etco2}</HelperText>
-      )}{" "}
+      )}
       <MedicalSliderInput
         label="Częstość oddechów (RR)"
         value={formData.rr}
-        onChange={(v) => setFormData({ ...formData, rr: v })}
+        onChange={v => setFormData({ ...formData, rr: v })}
         error={!!formErrors.rr}
         theme={theme}
         min={10}
@@ -498,14 +494,14 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   paramRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginHorizontal: -4,
   },
   switchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginVertical: 8,
   },
   segmentedButtons: {
@@ -514,13 +510,13 @@ const styles = StyleSheet.create({
   },
   generateButton: {
     marginTop: 0,
-    alignSelf: "flex-start",
+    alignSelf: 'flex-start',
     paddingHorizontal: 5,
   },
   sectionTitle: {
     marginBottom: 12,
     marginTop: 12,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     paddingHorizontal: 5,
   },
   divider: {
@@ -538,21 +534,21 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     marginBottom: 15,
-    fontWeight: "bold",
+    fontWeight: 'bold',
   },
   sliderContainer: {
     marginVertical: 10,
     paddingHorizontal: 5,
   },
   slider: {
-    width: "100%",
+    width: '100%',
     height: 50,
     marginVertical: 10,
   },
   valueControls: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginTop: 20,
     marginBottom: 10,
   },
@@ -567,7 +563,7 @@ const styles = StyleSheet.create({
     lineHeight: 30,
   },
   displayValue: {
-    textAlign: "center",
+    textAlign: 'center',
     fontSize: 24,
     minWidth: 80,
     marginHorizontal: 10,
@@ -576,8 +572,8 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   tickContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginTop: -10,
     marginBottom: 4,
     paddingHorizontal: 8,
@@ -587,8 +583,8 @@ const styles = StyleSheet.create({
     height: 8,
   },
   tickLabelContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     paddingHorizontal: 4,
     marginBottom: 10,
   },
@@ -598,14 +594,14 @@ const styles = StyleSheet.create({
 
   webSliderContainer: {
     marginBottom: 16,
-    width: "100%",
+    width: '100%',
     paddingHorizontal: 5,
   },
   webSliderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    width: "100%",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
   },
   webSlider: {
     height: 40,
@@ -613,8 +609,9 @@ const styles = StyleSheet.create({
   },
   webTickLabel: {
     fontSize: 10,
-    textAlign: "center",
-  },  formContainer: {
+    textAlign: 'center',
+  },
+  formContainer: {
     padding: 5,
   },
 });

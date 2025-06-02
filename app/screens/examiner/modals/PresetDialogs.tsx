@@ -1,10 +1,22 @@
-import React, { useState, useEffect } from "react";
-import { StyleSheet, ScrollView, View, Dimensions, ActivityIndicator } from "react-native";
-import { Dialog, Button, TextInput, List, IconButton, Text } from "react-native-paper";
-import { Preset, FormData } from "../types/types";
-import PresetService from "../../../../services/PresetService";
+import React, { useState, useEffect } from 'react';
+import {
+  StyleSheet,
+  ScrollView,
+  View,
+  Dimensions,
+  ActivityIndicator,
+} from 'react-native';
+import {
+  Dialog,
+  Button,
+  TextInput,
+  List,
+  IconButton,
+  Text,
+} from 'react-native-paper';
+import { Preset, FormData } from '../types/types';
+import PresetService from '../../../../services/PresetService';
 
-// SavePresetDialog
 interface SavePresetDialogProps {
   visible: boolean;
   onDismiss: () => void;
@@ -18,25 +30,21 @@ export const SavePresetDialog: React.FC<SavePresetDialogProps> = ({
   onSavePreset,
   formData,
 }) => {
-  const [presetName, setPresetName] = useState("");
+  const [presetName, setPresetName] = useState('');
 
   useEffect(() => {
-    if (visible) setPresetName("");
+    if (visible) setPresetName('');
   }, [visible]);
 
   const handleSave = () => {
     if (presetName.trim()) {
       onSavePreset(presetName);
-      setPresetName("");
+      setPresetName('');
     }
   };
 
   return (
-    <Dialog
-      visible={visible}
-      onDismiss={onDismiss}
-      style={styles.dialog}
-    >
+    <Dialog visible={visible} onDismiss={onDismiss} style={styles.dialog}>
       <Dialog.Title>Zapisz konfigurację jako preset</Dialog.Title>
       <Dialog.Content>
         <TextInput
@@ -50,13 +58,14 @@ export const SavePresetDialog: React.FC<SavePresetDialogProps> = ({
       </Dialog.Content>
       <Dialog.Actions>
         <Button onPress={onDismiss}>Anuluj</Button>
-        <Button mode="contained" onPress={handleSave}>Zapisz</Button>
+        <Button mode="contained" onPress={handleSave}>
+          Zapisz
+        </Button>
       </Dialog.Actions>
     </Dialog>
   );
 };
 
-// LoadPresetDialog
 interface LoadPresetDialogProps {
   visible: boolean;
   onDismiss: () => void;
@@ -82,7 +91,7 @@ export const LoadPresetDialog: React.FC<LoadPresetDialogProps> = ({
         const data = await PresetService.getDefaultPresets();
         setDefaultPresets(data);
       } catch (error) {
-        console.error("Błąd ładowania presetów:", error);
+        console.error('Błąd ładowania presetów:', error);
       } finally {
         setLoading(false);
       }
@@ -101,11 +110,7 @@ export const LoadPresetDialog: React.FC<LoadPresetDialogProps> = ({
   };
 
   return (
-    <Dialog
-      visible={visible}
-      onDismiss={onDismiss}
-      style={styles.dialog}
-    >
+    <Dialog visible={visible} onDismiss={onDismiss} style={styles.dialog}>
       <Dialog.Title>Wybierz preset</Dialog.Title>
       <Dialog.ScrollArea style={styles.scrollArea}>
         {loading ? (
@@ -125,13 +130,17 @@ export const LoadPresetDialog: React.FC<LoadPresetDialogProps> = ({
                   onPress={() => setSelectedPreset(preset.id)}
                   right={() => (
                     <IconButton
-                      icon={selectedPreset === preset.id ? "check-circle" : "circle-outline"}
+                      icon={
+                        selectedPreset === preset.id
+                          ? 'check-circle'
+                          : 'circle-outline'
+                      }
                       disabled
                     />
                   )}
                   style={[
                     styles.presetItem,
-                    selectedPreset === preset.id && styles.selectedPreset
+                    selectedPreset === preset.id && styles.selectedPreset,
                   ]}
                 />
               ))}
@@ -150,7 +159,11 @@ export const LoadPresetDialog: React.FC<LoadPresetDialogProps> = ({
                     right={() => (
                       <View style={styles.actions}>
                         <IconButton
-                          icon={selectedPreset === preset.id ? "check-circle" : "circle-outline"}
+                          icon={
+                            selectedPreset === preset.id
+                              ? 'check-circle'
+                              : 'circle-outline'
+                          }
                           onPress={() => setSelectedPreset(preset.id)}
                         />
                         <IconButton
@@ -161,7 +174,7 @@ export const LoadPresetDialog: React.FC<LoadPresetDialogProps> = ({
                     )}
                     style={[
                       styles.presetItem,
-                      selectedPreset === preset.id && styles.selectedPreset
+                      selectedPreset === preset.id && styles.selectedPreset,
                     ]}
                   />
                 ))

@@ -31,11 +31,11 @@ export interface StudentSessionUpdate {
 
 class SocketService {
   private socket: Socket | null = null;
-  private listeners: Map<string, Set<(data: any) => void>> = new Map();    async connect(): Promise<Socket> {
+  private listeners: Map<string, Set<(data: any) => void>> = new Map();
+  async connect(): Promise<Socket> {
     if (!this.socket || this.socket.disconnected) {
       console.log('Connecting to socket server at:', WS_URL);
-      
-      
+
       if (Platform.OS === 'android') {
         try {
           console.log('Enabling WebSocket keep-alive for Android');
@@ -44,11 +44,13 @@ class SocketService {
           console.warn('Failed to enable WebSocket keep-alive:', error);
         }
       }
-      
-      
+
       const socketOptions = {
         path: '/socket.io',
-        transports: Platform.OS === 'android' ? ['polling', 'websocket'] : ['websocket', 'polling'],
+        transports:
+          Platform.OS === 'android'
+            ? ['polling', 'websocket']
+            : ['websocket', 'polling'],
         withCredentials: false,
         autoConnect: true,
         reconnection: true,
@@ -58,26 +60,24 @@ class SocketService {
         timeout: 20000,
         forceNew: true,
       };
-      
-      
+
       if (Platform.OS === 'android') {
         Object.assign(socketOptions, {
           pingTimeout: 30000,
-          pingInterval: 25000
+          pingInterval: 25000,
         });
       }
-      
+
       try {
         this.socket = io(WS_URL, socketOptions);
       } catch (error) {
         console.error('Failed to initialize socket:', error);
-        
-        
+
         console.log('Trying alternative connection method...');
         const altOptions = {
           ...socketOptions,
           transports: ['polling'],
-          upgrade: false
+          upgrade: false,
         };
         this.socket = io(WS_URL, altOptions);
       }
@@ -87,47 +87,52 @@ class SocketService {
     return this.socket;
   }
 
-  
   private setupEventListeners() {
     if (!this.socket) return;
 
     this.socket.on('connect', () => {
       console.log('🟢 Connected to socket server with ID:', this.socket?.id);
-    });    this.socket.on('connect_error', (error) => {
+    });
+    this.socket.on('connect_error', error => {
       console.error('🔴 Socket connection error:', error.message);
-      
-      
+
       if (Platform.OS === 'android') {
-        console.log('⚠️ WebSocket connection failed on Android, will try polling');
+        console.log(
+          '⚠️ WebSocket connection failed on Android, will try polling'
+        );
         this.reconnectWithPolling();
       }
     });
 
     this.socket.on('connect_timeout', () => {
       console.error('🔴 Socket connection timeout');
-      
+
       if (Platform.OS === 'android') {
         this.reconnectWithPolling();
       }
     });
 
-    this.socket.on('disconnect', (reason) => {
+    this.socket.on('disconnect', reason => {
       console.log('🟠 Disconnected from socket server. Reason:', reason);
     });
 
-    this.socket.on('error', (error) => {
+    this.socket.on('error', error => {
       console.error('🔴 Socket error:', error);
     });
 
-    this.socket.on('reconnect', (attemptNumber) => {
-      console.log('🟢 Reconnected to socket server after', attemptNumber, 'attempts');
+    this.socket.on('reconnect', attemptNumber => {
+      console.log(
+        '🟢 Reconnected to socket server after',
+        attemptNumber,
+        'attempts'
+      );
     });
 
-    this.socket.on('reconnect_attempt', (attemptNumber) => {
+    this.socket.on('reconnect_attempt', attemptNumber => {
       console.log('🟠 Attempting to reconnect:', attemptNumber);
     });
 
-    this.socket.on('reconnect_error', (error) => {
+    this.socket.on('reconnect_error', error => {
       console.error('🔴 Socket reconnection error:', error);
     });
 
@@ -138,29 +143,39 @@ class SocketService {
     this.socket.onAny((event, ...args) => {
       console.log(`🔵 DEBUG: Socket event received: ${event}`, args);
     });
-  }    async joinSessionCode(code: string, studentInfo?: { name?: string, surname?: string, albumNumber?: string }): Promise<{ success: boolean, code: string }> {
+  }
+  async joinSessionCode(
+    code: string,
+    studentInfo?: { name?: string; surname?: string; albumNumber?: string }
+  ): Promise<{ success: boolean; code: string }> {
     if (!this.socket || !this.socket.connected) {
       await this.connect();
     }
 
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       if (!this.socket) {
         resolve({ success: false, code });
         return;
-      }      if (studentInfo && studentInfo.name && studentInfo.surname && studentInfo.albumNumber) {
+      }
+      if (
+        studentInfo &&
+        studentInfo.name &&
+        studentInfo.surname &&
+        studentInfo.albumNumber
+      ) {
         this.safeEmit('join-code', {
           code,
           name: studentInfo.name,
           surname: studentInfo.surname,
-          albumNumber: studentInfo.albumNumber
+          albumNumber: studentInfo.albumNumber,
         });
         console.log('Joining code room with student info:', code, studentInfo);
       } else {
         this.safeEmit('join-code', code);
         console.log('Joining code room:', code);
       }
-      
-      this.socket.once('joined-code', (response) => {
+
+      this.socket.once('joined-code', response => {
         console.log('Joined code room:', response);
         resolve(response);
       });
@@ -169,7 +184,7 @@ class SocketService {
 
   on<T = any>(eventName: string, callback: (data: T) => void): () => void {
     if (!this.socket || !this.socket.connected) {
-      this.connect(); 
+      this.connect();
     }
 
     console.log(`Listening for event: ${eventName}`);
@@ -181,30 +196,31 @@ class SocketService {
     const listeners = this.listeners.get(eventName);
     listeners?.add(callback);
 
-    
     this.socket?.on(eventName, callback);
 
-    
     return () => {
       this.socket?.off(eventName, callback);
       listeners?.delete(callback);
     };
   }
-    async onSessionUpdate(
-    code: string, 
+  async onSessionUpdate(
+    code: string,
     callback: (session: Session) => void,
-    studentInfo?: { name?: string, surname?: string, albumNumber?: string }
+    studentInfo?: { name?: string; surname?: string; albumNumber?: string }
   ): Promise<() => void> {
-      if (!this.socket || !this.socket.connected) {
-      console.log(`Socket not connected, reconnecting before subscribing to session ${code}...`);
+    if (!this.socket || !this.socket.connected) {
+      console.log(
+        `Socket not connected, reconnecting before subscribing to session ${code}...`
+      );
       await this.connect();
     }
 
-    
     console.log(`Joining session room for code: ${code}...`);
     const { success } = await this.joinSessionCode(code, studentInfo);
     if (!success) {
-      console.error(`⚠️  Could not join session-${code}, updates won't arrive.`);
+      console.error(
+        `⚠️  Could not join session-${code}, updates won't arrive.`
+      );
     }
 
     // Register specific event handler for this session code only
@@ -221,23 +237,22 @@ class SocketService {
       unsubscribe();
     };
   }
-  
 
   emitAudioCommand(
-    sessionCode: string, 
-    command: 'PLAY' | 'PAUSE' | 'RESUME' | 'STOP' | 'PLAY_QUEUE', 
+    sessionCode: string,
+    command: 'PLAY' | 'PAUSE' | 'RESUME' | 'STOP' | 'PLAY_QUEUE',
     soundName: string | any,
-    loop: boolean = false 
+    loop: boolean = false
   ): void {
     if (!this.socket || !this.socket.connected) {
       this.connect();
     }
-  
+
     const payload = {
       code: sessionCode,
       command,
       soundName,
-      loop 
+      loop,
     };
     console.log(`Emitting audio-command: ${command}`, payload);
     this.safeEmit('audio-command', payload);
@@ -245,29 +260,34 @@ class SocketService {
 
   // Nowa metoda do odtwarzania audio z serwera dla całej sesji
   emitServerAudioCommand(
-    sessionCode: string, 
-    command: 'PLAY' | 'PAUSE' | 'RESUME' | 'STOP', 
+    sessionCode: string,
+    command: 'PLAY' | 'PAUSE' | 'RESUME' | 'STOP',
     audioId: string,
-    loop: boolean = false 
+    loop: boolean = false
   ): void {
     if (this.socket && this.socket.connected) {
-      console.log(`🎵 Emitting server audio command:`, { sessionCode, command, audioId, loop });
-      this.socket.emit('server-audio-command', { 
-        code: sessionCode, 
-        command, 
-        audioId, 
-        loop 
+      console.log(`🎵 Emitting server audio command:`, {
+        sessionCode,
+        command,
+        audioId,
+        loop,
+      });
+      this.socket.emit('server-audio-command', {
+        code: sessionCode,
+        command,
+        audioId,
+        loop,
       });
     } else {
       console.warn('Socket not connected, cannot emit server audio command');
     }
   }
-    leaveSession(code: string): void {
+  leaveSession(code: string): void {
     if (!this.socket || !this.socket.connected) return;
-    
+
     console.log(`Leaving session room for code: ${code}`);
     this.safeEmit('leave-code', code);
-    
+
     // Also unsubscribe from specific session update events for this code
     const specificEvent = `session-update-${code}`;
     const listeners = this.listeners.get(specificEvent);
@@ -280,133 +300,158 @@ class SocketService {
     }
   }
   subscribeAsExaminer(
-    sessionCode: string, 
-    userId: string, 
-    token?: string, 
+    sessionCode: string,
+    userId: string,
+    token?: string,
     onStudentListUpdate?: (data: StudentListUpdate) => void,
     onStudentSessionUpdate?: (data: StudentSessionUpdate) => void
   ): Promise<{ success: boolean }> {
     if (!this.socket || !this.socket.connected) {
-      console.log('Socket not connected, connecting before subscribing examiner...');
+      console.log(
+        'Socket not connected, connecting before subscribing examiner...'
+      );
       this.connect();
-      
+
       // Give the socket a moment to establish connection
-      return new Promise((resolve) => {
+      return new Promise(resolve => {
         setTimeout(() => {
           if (this.socket?.connected) {
             // Now try to subscribe with connected socket
-            this._doExaminerSubscribe(sessionCode, userId, token, onStudentListUpdate, onStudentSessionUpdate)
-              .then(resolve);
+            this._doExaminerSubscribe(
+              sessionCode,
+              userId,
+              token,
+              onStudentListUpdate,
+              onStudentSessionUpdate
+            ).then(resolve);
           } else {
-            console.error('Socket connection failed, subscription will likely fail');
+            console.error(
+              'Socket connection failed, subscription will likely fail'
+            );
             resolve({ success: false });
           }
         }, 1000);
       });
     }
 
-    return this._doExaminerSubscribe(sessionCode, userId, token, onStudentListUpdate, onStudentSessionUpdate);
-  }
-  
-     emitStudentAudioCommand(
-  studentId: number, 
-  command: 'PLAY' | 'PAUSE' | 'RESUME' | 'STOP' | 'PLAY_QUEUE', 
-  soundName: string | SoundQueueItem[],
-  loop: boolean = false
-): void {
-  if (!this.socket || !this.socket.connected) {
-    this.connect();
-  }
-  
-  if (typeof studentId !== 'number') {
-    console.error('Invalid student ID type');
-    return;
+    return this._doExaminerSubscribe(
+      sessionCode,
+      userId,
+      token,
+      onStudentListUpdate,
+      onStudentSessionUpdate
+    );
   }
 
-  const payload = {
-    studentId,
-    command,
-    soundName,
-    loop
-  };
-  
-  console.log(`Emitting student audio-command: ${command}`, payload);
-  this.safeEmit('student-audio-command', payload);
-}
+  emitStudentAudioCommand(
+    studentId: number,
+    command: 'PLAY' | 'PAUSE' | 'RESUME' | 'STOP' | 'PLAY_QUEUE',
+    soundName: string | SoundQueueItem[],
+    loop: boolean = false
+  ): void {
+    if (!this.socket || !this.socket.connected) {
+      this.connect();
+    }
+
+    if (typeof studentId !== 'number') {
+      console.error('Invalid student ID type');
+      return;
+    }
+
+    const payload = {
+      studentId,
+      command,
+      soundName,
+      loop,
+    };
+
+    console.log(`Emitting student audio-command: ${command}`, payload);
+    this.safeEmit('student-audio-command', payload);
+  }
 
   private _doExaminerSubscribe(
-    sessionCode: string, 
-    userId: string, 
-    token?: string, 
+    sessionCode: string,
+    userId: string,
+    token?: string,
     onStudentListUpdate?: (data: StudentListUpdate) => void,
     onStudentSessionUpdate?: (data: StudentSessionUpdate) => void
   ): Promise<{ success: boolean }> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       if (!this.socket) {
         resolve({ success: false });
         return;
-      }      console.log(`Subscribing examiner to session: ${sessionCode}`);
-      
-      this.safeEmit('examiner-subscribe', { 
-        sessionCode, 
-        userId, 
-        token 
+      }
+      console.log(`Subscribing examiner to session: ${sessionCode}`);
+
+      this.safeEmit('examiner-subscribe', {
+        sessionCode,
+        userId,
+        token,
       });
-      
+
       // Set up listeners for student updates if callbacks are provided
       if (onStudentListUpdate) {
         this.on<StudentListUpdate>('student-list-update', onStudentListUpdate);
       }
-      
+
       if (onStudentSessionUpdate) {
-        this.on<StudentSessionUpdate>('student-session-update', onStudentSessionUpdate);
+        this.on<StudentSessionUpdate>(
+          'student-session-update',
+          onStudentSessionUpdate
+        );
       }
-      
+
       // Listen for subscription confirmation with timeout
       const timeoutId = setTimeout(() => {
-        console.log(`Subscription to ${sessionCode} timed out, will retry automatically`);
+        console.log(
+          `Subscription to ${sessionCode} timed out, will retry automatically`
+        );
         this.socket?.off('examiner-subscribe-success');
         this.socket?.off('examiner-subscribe-error');
         resolve({ success: false });
       }, 10000);
-      
+
       this.socket.once('examiner-subscribe-success', () => {
         clearTimeout(timeoutId);
-        console.log(`Successfully subscribed examiner to session ${sessionCode}`);
+        console.log(
+          `Successfully subscribed examiner to session ${sessionCode}`
+        );
         resolve({ success: true });
       });
-      
-      this.socket.once('examiner-subscribe-error', (error) => {
+
+      this.socket.once('examiner-subscribe-error', error => {
         clearTimeout(timeoutId);
-        console.error(`Failed to subscribe examiner to session ${sessionCode}:`, error);
+        console.error(
+          `Failed to subscribe examiner to session ${sessionCode}:`,
+          error
+        );
         resolve({ success: false });
       });
     });
   }
-    unsubscribeAsExaminer(): void {
+  unsubscribeAsExaminer(): void {
     if (!this.socket || !this.socket.connected) return;
-      console.log('Unsubscribing examiner from session');
+    console.log('Unsubscribing examiner from session');
     this.safeEmit('examiner-unsubscribe', {});
-    
+
     // Clean up listeners
     this.socket.off('student-list-update');
     this.socket.off('student-session-update');
-    
+
     // Clean up any event listeners related to examiner subscription
     this.socket.off('examiner-subscribe-success');
     this.socket.off('examiner-subscribe-error');
   }
 
-  
   private async reconnectWithPolling(): Promise<void> {
     console.log('🔄 Reconnecting with polling transport...');
-    
+
     try {
       // Disconnect current socket
       if (this.socket) {
         this.socket.disconnect();
       }
-      
+
       // Create new socket with polling transport only
       this.socket = io(WS_URL, {
         transports: ['polling'],
@@ -417,25 +462,24 @@ class SocketService {
         reconnectionDelay: 1000,
         reconnectionDelayMax: 5000,
         timeout: 30000,
-        forceNew: true
+        forceNew: true,
       });
-      
+
       // Setup event listeners again
       this.setupEventListeners();
-      
+
       console.log('🔄 Socket recreated with polling transport');
     } catch (error) {
       console.error('Failed to reconnect with polling:', error);
     }
   }
 
-  
   safeEmit(eventName: string, data: any): void {
     if (!this.socket) {
       console.warn(`Cannot emit ${eventName}, socket not initialized`);
       return;
     }
-    
+
     try {
       this.socket.emit(eventName, data);
     } catch (error) {
@@ -443,20 +487,23 @@ class SocketService {
     }
   }
 
-  
-  getConnectionStatus(): {connected: boolean; id: string | null; url: string} {
+  getConnectionStatus(): {
+    connected: boolean;
+    id: string | null;
+    url: string;
+  } {
     return {
       connected: this.socket?.connected || false,
       id: this.socket?.id || null,
-      url: WS_URL
+      url: WS_URL,
     };
   }
-    async disconnect(): Promise<void> {
+  async disconnect(): Promise<void> {
     if (this.socket) {
       this.socket.disconnect();
       this.socket = null;
       this.listeners.clear();
-      
+
       // Release WiFi lock on Android
       if (Platform.OS === 'android') {
         try {

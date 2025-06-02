@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
-import { router } from "expo-router";
-import { sessionService } from "@/services/SessionService";
-import { socketService } from "@/services/SocketService";
-import type { Session } from "@/services/SessionService";
+import { useState, useEffect } from 'react';
+import { router } from 'expo-router';
+import { sessionService } from '@/services/SessionService';
+import { socketService } from '@/services/SocketService';
+import type { Session } from '@/services/SessionService';
 
 interface UseSessionManagerProps {
   accessCode: string | undefined;
@@ -11,11 +11,11 @@ interface UseSessionManagerProps {
   albumNumber: string | undefined;
 }
 
-export const useSessionManager = ({ 
-  accessCode, 
-  firstName, 
-  lastName, 
-  albumNumber 
+export const useSessionManager = ({
+  accessCode,
+  firstName,
+  lastName,
+  albumNumber,
 }: UseSessionManagerProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +28,7 @@ export const useSessionManager = ({
 
   const fetchSession = async () => {
     if (!accessCode) {
-      setError("No access code provided");
+      setError('No access code provided');
       setIsLoading(false);
       return;
     }
@@ -36,12 +36,12 @@ export const useSessionManager = ({
       setIsLoading(true);
       const resp = await sessionService.getSessionByCode(accessCode.toString());
       if (!resp) {
-        setError("Session not found");
+        setError('Session not found');
       } else {
         setSessionData(resp);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to fetch session");
+      setError(e instanceof Error ? e.message : 'Failed to fetch session');
     } finally {
       setIsLoading(false);
     }
@@ -49,41 +49,42 @@ export const useSessionManager = ({
 
   useEffect(() => {
     fetchSession();
-  }, [accessCode]);  useEffect(() => {
+  }, [accessCode]);
+  useEffect(() => {
     let unsub: (() => void) | undefined;
 
     async function setupSessionSubscription() {
       if (!accessCode) return;
 
-      let name = firstName || "";
-      let surname = lastName || "";
-      let albumNum = albumNumber || "";
+      let name = firstName || '';
+      let surname = lastName || '';
+      let albumNum = albumNumber || '';
 
       sessionService
         .subscribeToSessionUpdates(
           accessCode.toString(),
-          (updated) => {
+          updated => {
             setSessionData(updated);
-            
+
             if (updated.isActive === false) {
-              setError("Sesja została dezaktywowana przez egzaminatora");
-              
+              setError('Sesja została dezaktywowana przez egzaminatora');
+
               if (accessCode) {
                 try {
                   sessionService.leaveSession(accessCode.toString());
                 } catch (e) {
-                  console.warn("Error leaving session on inactive:", e);
+                  console.warn('Error leaving session on inactive:', e);
                 }
               }
-              
+
               setTimeout(() => {
                 router.replace({
-                  pathname: "/routes/student-access",
-                  params: { 
-                    firstName: firstName || "", 
-                    lastName: lastName || "", 
-                    albumNumber: albumNumber || "" 
-                  }
+                  pathname: '/routes/student-access',
+                  params: {
+                    firstName: firstName || '',
+                    lastName: lastName || '',
+                    albumNumber: albumNumber || '',
+                  },
                 });
               }, 3000);
             }
@@ -92,17 +93,21 @@ export const useSessionManager = ({
             name,
             surname,
             albumNumber: albumNum,
-          }        )
-        .then((fn) => {
+          }
+        )
+        .then(fn => {
           unsub = fn;
-          // Mark session as joined after successful subscription
-          console.log('✅ Session subscription successful, setting sessionJoined = true');
+
+          console.log(
+            '✅ Session subscription successful, setting sessionJoined = true'
+          );
           setSessionJoined(true);
-        })        .catch(console.error);
+        })
+        .catch(console.error);
     }
 
     setupSessionSubscription();
-    
+
     return () => {
       unsub?.();
 

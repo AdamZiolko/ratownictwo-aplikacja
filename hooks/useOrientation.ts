@@ -8,9 +8,7 @@ export function useOrientation(): {
   screenWidth: number;
   screenHeight: number;
 } {
-  const [orientation, setOrientation] = useState<Orientation>(
-    getOrientation()
-  );
+  const [orientation, setOrientation] = useState<Orientation>(getOrientation());
   const [screenDimensions, setScreenDimensions] = useState({
     screenWidth: Dimensions.get('window').width,
     screenHeight: Dimensions.get('window').height,
@@ -25,7 +23,7 @@ export function useOrientation(): {
     const subscription = Dimensions.addEventListener('change', ({ window }) => {
       const { width, height } = window;
       const newOrientation = width < height ? 'portrait' : 'landscape';
-      
+
       setOrientation(newOrientation);
       setScreenDimensions({
         screenWidth: width,
@@ -34,7 +32,6 @@ export function useOrientation(): {
     });
 
     return () => {
-      
       subscription.remove();
     };
   }, []);

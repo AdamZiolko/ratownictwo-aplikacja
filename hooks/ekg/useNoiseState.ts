@@ -6,7 +6,7 @@ export const useNoiseState = () => {
   const [customNoiseSettings, setCustomNoiseSettings] = useState({
     noiseAmplitude: 0,
     baselineWanderAmplitude: 0,
-    muscleArtifactProbability: 0
+    muscleArtifactProbability: 0,
   });
 
   const selectNoiseType = useCallback((type: NoiseType) => {
@@ -49,6 +49,6 @@ export const useNoiseState = () => {
     customNoiseSettings,
     selectNoiseType,
     getNoiseTypeLabel,
-    getNoiseColor
+    getNoiseColor,
   };
 };

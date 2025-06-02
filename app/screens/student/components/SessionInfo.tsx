@@ -1,7 +1,7 @@
-import React from "react";
-import { View, StyleSheet, Platform } from "react-native";
-import { useTheme, Text, Surface, Button } from "react-native-paper";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import React from 'react';
+import { View, StyleSheet, Platform } from 'react-native';
+import { useTheme, Text, Surface, Button } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 interface SessionInfoProps {
   accessCode: string;
@@ -54,30 +54,21 @@ const SessionInfo: React.FC<SessionInfoProps> = ({
             size={20}
             color={theme.colors.secondary}
           />
-          <Text style={styles.sessionName}>
-            {sessionData.name}
-          </Text>
+          <Text style={styles.sessionName}>{sessionData.name}</Text>
         </View>
       )}
 
       <View style={styles.sessionMetaInfo}>
         <View style={styles.metaItemRow}>
           <MaterialCommunityIcons
-            name={
-              sessionData?.isActive
-                ? "check-circle"
-                : "close-circle"
-            }
+            name={sessionData?.isActive ? 'check-circle' : 'close-circle'}
             size={18}
             color={
-              sessionData?.isActive
-                ? theme.colors.primary
-                : theme.colors.error
+              sessionData?.isActive ? theme.colors.primary : theme.colors.error
             }
           />
           <Text style={styles.metaItemLabel}>
-            Status:{" "}
-            {sessionData?.isActive ? "Aktywna" : "Nieaktywna"}
+            Status: {sessionData?.isActive ? 'Aktywna' : 'Nieaktywna'}
           </Text>
         </View>
         {sessionData?.createdAt && (
@@ -88,8 +79,7 @@ const SessionInfo: React.FC<SessionInfoProps> = ({
               color={theme.colors.secondary}
             />
             <Text style={styles.metaItemLabel}>
-              Utworzono:{" "}
-              {new Date(sessionData.createdAt).toLocaleString()}
+              Utworzono: {new Date(sessionData.createdAt).toLocaleString()}
             </Text>
           </View>
         )}
@@ -101,7 +91,7 @@ const SessionInfo: React.FC<SessionInfoProps> = ({
               color={theme.colors.secondary}
             />
             <Text style={styles.metaItemLabel}>
-              Ostatnia aktualizacja:{" "}
+              Ostatnia aktualizacja:
               {new Date(sessionData.updatedAt).toLocaleString()}
             </Text>
           </View>
@@ -117,7 +107,7 @@ const SessionInfo: React.FC<SessionInfoProps> = ({
           <Button
             mode="elevated"
             onPress={() => setIsSessionPanelExpanded?.(!isSessionPanelExpanded)}
-            icon={isSessionPanelExpanded ? "chevron-up" : "chevron-down"}
+            icon={isSessionPanelExpanded ? 'chevron-up' : 'chevron-down'}
           >
             Informacje o sesji
           </Button>
@@ -137,42 +127,42 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   sessionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 8,
   },
   mobileHeaderButtons: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 8,
   },
   title: {
     fontSize: 20,
-    fontWeight: "bold",
+    fontWeight: 'bold',
   },
   sessionName: {
     fontSize: 16,
     marginTop: 8,
-    fontStyle: "italic",
+    fontStyle: 'italic',
   },
   sessionMetaInfo: {
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "rgba(0, 0, 0, 0.1)",
+    borderTopColor: 'rgba(0, 0, 0, 0.1)',
   },
   mobileSessionHeader: {
     marginBottom: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    borderBottomColor: '#eee',
   },
   headerIcon: {
     marginRight: 8,
   },
   patientInfoRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginVertical: 4,
   },
   patientInfoText: {
@@ -180,8 +170,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   metaItemRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginVertical: 4,
   },
   metaItemLabel: {

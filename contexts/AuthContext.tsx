@@ -1,7 +1,5 @@
-// contexts/AuthContext.tsx
-
-import React, { createContext, useContext, useState, useEffect } from "react";
-import AuthService from "../services/AuthService";
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import AuthService from '../services/AuthService';
 
 interface User {
   name: any;
@@ -18,8 +16,12 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   error: string | null;
-  login: (username: string, password: string) => Promise<string[]>; // teraz zwraca Promise<string[]>
-  register: (username: string, email: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<string[]>;
+  register: (
+    username: string,
+    email: string,
+    password: string
+  ) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
@@ -44,8 +46,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           setIsAuthenticated(true);
         }
       } catch (err) {
-        console.error("Authentication initialization error:", err);
-        setError("Failed to restore session");
+        console.error('Authentication initialization error:', err);
+        setError('Failed to restore session');
       } finally {
         setLoading(false);
       }
@@ -53,7 +55,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     initAuth();
   }, []);
-
 
   const login = async (
     username: string,
@@ -63,7 +64,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setLoading(true);
       setError(null);
 
-     
       const userData = await AuthService.login({ username, password });
 
       setUser(userData);
@@ -71,7 +71,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       return userData.roles;
     } catch (err: any) {
-      setError(err.message || "Login failed");
+      setError(err.message || 'Login failed');
       throw err;
     } finally {
       setLoading(false);
@@ -88,7 +88,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setError(null);
       await AuthService.register({ username, email, password });
     } catch (err: any) {
-      setError(err.message || "Registration failed");
+      setError(err.message || 'Registration failed');
       throw err;
     } finally {
       setLoading(false);
@@ -102,7 +102,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setUser(null);
       setIsAuthenticated(false);
     } catch (err: any) {
-      setError(err.message || "Logout failed");
+      setError(err.message || 'Logout failed');
     } finally {
       setLoading(false);
     }
@@ -112,7 +112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     user,
     loading,
     error,
-    login,      
+    login,
     register,
     logout,
     isAuthenticated,
@@ -124,7 +124,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 };

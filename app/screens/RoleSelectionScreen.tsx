@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { StyleSheet, View, Platform, Dimensions } from "react-native";
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, Platform, Dimensions } from 'react-native';
 import {
   Text,
   Card,
@@ -7,23 +7,21 @@ import {
   useTheme,
   Appbar,
   Avatar,
-} from "react-native-paper";
-import { router } from "expo-router";
-import FloatingThemeToggle from "@/components/FloatingThemeToggle";
-import BackgroundGradient from "@/components/BackgroundGradient";
-import { useOrientation } from "@/hooks/useOrientation";
-import { DebugModeDialog } from "@/components/DebugModeDialog";
-import { FirstLaunchService } from "@/services/FirstLaunchService";
+} from 'react-native-paper';
+import { router } from 'expo-router';
+import FloatingThemeToggle from '@/components/FloatingThemeToggle';
+import BackgroundGradient from '@/components/BackgroundGradient';
+import { useOrientation } from '@/hooks/useOrientation';
+import { DebugModeDialog } from '@/components/DebugModeDialog';
+import { FirstLaunchService } from '@/services/FirstLaunchService';
 
 const RoleSelectionScreen = () => {
   const theme = useTheme();
   const { orientation } = useOrientation();
   const isLandscape = orientation === 'landscape';
-  
-  // Stan dla dialogu pierwszego uruchomienia
+
   const [showFirstLaunchDialog, setShowFirstLaunchDialog] = useState(false);
-  
-  // Sprawdź czy to pierwszy raz i pokaż dialog
+
   useEffect(() => {
     const checkFirstLaunch = async () => {
       const isFirst = await FirstLaunchService.isFirstLaunch();
@@ -31,52 +29,53 @@ const RoleSelectionScreen = () => {
         setShowFirstLaunchDialog(true);
       }
     };
-    
+
     checkFirstLaunch();
   }, []);
-  
-  // Funkcja zamykania dialogu pierwszego uruchomienia
+
   const handleFirstLaunchDialogClose = async () => {
     setShowFirstLaunchDialog(false);
     await FirstLaunchService.markAsLaunched();
   };
 
-  const handleRoleSelect = (role: "examiner" | "student") => {
-    if (role === "examiner") {
-      router.push("/routes/examiner-login");
+  const handleRoleSelect = (role: 'examiner' | 'student') => {
+    if (role === 'examiner') {
+      router.push('/routes/examiner-login');
     } else {
-      router.push("/routes/student-profile");
+      router.push('/routes/student-profile');
     }
   };
 
   const platformLabel =
-    Platform.OS === "android" ? "Wersja mobilna (Android)" : "Wersja webowa";
+    Platform.OS === 'android' ? 'Wersja mobilna (Android)' : 'Wersja webowa';
 
   const cardBackgroundColor = theme.dark
-    ? "rgba(255, 255, 255, 0.08)"
-    : "rgba(255, 255, 255, 0.8)";
+    ? 'rgba(255, 255, 255, 0.08)'
+    : 'rgba(255, 255, 255, 0.8)';
   const cardContentBackgroundColor = theme.dark
-    ? "rgba(30, 30, 30, 0.7)"
-    : "rgba(255, 255, 255, 0.7)";
+    ? 'rgba(30, 30, 30, 0.7)'
+    : 'rgba(255, 255, 255, 0.7)';
 
   return (
     <BackgroundGradient containerStyle={styles.container}>
-      <View style={[
-        styles.cardsContainer, 
-        isLandscape && styles.landscapeCardsContainer
-      ]}>
-        <Text 
-          variant={isLandscape ? "titleMedium" : "titleLarge"} 
+      <View
+        style={[
+          styles.cardsContainer,
+          isLandscape && styles.landscapeCardsContainer,
+        ]}
+      >
+        <Text
+          variant={isLandscape ? 'titleMedium' : 'titleLarge'}
           style={[styles.subtitle, isLandscape && styles.landscapeTitle]}
         >
           Wybierz swoją rolę:
         </Text>
-        
+
         <View style={isLandscape ? styles.landscapeCardRow : undefined}>
           <Surface
             style={[
               styles.cardSurface,
-              Platform.OS === "android" && styles.androidCardSurface,
+              Platform.OS === 'android' && styles.androidCardSurface,
               isLandscape && styles.landscapeCardSurface,
               { backgroundColor: cardBackgroundColor },
             ]}
@@ -88,7 +87,7 @@ const RoleSelectionScreen = () => {
                 styles.fillCard,
                 { backgroundColor: cardContentBackgroundColor },
               ]}
-              onPress={() => handleRoleSelect("examiner")}
+              onPress={() => handleRoleSelect('examiner')}
               mode="elevated"
             >
               <Card.Title
@@ -96,14 +95,14 @@ const RoleSelectionScreen = () => {
                 subtitle="Zaloguj się aby tworzyć sesje treningowe dla studentów"
                 titleNumberOfLines={2}
                 subtitleNumberOfLines={3}
-                titleVariant={isLandscape ? "titleSmall" : "titleMedium"}
-                subtitleVariant={isLandscape ? "bodySmall" : "bodyMedium"}
-                left={(props) => (
+                titleVariant={isLandscape ? 'titleSmall' : 'titleMedium'}
+                subtitleVariant={isLandscape ? 'bodySmall' : 'bodyMedium'}
+                left={props => (
                   <View
                     style={[
-                      styles.iconContainer, 
-                      { backgroundColor: "#D32F2F" },
-                      isLandscape && styles.landscapeIconContainer
+                      styles.iconContainer,
+                      { backgroundColor: '#D32F2F' },
+                      isLandscape && styles.landscapeIconContainer,
                     ]}
                   >
                     <Avatar.Icon
@@ -111,11 +110,11 @@ const RoleSelectionScreen = () => {
                       icon="account-tie"
                       size={isLandscape ? 28 : 36}
                       color="#fff"
-                      style={{ backgroundColor: "transparent" }}
+                      style={{ backgroundColor: 'transparent' }}
                     />
                   </View>
                 )}
-                titleStyle={{ fontWeight: "600" }}
+                titleStyle={{ fontWeight: '600' }}
               />
             </Card>
           </Surface>
@@ -123,7 +122,7 @@ const RoleSelectionScreen = () => {
           <Surface
             style={[
               styles.cardSurface,
-              Platform.OS === "android" && styles.androidCardSurface,
+              Platform.OS === 'android' && styles.androidCardSurface,
               isLandscape && styles.landscapeCardSurface,
               { backgroundColor: cardBackgroundColor },
             ]}
@@ -135,7 +134,7 @@ const RoleSelectionScreen = () => {
                 styles.fillCard,
                 { backgroundColor: cardContentBackgroundColor },
               ]}
-              onPress={() => handleRoleSelect("student")}
+              onPress={() => handleRoleSelect('student')}
               mode="elevated"
             >
               <Card.Title
@@ -143,14 +142,14 @@ const RoleSelectionScreen = () => {
                 subtitle="Wpisz kod dostępu aby dołączyć do sesji"
                 titleNumberOfLines={2}
                 subtitleNumberOfLines={3}
-                titleVariant={isLandscape ? "titleSmall" : "titleMedium"}
-                subtitleVariant={isLandscape ? "bodySmall" : "bodyMedium"}
-                left={(props) => (
+                titleVariant={isLandscape ? 'titleSmall' : 'titleMedium'}
+                subtitleVariant={isLandscape ? 'bodySmall' : 'bodyMedium'}
+                left={props => (
                   <View
                     style={[
-                      styles.iconContainer, 
-                      { backgroundColor: "#8B0000" },
-                      isLandscape && styles.landscapeIconContainer
+                      styles.iconContainer,
+                      { backgroundColor: '#8B0000' },
+                      isLandscape && styles.landscapeIconContainer,
                     ]}
                   >
                     <Avatar.Icon
@@ -158,28 +157,35 @@ const RoleSelectionScreen = () => {
                       icon="account"
                       size={isLandscape ? 28 : 36}
                       color="#fff"
-                      style={{ backgroundColor: "transparent" }}
+                      style={{ backgroundColor: 'transparent' }}
                     />
                   </View>
                 )}
-                titleStyle={{ fontWeight: "600" }}
+                titleStyle={{ fontWeight: '600' }}
               />
             </Card>
           </Surface>
         </View>
 
-        <Text 
-          variant={isLandscape ? "bodySmall" : "titleSmall"} 
-          style={[styles.subtitle, styles.footer, isLandscape && styles.landscapeFooter]}
-        >          Aplikacja służąca do nauki i ćwiczeń z zakresu ratownictwa medycznego.
+        <Text
+          variant={isLandscape ? 'bodySmall' : 'titleSmall'}
+          style={[
+            styles.subtitle,
+            styles.footer,
+            isLandscape && styles.landscapeFooter,
+          ]}
+        >
+          Aplikacja służąca do nauki i ćwiczeń z zakresu ratownictwa medycznego.
         </Text>
       </View>
-      <Text style={[styles.debugText, isLandscape && styles.landscapeDebugText]}>
+      <Text
+        style={[styles.debugText, isLandscape && styles.landscapeDebugText]}
+      >
         {platformLabel}
       </Text>
       <FloatingThemeToggle position="topRight" size={isLandscape ? 20 : 24} />
-      
-      {/* Dialog pierwszego uruchomienia */}
+
+      {}
       <DebugModeDialog
         visible={showFirstLaunchDialog}
         onDismiss={handleFirstLaunchDialogClose}
@@ -191,51 +197,51 @@ const RoleSelectionScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: Platform.OS === "web" ? 16 : 16,
-    paddingTop: Platform.OS === "web" ? 80 : 50,
-    alignItems: "center",
-    width: "100%",
-    alignSelf: "center",
-    justifyContent: "center",
+    paddingHorizontal: Platform.OS === 'web' ? 16 : 16,
+    paddingTop: Platform.OS === 'web' ? 80 : 50,
+    alignItems: 'center',
+    width: '100%',
+    alignSelf: 'center',
+    justifyContent: 'center',
   },
   title: {
     marginBottom: 8,
-    fontWeight: "bold",
-    textAlign: "center",
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
   subtitle: {
-    textAlign: "center",
+    textAlign: 'center',
     marginBottom: 16,
   },
   footer: {
     marginTop: 16,
   },
   cardsContainer: {
-    width: "100%",
+    width: '100%',
     flex: 1,
-    justifyContent: "center",
+    justifyContent: 'center',
     ...Platform.select({
       android: {
-        flexDirection: "column",
-        alignItems: "stretch",
+        flexDirection: 'column',
+        alignItems: 'stretch',
         paddingHorizontal: 16,
         marginHorizontal: 0,
       },
       ios: {
-        flexDirection: "column",
-        alignItems: "stretch",
+        flexDirection: 'column',
+        alignItems: 'stretch',
         paddingHorizontal: 16,
         marginHorizontal: 0,
       },
       web: {
-        flexDirection: "column",
-        alignItems: "stretch",
+        flexDirection: 'column',
+        alignItems: 'stretch',
         maxWidth: 600,
-        alignSelf: "center",
+        alignSelf: 'center',
       },
       default: {
-        flexDirection: "column",
-        width: "100%",
+        flexDirection: 'column',
+        width: '100%',
       },
     }),
   },
@@ -244,9 +250,9 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   landscapeCardRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "stretch",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'stretch',
   },
   cardSurface: {
     borderRadius: 12,
@@ -255,10 +261,10 @@ const styles = StyleSheet.create({
         marginVertical: 8,
         marginHorizontal: 0,
         minHeight: 120,
-        overflow: "hidden",
-        alignSelf: "stretch",
+        overflow: 'hidden',
+        alignSelf: 'stretch',
         elevation: 8,
-        shadowColor: "#000",
+        shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 6,
@@ -267,9 +273,9 @@ const styles = StyleSheet.create({
         marginVertical: 8,
         marginHorizontal: 0,
         minHeight: 120,
-        overflow: "hidden",
-        alignSelf: "stretch",
-        shadowColor: "#000",
+        overflow: 'hidden',
+        alignSelf: 'stretch',
+        shadowColor: '#000',
         shadowOffset: { width: 0, height: 3 },
         shadowOpacity: 0.2,
         shadowRadius: 5,
@@ -277,11 +283,11 @@ const styles = StyleSheet.create({
       web: {
         margin: 16,
         minHeight: 140,
-        overflow: "hidden",
+        overflow: 'hidden',
       },
       default: {
         marginBottom: 16,
-        width: "100%",
+        width: '100%',
       },
     }),
   },
@@ -299,20 +305,20 @@ const styles = StyleSheet.create({
   },
   fillCard: {
     flex: 1,
-    justifyContent: "center",
+    justifyContent: 'center',
   },
   cardContent: {
-    alignItems: "center",
+    alignItems: 'center',
     paddingVertical: 24,
   },
   cardDescription: {
     marginTop: 8,
-    textAlign: "center",
+    textAlign: 'center',
   },
   debugText: {
     marginTop: 32,
     fontSize: 12,
-    color: "gray",
+    color: 'gray',
   },
   landscapeDebugText: {
     marginTop: 16,
@@ -322,9 +328,9 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.4,
     shadowRadius: 3,
@@ -339,8 +345,8 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   landscapeTitle: {
     marginBottom: 8,

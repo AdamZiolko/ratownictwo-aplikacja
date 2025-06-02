@@ -1,8 +1,15 @@
-import React from "react";
-import { View, StyleSheet, Modal, TouchableOpacity, ScrollView, Dimensions } from "react-native";
-import { Text, Button, Portal, useTheme } from "react-native-paper";
-import RhythmSelectionGrid from "./RhythmSelectionGrid";
-import { EkgType } from "../../../../services/EkgFactory";
+import React from 'react';
+import {
+  View,
+  StyleSheet,
+  Modal,
+  TouchableOpacity,
+  ScrollView,
+  Dimensions,
+} from 'react-native';
+import { Text, Button, Portal, useTheme } from 'react-native-paper';
+import RhythmSelectionGrid from './RhythmSelectionGrid';
+import { EkgType } from '../../../../services/EkgFactory';
 
 interface RhythmSelectionModalProps {
   visible: boolean;
@@ -18,14 +25,15 @@ const RhythmSelectionModal = ({
   setSelectedType,
 }: RhythmSelectionModalProps) => {
   const theme = useTheme();
-  
+
   const handleRhythmSelect = (type: EkgType) => {
     setSelectedType(type);
     onDismiss();
   };
 
   return (
-    <Portal>      <Modal
+    <Portal>
+      <Modal
         visible={visible}
         onDismiss={onDismiss}
         animationType="fade"
@@ -33,16 +41,16 @@ const RhythmSelectionModal = ({
         statusBarTranslucent={true}
       >
         <View style={styles.modalContainer}>
-          <View 
+          <View
             style={[
-              styles.modalContent, 
-              { backgroundColor: theme.colors.background }
+              styles.modalContent,
+              { backgroundColor: theme.colors.background },
             ]}
           >
             <View style={styles.header}>
               <Text style={styles.headerTitle}>Wybór rytmu EKG</Text>
-              <Button 
-                mode="outlined" 
+              <Button
+                mode="outlined"
                 onPress={onDismiss}
                 style={styles.closeButton}
                 icon="close"
@@ -50,7 +58,7 @@ const RhythmSelectionModal = ({
                 Zamknij
               </Button>
             </View>
-            
+
             <ScrollView style={styles.scrollView}>
               <RhythmSelectionGrid
                 selectedType={selectedType}
@@ -64,29 +72,31 @@ const RhythmSelectionModal = ({
   );
 };
 
-const styles = StyleSheet.create({  modalContainer: {
+const styles = StyleSheet.create({
+  modalContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
-    width: "100%",
-    height: "100%",
+    width: '100%',
+    height: '100%',
     paddingTop: 12,
     paddingBottom: 20,
-  },  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(0, 0, 0, 0.1)",
+    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
   },
   headerTitle: {
     fontSize: 22,
-    fontWeight: "bold",
+    fontWeight: 'bold',
   },
   closeButton: {
     marginLeft: 8,

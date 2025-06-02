@@ -1,5 +1,12 @@
 import React from 'react';
-import { Text, Button, TextInput, Dialog, Portal, useTheme } from 'react-native-paper';
+import {
+  Text,
+  Button,
+  TextInput,
+  Dialog,
+  Portal,
+  useTheme,
+} from 'react-native-paper';
 import { AudioDialogState } from '../types/AudioTypes';
 
 interface AudioDialogsProps {
@@ -29,7 +36,7 @@ export const AudioDialogs: React.FC<AudioDialogsProps> = ({
 
   return (
     <Portal>
-      {/* Dialog przesyłania */}
+      {}
       <Dialog
         visible={dialogState.uploadDialogVisible}
         onDismiss={onCloseUpload}
@@ -60,11 +67,8 @@ export const AudioDialogs: React.FC<AudioDialogsProps> = ({
         </Dialog.Actions>
       </Dialog>
 
-      {/* Dialog edycji */}
-      <Dialog
-        visible={dialogState.editDialogVisible}
-        onDismiss={onCloseEdit}
-      >
+      {}
+      <Dialog visible={dialogState.editDialogVisible} onDismiss={onCloseEdit}>
         <Dialog.Title>Edytuj plik audio</Dialog.Title>
         <Dialog.Content>
           <TextInput
@@ -91,7 +95,7 @@ export const AudioDialogs: React.FC<AudioDialogsProps> = ({
         </Dialog.Actions>
       </Dialog>
 
-      {/* Dialog usuwania */}
+      {}
       <Dialog
         visible={dialogState.deleteDialogVisible}
         onDismiss={onCloseDelete}
@@ -99,16 +103,13 @@ export const AudioDialogs: React.FC<AudioDialogsProps> = ({
         <Dialog.Title>Usuń plik audio</Dialog.Title>
         <Dialog.Content>
           <Text>
-            Czy na pewno chcesz usunąć plik audio "{dialogState.currentAudio?.name}"?
-            Ta operacja jest nieodwracalna.
+            Czy na pewno chcesz usunąć plik audio "
+            {dialogState.currentAudio?.name}"? Ta operacja jest nieodwracalna.
           </Text>
         </Dialog.Content>
         <Dialog.Actions>
           <Button onPress={onCloseDelete}>Anuluj</Button>
-          <Button 
-            onPress={onDelete} 
-            textColor={theme.colors.error}
-          >
+          <Button onPress={onDelete} textColor={theme.colors.error}>
             Usuń
           </Button>
         </Dialog.Actions>

@@ -1,9 +1,18 @@
-import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
+import {
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider as NavigationThemeProvider,
+} from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import { PaperProvider, MD3DarkTheme, MD3LightTheme, adaptNavigationTheme } from 'react-native-paper';
+import {
+  PaperProvider,
+  MD3DarkTheme,
+  MD3LightTheme,
+  adaptNavigationTheme,
+} from 'react-native-paper';
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import React from 'react';
 import FloatingThemeToggle from '@/components/FloatingThemeToggle';
@@ -17,10 +26,11 @@ function ThemedLayout() {
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
 
-  const { LightTheme: NavigationLightTheme, DarkTheme: NavigationDarkTheme } = adaptNavigationTheme({
-    reactNavigationLight: DefaultTheme,
-    reactNavigationDark: DarkTheme,
-  });
+  const { LightTheme: NavigationLightTheme, DarkTheme: NavigationDarkTheme } =
+    adaptNavigationTheme({
+      reactNavigationLight: DefaultTheme,
+      reactNavigationDark: DarkTheme,
+    });
 
   const navigationFontConfig = {
     regular: {
@@ -50,16 +60,16 @@ function ThemedLayout() {
       secondary: '#48CAE4',
       background: '#ffffff',
       surface: '#ffffff',
-      
+
       onPrimary: '#FFFFFF',
       onSecondary: '#000000',
       onSurface: '#000000',
       onBackground: '#000000',
-      
+
       buttonTextColor: '#FFFFFF',
       error: '#B00020',
     },
-    fonts: MD3LightTheme.fonts, 
+    fonts: MD3LightTheme.fonts,
   };
   const CombinedDarkTheme = {
     ...MD3DarkTheme,
@@ -71,16 +81,16 @@ function ThemedLayout() {
       secondary: '#90E0EF',
       background: '#121212',
       surface: '#1E1E1E',
-      
+
       onPrimary: '#000000',
       onSecondary: '#000000',
       onSurface: '#FFFFFF',
       onBackground: '#FFFFFF',
-      
+
       buttonTextColor: '#FFFFFF',
       error: '#CF6679',
     },
-    fonts: MD3DarkTheme.fonts, 
+    fonts: MD3DarkTheme.fonts,
   };
 
   const NavigationCompatibleLightTheme = {
@@ -96,7 +106,10 @@ function ThemedLayout() {
   };
 
   const paperTheme = theme === 'dark' ? CombinedDarkTheme : CombinedLightTheme;
-  const navigationTheme = theme === 'dark' ? NavigationCompatibleDarkTheme : NavigationCompatibleLightTheme;
+  const navigationTheme =
+    theme === 'dark'
+      ? NavigationCompatibleDarkTheme
+      : NavigationCompatibleLightTheme;
 
   useEffect(() => {
     if (loaded) {
@@ -118,13 +131,34 @@ function ThemedLayout() {
           }}
         >
           <Stack.Screen name="index" options={{ title: 'Home' }} />
-          <Stack.Screen name="routes/examiner-login" options={{ title: 'Examiner Login' }} />
-          <Stack.Screen name="routes/student-access" options={{ title: 'Student Access' }} />
-          <Stack.Screen name="routes/examiner-dashboard" options={{ title: 'Examiner Dashboard' }} />
-          <Stack.Screen name="routes/student-session" options={{ title: 'Student Session' }} />
-          <Stack.Screen name="routes/student-profile" options={{ title: 'Student Profile' }} />
-          <Stack.Screen name="routes/login-screen" options={{ title: 'Login' }} />
-          <Stack.Screen name="routes/register-screen" options={{ title: 'Register' }} />
+          <Stack.Screen
+            name="routes/examiner-login"
+            options={{ title: 'Examiner Login' }}
+          />
+          <Stack.Screen
+            name="routes/student-access"
+            options={{ title: 'Student Access' }}
+          />
+          <Stack.Screen
+            name="routes/examiner-dashboard"
+            options={{ title: 'Examiner Dashboard' }}
+          />
+          <Stack.Screen
+            name="routes/student-session"
+            options={{ title: 'Student Session' }}
+          />
+          <Stack.Screen
+            name="routes/student-profile"
+            options={{ title: 'Student Profile' }}
+          />
+          <Stack.Screen
+            name="routes/login-screen"
+            options={{ title: 'Login' }}
+          />
+          <Stack.Screen
+            name="routes/register-screen"
+            options={{ title: 'Register' }}
+          />
           <Stack.Screen name="+not-found" options={{ title: 'Not Found' }} />
         </Stack>
       </NavigationThemeProvider>

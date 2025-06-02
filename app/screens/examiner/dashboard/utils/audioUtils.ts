@@ -1,8 +1,9 @@
 import * as FileSystem from 'expo-file-system';
 import { Platform } from 'react-native';
 
-export const CACHE_DIR_NAME = '.audiocache'; // Hidden directory
-export const CACHE_DIR_URI = FileSystem.documentDirectory + CACHE_DIR_NAME + '/';
+export const CACHE_DIR_NAME = '.audiocache';
+export const CACHE_DIR_URI =
+  FileSystem.documentDirectory + CACHE_DIR_NAME + '/';
 
 export const getLocalAudioPath = (id: string) => `${CACHE_DIR_URI}${id}.mp3`;
 
@@ -16,7 +17,6 @@ export const ensureCacheDirExists = async () => {
     console.log('Creating cache directory:', CACHE_DIR_URI);
     await FileSystem.makeDirectoryAsync(CACHE_DIR_URI, { intermediates: true });
     if (Platform.OS === 'android') {
-      // Create .nomedia file to hide from music players on Android
       try {
         await FileSystem.writeAsStringAsync(CACHE_DIR_URI + '.nomedia', '');
         console.log('.nomedia file created in cache directory');
@@ -27,7 +27,6 @@ export const ensureCacheDirExists = async () => {
   }
 };
 
-// Formatowanie daty
 export const formatDate = (dateString: string) => {
   const date = new Date(dateString);
   return date.toLocaleDateString('pl-PL', {
@@ -39,7 +38,6 @@ export const formatDate = (dateString: string) => {
   });
 };
 
-// Formatowanie czasu trwania
 export const formatDuration = (seconds: string) => {
   const totalSeconds = parseInt(seconds, 10);
   const minutes = Math.floor(totalSeconds / 60);

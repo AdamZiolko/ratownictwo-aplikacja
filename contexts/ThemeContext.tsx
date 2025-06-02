@@ -15,12 +15,13 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 const THEME_PREFERENCE_KEY = '@theme_preference';
 
-export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const deviceTheme = useDeviceColorScheme() || 'light';
   const [themeMode, setThemeModeState] = useState<ThemeMode>('dark');
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
 
-  
   useEffect(() => {
     const loadThemePreference = async () => {
       try {
@@ -36,7 +37,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     loadThemePreference();
   }, []);
 
-  
   useEffect(() => {
     if (themeMode === 'system') {
       setTheme(deviceTheme);
@@ -45,7 +45,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [themeMode, deviceTheme]);
 
-  
   const setThemeMode = async (mode: ThemeMode) => {
     try {
       await AsyncStorage.setItem(THEME_PREFERENCE_KEY, mode);
@@ -55,7 +54,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  
   const toggleTheme = () => {
     if (themeMode === 'system') {
       setThemeMode(deviceTheme === 'light' ? 'dark' : 'light');
@@ -65,7 +63,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   return (
-    <ThemeContext.Provider value={{ themeMode, theme, setThemeMode, toggleTheme }}>
+    <ThemeContext.Provider
+      value={{ themeMode, theme, setThemeMode, toggleTheme }}
+    >
       {children}
     </ThemeContext.Provider>
   );

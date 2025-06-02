@@ -1,18 +1,18 @@
-import React, { useState, useEffect } from "react";
-import { View, StyleSheet, Text, Platform, ScrollView } from "react-native";
-import { socketService } from "../services/SocketService";
-import { Button, Card, Divider } from "react-native-paper";
-import { WS_URL, API_URL } from "../constants/Config";
-import { wifiKeepAliveService } from "../services/WifiKeepAliveService";
-import { networkMonitorService } from "../services/NetworkMonitorService";
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, Text, Platform, ScrollView } from 'react-native';
+import { socketService } from '../services/SocketService';
+import { Button, Card, Divider } from 'react-native-paper';
+import { WS_URL, API_URL } from '../constants/Config';
+import { wifiKeepAliveService } from '../services/WifiKeepAliveService';
+import { networkMonitorService } from '../services/NetworkMonitorService';
 
 const SocketConnectionStatus: React.FC = () => {
   const [status, setStatus] = useState({
     connected: socketService.getConnectionStatus().connected,
     id: socketService.getConnectionStatus().id,
-    wifiLockStatus: "Nieznany",
+    wifiLockStatus: 'Nieznany',
     networkConnected: true,
-    connectionType: "nieznany",
+    connectionType: 'nieznany',
     lastSuccessfulConnection: null as Date | null,
     connectionAttempts: 0,
     expanded: false,
@@ -21,15 +21,15 @@ const SocketConnectionStatus: React.FC = () => {
   useEffect(() => {
     const checkStatus = async () => {
       const currentStatus = socketService.getConnectionStatus();
-      let wifiLockStatus = "Nie dotyczy";
-      let networkInfo = { isConnected: true, connectionType: "nieznany" };
+      let wifiLockStatus = 'Nie dotyczy';
+      let networkInfo = { isConnected: true, connectionType: 'nieznany' };
 
-      if (Platform.OS === "android") {
+      if (Platform.OS === 'android') {
         try {
           wifiLockStatus = await wifiKeepAliveService.getStatus();
           networkInfo = await networkMonitorService.getNetworkInfo();
         } catch (error) {
-          wifiLockStatus = "Błąd sprawdzania statusu";
+          wifiLockStatus = 'Błąd sprawdzania statusu';
         }
       }
 
@@ -43,7 +43,7 @@ const SocketConnectionStatus: React.FC = () => {
         attempts += 1;
       }
 
-      setStatus((prev) => ({
+      setStatus(prev => ({
         ...prev,
         connected: currentStatus.connected,
         id: currentStatus.id,
@@ -65,12 +65,12 @@ const SocketConnectionStatus: React.FC = () => {
     await socketService.disconnect();
     setTimeout(async () => {
       await socketService.connect();
-      setRefreshKey((prev) => prev + 1);
+      setRefreshKey(prev => prev + 1);
     }, 500);
   };
 
   const toggleExpanded = () => {
-    setStatus((prev) => ({
+    setStatus(prev => ({
       ...prev,
       expanded: !prev.expanded,
     }));
@@ -80,15 +80,15 @@ const SocketConnectionStatus: React.FC = () => {
     <Card style={styles.container}>
       <Card.Title
         title="Status Połączenia"
-        subtitle={status.connected ? "Połączono" : "Rozłączono"}
-        right={(props) => (
+        subtitle={status.connected ? 'Połączono' : 'Rozłączono'}
+        right={props => (
           <Button
-            mode={status.connected ? "contained" : "outlined"}
+            mode={status.connected ? 'contained' : 'outlined'}
             onPress={toggleExpanded}
             compact
             style={{ marginRight: 8 }}
           >
-            {status.expanded ? "Mniej" : "Więcej"}
+            {status.expanded ? 'Mniej' : 'Więcej'}
           </Button>
         )}
       />
@@ -97,22 +97,22 @@ const SocketConnectionStatus: React.FC = () => {
           <Text
             style={[
               styles.statusText,
-              { color: status.connected ? "#4CAF50" : "#F44336" },
+              { color: status.connected ? '#4CAF50' : '#F44336' },
             ]}
           >
-            Socket: {status.connected ? "✓ Połączono" : "✗ Rozłączono"}
+            Socket: {status.connected ? '✓ Połączono' : '✗ Rozłączono'}
           </Text>
-          {Platform.OS === "android" && (
+          {Platform.OS === 'android' && (
             <Text
               style={[
                 styles.networkText,
-                { color: status.networkConnected ? "#4CAF50" : "#F44336" },
+                { color: status.networkConnected ? '#4CAF50' : '#F44336' },
               ]}
             >
               Sieć:
               {status.networkConnected
                 ? `✓ ${status.connectionType}`
-                : "✗ Offline"}
+                : '✗ Offline'}
             </Text>
           )}
         </View>
@@ -130,7 +130,7 @@ const SocketConnectionStatus: React.FC = () => {
 
             {status.lastSuccessfulConnection && (
               <Text style={styles.detailText}>
-                Ostatnie Połączenie:{" "}
+                Ostatnie Połączenie:
                 {status.lastSuccessfulConnection.toLocaleTimeString()}
               </Text>
             )}
@@ -160,18 +160,18 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   statusRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   statusText: {
-    fontWeight: "bold",
+    fontWeight: 'bold',
     fontSize: 14,
   },
   networkText: {
     fontSize: 12,
     opacity: 0.8,
-    fontWeight: "500",
+    fontWeight: '500',
   },
   detailsContainer: {
     maxHeight: 200,
@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 14,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     marginTop: 8,
   },
   divider: {
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
     marginVertical: 2,
   },
   buttonContainer: {
-    justifyContent: "flex-end",
+    justifyContent: 'flex-end',
     marginTop: 8,
   },
   button: {
