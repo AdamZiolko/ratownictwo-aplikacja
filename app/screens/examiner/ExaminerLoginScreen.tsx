@@ -58,72 +58,89 @@ const ExaminerLoginScreen = () => {
   const isValidEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
-  };  const handleLogin = async () => {
-    setLoginError("");
+  };
+// … w ExaminerLoginScreen:
 
-    if (!email.trim() || !password.trim()) {
-      setLoginError("Email i hasło są wymagane");
-      return;
+const handleLogin = async () => {
+  setLoginError("");
+  if (!email.trim() || !password.trim()) {
+    setLoginError("Email i hasło są wymagane");
+    return;
+  }
+
+  setLoginLoading(true);
+
+  try {
+    // login zwraca tablicę ról, np. ["ROLE_USER"], ["ROLE_MODERATOR"], ["ROLE_ADMIN"], itd.
+    const roles: string[] = await login(email, password);
+
+    if (roles.includes("ROLE_ADMIN")) {
+      // jeśli admin, idziemy na stronę admina
+      router.replace("/routes/app/routes/admin");
+    } else if (roles.includes("ROLE_MODERATOR")) {
+      // jeśli moderator, idziemy na dashboard egzaminatora
+      router.replace("/routes/examiner-dashboard");
+    } else {
+      // zwykły user (ROLE_USER) – wyświetlamy komunikat o oczekiwaniu na uprawnienia
+      setLoginError("Twoje konto oczekuje na nadanie uprawnień. Skontaktuj się z administratorem.   :(");
+      setSnackbarMessage("Konto wymaga nadania uprawnień przez administratora");
+      setSnackbarVisible(true);
     }
+  } catch (err: any) {
+    console.log("Login error caught:", err);
+    console.log("Error message:", err.message);
 
-    setLoginLoading(true);
+    let errorMessage = "Logowanie nie powiodło się. Sprawdź swoje dane i spróbuj ponownie.";
 
-    try {
-      await login(email, password);
-      router.push("/routes/examiner-dashboard");
-    } catch (err: any) {
-      console.log('Login error caught:', err);
-      console.log('Error message:', err.message);
-      
-      let errorMessage = "Logowanie nie powiodło się. Sprawdź swoje dane i spróbuj ponownie.";
-      
-      // Try to parse error response from backend
-      if (err.message && typeof err.message === 'string') {
-        try {
-          const errorData = JSON.parse(err.message);
-          console.log('Parsed error data:', errorData);
-          
-          if (errorData.success === false) {
-            // Handle validation errors
-            if (errorData.errors && Array.isArray(errorData.errors)) {
-              const validationErrors = errorData.errors.map((error: any) => error.message).join(', ');
-              errorMessage = validationErrors;
-            } else if (errorData.message) {
-              errorMessage = errorData.message;
-            }
-          } else if (errorData.error) {
-            errorMessage = errorData.error;
+    if (err.message && typeof err.message === "string") {
+      try {
+        const errorData = JSON.parse(err.message);
+        if (errorData.success === false) {
+          if (Array.isArray(errorData.errors)) {
+            const validationErrors = errorData.errors.map((e: any) => e.message).join(", ");
+            errorMessage = validationErrors;
           } else if (errorData.message) {
             errorMessage = errorData.message;
           }
-        } catch (parseError) {
-          // If parsing fails, use the original message
-          console.log('Failed to parse error message:', parseError);
-          errorMessage = err.message;
+        } else if (errorData.error) {
+          errorMessage = errorData.error;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
         }
+      } catch {
+        errorMessage = err.message;
       }
-      
-      // Handle common login errors with better Polish translations
-      if (errorMessage.includes('Invalid credentials') || errorMessage.includes('nieprawidłowe dane')) {
-        errorMessage = "Nieprawidłowy email lub hasło";
-      } else if (errorMessage.includes('User not found') || errorMessage.includes('użytkownik nie znaleziony')) {
-        errorMessage = "Nie znaleziono użytkownika o podanym adresie email";
-      } else if (errorMessage.includes('Account locked') || errorMessage.includes('konto zablokowane')) {
-        errorMessage = "Konto zostało tymczasowo zablokowane";
-      } else if (errorMessage.includes('Network') || errorMessage.includes('sieć')) {
-        errorMessage = "Błąd połączenia z serwerem. Sprawdź połączenie internetowe";
-      }
-      
-      console.log('Final error message:', errorMessage);
-      
-      setLoginError(errorMessage);
-      setSnackbarMessage(errorMessage);
-      setSnackbarVisible(true);
-      setIsSuccess(false);
-    } finally {
-      setLoginLoading(false);
     }
-  };const isValidPassword = (password: string) => {
+
+    if (
+      errorMessage.includes("Invalid credentials") ||
+      errorMessage.includes("nieprawidłowe dane")
+    ) {
+      errorMessage = "Nieprawidłowy email lub hasło";
+    } else if (
+      errorMessage.includes("User not found") ||
+      errorMessage.includes("użytkownik nie znaleziony")
+    ) {
+      errorMessage = "Nie znaleziono użytkownika o podanym adresie email";
+    } else if (
+      errorMessage.includes("Account locked") ||
+      errorMessage.includes("konto zablokowane")
+    ) {
+      errorMessage = "Konto zostało tymczasowo zablokowane";
+    } else if (errorMessage.includes("Network") || errorMessage.includes("sieć")) {
+      errorMessage = "Błąd połączenia z serwerem. Sprawdź połączenie internetowe";
+    }
+
+    setLoginError(errorMessage);
+    setSnackbarMessage(errorMessage);
+    setSnackbarVisible(true);
+  } finally {
+    setLoginLoading(false);
+  }
+};
+
+
+const isValidPassword = (password: string) => {
     if (password.length < 8) {
       return { valid: false, message: "Hasło musi mieć co najmniej 8 znaków" };
     }

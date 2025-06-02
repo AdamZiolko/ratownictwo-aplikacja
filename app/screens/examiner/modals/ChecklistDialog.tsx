@@ -238,6 +238,15 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
     }
   };
 
+React.useEffect(() => {
+  if (
+    testState.loadedTestName && 
+    !templates.some(t => t.name === testState.loadedTestName)
+  ) {
+    onLoadTemplate("", []);
+  }
+}, [templates, testState.loadedTestName, onLoadTemplate]);
+
   const moveTaskUp = (index: number) => {
     if (index === 0) return;
     const newTasks = [...testState.tasks];
