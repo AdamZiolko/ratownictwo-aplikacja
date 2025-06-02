@@ -42,7 +42,7 @@ const ColorConfigItem: React.FC<ColorConfigItemProps> = ({
     backgroundColor: theme.colors.surface,
     ...(Platform.OS === 'web' && {
       transition: 'none',
-      animation: 'none',
+      animationKeyframes: 'none',
     }),
   };
 
@@ -51,7 +51,7 @@ const ColorConfigItem: React.FC<ColorConfigItemProps> = ({
     backgroundColor: theme.colors.surface,
     ...(Platform.OS === 'web' && {
       transition: 'none',
-      animation: 'none',
+      animationKeyframes: 'none',
     }),
   };
 
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
     minWidth: "100%", // Ensure button content takes full width
     ...(Platform.OS === 'web' && {
       transition: 'none',
-      animation: 'none',
+      animationKeyframes: 'none',
     }),
   },
   loadingOverlay: {

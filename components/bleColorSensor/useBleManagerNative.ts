@@ -138,13 +138,21 @@ export const useBleManager = (onColorUpdate: (color: ColorValue) => Promise<void
           if (isConnected) {
             console.log(`[BLE] Cancelling connection to device ${device.id}...`);
             await manager.cancelDeviceConnection(device.id)
-              .catch(e => console.warn("[BLE] Error cancelling device connection:", e));
+              .catch(e => {
+                // Nie loguj błędu, jeśli jest to "Operation was cancelled"
+                if (!e.message || !e.message.includes("Operation was cancelled")) {
+                  console.warn("[BLE] Error cancelling device connection:", e);
+                }
+              });
             console.log(`[BLE] Successfully disconnected from device ${device.id}`);
           } else {
             console.log(`[BLE] Device ${device.id} is already disconnected`);
           }
         } catch (e) {
-          console.error("[BLE] Error during device disconnection:", e);
+          // Nie loguj błędu, jeśli jest to "Operation was cancelled"
+          if (e instanceof Error && (!e.message || !e.message.includes("Operation was cancelled"))) {
+            console.warn("[BLE] Issue during device disconnection:", e);
+          }
         }
         setDevice(null);
       }
@@ -319,10 +327,13 @@ export const useBleManager = (onColorUpdate: (color: ColorValue) => Promise<void
                 error: BleError | null,
                 disconnectedDevice: Device,
               ) => {
-                console.log(
-                  `Device ${disconnectedDevice.id} was disconnected`,
-                  error,
-                );
+                // Nie loguj błędu, jeśli jest to "Operation was cancelled"
+                if (!error || !error.message || !error.message.includes("Operation was cancelled")) {
+                  console.log(
+                    `Device ${disconnectedDevice.id} was disconnected`,
+                    error,
+                  );
+                }
 
                 // Check if this is our device
                 if (disconnectedDevice.id === d.id) {
@@ -371,7 +382,14 @@ export const useBleManager = (onColorUpdate: (color: ColorValue) => Promise<void
                 BLE_CONFIG.CHARACTERISTIC_UUID,
                 async (error, characteristic) => {
                   if (error) {
-                    console.error("[BLE] Monitor error", error);
+                    // Ignoruj błędy anulowania operacji, które są normalne podczas rozłączania
+                    if (error.message && error.message.includes('Operation was cancelled')) {
+                      // Całkowicie wyciszamy ten błąd - nie logujemy go wcale
+                      return;
+                    } else {
+                      // Logujemy tylko jako ostrzeżenie, nie jako błąd
+                      console.warn("[BLE] Monitor issue:", error.message || "Unknown error");
+                    }
                     return;
                   }
                   if (!characteristic?.value) return;                  try {
@@ -549,13 +567,22 @@ export const useBleManager = (onColorUpdate: (color: ColorValue) => Promise<void
             .isDeviceConnected(device.id)
             .catch(() => false);
           if (isConnected) {
-            await manager.cancelDeviceConnection(device.id);
+            await manager.cancelDeviceConnection(device.id)
+              .catch(e => {
+                // Nie loguj błędu, jeśli jest to "Operation was cancelled"
+                if (!e.message || !e.message.includes("Operation was cancelled")) {
+                  console.warn("[BLE] Error cancelling device connection:", e);
+                }
+              });
             console.log(
               `[BLE] Successfully disconnected from device ${device.id}`,
             );
           }
         } catch (e) {
-          console.error("[BLE] Error during device disconnection:", e);
+          // Nie loguj błędu, jeśli jest to "Operation was cancelled"
+          if (e instanceof Error && (!e.message || !e.message.includes("Operation was cancelled"))) {
+            console.warn("[BLE] Issue during device disconnection:", e);
+          }
         }
         setDevice(null);
       }
@@ -571,7 +598,10 @@ export const useBleManager = (onColorUpdate: (color: ColorValue) => Promise<void
         setIsReconnecting(false);
       }, 2000);
     } catch (error) {
-      console.error("[BLE] Error during manual disconnect:", error);
+      // Nie loguj błędu, jeśli jest to "Operation was cancelled"
+      if (error instanceof Error && (!error.message || !error.message.includes("Operation was cancelled"))) {
+        console.warn("[BLE] Issue during manual disconnect:", error);
+      }
       setStatus("idle");
       setError(null);
       GLOBAL_AUTO_RECONNECT_ENABLED = false;

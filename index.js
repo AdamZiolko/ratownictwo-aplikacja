@@ -10,7 +10,10 @@ LogBox.ignoreLogs([
   'timed out, assuming failure',
   '[BLE] Monitor error [BleError: Operation was cancelled]',
   '[BLE] Monitor error',
-  'BleError: Operation was cancelled'
+  'BleError: Operation was cancelled',
+  '(NOBRIDGE) ERROR  [BLE] Monitor error [BleError: Operation was cancelled]',
+  '(NOBRIDGE) ERROR',
+  'Operation was cancelled'
 ]);
 
 AppRegistry.registerComponent(appName, () => RoleSelectionScreen);
