@@ -95,23 +95,22 @@ const styles = StyleSheet.create({
     paddingBottom: 0,
     maxHeight: 400,
     minHeight: 300,
-    overflow: 'hidden',
   },
   mobileDialogContent: {
     paddingBottom: 0,
     maxHeight: screenHeight * 0.65,
-    minHeight: screenHeight * 0.65,
+    minHeight: screenHeight * 0.7,
     paddingHorizontal: 4,
-    overflow: 'hidden',
   },
   soundSelectionContainer: {
     flex: 1,
-    height: Platform.OS === 'web' ? 350 : screenHeight * 0.75,
-    maxHeight: Platform.OS === 'web' ? 350 : screenHeight * 0.75,
+    height: Platform.OS === 'web' ? 350 : screenHeight * 0.6,
+    maxHeight: Platform.OS === 'web' ? 350 : screenHeight * 0.6,
   },
   soundSelection: {
     flex: 1,
     height: '100%',
+    maxHeight: '100%',
   },
   modalActions: {
     justifyContent: 'flex-end',

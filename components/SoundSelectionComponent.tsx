@@ -424,7 +424,6 @@ const SoundSelectionComponent: React.FC<SoundSelectionComponentProps> = ({
 
   return (
     <View style={[styles.container, style]}>
-      {}
       <View style={styles.tabsContainer}>
         <Button
           mode={activeTab === 'local' ? 'contained' : 'outlined'}
@@ -506,7 +505,6 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flex: 1,
-    minHeight: Platform.OS === 'web' ? 200 : 500,
   },
   sectionHeader: {
     fontSize: 16,

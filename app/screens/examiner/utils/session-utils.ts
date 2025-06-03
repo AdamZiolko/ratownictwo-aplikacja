@@ -13,11 +13,12 @@ export const formDataToSession = (
     sessionCode: formData.sessionCode,
     isActive: formData.isActive,
     isEkdDisplayHidden: formData.isEkdDisplayHidden,
-    hr: parseInt(formData.hr) || undefined,
+    showColorsConfig: formData.showColorsConfig,
+    hr: formData.hr ? parseInt(formData.hr) || undefined : undefined,
     bp: formData.bp,
-    spo2: parseInt(formData.spo2) || undefined,
-    etco2: parseInt(formData.etco2) || undefined,
-    rr: parseInt(formData.rr) || undefined,
+    spo2: formData.spo2 ? parseInt(formData.spo2) || undefined : undefined,
+    etco2: formData.etco2 ? parseInt(formData.etco2) || undefined : undefined,
+    rr: formData.rr ? parseInt(formData.rr) || undefined : undefined,
   };
 };
 
@@ -36,6 +37,10 @@ export const sessionToFormData = (session: Session): FormData => {
       session.isEkdDisplayHidden !== undefined
         ? session.isEkdDisplayHidden
         : false,
+    showColorsConfig:
+      session.showColorsConfig !== undefined
+        ? session.showColorsConfig
+        : true,
     hr: session.hr ? session.hr.toString() : '80',
     bp: session.bp || '120/80',
     spo2: session.spo2 ? session.spo2.toString() : '98',

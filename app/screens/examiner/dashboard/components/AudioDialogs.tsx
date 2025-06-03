@@ -36,7 +36,6 @@ export const AudioDialogs: React.FC<AudioDialogsProps> = ({
 
   return (
     <Portal>
-      {}
       <Dialog
         visible={dialogState.uploadDialogVisible}
         onDismiss={onCloseUpload}
@@ -66,8 +65,6 @@ export const AudioDialogs: React.FC<AudioDialogsProps> = ({
           </Button>
         </Dialog.Actions>
       </Dialog>
-
-      {}
       <Dialog visible={dialogState.editDialogVisible} onDismiss={onCloseEdit}>
         <Dialog.Title>Edytuj plik audio</Dialog.Title>
         <Dialog.Content>
@@ -94,8 +91,6 @@ export const AudioDialogs: React.FC<AudioDialogsProps> = ({
           </Button>
         </Dialog.Actions>
       </Dialog>
-
-      {}
       <Dialog
         visible={dialogState.deleteDialogVisible}
         onDismiss={onCloseDelete}

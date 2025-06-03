@@ -417,8 +417,6 @@ const ExaminerDashboardScreen = () => {
               </View>
             ))
           )}
-
-          {}
           <Button
             mode="outlined"
             onPress={() => setHistoryVisible(v => !v)}
@@ -669,8 +667,6 @@ const ExaminerDashboardScreen = () => {
                   iconColor={theme.colors.onSurface}
                 />
               </View>
-
-              {}
               <View style={styles.filtersRow}>
                 <TextInput
                   label="Filtruj po nazwisku"

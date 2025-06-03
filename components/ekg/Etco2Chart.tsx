@@ -97,10 +97,7 @@ const Etco2Chart: React.FC<Etco2ChartProps> = ({
           viewBox={viewBox}
           preserveAspectRatio="none"
         >
-          {}
           <Rect x="0" y="0" width={CHART_WIDTH} height={height} fill="#000" />
-
-          {}
           <G
             stroke={theme.dark ? 'rgba(255,0,0,0.1)' : 'rgba(255,255,255,0.1)'}
           >
@@ -115,8 +112,6 @@ const Etco2Chart: React.FC<Etco2ChartProps> = ({
               );
             })}
           </G>
-
-          {}
           <Path
             d={pathData}
             stroke={theme.colors.secondary}

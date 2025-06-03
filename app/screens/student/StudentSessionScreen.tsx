@@ -249,11 +249,13 @@ const StudentSessionScreen = () => {
             formatBloodPressure={formatBloodPressure}
             isFullscreen={isFullscreen}
           />
-          <ColorConfigDisplay
-            colorConfigs={colorConfigs}
-            isLoading={colorConfigsLoading}
-            error={colorConfigsError}
-          />
+          {sessionData?.showColorsConfig && (
+            <ColorConfigDisplay
+              colorConfigs={colorConfigs}
+              isLoading={colorConfigsLoading}
+              error={colorConfigsError}
+            />
+          )}
           {!isWeb && (
             <ColorSensor
               colorConfigs={colorConfigs}

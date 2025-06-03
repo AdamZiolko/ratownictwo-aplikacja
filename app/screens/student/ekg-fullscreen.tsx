@@ -187,7 +187,6 @@ const EkgFullscreenScreen = () => {
 
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.mobileTopContainer}>
-          {}
           <TouchableOpacity
             style={styles.chartContainer}
             onPress={switchChart}

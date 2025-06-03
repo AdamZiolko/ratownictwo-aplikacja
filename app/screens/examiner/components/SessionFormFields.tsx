@@ -422,6 +422,24 @@ const SessionFormFields = ({
             color={theme.colors.primary}
           />
         </View>
+        <View style={styles.switchContainer}>
+          <Text
+            style={{
+              color: formData.showColorsConfig
+                ? theme.colors.primary
+                : theme.colors.outline,
+            }}
+          >
+            {formData.showColorsConfig ? 'Kolory widoczne' : 'Kolory ukryte'}
+          </Text>
+          <Switch
+            value={formData.showColorsConfig}
+            onValueChange={value =>
+              setFormData({ ...formData, showColorsConfig: value })
+            }
+            color={theme.colors.primary}
+          />
+        </View>
       </View>
       <Divider style={styles.divider} />
       <Text variant="titleMedium" style={styles.sectionTitle}>

@@ -61,7 +61,8 @@ const ColorConfigItem: React.FC<ColorConfigItemProps> = ({
   return (
     <Card style={[styles.listItem, { backgroundColor: theme.colors.surface }]}>
       <View style={styles.listItemContent}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+        {/* First row - Information */}
+        <View style={styles.infoRow}>
           <View style={styles.colorIndicatorContainer}>
             <View
               style={[
@@ -75,7 +76,7 @@ const ColorConfigItem: React.FC<ColorConfigItemProps> = ({
               ]}
             />
           </View>
-          <View style={{ flex: 1, marginLeft: 12 }}>
+          <View style={styles.infoContainer}>
             <Text
               style={[styles.listItemTitle, { color: theme.colors.onSurface }]}
             >
@@ -109,58 +110,64 @@ const ColorConfigItem: React.FC<ColorConfigItemProps> = ({
               </Text>
             </View>
           </View>
-          <View style={styles.itemActions}>
-            <View style={styles.playButtonContainer}>
-              <Button
-                mode="outlined"
-                icon={isCurrentlyPlaying ? 'stop' : 'play'}
-                compact
-                disabled={isLoadingAudio}
-                onPress={() => onPlay(item)}
-                style={[styles.playButton, buttonStyle]}
-                contentStyle={styles.buttonContent}
-                rippleColor={theme.colors.primary + '20'}
-                buttonColor={theme.colors.surface}
-                textColor={theme.colors.primary}
-              >
-                <Text>{isCurrentlyPlaying ? 'Stop' : 'Play'}</Text>
-              </Button>
-              {isCurrentlyLoading && (
-                <View style={styles.loadingOverlay}>
-                  <ActivityIndicator
-                    size="small"
-                    color={theme.colors.primary}
-                  />
-                </View>
-              )}
-            </View>
+        </View>
+        <View style={styles.buttonsRow}>
+          <View style={styles.buttonWrapper}>
+            <Button
+              mode="outlined"
+              icon={isCurrentlyPlaying ? 'stop' : 'play'}
+              compact
+              disabled={isLoadingAudio}
+              onPress={() => onPlay(item)}
+              style={[styles.actionButtonMobile, buttonStyle]}
+              contentStyle={styles.buttonContentMobile}
+              rippleColor={theme.colors.primary + '20'}
+              buttonColor={theme.colors.surface}
+              textColor={theme.colors.primary}
+            >
+              {isCurrentlyPlaying ? 'Stop' : 'Play'}
+            </Button>
+            {isCurrentlyLoading && (
+              <View style={styles.loadingOverlayMobile}>
+                <ActivityIndicator
+                  size="small"
+                  color={theme.colors.primary}
+                />
+              </View>
+            )}
+          </View>
+          
+          <View style={styles.buttonWrapper}>
             <Button
               mode="outlined"
               icon="pencil"
               compact
               disabled={isLoadingAudio}
               onPress={() => onEdit(item)}
-              style={[styles.actionButton, buttonStyle]}
-              contentStyle={styles.buttonContent}
+              style={[styles.actionButtonMobile, buttonStyle]}
+              contentStyle={styles.buttonContentMobile}
               rippleColor={theme.colors.primary + '20'}
               buttonColor={theme.colors.surface}
               textColor={theme.colors.primary}
             >
-              <Text>Edytuj</Text>
+              Edytuj
             </Button>
+          </View>
+          
+          <View style={styles.buttonWrapper}>
             <Button
               mode="outlined"
               icon="delete"
               compact
               disabled={isLoadingAudio}
               onPress={() => onDelete(item.id)}
-              style={[styles.actionButton, deleteButtonStyle]}
+              style={[styles.actionButtonMobile, deleteButtonStyle]}
               textColor={theme.colors.error}
-              contentStyle={styles.buttonContent}
+              contentStyle={styles.buttonContentMobile}
               rippleColor={theme.colors.error + '20'}
               buttonColor={theme.colors.surface}
             >
-              <Text>Usuń</Text>
+              Usuń
             </Button>
           </View>
         </View>
@@ -176,12 +183,18 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   listItemContent: {
-    paddingVertical: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   colorIndicatorContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 8,
+    marginRight: 12,
     minWidth: 40,
   },
   colorIndicator: {
@@ -192,6 +205,46 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'rgba(0,0,0,0.1)',
   },
+  infoContainer: {
+    flex: 1,
+  },
+  buttonsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  buttonWrapper: {
+    flex: 1,
+    position: 'relative',
+  },
+  actionButtonMobile: {
+    borderRadius: 8,
+    width: '100%',
+    height: 48,
+  },
+  buttonContentMobile: {
+    paddingHorizontal: 4,
+    paddingVertical: 0,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...(Platform.OS === 'web' && {
+      transition: 'none',
+      animationKeyframes: 'none',
+    }),
+  },
+  loadingOverlayMobile: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  // Legacy styles for web/desktop compatibility
   itemActions: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -207,17 +260,17 @@ const styles = StyleSheet.create({
   playButton: {
     borderRadius: 8,
     width: 160,
-    height: 36,
+    height: 44,
   },
   actionButton: {
     borderRadius: 8,
     width: 140,
-    height: 36,
+    height: 44,
   },
   buttonContent: {
     paddingHorizontal: 8,
-    paddingVertical: 4,
-    height: 36,
+    paddingVertical: 8,
+    height: 44,
     justifyContent: 'center',
     alignItems: 'center',
     minWidth: '100%',

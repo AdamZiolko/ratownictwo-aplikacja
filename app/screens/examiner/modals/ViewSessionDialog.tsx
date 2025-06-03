@@ -85,11 +85,18 @@ const ViewSessionDialog: React.FC<ViewSessionDialogProps> = ({
                 styles.statusChip,
                 session.isEkdDisplayHidden
                   ? themedStyles.hiddenChip
-                  : themedStyles.visibleChip,
+                  : themedStyles.hiddenChip,
               ]}
               textStyle={styles.chipText}
             >
               {session.isEkdDisplayHidden ? 'EKG ukryte' : 'EKG widoczne'}
+            </Chip>
+            <Chip
+              icon={session.showColorsConfig ? 'palette' : 'palette-outline'}
+              style={styles.statusChip}
+              textStyle={styles.chipText}
+            >
+              {session.showColorsConfig ? 'Kolory widoczne' : 'Kolory ukryte'}
             </Chip>
           </View>
           <Divider style={styles.divider} />

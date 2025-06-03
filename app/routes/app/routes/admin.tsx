@@ -89,15 +89,12 @@ const AdminPage = () => {
       <Card style={styles.userCard} mode="outlined">
         <Card.Content>
           <View style={styles.userRow}>
-            {}
             <View style={styles.userInfo}>
               <Text variant="titleMedium">{item.username}</Text>
               <Text variant="bodySmall" style={styles.emailText}>
                 {item.email}
               </Text>
             </View>
-
-            {}
             <View style={styles.roleSection}>
               <Text variant="bodyMedium" style={styles.roleLabel}>
                 {currentRole}

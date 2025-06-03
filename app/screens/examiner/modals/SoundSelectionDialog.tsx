@@ -384,8 +384,6 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
       <Dialog.Title style={styles.title}>
         {isColorAssignmentMode ? 'Wybierz dźwięk dla koloru' : 'Odtwórz dźwięk'}
       </Dialog.Title>
-
-      {}
       <View style={styles.tabsContainer}>
         <Button
           mode={activeTab === 'single' ? 'contained' : 'outlined'}
@@ -412,18 +410,11 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
           Serwer
         </Button>
       </View>
-
-      {}
       <Dialog.Content style={styles.contentContainer}>
-        {}
-        <View style={styles.debugContainer}>
-          <Text style={styles.debugText}>
-            Debug: SelectedSound: {selectedSound || 'None'} | Path:
-            {currentPath.join('/') || 'Root'} | ServerAudio:
-            {selectedServerAudioId || 'None'}
-          </Text>
-        </View>
-
+        <ScrollView 
+          showsVerticalScrollIndicator={true}
+          contentContainerStyle={{ flexGrow: 1 }}
+        >
         {(activeTab === 'single' || activeTab === 'queue') && (
           <>
             <Text style={styles.sectionHeader}>Wybierz dźwięk:</Text>
@@ -438,9 +429,11 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
                 Powrót
               </Button>
             )}
-
-            {}
-            <ScrollView style={styles.listContainer}>
+            <ScrollView 
+              style={styles.listContainer}
+              showsVerticalScrollIndicator={true}
+              nestedScrollEnabled={true}
+            >
               <RadioButton.Group
                 onValueChange={setSelectedSound}
                 value={selectedSound || ''}
@@ -464,13 +457,15 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
                 Odśwież
               </Button>
             </View>
-            <ScrollView style={styles.listContainer}>
+            <ScrollView 
+              style={styles.listContainer}
+              showsVerticalScrollIndicator={true}
+              nestedScrollEnabled={true}
+            >
               {renderServerAudioList()}
             </ScrollView>
           </>
         )}
-
-        {}
         {activeTab === 'single' && (
           <View style={styles.bottomPane}>
             <Text style={styles.sectionHeader}>Opcje odtwarzania:</Text>
@@ -667,6 +662,7 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
             </ScrollView>
           </View>
         )}
+        </ScrollView>
       </Dialog.Content>
 
       <Dialog.Actions style={styles.actions}>
@@ -686,15 +682,20 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
   );
 };
 
+const { width, height } = Dimensions.get('window');
+const isLandscape = width > height;
+const isTablet = width > 768;
+
 const styles = StyleSheet.create({
   dialog: {
-    maxWidth: 550,
-    width: '90%',
+    maxWidth: isTablet ? 550 : width * 0.95,
+    width: isTablet ? '90%' : '95%',
+    maxHeight: isLandscape ? height * 0.9 : height * 0.8,
     borderRadius: 12,
     alignSelf: 'center',
   },
   title: {
-    fontSize: 20,
+    fontSize: isLandscape ? 18 : 20,
     fontWeight: '700',
     paddingHorizontal: 16,
   },
@@ -703,7 +704,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     marginTop: 8,
-    marginBottom: 16,
+    marginBottom: isLandscape ? 8 : 16,
   },
   tabButton: {
     flex: 1,
@@ -717,6 +718,8 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingHorizontal: 16,
     paddingVertical: 8,
+    maxHeight: isLandscape ? height * 0.65 : height * 0.6,
+    minHeight: isLandscape ? height * 0.4 : height * 0.4,
   },
   debugContainer: {
     backgroundColor: '#f0f0f0',
@@ -732,7 +735,7 @@ const styles = StyleSheet.create({
   sectionHeader: {
     fontSize: 16,
     fontWeight: '600',
-    marginTop: 12,
+    marginTop: isLandscape ? 8 : 12,
     marginBottom: 8,
   },
   backButton: {
@@ -744,20 +747,26 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   listContainer: {
-    maxHeight: 260,
+    maxHeight: isLandscape ? height * 0.35 : 300,
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+    borderRadius: 8,
   },
   listWrapper: {
     paddingRight: 8,
+    paddingVertical: 4,
   },
   listItem: {
-    paddingVertical: 2,
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+    minHeight: 48,
   },
   listItemText: {
     fontSize: 14,
   },
   bottomPane: {
-    marginTop: 8,
+    marginTop: isLandscape ? 4 : 8,
   },
   checkboxRow: {
     flexDirection: 'row',
@@ -769,8 +778,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   playButton: {
-    marginTop: 12,
-    marginBottom: 16,
+    marginTop: isLandscape ? 8 : 12,
+    marginBottom: isLandscape ? 12 : 16,
     borderRadius: 8,
     paddingVertical: 6,
   },
@@ -797,7 +806,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   queueList: {
-    maxHeight: 120,
+    maxHeight: isLandscape ? height * 0.15 : 120,
     marginTop: 8,
     borderRadius: 8,
     borderWidth: 1,

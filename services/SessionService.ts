@@ -22,6 +22,7 @@ export interface Session {
   sessionCode: string;
   isActive?: boolean;
   isEkdDisplayHidden?: boolean;
+  showColorsConfig?: boolean;
   createdAt?: string;
   updatedAt?: string;
 
