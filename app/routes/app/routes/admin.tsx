@@ -60,6 +60,7 @@ const AdminPage = () => {
     spo2: '95',
     etco2: '40',
     rr: '16',
+    showColorsConfig: false,
   };
   const [formData, setFormData] = useState<FormData>({ ...initialFormData });
   const [formErrors, setFormErrors] = useState<FormErrors>({
@@ -129,18 +130,18 @@ const AdminPage = () => {
     }
   };
 
-  const performDeleteUser = async (userId: number) => {
-    try {
-      await apiService.delete(`users/${userId}`);
-      setSnackbarMessage('Użytkownik usunięty.');
-      setSnackbarVisible(true);
-      await fetchUsers();
-    } catch (err) {
-      console.error('Błąd usuwania użytkownika:', err);
-      setSnackbarMessage('Nie udało się usunąć użytkownika.');
-      setSnackbarVisible(true);
-    }
-  };
+const performDeleteUser = async (userId: number) => {
+  try {
+    await apiService.delete(`users/${userId}`);
+    setSnackbarMessage('Użytkownik usunięty.');
+    setSnackbarVisible(true);
+    await fetchUsers();
+  } catch (err) {
+    console.error('Błąd usuwania użytkownika:', err);
+    setSnackbarMessage('Nie udało się usunąć użytkownika.');
+    setSnackbarVisible(true);
+  }
+};
 
   const confirmDeleteUser = (userId: number) => {
     if (Platform.OS === 'web') {
