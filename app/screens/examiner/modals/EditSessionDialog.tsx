@@ -27,6 +27,7 @@ const EditSessionDialog = ({
     sessionCode: '',
     isActive: true,
     isEkdDisplayHidden: false,
+    showColorsConfig: true,
     bp: '120/80',
     spo2: '98',
     etco2: '35',
@@ -59,6 +60,10 @@ const EditSessionDialog = ({
           session.isEkdDisplayHidden !== undefined
             ? session.isEkdDisplayHidden
             : false,
+        showColorsConfig:
+          session.showColorsConfig !== undefined
+            ? session.showColorsConfig
+            : true,
         bp: session.bp || '120/80',
         spo2: session.spo2 ? session.spo2.toString() : '98',
         etco2: session.etco2 ? session.etco2.toString() : '35',

@@ -448,7 +448,6 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
     <View
       style={[styles.container, { backgroundColor: theme.colors.background }]}
     >
-      {}
       {sessionCode && onGoBack && (
         <Appbar.Header>
           <Appbar.BackAction onPress={onGoBack} />
@@ -458,7 +457,6 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
           />
         </Appbar.Header>
       )}
-      {}
       {sessionCode && !onGoBack && (
         <View style={styles.header}>
           <View style={styles.headerContent}>
@@ -478,10 +476,7 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
           </View>
         </View>
       )}
-      {}
       {loading && <ProgressBar indeterminate style={styles.progressBar} />}
-      {}
-      {}
       <FlatList
         data={colorConfigs}
         renderItem={renderColorConfigItem}
@@ -490,20 +485,17 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
       />
-      {}
       <View style={styles.addButtonContainer}>
         <Button
-          mode="outlined"
+          mode="contained"
           icon="plus"
           onPress={isLoadingAudio ? undefined : openAddModal}
           disabled={isLoadingAudio}
-          style={[styles.addButton, isLoadingAudio && { opacity: 0.5 }]}
-          contentStyle={styles.addButtonContent}
+          style={[styles.addButton]}
         >
           Dodaj konfigurację
         </Button>
       </View>
-      {}
       <Portal>
         <ColorConfigModal
           visible={addModalVisible || editModalVisible}
@@ -553,7 +545,6 @@ const ColorConfigTab: React.FC<ColorConfigTabProps> = ({
           onClose={() => setSoundSelectionVisible(false)}
         />
       </Portal>
-      {}
       <Snackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
@@ -643,15 +634,20 @@ const styles = StyleSheet.create({
     bottom: 20,
     left: 16,
     right: 16,
-    alignItems: 'center',
+    alignItems: 'stretch',
   },
   addButton: {
     borderRadius: 8,
-    minWidth: 200,
+    minHeight: 48,
+    width: 200,
+    alignSelf: 'flex-end',
   },
   addButtonContent: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 12,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   sensorCard: {
     marginBottom: 16,

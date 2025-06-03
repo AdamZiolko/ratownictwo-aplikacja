@@ -26,7 +26,6 @@ const BackgroundGradient: React.FC<BackgroundGradientProps> = ({
 
   return (
     <View style={[styles.container, containerStyle]}>
-      {}
       <View
         style={[styles.diagonalStripe, { backgroundColor: secondaryColor }]}
       />

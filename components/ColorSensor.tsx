@@ -1,14 +1,12 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { Surface, Text, useTheme, Button } from 'react-native-paper';
+import { View, StyleSheet } from 'react-native';
+import { Surface, Text, useTheme } from 'react-native-paper';
 import {
   useBleManager,
   ColorDisplay,
   ConnectionControls,
   ColorValue,
 } from './bleColorSensor';
-
-const DEBUG_MODE = __DEV__;
 
 interface ColorSensorProps {
   colorConfigs?: any[];
@@ -25,7 +23,6 @@ export const ColorSensor: React.FC<ColorSensorProps> = ({
   const [lastDetectedColor, setLastDetectedColor] = useState<string | null>(
     null
   );
-  const [showDebugControls, setShowDebugControls] = useState(false);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const processDetectedColor = useCallback(
@@ -177,26 +174,6 @@ export const ColorSensor: React.FC<ColorSensorProps> = ({
     return isMatch;
   };
 
-  const determineColor = (rgbColor: ColorValue): string | null => {
-    const { r, g, b } = rgbColor;
-
-    const normalizedR = Math.min(255, Math.max(0, r));
-    const normalizedG = Math.min(255, Math.max(0, g));
-    const normalizedB = Math.min(255, Math.max(0, b));
-
-    const totalBrightness = normalizedR + normalizedG + normalizedB;
-
-    if (totalBrightness < 100) {
-      return null;
-    }
-
-    return null;
-  };
-
-  const testColor = useCallback((testColorValue: ColorValue) => {
-    handleColorUpdate(testColorValue);
-  }, []);
-
   return (
     <Surface
       style={[styles.container, { backgroundColor: theme.colors.surface }]}
@@ -214,44 +191,6 @@ export const ColorSensor: React.FC<ColorSensorProps> = ({
       {status === 'monitoring' && (
         <View style={styles.colorDisplay}>
           <ColorDisplay color={color} currentSound={lastDetectedColor} />
-        </View>
-      )}
-      {colorConfigs.length > 0 && (
-        <View
-          style={[
-            styles.configInfo,
-            { backgroundColor: theme.colors.surfaceVariant },
-          ]}
-        >
-          <Text style={[styles.configTitle, { color: theme.colors.onSurface }]}>
-            Aktywne konfiguracje kolorów:
-          </Text>
-          <ScrollView
-            style={styles.configScrollView}
-            showsVerticalScrollIndicator={true}
-            nestedScrollEnabled={true}
-          >
-            {colorConfigs
-              .filter(cfg => cfg.isEnabled)
-              .map(cfg => (
-                <Text
-                  key={cfg.id}
-                  style={[
-                    styles.configItem,
-                    { color: theme.colors.onSurfaceVariant },
-                  ]}
-                >
-                  {cfg.color === 'custom'
-                    ? `Custom (RGB: ${cfg.customColorRgb?.r}, ${cfg.customColorRgb?.g}, ${cfg.customColorRgb?.b})`
-                    : cfg.color}
-                  : {cfg.soundName || 'Dźwięk serwera'}
-                  {cfg.isLooping ? ' (zapętlony)' : ''}
-                  {cfg.colorTolerance
-                    ? ` - tolerancja: ${(cfg.colorTolerance * 100).toFixed(0)}%`
-                    : ''}
-                </Text>
-              ))}
-          </ScrollView>
         </View>
       )}
       {lastDetectedColor && (
@@ -277,118 +216,6 @@ export const ColorSensor: React.FC<ColorSensorProps> = ({
           >
             {lastDetectedColor}
           </Text>
-        </View>
-      )}
-      {DEBUG_MODE && (
-        <View
-          style={[
-            styles.debugSection,
-            { backgroundColor: theme.colors.errorContainer },
-          ]}
-        >
-          <Text
-            style={[
-              styles.debugTitle,
-              { color: theme.colors.onErrorContainer },
-            ]}
-          >
-            🧪 DEBUG CONTROLS
-          </Text>
-          <Button
-            mode="outlined"
-            onPress={() => setShowDebugControls(!showDebugControls)}
-            style={styles.debugToggle}
-          >
-            {showDebugControls ? 'Ukryj' : 'Pokaż'} kontrolki testowe
-          </Button>
-
-          {showDebugControls && (
-            <View style={styles.debugControls}>
-              <Text
-                style={[
-                  styles.debugSubtitle,
-                  { color: theme.colors.onErrorContainer },
-                ]}
-              >
-                Testuj wykrywanie kolorów:
-              </Text>
-              <View style={styles.debugButtonRow}>
-                <Button
-                  mode="contained-tonal"
-                  onPress={() => testColor({ r: 255, g: 0, b: 0 })}
-                  style={styles.debugButton}
-                >
-                  Czerwony
-                </Button>
-                <Button
-                  mode="contained-tonal"
-                  onPress={() => testColor({ r: 0, g: 255, b: 0 })}
-                  style={styles.debugButton}
-                >
-                  Zielony
-                </Button>
-                <Button
-                  mode="contained-tonal"
-                  onPress={() => testColor({ r: 0, g: 0, b: 255 })}
-                  style={styles.debugButton}
-                >
-                  Niebieski
-                </Button>
-              </View>
-              <View style={styles.debugButtonRow}>
-                <Button
-                  mode="contained-tonal"
-                  onPress={() => testColor({ r: 255, g: 255, b: 0 })}
-                  style={styles.debugButton}
-                >
-                  Żółty
-                </Button>
-                <Button
-                  mode="contained-tonal"
-                  onPress={() => testColor({ r: 255, g: 165, b: 0 })}
-                  style={styles.debugButton}
-                >
-                  Pomarańczowy
-                </Button>
-                <Button
-                  mode="contained-tonal"
-                  onPress={() => testColor({ r: 128, g: 0, b: 128 })}
-                  style={styles.debugButton}
-                >
-                  Fioletowy
-                </Button>
-              </View>
-              <View style={styles.debugButtonRow}>
-                <Button
-                  mode="contained-tonal"
-                  onPress={() => testColor({ r: 50, g: 50, b: 50 })}
-                  style={styles.debugButton}
-                >
-                  Ciemny (ignorowany)
-                </Button>
-                <Button
-                  mode="contained-tonal"
-                  onPress={() => testColor({ r: 255, g: 255, b: 255 })}
-                  style={styles.debugButton}
-                >
-                  Biały
-                </Button>
-              </View>
-              {colorConfigs
-                .filter(cfg => cfg.color === 'custom' && cfg.isEnabled)
-                .map(config => (
-                  <Button
-                    key={config.id}
-                    mode="contained-tonal"
-                    onPress={() => testColor(config.customColorRgb)}
-                    style={[styles.debugButton, { marginTop: 8 }]}
-                  >
-                    Test Custom #{config.id} ({config.customColorRgb?.r},
-                    {config.customColorRgb?.g}, {config.customColorRgb?.b})
-                  </Button>
-                ))}
-            </View>
-          )}
         </View>
       )}
     </Surface>

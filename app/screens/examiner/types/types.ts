@@ -21,6 +21,7 @@ export interface Session {
   sessionCode: string;
   isActive?: boolean;
   isEkdDisplayHidden?: boolean;
+  showColorsConfig?: boolean;
   createdAt?: string;
   updatedAt?: string;
 
@@ -42,6 +43,7 @@ export interface FormData {
   sessionCode: string;
   isActive: boolean;
   isEkdDisplayHidden: boolean;
+  showColorsConfig: boolean;
   bp: string;
   spo2: string;
   etco2: string;

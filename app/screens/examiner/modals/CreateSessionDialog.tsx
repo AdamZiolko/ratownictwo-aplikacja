@@ -39,6 +39,7 @@ const CreateSessionDialog = ({
       sessionCode: sessionService.generateSessionCode(),
       isActive: true,
       isEkdDisplayHidden: false,
+      showColorsConfig: true,
       bp: '120/80',
       spo2: '98',
       etco2: '35',

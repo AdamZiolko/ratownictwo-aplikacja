@@ -284,7 +284,6 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
           <List.Section style={styles.section}>
             <List.Subheader>1. Wczytaj gotowy test</List.Subheader>
             <View style={styles.templateRow}>
-              {}
               <Menu
                 visible={selectMenuVisible}
                 onDismiss={() => setSelectMenuVisible(false)}
@@ -312,8 +311,6 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
                   ))
                 )}
               </Menu>
-
-              {}
               <IconButton
                 icon="refresh"
                 size={24}
@@ -321,8 +318,6 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
                 style={styles.refreshButton}
                 iconColor={theme.colors.primary}
               />
-
-              {}
               <Menu
                 visible={deleteMenuVisible}
                 onDismiss={() => setDeleteMenuVisible(false)}

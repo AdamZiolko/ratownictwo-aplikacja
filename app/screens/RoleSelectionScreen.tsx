@@ -184,8 +184,6 @@ const RoleSelectionScreen = () => {
         {platformLabel}
       </Text>
       <FloatingThemeToggle position="topRight" size={isLandscape ? 20 : 24} />
-
-      {}
       <DebugModeDialog
         visible={showFirstLaunchDialog}
         onDismiss={handleFirstLaunchDialogClose}

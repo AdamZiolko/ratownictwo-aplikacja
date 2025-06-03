@@ -53,7 +53,6 @@ export const AudioCard: React.FC<AudioCardProps> = ({
             </Text>
           </View>
           <View style={dashboardStyles.audioActions}>
-            {}
             {status?.isLoading && playingId !== audio.id && (
               <ActivityIndicator size="small" style={{ marginRight: 8 }} />
             )}
