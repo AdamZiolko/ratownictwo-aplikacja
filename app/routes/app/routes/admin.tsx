@@ -5,6 +5,8 @@ import {
   FlatList,
   ActivityIndicator,
   Platform,
+  Alert,
+  ScrollView,
 } from 'react-native';
 import {
   Text,
@@ -16,26 +18,62 @@ import {
   Divider,
   Snackbar,
   Surface,
+  IconButton,
+  Portal,
+  Modal,
+  TextInput,
 } from 'react-native-paper';
 import { router } from 'expo-router';
 import apiService from '@/services/ApiService';
+import { EkgType, NoiseType } from '@/services/EkgFactory';
+import SessionFormFields from '../../../screens/examiner/components/SessionFormFields';
+import { FormData, FormErrors } from '../../../screens/examiner/types/types';
 
 const AVAILABLE_ROLES = ['ROLE_USER', 'ROLE_MODERATOR', 'ROLE_ADMIN'];
 
 const AdminPage = () => {
   const theme = useTheme();
 
-  const [users, setUsers] = useState<Array<any>>([]);
+  const [users, setUsers] = useState<any[]>([]);
+  const [presets, setPresets] = useState<any[]>([]);
 
   const [menuUserId, setMenuUserId] = useState<number | null>(null);
 
-  const [loadingUsers, setLoadingUsers] = useState<boolean>(true);
-  const [updatingRoles, setUpdatingRoles] = useState<{
-    [key: number]: boolean;
-  }>({});
+  const [loadingUsers, setLoadingUsers] = useState(true);
+  const [loadingPresets, setLoadingPresets] = useState(true);
+  const [updatingRoles, setUpdatingRoles] = useState<{ [key: number]: boolean }>({});
 
-  const [snackbarVisible, setSnackbarVisible] = useState<boolean>(false);
-  const [snackbarMessage, setSnackbarMessage] = useState<string>('');
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+
+  // Stany formularza dodawania presetu
+  const initialFormData: FormData = {
+    name: '',
+    temperature: '37',
+    rhythmType: EkgType.NORMAL_SINUS_RHYTHM,
+    beatsPerMinute: '',
+    noiseLevel: NoiseType.NONE,
+    sessionCode: '',
+    isActive: true,
+    isEkdDisplayHidden: false,
+    bp: '',
+    spo2: '95',
+    etco2: '40',
+    rr: '16',
+  };
+  const [formData, setFormData] = useState<FormData>({ ...initialFormData });
+  const [formErrors, setFormErrors] = useState<FormErrors>({
+    temperature: '',
+    beatsPerMinute: '',
+    sessionCode: '',
+    spo2: '',
+    etco2: '',
+    rr: '',
+  });
+
+  // Widoczność modala z pełnym formularzem + nazwa presetu
+  const [modalVisible, setModalVisible] = useState(false);
+  const [presetName, setPresetName] = useState('');
 
   const handleBack = () => {
     router.back();
@@ -44,44 +82,176 @@ const AdminPage = () => {
   const fetchUsers = async () => {
     setLoadingUsers(true);
     try {
-      const response = await apiService.get('users');
-      setUsers(response);
+      const resp = await apiService.get('users');
+      setUsers(resp);
     } catch (err: any) {
-      console.error('Błąd przy pobieraniu użytkowników:', err);
-      setSnackbarMessage('Nie udało się pobrać listy użytkowników.');
+      console.error('Błąd pobierania użytkowników:', err);
+      setSnackbarMessage('Nie udało się pobrać użytkowników.');
       setSnackbarVisible(true);
     } finally {
       setLoadingUsers(false);
     }
   };
 
+  const fetchPresets = async () => {
+    setLoadingPresets(true);
+    try {
+      const resp = await apiService.get('presets/default');
+      setPresets(resp);
+    } catch (err: any) {
+      console.error('Błąd pobierania presetów:', err);
+      setSnackbarMessage('Nie udało się pobrać presetów.');
+      setSnackbarVisible(true);
+    } finally {
+      setLoadingPresets(false);
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
+    fetchPresets();
   }, []);
 
   const changeUserRole = async (userId: number, newRole: string) => {
     setMenuUserId(null);
-    setUpdatingRoles(prev => ({ ...prev, [userId]: true }));
+    setUpdatingRoles((prev) => ({ ...prev, [userId]: true }));
     try {
-      await apiService.put(`users/${userId}/roles`, {
-        roles: [newRole],
-      });
-
+      await apiService.put(`users/${userId}/roles`, { roles: [newRole] });
       await fetchUsers();
-      setSnackbarMessage('Rola użytkownika została zaktualizowana.');
+      setSnackbarMessage('Rola użytkownika zaktualizowana.');
       setSnackbarVisible(true);
-    } catch (err: any) {
-      console.error('Błąd przy zmianie roli:', err);
-      setSnackbarMessage('Nie udało się zmienić roli użytkownika.');
+    } catch (err) {
+      console.error('Błąd zmiany roli:', err);
+      setSnackbarMessage('Nie udało się zmienić roli.');
       setSnackbarVisible(true);
     } finally {
-      setUpdatingRoles(prev => ({ ...prev, [userId]: false }));
+      setUpdatingRoles((prev) => ({ ...prev, [userId]: false }));
+    }
+  };
+
+  const performDeleteUser = async (userId: number) => {
+    try {
+      await apiService.delete(`users/${userId}`);
+      setSnackbarMessage('Użytkownik usunięty.');
+      setSnackbarVisible(true);
+      await fetchUsers();
+    } catch (err) {
+      console.error('Błąd usuwania użytkownika:', err);
+      setSnackbarMessage('Nie udało się usunąć użytkownika.');
+      setSnackbarVisible(true);
+    }
+  };
+
+  const confirmDeleteUser = (userId: number) => {
+    if (Platform.OS === 'web') {
+      if (window.confirm('Usunąć tego użytkownika?')) {
+        performDeleteUser(userId);
+      }
+    } else {
+      Alert.alert(
+        'Usuń użytkownika',
+        'Czy na pewno?',
+        [
+          { text: 'Anuluj', style: 'cancel' },
+          { text: 'Usuń', style: 'destructive', onPress: () => performDeleteUser(userId) },
+        ]
+      );
+    }
+  };
+
+  const performDeletePreset = async (presetId: string) => {
+    try {
+      await apiService.delete(`presets/default/${presetId}`);
+      setSnackbarMessage('Preset usunięty.');
+      setSnackbarVisible(true);
+      await fetchPresets();
+    } catch (err) {
+      console.error('Błąd usuwania presetu:', err);
+      setSnackbarMessage('Nie udało się usunąć presetu.');
+      setSnackbarVisible(true);
+    }
+  };
+
+  const confirmDeletePreset = (presetId: string) => {
+    if (Platform.OS === 'web') {
+      if (window.confirm('Usunąć ten preset?')) {
+        performDeletePreset(presetId);
+      }
+    } else {
+      Alert.alert(
+        'Usuń preset',
+        'Czy na pewno?',
+        [
+          { text: 'Anuluj', style: 'cancel' },
+          { text: 'Usuń', style: 'destructive', onPress: () => performDeletePreset(presetId) },
+        ]
+      );
+    }
+  };
+
+  const validateForm = (): FormErrors => {
+    const errors: FormErrors = {
+      temperature: '',
+      beatsPerMinute: '',
+      sessionCode: '',
+      spo2: '',
+      etco2: '',
+      rr: '',
+    };
+    if (!formData.temperature) {
+      errors.temperature = 'Pole temperatura jest wymagane.';
+    }
+    if (!/^[0-9]{1,3}$/.test(formData.beatsPerMinute)) {
+      errors.beatsPerMinute = 'Podaj poprawne BPM (30–220).';
+    }
+    if (!/^[0-9]{6}$/.test(formData.sessionCode)) {
+      errors.sessionCode = 'Kod musi mieć 6 cyfr.';
+    }
+    if (!/^[0-9]{1,3}$/.test(formData.spo2)) {
+      errors.spo2 = 'SpO₂ (0–100).';
+    }
+    if (!/^[0-9]{1,3}$/.test(formData.etco2)) {
+      errors.etco2 = 'EtCO₂ (0–100).';
+    }
+    if (!/^[0-9]{1,3}$/.test(formData.rr)) {
+      errors.rr = 'RR (0–100).';
+    }
+    return errors;
+  };
+
+  // Po wciśnięciu “Zapisz” w modalu
+  const handleSavePreset = async () => {
+    const errors = validateForm();
+    setFormErrors(errors);
+    const hasErrors = Object.values(errors).some((msg) => msg !== '');
+    if (hasErrors) {
+      return;
+    }
+    if (!presetName.trim()) {
+      return; // wymagamy nazwy
+    }
+    const payload = {
+      name: presetName.trim(),
+      data: formData,
+    };
+    try {
+      await apiService.post('presets/default', payload);
+      setSnackbarMessage('Preset zapisany.');
+      setSnackbarVisible(true);
+      setModalVisible(false);
+      setPresetName('');
+      setFormData({ ...initialFormData });
+      await fetchPresets();
+    } catch (err) {
+      console.error('Błąd zapisu presetu:', err);
+      setSnackbarMessage('Nie udało się zapisać presetu.');
+      setSnackbarVisible(true);
+      setModalVisible(false);
     }
   };
 
   const renderUserItem = ({ item }: { item: any }) => {
-    const currentRole =
-      Array.isArray(item.roles) && item.roles.length > 0 ? item.roles[0] : '—';
+    const currentRole = Array.isArray(item.roles) && item.roles.length > 0 ? item.roles[0] : '—';
     const isUpdating = updatingRoles[item.id] === true;
     const isMenuVisible = menuUserId === item.id;
 
@@ -89,19 +259,12 @@ const AdminPage = () => {
       <Card style={styles.userCard} mode="outlined">
         <Card.Content>
           <View style={styles.userRow}>
-            {}
             <View style={styles.userInfo}>
               <Text variant="titleMedium">{item.username}</Text>
-              <Text variant="bodySmall" style={styles.emailText}>
-                {item.email}
-              </Text>
+              <Text variant="bodySmall" style={styles.emailText}>{item.email}</Text>
             </View>
-
-            {}
             <View style={styles.roleSection}>
-              <Text variant="bodyMedium" style={styles.roleLabel}>
-                {currentRole}
-              </Text>
+              <Text variant="bodyMedium" style={styles.roleLabel}>{currentRole}</Text>
               <Menu
                 visible={isMenuVisible}
                 onDismiss={() => setMenuUserId(null)}
@@ -116,7 +279,7 @@ const AdminPage = () => {
                   </Button>
                 }
               >
-                {AVAILABLE_ROLES.map(role => (
+                {AVAILABLE_ROLES.map((role) => (
                   <Menu.Item
                     key={role}
                     onPress={() => changeUserRole(item.id, role)}
@@ -125,7 +288,13 @@ const AdminPage = () => {
                 ))}
               </Menu>
             </View>
-
+            <IconButton
+              icon="delete"
+              size={20}
+              onPress={() => confirmDeleteUser(item.id)}
+              disabled={isUpdating}
+              iconColor={theme.colors.error}
+            />
             {isUpdating && (
               <ActivityIndicator
                 style={styles.updatingIndicator}
@@ -138,6 +307,27 @@ const AdminPage = () => {
       </Card>
     );
   };
+
+  const renderPresetItem = ({ item }: { item: any }) => (
+    <Card style={styles.presetCard} mode="outlined">
+      <Card.Content>
+        <View style={styles.presetRow}>
+          <View style={styles.presetInfo}>
+            <Text variant="titleMedium">{item.name}</Text>
+            <Text variant="bodySmall" style={styles.presetDetail}>
+              Kod: {item.data.sessionCode}
+            </Text>
+          </View>
+          <IconButton
+            icon="delete"
+            size={20}
+            onPress={() => confirmDeletePreset(item.id)}
+            iconColor={theme.colors.error}
+          />
+        </View>
+      </Card.Content>
+    </Card>
+  );
 
   return (
     <>
@@ -154,8 +344,34 @@ const AdminPage = () => {
         ) : (
           <FlatList
             data={users}
-            keyExtractor={item => item.id.toString()}
+            keyExtractor={(item) => item.id.toString()}
             renderItem={renderUserItem}
+            ItemSeparatorComponent={() => <Divider />}
+            contentContainerStyle={styles.listContent}
+            ListHeaderComponent={<Text style={styles.sectionHeader}>Użytkownicy</Text>}
+          />
+        )}
+
+        <View style={styles.presetsHeader}>
+          <Text style={styles.sectionHeader}>Presety</Text>
+          <Button
+            mode="contained"
+            onPress={() => setModalVisible(true)}
+            style={styles.addButton}
+          >
+            Dodaj preset
+          </Button>
+        </View>
+
+        {loadingPresets ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={theme.colors.primary} />
+          </View>
+        ) : (
+          <FlatList
+            data={presets}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={renderPresetItem}
             ItemSeparatorComponent={() => <Divider />}
             contentContainerStyle={styles.listContent}
           />
@@ -166,63 +382,76 @@ const AdminPage = () => {
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
         duration={3000}
-        action={{
-          label: 'OK',
-          onPress: () => setSnackbarVisible(false),
-        }}
+        action={{ label: 'OK', onPress: () => setSnackbarVisible(false) }}
         style={styles.snackbar}
       >
         {snackbarMessage}
       </Snackbar>
+
+      <Portal>
+        <Modal
+          visible={modalVisible}
+          onDismiss={() => setModalVisible(false)}
+          contentContainerStyle={[styles.modalContent, { backgroundColor: theme.colors.background }]}
+        >
+          <ScrollView contentContainerStyle={styles.modalScrollContent}>
+            {/* Najpierw pole nazwy presetu */}
+            <TextInput
+              label="Nazwa presetu"
+              value={presetName}
+              onChangeText={setPresetName}
+              mode="outlined"
+              placeholder="Wprowadź nazwę presetu"
+              style={styles.input}
+            />
+
+            {/* Pełny formularz sesji */}
+            <SessionFormFields
+              formData={formData}
+              setFormData={setFormData}
+              formErrors={formErrors}
+              showGenerateCodeButton
+            />
+
+            <View style={styles.modalButtons}>
+              <Button mode="text" onPress={() => setModalVisible(false)} style={styles.modalButton}>
+                Anuluj
+              </Button>
+              <Button mode="contained" onPress={handleSavePreset} style={styles.modalButton}>
+                Zapisz
+              </Button>
+            </View>
+          </ScrollView>
+        </Modal>
+      </Portal>
     </>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Platform.OS === 'android' ? 'transparent' : 'transparent',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  listContent: {
-    paddingVertical: 8,
-  },
-  userCard: {
-    marginHorizontal: 12,
-    marginVertical: 6,
-  },
-  userRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  userInfo: {
-    flex: 1,
-  },
-  emailText: {
-    color: '#666',
-    marginTop: 2,
-  },
-  roleSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  roleLabel: {
-    marginRight: 8,
-  },
-  updatingIndicator: {
-    marginLeft: 8,
-  },
-  snackbar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-  },
+  container: { flex: 1, backgroundColor: Platform.OS === 'android' ? 'transparent' : 'transparent' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  listContent: { paddingVertical: 8 },
+  sectionHeader: { marginHorizontal: 12, marginVertical: 4, fontWeight: 'bold' },
+  presetsHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, marginTop: 8 },
+  addButton: { marginRight: 12 },
+  userCard: { marginHorizontal: 12, marginVertical: 6 },
+  userRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  userInfo: { flex: 1 },
+  emailText: { color: '#666', marginTop: 2 },
+  roleSection: { flexDirection: 'row', alignItems: 'center' },
+  roleLabel: { marginRight: 8 },
+  updatingIndicator: { marginLeft: 8 },
+  presetCard: { marginHorizontal: 12, marginVertical: 6 },
+  presetRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  presetInfo: { flex: 1 },
+  presetDetail: { color: '#666', marginTop: 2 },
+  snackbar: { position: 'absolute', bottom: 0, left: 0, right: 0 },
+  modalContent: { maxHeight: '80%', margin: 20, borderRadius: 8, overflow: 'hidden' },
+  modalScrollContent: { padding: 20 },
+  input: { marginBottom: 12 },
+  modalButtons: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 16 },
+  modalButton: { marginLeft: 8 },
 });
 
 export default AdminPage;
