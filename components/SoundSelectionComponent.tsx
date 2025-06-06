@@ -402,17 +402,20 @@ const SoundSelectionComponent: React.FC<SoundSelectionComponentProps> = ({
                 />
               )}
               right={() => (
-                <IconButton
-                  icon={playingSound === `server_${file.id}` ? 'stop' : 'play'}
-                  size={20}
-                  onPress={async () => {
-                    if (playingSound === `server_${file.id}`) {
-                      await stopSound();
-                    } else {
-                      await playServerAudio(file.id);
-                    }
-                  }}
-                />
+                <View style={{ flexDirection: 'row' }}>
+                  <IconButton
+                    icon="play"
+                    size={20}
+                    onPress={() => playServerAudio(file.id)}
+                    disabled={playingSound === `server_${file.id}`}
+                  />
+                  <IconButton
+                    icon="stop"
+                    size={20}
+                    onPress={() => stopSound()}
+                    disabled={playingSound !== `server_${file.id}`}
+                  />
+                </View>
               )}
               onPress={() => handleServerAudioSelect(file.id)}
             />

@@ -307,6 +307,28 @@ const SoundSelectionDialog: React.FC<SoundSelectionDialogProps> = ({
                   }
                 />
               )}
+              right={() => (
+                <View style={{ flexDirection: 'row' }}>
+                  <IconButton
+                    icon="play"
+                    size={20}
+                    onPress={() => {
+                      setSelectedServerAudioId(file.id);
+                      handleServerAudioPlayback();
+                    }}
+                    disabled={serverIsPlaying && selectedServerAudioId === file.id}
+                  />
+                  <IconButton
+                    icon="stop"
+                    size={20}
+                    onPress={() => {
+                      setSelectedServerAudioId(file.id);
+                      handleServerAudioStop();
+                    }}
+                    disabled={!serverIsPlaying || selectedServerAudioId !== file.id}
+                  />
+                </View>
+              )}
               onPress={() => setSelectedServerAudioId(file.id)}
             />
           ))}
