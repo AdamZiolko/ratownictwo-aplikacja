@@ -15,7 +15,6 @@ interface AudioListProps {
   onRefresh: () => void;
   onPlay: (audio: AudioFile) => void;
   onDownload: (id: string, name: string) => void;
-  onEdit: (audio: AudioFile) => void;
   onDelete: (audio: AudioFile) => void;
 }
 
@@ -29,7 +28,6 @@ export const AudioList: React.FC<AudioListProps> = ({
   onRefresh,
   onPlay,
   onDownload,
-  onEdit,
   onDelete,
 }) => {
   const theme = useTheme();
@@ -71,7 +69,6 @@ export const AudioList: React.FC<AudioListProps> = ({
               isPlayingInModal={isPlayingInModal}
               onPlay={onPlay}
               onDownload={onDownload}
-              onEdit={onEdit}
               onDelete={onDelete}
             />
           ))}

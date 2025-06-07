@@ -402,19 +402,6 @@ const ExaminerDashboardScreen = () => {
                         </TouchableOpacity>
                       </View>
                     ))}
-
-                    <View style={dashboardStyles.sessionActions}>
-                      <Button
-                        mode="outlined"
-                        onPress={() => openColorConfigForSession(session)}
-                        style={dashboardStyles.colorConfigButton}
-                        icon="palette"
-                        compact
-                        labelStyle={{ fontSize: 12 }}
-                      >
-                        Konfiguracja kolorów
-                      </Button>
-                    </View>
                   </View>
                 )}
               </View>

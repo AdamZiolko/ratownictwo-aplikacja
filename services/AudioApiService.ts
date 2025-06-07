@@ -1,5 +1,4 @@
 import ApiService from './ApiService';
-import AuthService from './AuthService';
 import { API_URL } from '@/constants/Config';
 import * as FileSystem from 'expo-file-system';
 import { Platform } from 'react-native';
@@ -19,12 +18,6 @@ interface UploadAudioData {
   name: string;
   audioData: string;
   mimeType: string;
-}
-
-interface UpdateAudioData {
-  name?: string;
-  audioData?: string;
-  mimeType?: string;
 }
 
 class AudioApiService {
@@ -85,15 +78,6 @@ class AudioApiService {
       return response.audio;
     } catch (error) {
       console.error('Error uploading audio:', error);
-      throw error;
-    }
-  }
-  async updateAudio(id: string, data: UpdateAudioData): Promise<AudioFile> {
-    try {
-      const response = await this.api.put(`audio/${id}/update`, data);
-      return response.audio;
-    } catch (error) {
-      console.error('Error updating audio:', error);
       throw error;
     }
   }

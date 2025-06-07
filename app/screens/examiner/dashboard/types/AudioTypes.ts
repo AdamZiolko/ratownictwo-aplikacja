@@ -29,7 +29,6 @@ export interface AudioPlayerState {
 
 export interface AudioDialogState {
   uploadDialogVisible: boolean;
-  editDialogVisible: boolean;
   deleteDialogVisible: boolean;
   currentAudio: AudioFile | null;
   audioName: string;

@@ -1,15 +1,12 @@
 import { useState } from 'react';
 import { Alert } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system';
 import { audioApiService } from '@/services/AudioApiService';
 import { AudioFile, AudioDialogState } from '../types/AudioTypes';
-import { getLocalAudioPath } from '../utils/audioUtils';
 
 export const useAudioFileOperations = (onFileChange: () => void) => {
   const [dialogState, setDialogState] = useState<AudioDialogState>({
     uploadDialogVisible: false,
-    editDialogVisible: false,
     deleteDialogVisible: false,
     currentAudio: null,
     audioName: '',
@@ -74,46 +71,6 @@ export const useAudioFileOperations = (onFileChange: () => void) => {
     }
   };
 
-  const handleUpdateAudio = async () => {
-    if (!dialogState.currentAudio || !dialogState.audioName.trim()) {
-      Alert.alert('Błąd', 'Proszę podać nazwę');
-      return;
-    }
-
-    setDialogState(prev => ({ ...prev, uploading: true }));
-    try {
-      const updateData: any = {
-        name: dialogState.audioName.trim(),
-      };
-      if (dialogState.selectedFile) {
-        const base64Data = await audioApiService.fileToBase64(
-          dialogState.selectedFile.uri
-        );
-        updateData.audioData = base64Data;
-        updateData.mimeType = dialogState.selectedFile.mimeType || 'audio/mp3';
-      }
-
-      await audioApiService.updateAudio(
-        dialogState.currentAudio.id,
-        updateData
-      );
-
-      Alert.alert('Sukces', 'Plik audio został pomyślnie zaktualizowany');
-      setDialogState(prev => ({
-        ...prev,
-        editDialogVisible: false,
-        audioName: '',
-        selectedFile: null,
-        currentAudio: null,
-      }));
-      onFileChange();
-    } catch (error) {
-      console.error('Błąd podczas aktualizacji:', error);
-      Alert.alert('Błąd', 'Nie udało się zaktualizować pliku audio');
-    } finally {
-      setDialogState(prev => ({ ...prev, uploading: false }));
-    }
-  };
   const handleDeleteAudio = async () => {
     if (!dialogState.currentAudio) return;
     const audioIdToDelete = dialogState.currentAudio.id;
@@ -141,16 +98,6 @@ export const useAudioFileOperations = (onFileChange: () => void) => {
     }));
   };
 
-  const openEditDialog = (audio: AudioFile) => {
-    setDialogState(prev => ({
-      ...prev,
-      currentAudio: audio,
-      audioName: audio.name,
-      selectedFile: null,
-      editDialogVisible: true,
-    }));
-  };
-
   const openDeleteDialog = (audio: AudioFile) => {
     setDialogState(prev => ({
       ...prev,
@@ -161,10 +108,6 @@ export const useAudioFileOperations = (onFileChange: () => void) => {
 
   const closeUploadDialog = () => {
     setDialogState(prev => ({ ...prev, uploadDialogVisible: false }));
-  };
-
-  const closeEditDialog = () => {
-    setDialogState(prev => ({ ...prev, editDialogVisible: false }));
   };
 
   const closeDeleteDialog = () => {
@@ -179,13 +122,10 @@ export const useAudioFileOperations = (onFileChange: () => void) => {
     dialogState,
     handleSelectFile,
     handleUploadAudio,
-    handleUpdateAudio,
     handleDeleteAudio,
     openUploadDialog,
-    openEditDialog,
     openDeleteDialog,
     closeUploadDialog,
-    closeEditDialog,
     closeDeleteDialog,
     updateAudioName,
   };

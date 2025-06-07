@@ -39,7 +39,6 @@ const AudioTab = () => {
         onRefresh={onRefresh}
         onPlay={handlePlayAudio}
         onDownload={handleDownloadAudio}
-        onEdit={fileOperations.openEditDialog}
         onDelete={fileOperations.openDeleteDialog}
       />
 
@@ -61,10 +60,8 @@ const AudioTab = () => {
         dialogState={fileOperations.dialogState}
         onSelectFile={fileOperations.handleSelectFile}
         onUpload={fileOperations.handleUploadAudio}
-        onUpdate={fileOperations.handleUpdateAudio}
         onDelete={fileOperations.handleDeleteAudio}
         onCloseUpload={fileOperations.closeUploadDialog}
-        onCloseEdit={fileOperations.closeEditDialog}
         onCloseDelete={fileOperations.closeDeleteDialog}
         onUpdateName={fileOperations.updateAudioName}
       />

@@ -19,7 +19,6 @@ interface AudioCardProps {
   isPlayingInModal: boolean;
   onPlay: (audio: AudioFile) => void;
   onDownload: (id: string, name: string) => void;
-  onEdit: (audio: AudioFile) => void;
   onDelete: (audio: AudioFile) => void;
 }
 
@@ -30,7 +29,6 @@ export const AudioCard: React.FC<AudioCardProps> = ({
   isPlayingInModal,
   onPlay,
   onDownload,
-  onEdit,
   onDelete,
 }) => {
   const theme = useTheme();
@@ -92,7 +90,6 @@ export const AudioCard: React.FC<AudioCardProps> = ({
                 />
               </Tooltip>
             )}
-            <IconButton icon="pencil" size={20} onPress={() => onEdit(audio)} />
             <IconButton
               icon="delete"
               size={20}
