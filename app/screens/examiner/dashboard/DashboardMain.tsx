@@ -72,6 +72,7 @@ interface StudentTestState {
 const ExaminerDashboardScreen = () => {
   const theme = useTheme();
   const { user, logout } = useAuth();
+  const [isDeleting, setIsDeleting] = useState(false);
   const scrollY = useRef(new Animated.Value(0)).current;
   const [headerVisible, setHeaderVisible] = useState(true);
   const [activeTab, setActiveTab] = useState<
@@ -804,16 +805,18 @@ const ExaminerDashboardScreen = () => {
               if (success) setEditDialogVisible(false);
             }}
           />
-
           <DeleteSessionDialog
             visible={deleteDialogVisible}
             onDismiss={() => setDeleteDialogVisible(false)}
             session={currentSession}
             onDeleteSession={async () => {
+              setIsDeleting(true);
               const success = await handleDeleteSession();
+              setIsDeleting(false);
               if (success) setDeleteDialogVisible(false);
             }}
             errorColor={theme.colors.error}
+            isDeleting={isDeleting}
           />
 
           <SoundSelectionDialog

@@ -93,6 +93,9 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
   const [selectMenuVisible, setSelectMenuVisible] = React.useState(false);
   const [deleteMenuVisible, setDeleteMenuVisible] = React.useState(false);
 
+  const [isSavingTemplate, setIsSavingTemplate] = React.useState(false);
+  const [isSavingResults, setIsSavingResults] = React.useState(false);
+
   const handleAddTask = () => {
     if (newTaskText.trim() === '') return;
     const newTask: Task = {
@@ -135,32 +138,36 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
   };
 
   const handleSaveTemplate = async (name: string) => {
+    if (!name.trim()) {
+      Alert.alert('Błąd', 'Nazwa szablonu nie może być pusta');
+      return;
+    }
+    setIsSavingTemplate(true);
     try {
-      if (!name.trim()) {
-        Alert.alert('Błąd', 'Nazwa szablonu nie może być pusta');
-        return;
-      }
-      const response = await apiService.post('checklist/templates', {
+      await apiService.post('checklist/templates', {
         name: name.trim(),
         tasks: testState.tasks.map(t => ({ text: t.text })),
       });
       Alert.alert('Sukces', 'Szablon został zapisany lub nadpisany');
       setTemplateNameInput('');
       setShowTemplateNameDialog(false);
-      loadTemplates();
+      await loadTemplates();
     } catch (error) {
       console.error('Błąd zapisu szablonu:', error);
       Alert.alert('Błąd', 'Nie udało się zapisać szablonu');
+    } finally {
+      setIsSavingTemplate(false);
     }
   };
 
   const handleSaveResults = async () => {
+    if (!student || !sessionId) {
+      Alert.alert('Błąd', 'Brak wymaganych danych: student lub sesja');
+      return;
+    }
+    setIsSavingResults(true);
     try {
-      if (!student || !sessionId) {
-        Alert.alert('Błąd', 'Brak wymaganych danych: student lub sesja');
-        return;
-      }
-      const response = await apiService.post('checklist/test-results', {
+      await apiService.post('checklist/test-results', {
         student: {
           name: student.name,
           surname: student.surname,
@@ -184,6 +191,8 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
         errorMessage = `${error.message} (${error.stack})`;
       }
       Alert.alert('Błąd', errorMessage);
+    } finally {
+      setIsSavingResults(false);
     }
   };
 
@@ -218,7 +227,7 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
     try {
       await apiService.delete(`checklist/templates/${templateId}`);
       Alert.alert('Usunięto', 'Szablon został usunięty');
-      loadTemplates();
+      await loadTemplates();
       const wasLoaded = templates.find(t => t.id === templateId);
       if (wasLoaded && wasLoaded.name === testState.loadedTestName) {
         onLoadTemplate('', []);
@@ -294,6 +303,7 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
                     style={styles.templateButton}
                     contentStyle={{ backgroundColor: theme.colors.surface }}
                     labelStyle={{ color: theme.colors.onSurface }}
+                    disabled={isSavingTemplate || isSavingResults}
                   >
                     {testState.loadedTestName || 'Wybierz szablon'}
                   </Button>
@@ -317,6 +327,7 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
                 onPress={loadTemplates}
                 style={styles.refreshButton}
                 iconColor={theme.colors.primary}
+                disabled={isSavingTemplate || isSavingResults}
               />
               <Menu
                 visible={deleteMenuVisible}
@@ -327,6 +338,7 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
                     size={24}
                     onPress={() => setDeleteMenuVisible(true)}
                     iconColor={theme.colors.error}
+                    disabled={isSavingTemplate || isSavingResults}
                   />
                 }
               >
@@ -358,12 +370,13 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
                 style={styles.newTaskInput}
                 onSubmitEditing={handleAddTask}
                 theme={{ colors: { primary: theme.colors.primary } }}
+                disabled={isSavingTemplate || isSavingResults}
               />
               <IconButton
                 icon="plus"
                 size={24}
                 onPress={handleAddTask}
-                disabled={newTaskText.trim() === ''}
+                disabled={newTaskText.trim() === '' || isSavingTemplate || isSavingResults}
                 iconColor={theme.colors.primary}
               />
             </View>
@@ -379,6 +392,7 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
                     status={task.completed ? 'checked' : 'unchecked'}
                     onPress={() => toggleTaskCompleted(task.id)}
                     color={theme.colors.primary}
+                    disabled={isSavingTemplate || isSavingResults}
                   />
                   <Text style={styles.taskText}>{task.text}</Text>
                   <View style={styles.reorderButtons}>
@@ -386,14 +400,18 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
                       icon="arrow-up"
                       size={20}
                       onPress={() => moveTaskUp(idx)}
-                      disabled={idx === 0}
+                      disabled={idx === 0 || isSavingTemplate || isSavingResults}
                       iconColor={idx === 0 ? '#BDBDBD' : theme.colors.primary}
                     />
                     <IconButton
                       icon="arrow-down"
                       size={20}
                       onPress={() => moveTaskDown(idx)}
-                      disabled={idx === testState.tasks.length - 1}
+                      disabled={
+                        idx === testState.tasks.length - 1 ||
+                        isSavingTemplate ||
+                        isSavingResults
+                      }
                       iconColor={
                         idx === testState.tasks.length - 1
                           ? '#BDBDBD'
@@ -406,6 +424,7 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
                     size={20}
                     onPress={() => handleDeleteTask(task.id)}
                     iconColor={theme.colors.error}
+                    disabled={isSavingTemplate || isSavingResults}
                   />
                 </View>
               ))
@@ -421,6 +440,7 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
                 onPress={() => setCommentsExpanded(!commentsExpanded)}
                 style={styles.commentToggle}
                 iconColor={theme.colors.primary}
+                disabled={isSavingTemplate || isSavingResults}
               />
             </List.Subheader>
             <RNTextInput
@@ -437,11 +457,12 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
               onChangeText={setNewComment}
               multiline
               textAlignVertical="top"
+              editable={!isSavingTemplate && !isSavingResults}
             />
             <Button
               mode="outlined"
               onPress={handleSaveComment}
-              disabled={newComment.trim() === ''}
+              disabled={newComment.trim() === '' || isSavingTemplate || isSavingResults}
               style={styles.actionButton}
               contentStyle={{ backgroundColor: theme.colors.surface }}
             >
@@ -464,9 +485,10 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
             <Button
               mode="contained"
               onPress={openSaveTemplateModal}
-              disabled={testState.tasks.length === 0}
+              disabled={testState.tasks.length === 0 || isSavingTemplate || isSavingResults}
               style={styles.actionButton}
               contentStyle={{ backgroundColor: theme.colors.primary }}
+              loading={isSavingTemplate}
             >
               Zapisz jako szablon
             </Button>
@@ -496,16 +518,21 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
                       placeholder="Nazwa szablonu"
                       placeholderTextColor="#888"
                       theme={{ colors: { primary: theme.colors.primary } }}
+                      disabled={isSavingTemplate}
                     />
                     <View style={styles.modalButtons}>
-                      <Button onPress={() => setShowTemplateNameDialog(false)}>
+                      <Button
+                        onPress={() => setShowTemplateNameDialog(false)}
+                        disabled={isSavingTemplate}
+                      >
                         Anuluj
                       </Button>
                       <Button
                         mode="contained"
                         onPress={() => handleSaveTemplate(templateNameInput)}
-                        disabled={!templateNameInput.trim()}
+                        disabled={!templateNameInput.trim() || isSavingTemplate}
                         contentStyle={{ backgroundColor: theme.colors.primary }}
+                        loading={isSavingTemplate}
                       >
                         Zapisz
                       </Button>
@@ -518,19 +545,20 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
             <Button
               mode="outlined"
               onPress={handleSaveResults}
-              disabled={testState.tasks.length === 0}
+              disabled={testState.tasks.length === 0 || isSavingResults || isSavingTemplate}
               style={styles.actionButton}
               contentStyle={{ backgroundColor: theme.colors.surface }}
+              loading={isSavingResults}
             >
               Zapisz wyniki
             </Button>
 
-            {}
             <Button
               mode="outlined"
               onPress={handleClearForm}
               style={[styles.actionButton, { marginTop: 12 }]}
               contentStyle={{ backgroundColor: theme.colors.surface }}
+              disabled={isSavingResults || isSavingTemplate}
             >
               Wyczyść formularz
             </Button>
@@ -588,10 +616,7 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
     >
       <Pressable style={styles.mobileOverlay} onPress={onDismiss}>
         <View
-          style={[
-            styles.mobilePopup,
-            { backgroundColor: theme.colors.surface },
-          ]}
+          style={[styles.mobilePopup, { backgroundColor: theme.colors.surface }]}
         >
           <ScrollView
             style={styles.scrollView}

@@ -9,15 +9,15 @@ interface EditSessionDialogProps {
   visible: boolean;
   onDismiss: () => void;
   session: Session | null;
-  onUpdateSession: (formData: FormData) => void;
+  onUpdateSession: (formData: FormData) => Promise<void>;
 }
 
-const EditSessionDialog = ({
+const EditSessionDialog: React.FC<EditSessionDialogProps> = ({
   visible,
   onDismiss,
   session,
   onUpdateSession,
-}: EditSessionDialogProps) => {
+}) => {
   const [formData, setFormData] = useState<FormData>({
     name: '',
     temperature: '36.6',
@@ -34,57 +34,74 @@ const EditSessionDialog = ({
     rr: '12',
   });
 
-  const [formErrors, setFormErrors] = useState<FormErrors>({
+  const [formErrors, setFormErrors] = useState<FormErrors & { name: string; bp: string }>({
+    name: '',
     temperature: '',
     beatsPerMinute: '',
     sessionCode: '',
     spo2: '',
     etco2: '',
     rr: '',
+    bp: '',
   });
 
+  // stan ładowania przy aktualizacji
+  const [isUpdating, setIsUpdating] = useState(false);
+
   useEffect(() => {
-    if (session) {
+    if (visible && session) {
       setFormData({
-        temperature: session.temperature
-          ? session.temperature.toString()
-          : '36.6',
+        name: session.name || '',
+        temperature: session.temperature ? session.temperature.toString() : '36.6',
         rhythmType: session.rhythmType as EkgType,
-        beatsPerMinute: session.beatsPerMinute
-          ? session.beatsPerMinute.toString()
-          : '72',
+        beatsPerMinute: session.beatsPerMinute ? session.beatsPerMinute.toString() : '72',
         noiseLevel: session.noiseLevel as NoiseType,
-        sessionCode: session.sessionCode ? session.sessionCode.toString() : '',
+        sessionCode: session.sessionCode || '',
         isActive: session.isActive !== undefined ? session.isActive : true,
         isEkdDisplayHidden:
-          session.isEkdDisplayHidden !== undefined
-            ? session.isEkdDisplayHidden
-            : false,
+          session.isEkdDisplayHidden !== undefined ? session.isEkdDisplayHidden : false,
         showColorsConfig:
-          session.showColorsConfig !== undefined
-            ? session.showColorsConfig
-            : true,
+          session.showColorsConfig !== undefined ? session.showColorsConfig : true,
         bp: session.bp || '120/80',
         spo2: session.spo2 ? session.spo2.toString() : '98',
         etco2: session.etco2 ? session.etco2.toString() : '35',
         rr: session.rr ? session.rr.toString() : '12',
-        name: session.name || '',
       });
+      setFormErrors({
+        name: '',
+        temperature: '',
+        beatsPerMinute: '',
+        sessionCode: '',
+        spo2: '',
+        etco2: '',
+        rr: '',
+        bp: '',
+      });
+      setIsUpdating(false);
     }
-  }, [session]);
+  }, [visible, session]);
 
   const validateForm = () => {
-    const errors = {
+    const errors: typeof formErrors = {
+      name: '',
       temperature: '',
       beatsPerMinute: '',
       sessionCode: '',
       spo2: '',
       etco2: '',
       rr: '',
+      bp: '',
     };
-
     let isValid = true;
 
+    if (!formData.name.trim()) {
+      errors.name = 'Pole nazwa sesji jest wymagane.';
+      isValid = false;
+    }
+    if (!formData.bp.trim()) {
+      errors.bp = 'Pole ciśnienie krwi jest wymagane.';
+      isValid = false;
+    }
     const temp = parseFloat(formData.temperature);
     if (!formData.temperature || isNaN(temp)) {
       errors.temperature = 'Podaj prawidłową temperaturę';
@@ -93,7 +110,7 @@ const EditSessionDialog = ({
       errors.temperature = 'Temperatura musi być w zakresie 30-43°C';
       isValid = false;
     }
-    const bpm = parseInt(formData.beatsPerMinute);
+    const bpm = parseInt(formData.beatsPerMinute, 10);
     if (!formData.beatsPerMinute || isNaN(bpm)) {
       errors.beatsPerMinute = 'Podaj prawidłowe tętno';
       isValid = false;
@@ -104,7 +121,6 @@ const EditSessionDialog = ({
       errors.beatsPerMinute = 'Tętno musi być w zakresie 30-220';
       isValid = false;
     }
-
     if (!formData.sessionCode) {
       errors.sessionCode = 'Kod sesji jest wymagany';
       isValid = false;
@@ -117,11 +133,19 @@ const EditSessionDialog = ({
     return isValid;
   };
 
-  const handleUpdateSession = () => {
-    if (validateForm()) {
-      onUpdateSession(formData);
+  const handleUpdate = async () => {
+    if (!validateForm()) {
+      return;
+    }
+    setIsUpdating(true);
+    try {
+      await onUpdateSession(formData);
+    } catch {
+    } finally {
+      setIsUpdating(false);
     }
   };
+
   return (
     <Dialog
       visible={visible}
@@ -145,9 +169,14 @@ const EditSessionDialog = ({
           </View>
         </ScrollView>
       </Dialog.ScrollArea>
+
       <Dialog.Actions>
-        <Button onPress={onDismiss}>Anuluj</Button>
-        <Button onPress={handleUpdateSession}>Zaktualizuj</Button>
+        <Button onPress={onDismiss} disabled={isUpdating}>
+          Anuluj
+        </Button>
+        <Button onPress={handleUpdate} loading={isUpdating} disabled={isUpdating}>
+          Zaktualizuj
+        </Button>
       </Dialog.Actions>
     </Dialog>
   );

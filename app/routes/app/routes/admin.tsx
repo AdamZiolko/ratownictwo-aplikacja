@@ -22,6 +22,7 @@ import {
   Portal,
   Modal,
   TextInput,
+  HelperText,
 } from 'react-native-paper';
 import { router } from 'expo-router';
 import apiService from '@/services/ApiService';
@@ -43,10 +44,11 @@ const AdminPage = () => {
   const [loadingPresets, setLoadingPresets] = useState(true);
   const [updatingRoles, setUpdatingRoles] = useState<{ [key: number]: boolean }>({});
 
+  const [savingPreset, setSavingPreset] = useState(false);
+
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
 
-  // Stany formularza dodawania presetu
   const initialFormData: FormData = {
     name: '',
     temperature: '37',
@@ -63,16 +65,23 @@ const AdminPage = () => {
     showColorsConfig: false,
   };
   const [formData, setFormData] = useState<FormData>({ ...initialFormData });
-  const [formErrors, setFormErrors] = useState<FormErrors>({
+
+  const [formErrors, setFormErrors] = useState<FormErrors & {
+    name: string;
+    bp: string;
+    presetName: string;
+  }>({
+    name: '',
     temperature: '',
     beatsPerMinute: '',
     sessionCode: '',
     spo2: '',
     etco2: '',
     rr: '',
+    bp: '',
+    presetName: '',
   });
 
-  // Widoczność modala z pełnym formularzem + nazwa presetu
   const [modalVisible, setModalVisible] = useState(false);
   const [presetName, setPresetName] = useState('');
 
@@ -130,18 +139,18 @@ const AdminPage = () => {
     }
   };
 
-const performDeleteUser = async (userId: number) => {
-  try {
-    await apiService.delete(`users/${userId}`);
-    setSnackbarMessage('Użytkownik usunięty.');
-    setSnackbarVisible(true);
-    await fetchUsers();
-  } catch (err) {
-    console.error('Błąd usuwania użytkownika:', err);
-    setSnackbarMessage('Nie udało się usunąć użytkownika.');
-    setSnackbarVisible(true);
-  }
-};
+  const performDeleteUser = async (userId: number) => {
+    try {
+      await apiService.delete(`users/${userId}`);
+      setSnackbarMessage('Użytkownik usunięty.');
+      setSnackbarVisible(true);
+      await fetchUsers();
+    } catch (err) {
+      console.error('Błąd usuwania użytkownika:', err);
+      setSnackbarMessage('Nie udało się usunąć użytkownika.');
+      setSnackbarVisible(true);
+    }
+  };
 
   const confirmDeleteUser = (userId: number) => {
     if (Platform.OS === 'web') {
@@ -190,47 +199,70 @@ const performDeleteUser = async (userId: number) => {
     }
   };
 
-  const validateForm = (): FormErrors => {
-    const errors: FormErrors = {
+
+  const validateForm = (): typeof formErrors => {
+    const errors: typeof formErrors = {
+      name: '',
       temperature: '',
       beatsPerMinute: '',
       sessionCode: '',
       spo2: '',
       etco2: '',
       rr: '',
+      bp: '',
+      presetName: '', 
     };
+
+    if (!formData.name.trim()) {
+      errors.name = 'Pole nazwa sesji jest wymagane.';
+    }
+
+    if (!formData.bp.trim()) {
+      errors.bp = 'Pole ciśnienie krwi jest wymagane.';
+    }
+
     if (!formData.temperature) {
       errors.temperature = 'Pole temperatura jest wymagane.';
     }
+
     if (!/^[0-9]{1,3}$/.test(formData.beatsPerMinute)) {
       errors.beatsPerMinute = 'Podaj poprawne BPM (30–220).';
     }
+
     if (!/^[0-9]{6}$/.test(formData.sessionCode)) {
       errors.sessionCode = 'Kod musi mieć 6 cyfr.';
     }
+
     if (!/^[0-9]{1,3}$/.test(formData.spo2)) {
       errors.spo2 = 'SpO₂ (0–100).';
     }
+
     if (!/^[0-9]{1,3}$/.test(formData.etco2)) {
       errors.etco2 = 'EtCO₂ (0–100).';
     }
+
     if (!/^[0-9]{1,3}$/.test(formData.rr)) {
       errors.rr = 'RR (0–100).';
     }
+
     return errors;
   };
 
-  // Po wciśnięciu “Zapisz” w modalu
   const handleSavePreset = async () => {
     const errors = validateForm();
+
+    if (!presetName.trim()) {
+      errors.presetName = 'Pole nazwa presetu jest wymagane.';
+    }
+
     setFormErrors(errors);
     const hasErrors = Object.values(errors).some((msg) => msg !== '');
     if (hasErrors) {
       return;
     }
-    if (!presetName.trim()) {
-      return; // wymagamy nazwy
-    }
+
+    setSavingPreset(true);
+
     const payload = {
       name: presetName.trim(),
       data: formData,
@@ -239,6 +271,7 @@ const performDeleteUser = async (userId: number) => {
       await apiService.post('presets/default', payload);
       setSnackbarMessage('Preset zapisany.');
       setSnackbarVisible(true);
+
       setModalVisible(false);
       setPresetName('');
       setFormData({ ...initialFormData });
@@ -247,7 +280,8 @@ const performDeleteUser = async (userId: number) => {
       console.error('Błąd zapisu presetu:', err);
       setSnackbarMessage('Nie udało się zapisać presetu.');
       setSnackbarVisible(true);
-      setModalVisible(false);
+    } finally {
+      setSavingPreset(false);
     }
   };
 
@@ -262,10 +296,14 @@ const performDeleteUser = async (userId: number) => {
           <View style={styles.userRow}>
             <View style={styles.userInfo}>
               <Text variant="titleMedium">{item.username}</Text>
-              <Text variant="bodySmall" style={styles.emailText}>{item.email}</Text>
+              <Text variant="bodySmall" style={styles.emailText}>
+                {item.email}
+              </Text>
             </View>
             <View style={styles.roleSection}>
-              <Text variant="bodyMedium" style={styles.roleLabel}>{currentRole}</Text>
+              <Text variant="bodyMedium" style={styles.roleLabel}>
+                {currentRole}
+              </Text>
               <Menu
                 visible={isMenuVisible}
                 onDismiss={() => setMenuUserId(null)}
@@ -357,7 +395,20 @@ const performDeleteUser = async (userId: number) => {
           <Text style={styles.sectionHeader}>Presety</Text>
           <Button
             mode="contained"
-            onPress={() => setModalVisible(true)}
+            onPress={() => {
+              setFormErrors({
+                name: '',
+                temperature: '',
+                beatsPerMinute: '',
+                sessionCode: '',
+                spo2: '',
+                etco2: '',
+                rr: '',
+                bp: '',
+                presetName: '',
+              });
+              setModalVisible(true);
+            }}
             style={styles.addButton}
           >
             Dodaj preset
@@ -392,21 +443,33 @@ const performDeleteUser = async (userId: number) => {
       <Portal>
         <Modal
           visible={modalVisible}
-          onDismiss={() => setModalVisible(false)}
-          contentContainerStyle={[styles.modalContent, { backgroundColor: theme.colors.background }]}
+          onDismiss={() => {
+            setModalVisible(false);
+          }}
+          contentContainerStyle={[
+            styles.modalContent,
+            { backgroundColor: theme.colors.background },
+          ]}
         >
           <ScrollView contentContainerStyle={styles.modalScrollContent}>
-            {/* Najpierw pole nazwy presetu */}
             <TextInput
               label="Nazwa presetu"
               value={presetName}
-              onChangeText={setPresetName}
+              onChangeText={(text) => {
+                setPresetName(text);
+                if (formErrors.presetName) {
+                  setFormErrors((prev) => ({ ...prev, presetName: '' }));
+                }
+              }}
               mode="outlined"
               placeholder="Wprowadź nazwę presetu"
               style={styles.input}
+              error={!!formErrors.presetName}
             />
+            <HelperText type="error" visible={!!formErrors.presetName}>
+              {formErrors.presetName}
+            </HelperText>
 
-            {/* Pełny formularz sesji */}
             <SessionFormFields
               formData={formData}
               setFormData={setFormData}
@@ -414,11 +477,29 @@ const performDeleteUser = async (userId: number) => {
               showGenerateCodeButton
             />
 
+            <HelperText type="error" visible={!!formErrors.name}>
+              {formErrors.name}
+            </HelperText>
+            <HelperText type="error" visible={!!formErrors.bp}>
+              {formErrors.bp}
+            </HelperText>
+
             <View style={styles.modalButtons}>
-              <Button mode="text" onPress={() => setModalVisible(false)} style={styles.modalButton}>
+              <Button
+                mode="text"
+                onPress={() => setModalVisible(false)}
+                style={styles.modalButton}
+                disabled={savingPreset}
+              >
                 Anuluj
               </Button>
-              <Button mode="contained" onPress={handleSavePreset} style={styles.modalButton}>
+              <Button
+                mode="contained"
+                onPress={handleSavePreset}
+                style={styles.modalButton}
+                loading={savingPreset}
+                disabled={savingPreset}
+              >
                 Zapisz
               </Button>
             </View>

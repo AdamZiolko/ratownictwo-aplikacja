@@ -9,6 +9,7 @@ interface DeleteSessionDialogProps {
   session: Session | null;
   onDeleteSession: () => void;
   errorColor: string;
+  isDeleting: boolean; 
 }
 
 const DeleteSessionDialog: React.FC<DeleteSessionDialogProps> = ({
@@ -17,8 +18,10 @@ const DeleteSessionDialog: React.FC<DeleteSessionDialogProps> = ({
   session,
   onDeleteSession,
   errorColor,
+  isDeleting, 
 }) => {
   if (!session) return null;
+
   return (
     <Dialog
       visible={visible}
@@ -43,8 +46,18 @@ const DeleteSessionDialog: React.FC<DeleteSessionDialogProps> = ({
         </Text>
       </Dialog.Content>
       <Dialog.Actions>
-        <Button onPress={onDismiss}>Anuluj</Button>
-        <Button onPress={onDeleteSession} textColor={errorColor}>
+        <Button
+          onPress={onDismiss}
+          disabled={isDeleting} 
+        >
+          Anuluj
+        </Button>
+        <Button
+          onPress={onDeleteSession}
+          textColor={errorColor}
+          loading={isDeleting}   
+          disabled={isDeleting}  
+        >
           Usuń
         </Button>
       </Dialog.Actions>
