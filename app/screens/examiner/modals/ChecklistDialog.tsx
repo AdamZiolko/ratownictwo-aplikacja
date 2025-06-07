@@ -65,6 +65,8 @@ interface ChecklistDialogProps {
   onLoadTemplate: (name: string, tasks: Task[]) => void;
   onChangeTasks: (newTasks: Task[]) => void;
   onChangeComments: (newComments: Comment[]) => void;
+  onShowSnackbar: (message: string, type: 'success' | 'error') => void;
+
 }
 
 const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
@@ -79,6 +81,7 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
   onLoadTemplate,
   onChangeTasks,
   onChangeComments,
+  onShowSnackbar,
 }) => {
   const theme = useTheme();
 
@@ -137,9 +140,9 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
     setNewComment('');
   };
 
-  const handleSaveTemplate = async (name: string) => {
+ const handleSaveTemplate = async (name: string) => {
     if (!name.trim()) {
-      Alert.alert('Błąd', 'Nazwa szablonu nie może być pusta');
+      onShowSnackbar('Nazwa szablonu nie może być pusta', 'error');
       return;
     }
     setIsSavingTemplate(true);
@@ -148,13 +151,13 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
         name: name.trim(),
         tasks: testState.tasks.map(t => ({ text: t.text })),
       });
-      Alert.alert('Sukces', 'Szablon został zapisany lub nadpisany');
+      onShowSnackbar('Szablon został zapisany pomyślnie', 'success');
       setTemplateNameInput('');
       setShowTemplateNameDialog(false);
       await loadTemplates();
     } catch (error) {
       console.error('Błąd zapisu szablonu:', error);
-      Alert.alert('Błąd', 'Nie udało się zapisać szablonu');
+      onShowSnackbar('Nie udało się zapisać szablonu', 'error');
     } finally {
       setIsSavingTemplate(false);
     }
@@ -162,35 +165,31 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
 
   const handleSaveResults = async () => {
     if (!student || !sessionId) {
-      Alert.alert('Błąd', 'Brak wymaganych danych: student lub sesja');
+      onShowSnackbar('Brak wymaganych danych: student lub sesja', 'error');
       return;
     }
     setIsSavingResults(true);
     try {
-      await apiService.post('checklist/test-results', {
-        student: {
-          name: student.name,
-          surname: student.surname,
-          albumNumber: student.albumNumber || '',
-        },
-        tasks: testState.tasks.map(t => ({
-          text: t.text,
-          completed: t.completed,
-        })),
-        comments: testState.comments.map(c => ({
-          text: c.text,
-          timestamp: c.timestamp.toISOString(),
-        })),
-        sessionId: sessionId,
-      });
-      Alert.alert('Sukces', 'Wyniki testu zostały zapisane');
+await apiService.post('checklist/test-results', {
+  student: {
+    name: student.name,
+    surname: student.surname,
+    albumNumber: student.albumNumber || '',
+  },
+  tasks: testState.tasks.map(t => ({
+    text: t.text,
+    completed: t.completed,
+  })),
+  comments: testState.comments.map(c => ({
+    text: c.text,
+    timestamp: c.timestamp.toISOString(),
+  })),
+  sessionId: sessionId,
+});
+onShowSnackbar('Wyniki testu zostały zapisane', 'success');
     } catch (error) {
       console.error('Pełny błąd zapisu:', error);
-      let errorMessage = 'Nie udało się zapisać wyników testu';
-      if (error instanceof Error) {
-        errorMessage = `${error.message} (${error.stack})`;
-      }
-      Alert.alert('Błąd', errorMessage);
+      onShowSnackbar('Błąd zapisywania wyników testu', 'error');
     } finally {
       setIsSavingResults(false);
     }
@@ -204,6 +203,44 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
     }));
     onLoadTemplate(template.name, newTasks);
     setSelectMenuVisible(false);
+    onShowSnackbar(`Wczytano szablon: ${template.name}`, 'success');
+  };
+
+const handleDeleteTemplate = async (templateId: number) => {
+  const toDelete = templates.find(t => t.id === templateId);
+
+  setDeleteMenuVisible(false);
+
+  setTemplates(prev => prev.filter(t => t.id !== templateId));
+
+  if (toDelete?.name === testState.loadedTestName) {
+    onLoadTemplate('', []);
+  }
+
+  try {
+    await apiService.delete(`checklist/templates/${templateId}`)
+      .catch(err => {
+        if (
+          !(err instanceof SyntaxError &&
+            err.message.includes('Unexpected end of JSON input'))
+        ) {
+          throw err;
+        }
+      });
+
+    onShowSnackbar(`Usunięto szablon: ${toDelete?.name}`, 'success');
+  } catch (err) {
+    console.error('Błąd usuwania szablonu:', err);
+    setTemplates(await apiService.get('checklist/templates'));
+    onShowSnackbar('Nie udało się usunąć szablonu', 'error');
+  }
+};
+
+
+  const handleClearForm = () => {
+    onChangeTasks([]);
+    onChangeComments([]);
+    onShowSnackbar('Formularz został wyczyszczony', 'success');
   };
 
   const toggleTaskCompleted = (taskId: number) => {
@@ -223,21 +260,7 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
     setShowTemplateNameDialog(true);
   };
 
-  const handleDeleteTemplate = async (templateId: number) => {
-    try {
-      await apiService.delete(`checklist/templates/${templateId}`);
-      Alert.alert('Usunięto', 'Szablon został usunięty');
-      await loadTemplates();
-      const wasLoaded = templates.find(t => t.id === templateId);
-      if (wasLoaded && wasLoaded.name === testState.loadedTestName) {
-        onLoadTemplate('', []);
-      }
-      setDeleteMenuVisible(false);
-    } catch (error) {
-      console.error('Błąd usuwania szablonu:', error);
-      Alert.alert('Błąd', 'Nie udało się usunąć szablonu');
-    }
-  };
+ 
 
   React.useEffect(() => {
     if (
@@ -268,10 +291,7 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
     onChangeTasks(newTasks);
   };
 
-  const handleClearForm = () => {
-    onChangeTasks([]);
-    onChangeComments([]);
-  };
+
 
   const renderContent = () => (
     <>

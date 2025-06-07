@@ -59,57 +59,64 @@ class ApiService {
     return null;
   }
 
-  private async handleResponse(
-    response: Response,
-    initialRequest?: Request
-  ): Promise<any> {
-    if (response.ok) {
-      return await response.json();
-    }
+private async handleResponse(
+  response: Response,
+  initialRequest?: Request
+): Promise<any> {
+  if (response.ok) {
+    return await response.json();
+  }
 
-    if (response.status === 401) {
-      try {
-        const refreshResult = await AuthService.refreshToken();
-
-        if (refreshResult && initialRequest) {
-          const headers = await this.getAuthHeader();
-
-          if (initialRequest.headers) {
-            const authHeader = initialRequest.headers.get('authorization');
-            const bearerToken = this.extractTokenFromHeader(authHeader);
-            if (!bearerToken && refreshResult.accessToken) {
-              headers.set(
-                'authorization',
-                `Bearer ${refreshResult.accessToken}`
-              );
-            }
-          }
-
-          const retryResponse = await fetch(response.url, {
-            method: initialRequest.method || 'GET',
-            headers,
-            body:
-              initialRequest.method !== 'GET' &&
-              initialRequest.method !== 'HEAD'
-                ? initialRequest.body
-                : undefined,
-          });
-
-          return await this.handleResponse(retryResponse);
-        }
-      } catch (error) {
-        await AuthService.logout();
-        throw new Error('Session expired. Please login again.');
-      }
-    }
-
+   if (response.status === 401) {
     try {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Request failed');
-    } catch (e) {
-      throw new Error(`Request failed with status ${response.status}`);
+      const refreshResult = await AuthService.refreshToken();
+
+      if (refreshResult && initialRequest) {
+        const headers = await this.getAuthHeader();
+
+        if (initialRequest.headers) {
+          const authHeader = initialRequest.headers.get('authorization');
+          const bearerToken = this.extractTokenFromHeader(authHeader);
+          if (!bearerToken && refreshResult.accessToken) {
+            headers.set(
+              'authorization',
+              `Bearer ${refreshResult.accessToken}`
+            );
+          }
+        }
+
+        const retryResponse = await fetch(response.url, {
+          method: initialRequest.method || 'GET',
+          headers,
+          body:
+            initialRequest.method !== 'GET' &&
+            initialRequest.method !== 'HEAD'
+              ? initialRequest.body
+              : undefined,
+        });
+
+        return await this.handleResponse(retryResponse);
+      }
+    } catch (error) {
+      await AuthService.logout();
+      throw new Error('Session expired. Please login again.');
     }
   }
+
+  let errorData: { message?: string; field?: string };
+  try {
+    errorData = await response.json();
+  } catch {
+    
+    throw new Error(`Request failed with status ${response.status}`);
+  }
+
+  const e: any = new Error(errorData.message || `Request failed with status ${response.status}`);
+  e.response = { data: errorData };
+  e.field = errorData.field;
+  throw e;
+}
+
 
   async get(endpoint: string, customHeaders?: Headers): Promise<any> {
     try {

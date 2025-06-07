@@ -72,7 +72,6 @@ interface StudentTestState {
 const ExaminerDashboardScreen = () => {
   const theme = useTheme();
   const { user, logout } = useAuth();
-  const [isDeleting, setIsDeleting] = useState(false);
   const scrollY = useRef(new Animated.Value(0)).current;
   const [headerVisible, setHeaderVisible] = useState(true);
   const [activeTab, setActiveTab] = useState<
@@ -82,6 +81,7 @@ const ExaminerDashboardScreen = () => {
   const [createDialogVisible, setCreateDialogVisible] = useState(false);
   const [editDialogVisible, setEditDialogVisible] = useState(false);
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [viewDialogVisible, setViewDialogVisible] = useState(false);
   const [soundDialogVisible, setSoundDialogVisible] = useState(false);
   const [studentsDialogVisible, setStudentsDialogVisible] = useState(false);
@@ -151,6 +151,7 @@ const ExaminerDashboardScreen = () => {
     handleServerAudioStopCommand,
     lastLoopedSound,
     setLastLoopedSound,
+    showSnackbar,
   } = useSessionManager(user);
 
   const toggleSidebar = () => {
@@ -279,6 +280,7 @@ const ExaminerDashboardScreen = () => {
         {selectedStudent !== null && (
           <ChecklistDialog
             visible={selectedStudent !== null}
+            onShowSnackbar={showSnackbar}
             top={popupTop}
             left={sidebarVisible ? sidebarWidthValue + 16 : 16}
             onDismiss={() => setSelectedStudent(null)}
@@ -818,6 +820,7 @@ const ExaminerDashboardScreen = () => {
             errorColor={theme.colors.error}
             isDeleting={isDeleting}
           />
+
 
           <SoundSelectionDialog
             visible={soundDialogVisible}

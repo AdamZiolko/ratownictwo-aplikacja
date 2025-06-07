@@ -192,110 +192,79 @@ export const useSessionManager = (user: any) => {
     }
   };
 
-  const handleCreateSession = async (data: FormData) => {
-    try {
-      const newSession = {
-        name: data.name || `Sesja ${data.sessionCode}`,
-        temperature: parseFloat(data.temperature),
-        rhythmType: data.rhythmType as number,
-        beatsPerMinute: parseInt(data.beatsPerMinute),
-        noiseLevel: data.noiseLevel as number,
-        sessionCode: data.sessionCode,
-        isActive: data.isActive,
-        isEkdDisplayHidden: data.isEkdDisplayHidden,
-        bp: data.bp,
-        spo2: parseInt(data.spo2) || undefined,
-        etco2: parseInt(data.etco2) || undefined,
-        rr: parseInt(data.rr) || undefined,
-      };
+const handleCreateSession = async (data: FormData): Promise<boolean> => {
+  try {
+    const newSession = {
+      name: data.name || `Sesja ${data.sessionCode}`,
+      temperature: parseFloat(data.temperature),
+      rhythmType: data.rhythmType as number,
+      beatsPerMinute: parseInt(data.beatsPerMinute, 10),
+      noiseLevel: data.noiseLevel as number,
+      sessionCode: data.sessionCode,
+      isActive: data.isActive,
+      isEkdDisplayHidden: data.isEkdDisplayHidden,
+      showColorsConfig: data.showColorsConfig,
+      bp: data.bp,
+      spo2: parseInt(data.spo2, 10) || undefined,
+      etco2: parseInt(data.etco2, 10) || undefined,
+      rr: parseInt(data.rr, 10) || undefined,
+    };
+    await sessionService.createSession(newSession);
+    showSnackbar('Sesja została utworzona', 'success');
+    loadSessions();
+    return true;
+  } catch (error: any) {
+    console.error('Error creating session:', error);
 
-      await sessionService.createSession(newSession);
-      showSnackbar('Sesja została utworzona', 'success');
-      loadSessions();
-      return true;
-    } catch (error: any) {
-      console.error('Error creating session:', error);
+    const serverMessage = error.response?.data?.message || error.message || 'Nie udało się utworzyć sesji';
+    const serverField   = error.response?.data?.field   || error.field;
 
-      if (error?.response?.data?.message) {
-        const errorMessage = error.response.data.message;
+    showSnackbar(serverMessage, 'error');
 
-        if (errorMessage.includes('kodzie już istnieje')) {
-          showSnackbar(
-            'Sesja o tym kodzie już istnieje. Wybierz inny kod sesji.',
-            'error'
-          );
-        } else if (errorMessage.includes('nazwie już istnieje')) {
-          showSnackbar(
-            'Sesja o tej nazwie już istnieje. Wybierz inną nazwę sesji.',
-            'error'
-          );
-        } else {
-          showSnackbar(errorMessage, 'error');
-        }
-      } else if (error?.message) {
-        showSnackbar(error.message, 'error');
-      } else {
-        showSnackbar('Nie udało się utworzyć sesji', 'error');
-      }
-      return false;
-    }
-  };
-  const handleUpdateSession = async (data: FormData) => {
-    if (!currentSession) return false;
+    
 
-    try {
-      const updatedSession = {
-        name: data.name || `Sesja ${data.sessionCode}`,
-        temperature: parseFloat(data.temperature),
-        rhythmType: data.rhythmType as number,
-        beatsPerMinute: parseInt(data.beatsPerMinute),
-        noiseLevel: data.noiseLevel as number,
-        sessionCode: data.sessionCode,
-        isActive: data.isActive,
-        isEkdDisplayHidden: data.isEkdDisplayHidden,
-        showColorsConfig: data.showColorsConfig,
-        bp: data.bp,
-        spo2: parseInt(data.spo2) || undefined,
-        etco2: parseInt(data.etco2) || undefined,
-        rr: parseInt(data.rr) || undefined,
-      };
+    return false;
+  }
+};
 
-      if (!currentSession.sessionId) return false;
+ const handleUpdateSession = async (data: FormData): Promise<boolean> => {
+  if (!currentSession) return false;
 
-      await sessionService.updateSession(
-        currentSession.sessionId,
-        updatedSession
-      );
-      showSnackbar('Sesja została zaktualizowana', 'success');
-      loadSessions();
-      return true;
-    } catch (error: any) {
-      console.error('Error updating session:', error);
+  try {
+    const updatedSession = {
+      name: data.name || `Sesja ${data.sessionCode}`,
+      temperature: parseFloat(data.temperature),
+      rhythmType: data.rhythmType as number,
+      beatsPerMinute: parseInt(data.beatsPerMinute, 10),
+      noiseLevel: data.noiseLevel as number,
+      sessionCode: data.sessionCode,
+      isActive: data.isActive,
+      isEkdDisplayHidden: data.isEkdDisplayHidden,
+      showColorsConfig: data.showColorsConfig,
+      bp: data.bp,
+      spo2: parseInt(data.spo2, 10) || undefined,
+      etco2: parseInt(data.etco2, 10) || undefined,
+      rr: parseInt(data.rr, 10) || undefined,
+    };
 
-      if (error?.response?.data?.message) {
-        const errorMessage = error.response.data.message;
+    if (!currentSession.sessionId) return false;
 
-        if (errorMessage.includes('kodzie już istnieje')) {
-          showSnackbar(
-            'Sesja o tym kodzie już istnieje. Wybierz inny kod sesji.',
-            'error'
-          );
-        } else if (errorMessage.includes('nazwie już istnieje')) {
-          showSnackbar(
-            'Sesja o tej nazwie już istnieje. Wybierz inną nazwę sesji.',
-            'error'
-          );
-        } else {
-          showSnackbar(errorMessage, 'error');
-        }
-      } else if (error?.message) {
-        showSnackbar(error.message, 'error');
-      } else {
-        showSnackbar('Nie udało się zaktualizować sesji', 'error');
-      }
-      return false;
-    }
-  };
+    await sessionService.updateSession(
+      currentSession.sessionId,
+      updatedSession
+    );
+    showSnackbar('Sesja została zaktualizowana', 'success');
+    loadSessions();
+    return true;
+  } catch (error: any) {
+    console.error('Error updating session:', error);
+
+    const msg = error.message || 'Nie udało się zaktualizować sesji';
+    showSnackbar(msg, 'error');
+    return false;
+  }
+};
+
 
   const handleDeleteSession = async () => {
     if (!currentSession) return false;

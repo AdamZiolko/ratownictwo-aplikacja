@@ -45,7 +45,6 @@ const EditSessionDialog: React.FC<EditSessionDialogProps> = ({
     bp: '',
   });
 
-  // stan ładowania przy aktualizacji
   const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
