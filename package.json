@@ -1,5 +1,5 @@
 {
-  "name": "ratownictwo",
+  "name": "medutrainer",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
@@ -80,8 +80,8 @@
   "private": true,
   "react-native-windows": {
     "init-windows": {
-      "name": "ratownictwo",
-      "namespace": "ratownictwo",
+      "name": "MeduTrainer",
+      "namespace": "MeduTrainer",
       "template": "old/uwp-cpp-app"
     }
   }
